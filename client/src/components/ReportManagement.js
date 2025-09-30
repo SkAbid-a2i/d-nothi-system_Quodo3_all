@@ -391,7 +391,7 @@ const ReportManagement = () => {
         </Paper>
       )}
       
-      {activeTab === 2 && Object.keys(summaryReports).length > 0 && (
+      {activeTab === 2 && Object.keys(activityReports).length > 0 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Summary Report Results
@@ -410,7 +410,7 @@ const ReportManagement = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {summaryReports.tasks && summaryReports.tasks.map((stat) => (
+                    {activityReports.tasks && activityReports.tasks.map((stat) => (
                       <TableRow key={stat.status}>
                         <TableCell>{stat.status}</TableCell>
                         <TableCell>{stat.count}</TableCell>
@@ -434,7 +434,7 @@ const ReportManagement = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {summaryReports.leaves && summaryReports.leaves.map((stat) => (
+                    {activityReports.leaves && activityReports.leaves.map((stat) => (
                       <TableRow key={stat.status}>
                         <TableCell>{stat.status}</TableCell>
                         <TableCell>{stat.count}</TableCell>
