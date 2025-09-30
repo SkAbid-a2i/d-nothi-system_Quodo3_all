@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -19,8 +19,8 @@ import {
   Chip,
   IconButton,
   Autocomplete,
-  CircularProgress,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -30,39 +30,35 @@ import {
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+// import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 
 const TaskManagement = () => {
   const { user } = useAuth();
+  // const { t } = useTranslation();
   const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  const [sources, setSources] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [selectedSource, setSelectedSource] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
-  
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [sources, setSources] = useState([]);
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [services, setServices] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [assignedTo, setAssignedTo] = useState('');
   
+  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  
-  // Fetch tasks and dropdown values on component mount
-  useEffect(() => {
-    fetchTasks();
-    fetchDropdownValues();
-  }, [fetchTasks]);
-  
-  const fetchTasks = async () => {
+
+  const fetchTasks = useCallback(async () => {
     setDataLoading(true);
     try {
       const response = await taskAPI.getAllTasks();
@@ -76,7 +72,13 @@ const TaskManagement = () => {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [user?.username]);
+
+  // Fetch tasks on component mount
+  useEffect(() => {
+    fetchTasks();
+    fetchDropdownValues();
+  }, [fetchTasks]);
 
   // Fetch dropdown values on component mount
   useEffect(() => {

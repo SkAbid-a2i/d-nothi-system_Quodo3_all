@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -39,7 +39,7 @@ const Files = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const fetchStorageInfo = async () => {
+  const fetchStorageInfo = useCallback(async () => {
     try {
       // In a real implementation, this would come from the backend
       // For now, we'll use the user's storage quota from the auth context
@@ -48,13 +48,13 @@ const Files = () => {
     } catch (error) {
       console.error('Error fetching storage info:', error);
     }
-  };
+  }, [user?.usedStorage, user?.storageQuota]);
 
   // Fetch user storage info and files on component mount
   useEffect(() => {
     fetchStorageInfo();
     fetchFiles();
-  }, []);
+  }, [fetchStorageInfo]);
 
   const fetchFiles = async () => {
     // setLoading(true);
