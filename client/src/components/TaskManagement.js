@@ -134,7 +134,8 @@ const TaskManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error deleting task:', error);
-      setError('Failed to delete task');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
+      setError(`Failed to delete task: ${errorMessage}`);
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -152,7 +153,8 @@ const TaskManagement = () => {
         service: selectedService?.value || '',
         description,
         status,
-        assignedTo
+        assignedTo,
+        office: user?.office || ''
       };
       
       const response = await taskAPI.createTask(taskData);
@@ -160,7 +162,9 @@ const TaskManagement = () => {
       // Add new task to list
       const newTask = {
         id: response.data.id,
-        ...taskData
+        ...taskData,
+        userId: user?.id,
+        userName: user?.fullName
       };
       setTasks([...tasks, newTask]);
       
@@ -180,7 +184,8 @@ const TaskManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error creating task:', error);
-      setError('Failed to create task');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create task';
+      setError(`Failed to create task: ${errorMessage}`);
       setTimeout(() => setError(''), 5000);
     }
   };
