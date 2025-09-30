@@ -36,7 +36,6 @@ const Files = () => {
   const [usedStorage, setUsedStorage] = useState(0);
   const [storageQuota, setStorageQuota] = useState(0);
   const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -44,7 +43,7 @@ const Files = () => {
   useEffect(() => {
     fetchStorageInfo();
     fetchFiles();
-  }, []);
+  }, [fetchStorageInfo]);
 
   const fetchStorageInfo = async () => {
     try {
@@ -58,7 +57,7 @@ const Files = () => {
   };
 
   const fetchFiles = async () => {
-    setLoading(true);
+    // setLoading(true);
     try {
       // In a real implementation, this would fetch actual files from the backend
       // For now, we'll use mock data
@@ -73,7 +72,7 @@ const Files = () => {
       console.error('Error fetching files:', error);
       setError('Failed to fetch files');
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 

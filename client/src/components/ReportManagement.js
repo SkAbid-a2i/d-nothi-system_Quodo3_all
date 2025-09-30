@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
-  Grid, 
   Paper, 
+  Grid, 
   TextField, 
   Button, 
   FormControl, 
@@ -24,32 +24,39 @@ import {
 } from '@mui/material';
 import { 
   Search as SearchIcon,
-  PictureAsPdf as PdfIcon,
-  Description as CsvIcon,
-  GridOn as ExcelIcon
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import { reportAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
+import CsvIcon from '../components/icons/CsvIcon';
+import ExcelIcon from '../components/icons/ExcelIcon';
+import PdfIcon from '../components/icons/PdfIcon';
 
 const ReportManagement = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reportType, setReportType] = useState('task');
   const [userId, setUserId] = useState('');
   const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   
   const [taskReports, setTaskReports] = useState([]);
   const [leaveReports, setLeaveReports] = useState([]);
-  const [summaryReports, setSummaryReports] = useState({});
+  const [activityReports, setActivityReports] = useState([]);
+
+  useEffect(() => {
+    // Reset reports when tab changes
+    setTaskReports([]);
+    setLeaveReports([]);
+    setActivityReports([]);
+  }, [activeTab]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -68,21 +75,16 @@ const ReportManagement = () => {
         status: status || undefined
       };
       
-      if (reportType === 'task') {
-        const response = await reportAPI.getTaskReport(params);
-        setTaskReports(response.data);
-        // Log audit entry
-        auditLog.reportExported('Task Report', 'generated', user?.username || 'unknown');
-      } else if (reportType === 'leave') {
-        const response = await reportAPI.getLeaveReport(params);
-        setLeaveReports(response.data);
-        // Log audit entry
-        auditLog.reportExported('Leave Report', 'generated', user?.username || 'unknown');
-      } else if (reportType === 'summary') {
-        const response = await reportAPI.getSummaryReport(params);
-        setSummaryReports(response.data);
-        // Log audit entry
-        auditLog.reportExported('Summary Report', 'generated', user?.username || 'unknown');
+      let data;
+      if (activeTab === 0) {
+        data = await reportAPI.getTaskReport(params);
+        setTaskReports(data.data);
+      } else if (activeTab === 1) {
+        data = await reportAPI.getLeaveReport(params);
+        setLeaveReports(data.data);
+      } else {
+        data = await reportAPI.getSummaryReport(params);
+        setActivityReports(data.data);
       }
       
       setSuccess('Report generated successfully!');
@@ -97,6 +99,10 @@ const ReportManagement = () => {
   };
 
   const handleExport = async (format) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    
     try {
       const params = {
         startDate,
@@ -106,13 +112,12 @@ const ReportManagement = () => {
         format
       };
       
-      let response;
       if (reportType === 'task') {
-        response = await reportAPI.getTaskReport(params);
+        await reportAPI.getTaskReport(params);
       } else if (reportType === 'leave') {
-        response = await reportAPI.getLeaveReport(params);
+        await reportAPI.getLeaveReport(params);
       } else if (reportType === 'summary') {
-        response = await reportAPI.getSummaryReport(params);
+        await reportAPI.getSummaryReport(params);
       }
       
       // In a real implementation, this would download the file
@@ -125,6 +130,8 @@ const ReportManagement = () => {
       console.error('Error exporting report:', error);
       setError(`Failed to export report as ${format.toUpperCase()}`);
       setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
     }
   };
 

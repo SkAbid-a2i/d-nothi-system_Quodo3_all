@@ -47,17 +47,6 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [userFilter, setUserFilter] = useState('');
   
-  // Widget state
-  const [widgets, setWidgets] = useState([
-    { id: 1, type: 'taskSummary', title: 'Task Summary', enabled: true },
-    { id: 2, type: 'leaveCalendar', title: 'Leave Calendar', enabled: true },
-    { id: 3, type: 'performanceMetrics', title: 'Performance Metrics', enabled: false },
-    { id: 4, type: 'teamAvailability', title: 'Team Availability', enabled: true },
-    { id: 5, type: 'customNote', title: 'Team Meeting Notes', enabled: true }
-  ]);
-  
-  const [newWidgetTitle, setNewWidgetTitle] = useState('');
-
   // Mock data for team tasks
   const teamTasks = [
     { id: 1, user: 'John Doe', date: '2025-09-28', source: 'Email', category: 'IT Support', service: 'Hardware', status: 'Completed' },

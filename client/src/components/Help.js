@@ -9,10 +9,8 @@ import {
   AccordionSummary, 
   AccordionDetails,
   FormControl,
-  InputLabel,
   Select,
-  MenuItem,
-  IconButton
+  MenuItem
 } from '@mui/material';
 import { 
   ExpandMore as ExpandMoreIcon,
@@ -27,10 +25,6 @@ const Help = () => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-  };
-
-  const handleLanguageChange = (event) => {
-    setLanguage(event.target.value);
   };
 
   // Mock help content

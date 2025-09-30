@@ -61,11 +61,6 @@ const LeaveManagement = () => {
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   
-  // Fetch leaves on component mount
-  useEffect(() => {
-    fetchLeaves();
-  }, [fetchLeaves]);
-  
   const fetchLeaves = React.useCallback(async () => {
     setLoading(true);
     try {
@@ -81,6 +76,11 @@ const LeaveManagement = () => {
       setLoading(false);
     }
   }, [user?.username]);
+  
+  // Fetch leaves on component mount
+  useEffect(() => {
+    fetchLeaves();
+  }, [fetchLeaves]);
   
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
