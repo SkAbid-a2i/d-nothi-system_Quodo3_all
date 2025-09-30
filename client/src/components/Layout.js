@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   AppBar, 
@@ -28,6 +28,8 @@ import {
 const drawerWidth = 240;
 
 const Layout = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   
   const menuItems = [
@@ -40,6 +42,11 @@ const Layout = () => {
 
   const handleLogout = () => {
     logout();
+    navigate('/');
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
   };
 
   return (
@@ -75,7 +82,12 @@ const Layout = () => {
         <Box sx={{ overflow: 'auto' }}>
           <List>
             {menuItems.map((item, index) => (
-              <ListItem button key={item.text}>
+              <ListItem 
+                button 
+                key={item.text}
+                selected={location.pathname === item.path}
+                onClick={() => handleNavigation(item.path)}
+              >
                 <ListItemIcon>
                   {item.icon}
                 </ListItemIcon>
@@ -85,7 +97,11 @@ const Layout = () => {
           </List>
           <Divider />
           <List>
-            <ListItem button>
+            <ListItem 
+              button
+              selected={location.pathname === '/settings'}
+              onClick={() => handleNavigation('/settings')}
+            >
               <ListItemIcon>
                 <SettingsIcon />
               </ListItemIcon>

@@ -11,6 +11,7 @@ import TaskManagement from './components/TaskManagement';
 import LeaveManagement from './components/LeaveManagement';
 import UserManagement from './components/UserManagement';
 import ReportManagement from './components/ReportManagement';
+import Settings from './components/Settings';
 
 // Create theme
 const theme = createTheme({
@@ -73,6 +74,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
                     <ReportManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />
