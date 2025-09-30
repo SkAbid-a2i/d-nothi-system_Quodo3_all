@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { auditLog } from '../services/auditLogger';
 
 const TaskManagement = () => {
   const { user } = useAuth();
