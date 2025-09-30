@@ -1,6 +1,8 @@
 const express = require('express');
 const Leave = require('../models/Leave');
+const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const emailService = require('../services/email.service');
 
 const router = express.Router();
 
@@ -55,8 +57,34 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor'), async 
       reason,
     });
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Send email notification to admin/supervisor
+    try {
+      // Get admin/supervisor for the office
+      const admins = await User.findAll({
+        where: {
+          office: req.user.office,
+          role: {
+            [require('sequelize').Op.or]: ['Admin', 'Supervisor']
+          },
+          isActive: true
+        }
+      });
+
+      // Send notification to each admin/supervisor
+      for (const admin of admins) {
+        if (admin.email) {
+          await emailService.sendLeaveRequestNotification({
+            employeeName: req.user.fullName,
+            startDate,
+            endDate,
+            reason
+          }, admin.email);
+        }
+      }
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError);
+      // Don't fail the request if email sending fails
+    }
 
     res.status(201).json(leave);
   } catch (err) {
@@ -91,8 +119,20 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor'), async
 
     await leave.save();
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Send email notification to employee
+    try {
+      const employee = await User.findByPk(leave.userId);
+      if (employee && employee.email) {
+        await emailService.sendLeaveApprovalNotification({
+          startDate: leave.startDate,
+          endDate: leave.endDate,
+          approverName: req.user.fullName
+        }, employee.email);
+      }
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError);
+      // Don't fail the request if email sending fails
+    }
 
     res.json(leave);
   } catch (err) {
@@ -129,8 +169,21 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor'), async 
 
     await leave.save();
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Send email notification to employee
+    try {
+      const employee = await User.findByPk(leave.userId);
+      if (employee && employee.email) {
+        await emailService.sendLeaveRejectionNotification({
+          startDate: leave.startDate,
+          endDate: leave.endDate,
+          rejecterName: req.user.fullName,
+          rejectionReason
+        }, employee.email);
+      }
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError);
+      // Don't fail the request if email sending fails
+    }
 
     res.json(leave);
   } catch (err) {

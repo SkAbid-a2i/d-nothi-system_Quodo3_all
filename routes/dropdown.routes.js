@@ -4,6 +4,22 @@ const { authenticate, authorize } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
+// @route   GET /api/dropdowns
+// @desc    Get all dropdown values
+// @access  Private
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const dropdowns = await Dropdown.findAll({ 
+      where: { isActive: true },
+      order: [['type', 'ASC'], ['value', 'ASC']]
+    });
+    res.json(dropdowns);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/dropdowns/:type
 // @desc    Get dropdown values by type
 // @access  Private
@@ -99,6 +115,38 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, r
     // TODO: Implement audit logging
 
     res.json(dropdown);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/dropdowns/:id
+// @desc    Delete dropdown value
+// @access  Private (Admin, Supervisor)
+router.delete('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if dropdown exists
+    const dropdown = await Dropdown.findByPk(id);
+    if (!dropdown) {
+      return res.status(404).json({ message: 'Dropdown value not found' });
+    }
+
+    // Check permissions
+    if (req.user.role === 'Supervisor' && dropdown.createdBy !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Don't actually delete, just deactivate
+    dropdown.isActive = false;
+    await dropdown.save();
+
+    // Log the action
+    // TODO: Implement audit logging
+
+    res.json({ message: 'Dropdown value deleted successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

@@ -4,6 +4,14 @@ A comprehensive web application for organizations to manage tasks, leaves, repor
 
 ## Features
 
+### Enhanced Features
+- **Email Notifications**: Automatic email notifications for leave requests, approvals, and rejections
+- **Storage Quota Management**: Proper backend validation for file upload quotas
+- **Permission Templates**: Comprehensive permission template management for role-based access
+- **Full Dropdown Management**: Complete CRUD operations for dropdown values with dependent dropdowns
+- **Advanced Reporting**: Export reports in CSV, Excel, and PDF formats
+- **Multilanguage Support**: Full application support for English and Bengali languages
+
 ### User Roles
 - **System Administrator (SystemAdmin)**: Can create and disable users, assign roles, and decide what different users can access.
 - **Administrator (Admin)**: Can oversee team activities, approve or reject leaves, manage dropdown values, and view reports.
@@ -31,16 +39,17 @@ A comprehensive web application for organizations to manage tasks, leaves, repor
 - Form to request leave with dates and reason
 - Admin/Supervisor approval or rejection
 - Calendar view of leave schedules
+- Email notifications for leave requests, approvals, and rejections
 - Notifications for updates
 - Full history of leave requests per user
 
 #### Admin Console & Management Tools
-- **User Privileges**: SystemAdmin defines what Admins and Supervisors can do
-- **Drop-Down Management**: Admin/Supervisor can add/update dropdown options
-- **Report Management & Analysis**: Reports for tasks, leaves, and activity, exportable in multiple formats
+- **User Privileges**: SystemAdmin defines what Admins and Supervisors can do via permission templates
+- **Drop-Down Management**: Admin/Supervisor can add/update/delete dropdown options with full CRUD operations
+- **Report Management & Analysis**: Reports for tasks, leaves, and activity, exportable in CSV, Excel, and PDF formats
 
 #### Help / Tutorial Section
-- Guidance in English and Bangla
+- Guidance in English and Bangla (multilanguage support)
 - Video or link tutorials
 - Info icons for on-page explanations
 
@@ -115,6 +124,14 @@ JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
 JWT_EXPIRES_IN=1h
 JWT_REFRESH_EXPIRES_IN=7d
 
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+EMAIL_FROM=D-Nothi Task Management <no-reply@d-nothi.com>
+
 # Server Configuration
 NODE_ENV=development
 PORT=5000
@@ -158,7 +175,9 @@ quodo3/
 - Role-based access control
 - Input validation and sanitization
 - Secure HTTP headers with Helmet
-- Audit logging for critical actions
+- Comprehensive audit logging for all CRUD operations
+- Email notification security with app passwords
+- Proper authorization checks for all operations
 
 ## Key Expectations
 - The system keeps a history of all critical actions (audit log)

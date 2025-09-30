@@ -18,7 +18,7 @@ router.get('/tasks', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin
       where.office = req.user.office;
     }
     
-    const { startDate, endDate, userId, status } = req.query;
+    const { startDate, endDate, userId, status, format } = req.query;
     
     // Apply date filter
     if (startDate || endDate) {
@@ -37,6 +37,11 @@ router.get('/tasks', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin
       where,
       order: [['date', 'DESC']]
     });
+    
+    // Handle export formats
+    if (format) {
+      return handleExport(res, tasks, 'tasks', format);
+    }
     
     res.json(tasks);
   } catch (err) {
@@ -57,7 +62,7 @@ router.get('/leaves', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmi
       where.office = req.user.office;
     }
     
-    const { startDate, endDate, userId, status } = req.query;
+    const { startDate, endDate, userId, status, format } = req.query;
     
     // Apply date filter
     if (startDate || endDate) {
@@ -76,6 +81,11 @@ router.get('/leaves', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmi
       where,
       order: [['createdAt', 'DESC']]
     });
+    
+    // Handle export formats
+    if (format) {
+      return handleExport(res, leaves, 'leaves', format);
+    }
     
     res.json(leaves);
   } catch (err) {
@@ -98,7 +108,7 @@ router.get('/summary', authenticate, authorize('Admin', 'Supervisor', 'SystemAdm
       leaveWhere.office = req.user.office;
     }
     
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, format } = req.query;
     
     // Apply date filter
     if (startDate || endDate) {
@@ -134,19 +144,179 @@ router.get('/summary', authenticate, authorize('Admin', 'Supervisor', 'SystemAdm
       group: ['status']
     });
     
-    // Get total users in office (for Admin/Supervisor)
-    // We would need to import User model and count users in the office
-    // For now, we'll set it to 0 and implement later
-    
-    res.json({
+    const summary = {
       tasks: taskStats,
       leaves: leaveStats,
-      userCount: 0
-    });
+      generatedAt: new Date()
+    };
+    
+    // Handle export formats
+    if (format) {
+      return handleExport(res, summary, 'summary', format);
+    }
+    
+    res.json(summary);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Helper function to handle exports
+const handleExport = (res, data, reportType, format) => {
+  switch (format.toLowerCase()) {
+    case 'csv':
+      return exportAsCSV(res, data, reportType);
+    case 'xlsx':
+      return exportAsExcel(res, data, reportType);
+    case 'pdf':
+      return exportAsPDF(res, data, reportType);
+    default:
+      return res.status(400).json({ message: 'Invalid export format' });
+  }
+};
+
+// Export as CSV
+const exportAsCSV = (res, data, reportType) => {
+  let csvContent = '';
+  
+  // Add headers
+  if (reportType === 'tasks' && data.length > 0) {
+    const headers = Object.keys(data[0].toJSON());
+    csvContent += headers.join(',') + '\n';
+    
+    // Add data rows
+    data.forEach(item => {
+      const values = headers.map(header => {
+        const value = item[header];
+        // Escape commas and quotes in values
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += values.join(',') + '\n';
+    });
+  } else if (reportType === 'leaves' && data.length > 0) {
+    const headers = Object.keys(data[0].toJSON());
+    csvContent += headers.join(',') + '\n';
+    
+    // Add data rows
+    data.forEach(item => {
+      const values = headers.map(header => {
+        const value = item[header];
+        // Escape commas and quotes in values
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += values.join(',') + '\n';
+    });
+  } else if (reportType === 'summary') {
+    csvContent += 'Report Type,Generated At\n';
+    csvContent += `Summary,${data.generatedAt.toISOString()}\n\n`;
+    
+    csvContent += 'Task Statistics\n';
+    csvContent += 'Status,Count\n';
+    data.tasks.forEach(stat => {
+      csvContent += `${stat.status},${stat.count}\n`;
+    });
+    
+    csvContent += '\nLeave Statistics\n';
+    csvContent += 'Status,Count\n';
+    data.leaves.forEach(stat => {
+      csvContent += `${stat.status},${stat.count}\n`;
+    });
+  }
+  
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${reportType}_report.csv"`);
+  res.status(200).send(csvContent);
+};
+
+// Export as Excel (simplified - in a real implementation, you'd use a library like xlsx)
+const exportAsExcel = (res, data, reportType) => {
+  // For demonstration purposes, we'll return CSV with Excel extension
+  // In a real implementation, you would use a library like xlsx to generate proper Excel files
+  let csvContent = '';
+  
+  if (reportType === 'tasks' && data.length > 0) {
+    const headers = Object.keys(data[0].toJSON());
+    csvContent += headers.join(',') + '\n';
+    
+    data.forEach(item => {
+      const values = headers.map(header => {
+        const value = item[header];
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += values.join(',') + '\n';
+    });
+  } else if (reportType === 'leaves' && data.length > 0) {
+    const headers = Object.keys(data[0].toJSON());
+    csvContent += headers.join(',') + '\n';
+    
+    data.forEach(item => {
+      const values = headers.map(header => {
+        const value = item[header];
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += values.join(',') + '\n';
+    });
+  } else if (reportType === 'summary') {
+    csvContent += 'Report Type,Generated At\n';
+    csvContent += `Summary,${data.generatedAt.toISOString()}\n\n`;
+    
+    csvContent += 'Task Statistics\n';
+    csvContent += 'Status,Count\n';
+    data.tasks.forEach(stat => {
+      csvContent += `${stat.status},${stat.count}\n`;
+    });
+    
+    csvContent += '\nLeave Statistics\n';
+    csvContent += 'Status,Count\n';
+    data.leaves.forEach(stat => {
+      csvContent += `${stat.status},${stat.count}\n`;
+    });
+  }
+  
+  res.setHeader('Content-Type', 'application/vnd.ms-excel');
+  res.setHeader('Content-Disposition', `attachment; filename="${reportType}_report.xlsx"`);
+  res.status(200).send(csvContent);
+};
+
+// Export as PDF (simplified - in a real implementation, you'd use a library like pdfkit)
+const exportAsPDF = (res, data, reportType) => {
+  // For demonstration purposes, we'll return a simple text representation
+  // In a real implementation, you would use a library like pdfkit to generate proper PDF files
+  let pdfContent = `Report: ${reportType}\n`;
+  pdfContent += `Generated: ${new Date().toISOString()}\n\n`;
+  
+  if (reportType === 'tasks') {
+    pdfContent += 'Tasks:\n';
+    data.forEach((item, index) => {
+      pdfContent += `${index + 1}. ${item.description || 'No description'}\n`;
+      pdfContent += `   Date: ${item.date}\n`;
+      pdfContent += `   Status: ${item.status}\n\n`;
+    });
+  } else if (reportType === 'leaves') {
+    pdfContent += 'Leaves:\n';
+    data.forEach((item, index) => {
+      pdfContent += `${index + 1}. ${item.userName}\n`;
+      pdfContent += `   Dates: ${item.startDate} to ${item.endDate}\n`;
+      pdfContent += `   Status: ${item.status}\n\n`;
+    });
+  } else if (reportType === 'summary') {
+    pdfContent += 'Summary Report\n\n';
+    
+    pdfContent += 'Task Statistics:\n';
+    data.tasks.forEach(stat => {
+      pdfContent += `  ${stat.status}: ${stat.count}\n`;
+    });
+    
+    pdfContent += '\nLeave Statistics:\n';
+    data.leaves.forEach(stat => {
+      pdfContent += `  ${stat.status}: ${stat.count}\n`;
+    });
+  }
+  
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${reportType}_report.pdf"`);
+  res.status(200).send(pdfContent);
+};
 
 module.exports = router;

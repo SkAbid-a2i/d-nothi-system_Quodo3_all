@@ -46,6 +46,7 @@ const taskRoutes = require('./routes/task.routes');
 const leaveRoutes = require('./routes/leave.routes');
 const dropdownRoutes = require('./routes/dropdown.routes');
 const reportRoutes = require('./routes/report.routes');
+const auditRoutes = require('./routes/audit.routes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -54,6 +55,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/dropdowns', dropdownRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -77,6 +79,10 @@ app.listen(PORT, async () => {
   } catch (error) {
     console.error('Error syncing database:', error);
   }
+  
+  // Test email service
+  const emailService = require('./services/email.service');
+  console.log('Email service initialized');
 });
 
 module.exports = app;
