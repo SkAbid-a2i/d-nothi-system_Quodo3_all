@@ -23,8 +23,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { 
-  Search as SearchIcon,
-  Assessment as AssessmentIcon
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { reportAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';

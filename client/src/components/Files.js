@@ -25,7 +25,7 @@ import {
   Folder as FolderIcon,
   InsertDriveFile as FileIcon
 } from '@mui/icons-material';
-import { fileAPI } from '../services/api';
+// import { fileAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { auditLog } from '../services/auditLogger';
 
@@ -39,12 +39,6 @@ const Files = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Fetch user storage info and files on component mount
-  useEffect(() => {
-    fetchStorageInfo();
-    fetchFiles();
-  }, [fetchStorageInfo]);
-
   const fetchStorageInfo = async () => {
     try {
       // In a real implementation, this would come from the backend
@@ -55,6 +49,12 @@ const Files = () => {
       console.error('Error fetching storage info:', error);
     }
   };
+
+  // Fetch user storage info and files on component mount
+  useEffect(() => {
+    fetchStorageInfo();
+    fetchFiles();
+  }, []);
 
   const fetchFiles = async () => {
     // setLoading(true);
