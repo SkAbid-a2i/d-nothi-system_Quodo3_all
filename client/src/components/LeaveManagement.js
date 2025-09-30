@@ -64,9 +64,9 @@ const LeaveManagement = () => {
   // Fetch leaves on component mount
   useEffect(() => {
     fetchLeaves();
-  }, []);
+  }, [fetchLeaves]);
   
-  const fetchLeaves = async () => {
+  const fetchLeaves = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await leaveAPI.getAllLeaves();
@@ -80,7 +80,7 @@ const LeaveManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.username]);
   
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);

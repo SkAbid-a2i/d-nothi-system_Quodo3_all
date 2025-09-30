@@ -23,7 +23,6 @@ import {
   Assignment as TaskIcon,
   EventAvailable as LeaveIcon,
   People as UserIcon,
-  Assessment as ReportIcon,
   Settings as SettingsIcon,
   Help as HelpIcon,
   Logout as LogoutIcon,
