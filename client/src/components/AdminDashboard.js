@@ -99,11 +99,6 @@ const AdminDashboard = () => {
     console.log(`Rejecting leave ${leaveId}`);
   };
   
-  const handleExport = (format) => {
-    // Implement export functionality
-    console.log(`Exporting data as ${format}`);
-  };
-  
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
