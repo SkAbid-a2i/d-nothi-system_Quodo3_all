@@ -11,8 +11,9 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT,
     dialect: 'mysql',
     dialectOptions: {
+      // SSL configuration for TiDB
       ssl: {
-        rejectUnauthorized: true
+        rejectUnauthorized: false
       }
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
