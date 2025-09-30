@@ -9,12 +9,12 @@ const User = sequelize.define('User', {
     autoIncrement: true
   },
   username: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false,
     unique: true
   },
   email: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false,
     unique: true,
     validate: {
@@ -22,7 +22,7 @@ const User = sequelize.define('User', {
     }
   },
   password: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false,
     set(value) {
       // Hash the password before saving
@@ -32,7 +32,7 @@ const User = sequelize.define('User', {
     }
   },
   fullName: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   role: {
@@ -40,7 +40,7 @@ const User = sequelize.define('User', {
     defaultValue: 'Agent'
   },
   office: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   },
   isActive: {
     type: DataTypes.BOOLEAN,
@@ -56,7 +56,9 @@ const User = sequelize.define('User', {
   }
 }, {
   timestamps: true,
-  tableName: 'users'
+  tableName: 'users',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
 // Method to compare passwords

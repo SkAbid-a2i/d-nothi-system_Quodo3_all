@@ -74,10 +74,11 @@ app.listen(PORT, async () => {
   
   // Sync database models
   try {
-    await sequelize.sync({ alter: true }); // Use { force: true } for development only
-    console.log('Database synced successfully');
+    // For TiDB, we'll use alter option to avoid constraint issues
+    await sequelize.sync({ alter: true });
+    console.log('Database synced successfully with TiDB');
   } catch (error) {
-    console.error('Error syncing database:', error);
+    console.error('Error syncing database with TiDB:', error);
   }
   
   // Test email service

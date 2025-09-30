@@ -11,14 +11,14 @@ const AuditLog = sequelize.define('AuditLog', {
     type: DataTypes.INTEGER
   },
   userName: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   },
   action: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   resourceType: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   resourceId: {
@@ -28,14 +28,16 @@ const AuditLog = sequelize.define('AuditLog', {
     type: DataTypes.TEXT
   },
   ipAddress: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   },
   userAgent: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   }
 }, {
   timestamps: true,
-  tableName: 'audit_logs'
+  tableName: 'audit_logs',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
 module.exports = AuditLog;

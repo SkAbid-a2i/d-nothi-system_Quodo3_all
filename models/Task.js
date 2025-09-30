@@ -12,15 +12,15 @@ const Task = sequelize.define('Task', {
     allowNull: false
   },
   source: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   category: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   service: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   userId: {
@@ -28,11 +28,11 @@ const Task = sequelize.define('Task', {
     allowNull: false
   },
   userName: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   office: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   description: {
@@ -53,7 +53,9 @@ const Task = sequelize.define('Task', {
   }
 }, {
   timestamps: true,
-  tableName: 'tasks'
+  tableName: 'tasks',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
 module.exports = Task;

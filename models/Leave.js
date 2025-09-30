@@ -12,7 +12,7 @@ const Leave = sequelize.define('Leave', {
     allowNull: false
   },
   userName: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   startDate: {
@@ -35,7 +35,7 @@ const Leave = sequelize.define('Leave', {
     type: DataTypes.INTEGER
   },
   approvedByName: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   },
   approvedAt: {
     type: DataTypes.DATE
@@ -45,7 +45,9 @@ const Leave = sequelize.define('Leave', {
   }
 }, {
   timestamps: true,
-  tableName: 'leaves'
+  tableName: 'leaves',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
 module.exports = Leave;

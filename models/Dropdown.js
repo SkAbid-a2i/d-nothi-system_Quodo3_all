@@ -12,14 +12,14 @@ const Dropdown = sequelize.define('Dropdown', {
     allowNull: false
   },
   value: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   parentType: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   },
   parentValue: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(255)
   },
   isActive: {
     type: DataTypes.BOOLEAN,
@@ -30,7 +30,9 @@ const Dropdown = sequelize.define('Dropdown', {
   }
 }, {
   timestamps: true,
-  tableName: 'dropdowns'
+  tableName: 'dropdowns',
+  charset: 'utf8mb4',
+  collate: 'utf8mb4_unicode_ci'
 });
 
 module.exports = Dropdown;
