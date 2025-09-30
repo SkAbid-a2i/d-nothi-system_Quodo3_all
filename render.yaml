@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: quodo3-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DB_HOST
+        value: gateway01.eu-central-1.prod.aws.tidbcloud.com
+      - key: DB_PORT
+        value: 4000
+      - key: DB_USER
+        value: 4VmPGSU3EFyEhLJ.root
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: d_nothi_db
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+
+  - type: web
+    name: quodo3-frontend
+    runtime: static
+    plan: free
+    buildCommand: cd client && npm install && npm run build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://quodo3-backend.onrender.com/api
