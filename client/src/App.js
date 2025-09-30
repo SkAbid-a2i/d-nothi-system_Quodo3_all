@@ -8,7 +8,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
-import TaskManagement from './components/TaskManagement';
 import TaskLogger from './components/TaskLogger';
 import AgentDashboard from './components/AgentDashboard';
 import AdminDashboard from './components/AdminDashboard';

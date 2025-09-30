@@ -60,7 +60,7 @@ const TaskManagement = () => {
   useEffect(() => {
     fetchTasks();
     fetchDropdownValues();
-  }, []);
+  }, [fetchTasks]);
   
   const fetchTasks = async () => {
     setDataLoading(true);

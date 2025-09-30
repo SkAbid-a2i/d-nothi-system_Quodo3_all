@@ -24,15 +24,7 @@ import {
   Tab,
   IconButton,
   Switch,
-  FormControlLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  Divider
+  FormControlLabel
 } from '@mui/material';
 import { 
   Assignment, 

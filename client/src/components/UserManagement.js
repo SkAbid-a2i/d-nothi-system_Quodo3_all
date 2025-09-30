@@ -22,7 +22,6 @@ import {
   FormControlLabel,
   Tabs,
   Tab,
-  Divider,
   Autocomplete,
   Alert,
   Dialog,
@@ -86,7 +85,7 @@ const UserManagement = () => {
     fetchUsers();
     fetchOffices();
     fetchDropdowns();
-  }, []);
+  }, [fetchUsers]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -182,7 +181,7 @@ const UserManagement = () => {
     try {
       if (isEditing) {
         // Update existing user
-        const response = await userAPI.updateUser(editingUserId, formData);
+        await userAPI.updateUser(editingUserId, formData);
         
         setUsers(users.map(user => 
           user.id === editingUserId 

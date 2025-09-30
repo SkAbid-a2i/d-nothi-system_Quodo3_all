@@ -24,7 +24,7 @@ export const TranslationProvider = ({ children }) => {
     if (savedLanguage !== language) {
       changeLanguage(savedLanguage);
     }
-  }, []);
+  }, [language]);
 
   const changeLanguage = (newLanguage) => {
     if (translationService.setLanguage(newLanguage)) {
