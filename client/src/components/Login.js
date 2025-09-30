@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   Container, 
   Paper, 
@@ -21,15 +22,29 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
+  // Redirect based on user role after authentication
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (isAuthenticated && user) {
+      // Role-based redirect
+      switch (user.role) {
+        case 'SystemAdmin':
+          navigate('/admin');
+          break;
+        case 'Admin':
+        case 'Supervisor':
+          navigate('/team-tasks');
+          break;
+        case 'Agent':
+        default:
+          navigate('/dashboard');
+          break;
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,9 +57,7 @@ const Login = () => {
     
     const result = await login({ username, password });
     
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
+    if (!result.success) {
       setError(result.message);
     }
   };
@@ -61,7 +74,7 @@ const Login = () => {
         >
           <LockOutlined sx={{ m: 1, bgcolor: 'secondary.main' }} />
           <Typography component="h1" variant="h5">
-            Sign in to D-Nothi
+            {t('login.title')}
           </Typography>
           
           {error && (
@@ -76,7 +89,7 @@ const Login = () => {
               required
               fullWidth
               id="username"
-              label="Username or Email"
+              label={t('login.username')}
               name="username"
               autoComplete="username"
               autoFocus
@@ -88,7 +101,7 @@ const Login = () => {
               required
               fullWidth
               name="password"
-              label="Password"
+              label={t('login.password')}
               type="password"
               id="password"
               autoComplete="current-password"
@@ -103,7 +116,7 @@ const Login = () => {
                   color="primary" 
                 />
               }
-              label="Remember me"
+              label={t('login.rememberMe')}
             />
             <Button
               type="submit"
@@ -111,17 +124,17 @@ const Login = () => {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              {t('login.signIn')}
             </Button>
             <Grid container>
               <Grid item xs>
                 <Link href="#" variant="body2">
-                  Forgot password?
+                  {t('login.forgotPassword')}
                 </Link>
               </Grid>
               <Grid item>
                 <Link href="#" variant="body2">
-                  {"Don't have an account? Sign Up"}
+                  {t('login.noAccount')}
                 </Link>
               </Grid>
             </Grid>

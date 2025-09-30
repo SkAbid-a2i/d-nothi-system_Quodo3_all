@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -9,127 +9,189 @@ import {
   MenuItem,
   TextField,
   Button,
-  Grid
+  Grid,
+  Switch,
+  FormControlLabel,
+  Tabs,
+  Tab
 } from '@mui/material';
+import { useTranslation } from '../contexts/TranslationContext';
 
 const Settings = () => {
+  const { t, changeLanguage } = useTranslation();
+  const [activeTab, setActiveTab] = useState(0);
+  
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
-        Settings
+        {t('settings.title')}
       </Typography>
       
-      <Grid container spacing={3}>
-        {/* Profile Settings */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Profile Settings
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Full Name"
-                  defaultValue="John Doe"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  defaultValue="john.doe@example.com"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  defaultValue="+1 234 567 8900"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Button variant="contained" color="primary">
-                  Update Profile
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
+      <Paper sx={{ width: '100%' }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          indicatorColor="primary"
+          textColor="primary"
+        >
+          <Tab label={t('settings.profile')} />
+          <Tab label={t('settings.security')} />
+          <Tab label={t('settings.application')} />
+        </Tabs>
         
-        {/* Security Settings */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Security Settings
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Current Password"
-                  type="password"
-                />
+        <Box sx={{ p: 3 }}>
+          {activeTab === 0 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                {t('settings.profile')}
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('users.fullName')}
+                    defaultValue="System Administrator"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('users.email')}
+                    defaultValue="admin@example.com"
+                    type="email"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('users.username')}
+                    defaultValue="admin"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('users.role')}</InputLabel>
+                    <Select defaultValue="SystemAdmin">
+                      <MenuItem value="Agent">Agent</MenuItem>
+                      <MenuItem value="Supervisor">Supervisor</MenuItem>
+                      <MenuItem value="Admin">Admin</MenuItem>
+                      <MenuItem value="SystemAdmin">System Administrator</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="contained">
+                    {t('common.save')}
+                  </Button>
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="New Password"
-                  type="password"
-                />
+            </Box>
+          )}
+          
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                {t('settings.security')}
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('settings.currentPassword')}
+                    type="password"
+                  />
+                </Grid>
+                <Grid item xs={12}></Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('settings.newPassword')}
+                    type="password"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('settings.confirmNewPassword')}
+                    type="password"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="contained">
+                    {t('settings.changePassword')}
+                  </Button>
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Confirm New Password"
-                  type="password"
-                />
+              
+              <Grid container spacing={3} sx={{ mt: 3 }}>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={<Switch />}
+                    label={t('settings.enable2FA')}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="outlined">
+                    {t('settings.configure2FA')}
+                  </Button>
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <Button variant="contained" color="primary">
-                  Change Password
-                </Button>
+            </Box>
+          )}
+          
+          {activeTab === 2 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                {t('settings.application')}
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.language')}</InputLabel>
+                    <Select 
+                      defaultValue="en"
+                      onChange={(e) => changeLanguage(e.target.value)}
+                    >
+                      <MenuItem value="en">English</MenuItem>
+                      <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.theme')}</InputLabel>
+                    <Select defaultValue="light">
+                      <MenuItem value="light">Light</MenuItem>
+                      <MenuItem value="dark">Dark</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={<Switch defaultChecked />}
+                    label={t('settings.notifications')}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={<Switch />}
+                    label={t('settings.autoRefresh')}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="contained">
+                    {t('common.save')}
+                  </Button>
+                </Grid>
               </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
-        
-        {/* Application Settings */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Application Settings
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Language</InputLabel>
-                  <Select defaultValue="en">
-                    <MenuItem value="en">English</MenuItem>
-                    <MenuItem value="es">Spanish</MenuItem>
-                    <MenuItem value="fr">French</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Theme</InputLabel>
-                  <Select defaultValue="light">
-                    <MenuItem value="light">Light</MenuItem>
-                    <MenuItem value="dark">Dark</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <Button variant="contained" color="primary">
-                  Save Settings
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
-      </Grid>
+            </Box>
+          )}
+        </Box>
+      </Paper>
     </Box>
   );
 };

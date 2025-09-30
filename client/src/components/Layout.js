@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   AppBar, 
   Toolbar, 
@@ -13,7 +14,9 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  CssBaseline
+  CssBaseline,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -22,7 +25,10 @@ import {
   People as UserIcon,
   Assessment as ReportIcon,
   Settings as SettingsIcon,
-  Logout as LogoutIcon
+  Help as HelpIcon,
+  Logout as LogoutIcon,
+  Brightness4 as DarkModeIcon,
+  Brightness7 as LightModeIcon
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -31,14 +37,23 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  
+  const { t } = useTranslation();
+  const [darkMode, setDarkMode] = useState(false);
+
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Tasks', icon: <TaskIcon />, path: '/tasks' },
-    { text: 'Leaves', icon: <LeaveIcon />, path: '/leaves' },
-    { text: 'Users', icon: <UserIcon />, path: '/users' },
-    { text: 'Reports', icon: <ReportIcon />, path: '/reports' },
+    { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
+    { text: t('navigation.taskLogger'), icon: <TaskIcon />, path: '/tasks' },
+    { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
+    { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
+    { text: t('navigation.files'), icon: <TaskIcon />, path: '/files' },
+    { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
+    { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },
   ];
+
+  // Add team tasks for Admin/Supervisor
+  if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
+    menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TaskIcon />, path: '/team-tasks' });
+  }
 
   const handleLogout = () => {
     logout();
@@ -49,6 +64,10 @@ const Layout = () => {
     navigate(path);
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
@@ -57,6 +76,10 @@ const Layout = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             D-Nothi Task Management
           </Typography>
+          <FormControlLabel
+            control={<Switch checked={darkMode} onChange={toggleDarkMode} />}
+            label={darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+          />
           <Typography variant="body2" sx={{ mr: 2 }}>
             Welcome, {user?.fullName || 'User'}
           </Typography>
@@ -65,7 +88,7 @@ const Layout = () => {
             startIcon={<LogoutIcon />}
             onClick={handleLogout}
           >
-            Logout
+            {t('navigation.logout')}
           </Button>
         </Toolbar>
       </AppBar>
@@ -81,19 +104,26 @@ const Layout = () => {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            {menuItems.map((item, index) => (
-              <ListItem 
-                button 
-                key={item.text}
-                selected={location.pathname === item.path}
-                onClick={() => handleNavigation(item.path)}
-              >
-                <ListItemIcon>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
-            ))}
+            {menuItems.map((item) => {
+              // Check if the menu item should be visible based on user role
+              if (item.allowedRoles && !item.allowedRoles.includes(user?.role)) {
+                return null;
+              }
+              
+              return (
+                <ListItem 
+                  button 
+                  key={item.text}
+                  selected={location.pathname === item.path}
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItem>
+              );
+            })}
           </List>
           <Divider />
           <List>
@@ -105,7 +135,7 @@ const Layout = () => {
               <ListItemIcon>
                 <SettingsIcon />
               </ListItemIcon>
-              <ListItemText primary="Settings" />
+              <ListItemText primary={t('navigation.settings')} />
             </ListItem>
           </List>
         </Box>

@@ -73,6 +73,8 @@ export const dropdownAPI = {
   getDropdownValues: (type, parentValue) => api.get(`/dropdowns/${type}`, { params: { parentValue } }),
   createDropdownValue: (dropdownData) => api.post('/dropdowns', dropdownData),
   updateDropdownValue: (id, dropdownData) => api.put(`/dropdowns/${id}`, dropdownData),
+  deleteDropdownValue: (id) => api.delete(`/dropdowns/${id}`),
+  getAllDropdowns: () => api.get('/dropdowns'),
 };
 
 // Report endpoints
@@ -80,6 +82,20 @@ export const reportAPI = {
   getTaskReport: (params) => api.get('/reports/tasks', { params }),
   getLeaveReport: (params) => api.get('/reports/leaves', { params }),
   getSummaryReport: (params) => api.get('/reports/summary', { params }),
+};
+
+// Audit endpoints
+export const auditAPI = {
+  getAllLogs: (params) => api.get('/audit', { params }),
+  createLog: (logData) => api.post('/audit', logData),
+};
+
+// File endpoints
+export const fileAPI = {
+  uploadFile: (fileData) => api.post('/files/upload', fileData),
+  getFiles: () => api.get('/files'),
+  downloadFile: (id) => api.get(`/files/${id}/download`),
+  deleteFile: (id) => api.delete(`/files/${id}`),
 };
 
 export default api;

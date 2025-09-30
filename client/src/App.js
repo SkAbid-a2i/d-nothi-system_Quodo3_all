@@ -3,15 +3,21 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
+import { TranslationProvider } from './contexts/TranslationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import TaskManagement from './components/TaskManagement';
+import TaskLogger from './components/TaskLogger';
+import AgentDashboard from './components/AgentDashboard';
+import AdminDashboard from './components/AdminDashboard';
 import LeaveManagement from './components/LeaveManagement';
 import UserManagement from './components/UserManagement';
 import ReportManagement from './components/ReportManagement';
 import Settings from './components/Settings';
+import Help from './components/Help';
+import Files from './components/Files';
 
 // Create theme
 const theme = createTheme({
@@ -33,10 +39,11 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route element={<Layout />}>
+        <TranslationProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route element={<Layout />}>
               <Route 
                 path="/dashboard" 
                 element={
@@ -49,7 +56,23 @@ function App() {
                 path="/tasks" 
                 element={
                   <ProtectedRoute>
-                    <TaskManagement />
+                    <TaskLogger />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/my-tasks" 
+                element={
+                  <ProtectedRoute>
+                    <AgentDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/team-tasks" 
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Supervisor']}>
+                    <AdminDashboard />
                   </ProtectedRoute>
                 } 
               />
@@ -62,9 +85,17 @@ function App() {
                 } 
               />
               <Route 
-                path="/users" 
+                path="/files" 
                 element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin']}>
+                  <ProtectedRoute>
+                    <Files />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
                     <UserManagement />
                   </ProtectedRoute>
                 } 
@@ -85,9 +116,18 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/help" 
+                element={
+                  <ProtectedRoute>
+                    <Help />
+                  </ProtectedRoute>
+                } 
+              />
             </Route>
           </Routes>
         </Router>
+        </TranslationProvider>
       </AuthProvider>
     </ThemeProvider>
   );

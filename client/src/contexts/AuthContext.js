@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { auditLog } from '../services/auditLogger';
 
 // Create context
 const AuthContext = createContext();
@@ -58,6 +59,9 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setIsAuthenticated(true);
       
+      // Log audit entry
+      auditLog.userLogin(user.id, user.username);
+      
       return { success: true };
     } catch (error) {
       return { 
@@ -74,6 +78,9 @@ export const AuthProvider = ({ children }) => {
     
     setUser(null);
     setIsAuthenticated(false);
+    
+    // Log audit entry
+    auditLog.userLogout(user?.id, user?.username);
   };
 
   const value = {

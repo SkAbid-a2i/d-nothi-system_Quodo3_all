@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -17,7 +17,10 @@ import {
   TableHead,
   TableRow,
   Chip,
-  IconButton
+  IconButton,
+  Autocomplete,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -25,36 +28,158 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
+import { dropdownAPI, taskAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const TaskManagement = () => {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      date: '2025-09-28',
-      source: 'Email',
-      category: 'IT Support',
-      service: 'Hardware',
-      description: 'Monitor not working',
-      status: 'Completed',
-      assignedTo: 'John Doe'
-    },
-    {
-      id: 2,
-      date: '2025-09-29',
-      source: 'Phone',
-      category: 'HR',
-      service: 'Leave',
-      description: 'Leave application approval',
-      status: 'In Progress',
-      assignedTo: 'Jane Smith'
-    }
-  ]);
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  const [sources, setSources] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedService, setSelectedService] = useState(null);
+  
+  // Form state
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('Pending');
+  const [assignedTo, setAssignedTo] = useState('');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  
+  // Fetch tasks and dropdown values on component mount
+  useEffect(() => {
+    fetchTasks();
+    fetchDropdownValues();
+  }, []);
+  
+  const fetchTasks = async () => {
+    setDataLoading(true);
+    try {
+      const response = await taskAPI.getAllTasks();
+      setTasks(response.data);
+      
+      // Log audit entry
+      auditLog.taskCreated(response.data.length, user?.username || 'unknown');
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setError('Failed to fetch tasks');
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
-  const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+  // Fetch dropdown values on component mount
+  useEffect(() => {
+    fetchDropdownValues();
+  }, []);
+
+  const fetchDropdownValues = async () => {
+    setLoading(true);
+    try {
+      const [sourcesRes, categoriesRes] = await Promise.all([
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category')
+      ]);
+      
+      setSources(sourcesRes.data);
+      setCategories(categoriesRes.data);
+    } catch (error) {
+      console.error('Error fetching dropdown values:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch services when category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchServicesForCategory(selectedCategory.value);
+    } else {
+      setServices([]);
+      setSelectedService(null);
+    }
+  }, [selectedCategory]);
+
+  const fetchServicesForCategory = async (categoryValue) => {
+    try {
+      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
+      setServices(response.data);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await taskAPI.deleteTask(taskId);
+      
+      setTasks(tasks.filter(task => task.id !== taskId));
+      
+      // Log audit entry
+      auditLog.taskDeleted(taskId, user?.username || 'unknown');
+      
+      setSuccess('Task deleted successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      setError('Failed to delete task');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+  
+  const handleSubmitTask = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    
+    try {
+      const taskData = {
+        date,
+        source: selectedSource?.value || '',
+        category: selectedCategory?.value || '',
+        service: selectedService?.value || '',
+        description,
+        status,
+        assignedTo
+      };
+      
+      const response = await taskAPI.createTask(taskData);
+      
+      // Add new task to list
+      const newTask = {
+        id: response.data.id,
+        ...taskData
+      };
+      setTasks([...tasks, newTask]);
+      
+      // Log audit entry
+      auditLog.taskCreated(response.data.id, user?.username || 'unknown');
+      
+      // Reset form
+      setDate(new Date().toISOString().split('T')[0]);
+      setSelectedSource(null);
+      setSelectedCategory(null);
+      setSelectedService(null);
+      setDescription('');
+      setStatus('Pending');
+      setAssignedTo('');
+      
+      setSuccess('Task created successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error creating task:', error);
+      setError('Failed to create task');
+      setTimeout(() => setError(''), 5000);
+    }
   };
 
   return (
@@ -64,75 +189,131 @@ const TaskManagement = () => {
       </Typography>
       
       {/* Task Form */}
+      {dataLoading && (
+        <Typography>Loading tasks...</Typography>
+      )}
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+      
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Create New Task
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} component="form" onSubmit={handleSubmitTask}>
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
               label="Date"
               type="date"
               InputLabelProps={{ shrink: true }}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
             />
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Source</InputLabel>
-              <Select label="Source">
-                <MenuItem value="Email">Email</MenuItem>
-                <MenuItem value="Phone">Phone</MenuItem>
-                <MenuItem value="Walk-in">Walk-in</MenuItem>
-              </Select>
-            </FormControl>
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Autocomplete
+                options={sources}
+                getOptionLabel={(option) => option.value}
+                value={selectedSource}
+                onChange={(event, newValue) => setSelectedSource(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Source" fullWidth />
+                )}
+              />
+            )}
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select label="Category">
-                <MenuItem value="IT Support">IT Support</MenuItem>
-                <MenuItem value="HR">HR</MenuItem>
-                <MenuItem value="Finance">Finance</MenuItem>
-              </Select>
-            </FormControl>
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Autocomplete
+                options={categories}
+                getOptionLabel={(option) => option.value}
+                value={selectedCategory}
+                onChange={(event, newValue) => setSelectedCategory(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Category" fullWidth />
+                )}
+              />
+            )}
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Service</InputLabel>
-              <Select label="Service">
-                <MenuItem value="Hardware">Hardware</MenuItem>
-                <MenuItem value="Software">Software</MenuItem>
-                <MenuItem value="Network">Network</MenuItem>
-              </Select>
-            </FormControl>
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <Autocomplete
+                options={services}
+                getOptionLabel={(option) => option.value}
+                value={selectedService}
+                onChange={(event, newValue) => setSelectedService(newValue)}
+                disabled={!selectedCategory}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Service" 
+                    fullWidth 
+                    disabled={!selectedCategory}
+                  />
+                )}
+              />
+            )}
           </Grid>
+          
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Description"
               multiline
               rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
             />
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
-              <Select label="Status" defaultValue="Pending">
+              <Select 
+                label="Status" 
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
                 <MenuItem value="Pending">Pending</MenuItem>
                 <MenuItem value="In Progress">In Progress</MenuItem>
                 <MenuItem value="Completed">Completed</MenuItem>
               </Select>
             </FormControl>
           </Grid>
+          
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
               label="Assigned To"
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
             />
           </Grid>
+          
           <Grid item xs={12}>
-            <Button variant="contained" startIcon={<AddIcon />}>
+            <Button variant="contained" startIcon={<AddIcon />} type="submit">
               Create Task
             </Button>
           </Grid>
