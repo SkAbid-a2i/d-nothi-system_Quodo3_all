@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -81,13 +81,7 @@ const UserManagement = () => {
   const [editingUserId, setEditingUserId] = useState(null);
 
   // Fetch users and offices on component mount
-  useEffect(() => {
-    fetchUsers();
-    fetchOffices();
-    fetchDropdowns();
-  }, [fetchUsers]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await userAPI.getAllUsers();
@@ -101,7 +95,13 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.username]);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchOffices();
+    fetchDropdowns();
+  }, [fetchUsers]);
 
   const fetchOffices = async () => {
     try {

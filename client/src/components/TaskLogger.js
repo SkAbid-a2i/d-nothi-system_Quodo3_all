@@ -11,8 +11,6 @@ import {
   Select, 
   MenuItem,
   Autocomplete,
-  Chip,
-  CircularProgress,
   LinearProgress,
   Alert
 } from '@mui/material';
@@ -45,8 +43,6 @@ const TaskLogger = () => {
   const [comment, setComment] = useState('');
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [usedStorage, setUsedStorage] = useState(50); // Example value
-  const [storageQuota, setStorageQuota] = useState(500); // Example value
 
   // Fetch dropdown values on component mount
   useEffect(() => {
@@ -95,8 +91,8 @@ const TaskLogger = () => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       // Check if file size would exceed quota
-      const newUsedStorage = usedStorage + (selectedFile.size / (1024 * 1024)); // Convert to MB
-      if (newUsedStorage > storageQuota) {
+      const newUsedStorage = 50 + (selectedFile.size / (1024 * 1024)); // Convert to MB
+      if (newUsedStorage > 500) {
         alert('File upload would exceed your storage quota!');
         return;
       }
@@ -338,10 +334,10 @@ const TaskLogger = () => {
                     <LinearProgress variant="determinate" value={uploadProgress} />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                       <Typography variant="body2">
-                        {Math.round((usedStorage / storageQuota) * 100)}% of quota used
+                        {Math.round((50 / 500) * 100)}% of quota used
                       </Typography>
                       <Typography variant="body2">
-                        {usedStorage} MB / {storageQuota} MB
+                        50 MB / 500 MB
                       </Typography>
                     </Box>
                   </Box>

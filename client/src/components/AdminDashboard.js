@@ -37,10 +37,7 @@ import {
   BarChart as BarChartIcon,
   ShowChart as LineChartIcon,
   Check as CheckIcon,
-  Close as CloseIcon,
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
+  Close as CloseIcon
 } from '@mui/icons-material';
 
 const AdminDashboard = () => {
@@ -59,9 +56,7 @@ const AdminDashboard = () => {
     { id: 5, type: 'customNote', title: 'Team Meeting Notes', enabled: true }
   ]);
   
-  const [openAddWidgetDialog, setOpenAddWidgetDialog] = useState(false);
   const [newWidgetTitle, setNewWidgetTitle] = useState('');
-  const [newWidgetType, setNewWidgetType] = useState('note');
 
   // Mock data for team tasks
   const teamTasks = [
@@ -107,13 +102,12 @@ const AdminDashboard = () => {
     if (newWidgetTitle.trim()) {
       const newWidget = {
         id: Date.now(),
-        type: newWidgetType,
+        type: 'note',
         title: newWidgetTitle,
         enabled: true
       };
       setWidgets([...widgets, newWidget]);
       setNewWidgetTitle('');
-      setOpenAddWidgetDialog(false);
     }
   };
   
@@ -206,14 +200,6 @@ const AdminDashboard = () => {
         );
     }
   };
-  
-  const widgetTypes = [
-    { value: 'note', label: 'Note' },
-    { value: 'table', label: 'Table' },
-    { value: 'graph', label: 'Graph' },
-    { value: 'taskSummary', label: 'Task Summary' },
-    { value: 'leaveCalendar', label: 'Leave Calendar' }
-  ];
 
   return (
     <Box sx={{ flexGrow: 1 }}>
