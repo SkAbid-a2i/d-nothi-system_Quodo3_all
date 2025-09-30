@@ -127,7 +127,7 @@ const UserManagement = () => {
             />
           </Grid>
           <Grid item xs={12}>
-            <Button variant="contained" startIcon={<AddIcon>}>
+            <Button variant="contained" startIcon={<AddIcon />}>
               Create User
             </Button>
           </Grid>

@@ -129,7 +129,7 @@ const LeaveManagement = () => {
             />
           </Grid>
           <Grid item xs={12}>
-            <Button variant="contained" startIcon={<AddIcon>}>
+            <Button variant="contained" startIcon={<AddIcon />}>
               Submit Leave Request
             </Button>
           </Grid>
