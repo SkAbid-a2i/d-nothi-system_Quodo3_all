@@ -50,8 +50,8 @@ router.get('/', authenticate, async (req, res) => {
 
 // @route   POST /api/tasks
 // @desc    Create new task
-// @access  Private (Agent, Admin, Supervisor)
-router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor'), upload.array('attachments', 5), async (req, res) => {
+// @access  Private (Agent, Admin, Supervisor, SystemAdmin)
+router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), upload.array('attachments', 5), async (req, res) => {
   try {
     const { date, source, category, service, description, status } = req.body;
 

@@ -51,8 +51,8 @@ router.get('/:type', authenticate, async (req, res) => {
 
 // @route   POST /api/dropdowns
 // @desc    Create new dropdown value
-// @access  Private (Admin, Supervisor)
-router.post('/', authenticate, authorize('Admin', 'Supervisor'), async (req, res) => {
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { type, value, parentType, parentValue } = req.body;
 
@@ -88,8 +88,8 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor'), async (req, res
 
 // @route   PUT /api/dropdowns/:id
 // @desc    Update dropdown value
-// @access  Private (Admin, Supervisor)
-router.put('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, res) => {
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { value, isActive } = req.body;
@@ -100,8 +100,10 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, r
       return res.status(404).json({ message: 'Dropdown value not found' });
     }
 
-    // Check permissions
-    if (req.user.role === 'Supervisor' && dropdown.createdBy !== req.user.id) {
+    // Check permissions - SystemAdmin can modify any dropdown
+    if (req.user.role !== 'SystemAdmin' && 
+        req.user.role === 'Supervisor' && 
+        dropdown.createdBy !== req.user.id) {
       return res.status(403).json({ 
         message: 'Access denied - Supervisors can only modify their own dropdowns',
         userRole: req.user.role,
@@ -128,8 +130,8 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, r
 
 // @route   DELETE /api/dropdowns/:id
 // @desc    Delete dropdown value
-// @access  Private (Admin, Supervisor)
-router.delete('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, res) => {
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.delete('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -139,9 +141,16 @@ router.delete('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req
       return res.status(404).json({ message: 'Dropdown value not found' });
     }
 
-    // Check permissions
-    if (req.user.role === 'Supervisor' && dropdown.createdBy !== req.user.id) {
-      return res.status(403).json({ message: 'Access denied' });
+    // Check permissions - SystemAdmin can delete any dropdown
+    if (req.user.role !== 'SystemAdmin' && 
+        req.user.role === 'Supervisor' && 
+        dropdown.createdBy !== req.user.id) {
+      return res.status(403).json({ 
+        message: 'Access denied - Supervisors can only delete their own dropdowns',
+        userRole: req.user.role,
+        dropdownCreator: dropdown.createdBy,
+        currentUser: req.user.id
+      });
     }
 
     // Don't actually delete, just deactivate

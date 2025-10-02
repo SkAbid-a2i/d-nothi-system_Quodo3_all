@@ -95,8 +95,8 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor'), async 
 
 // @route   PUT /api/leaves/:id/approve
 // @desc    Approve leave request
-// @access  Private (Admin, Supervisor)
-router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor'), async (req, res) => {
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -106,9 +106,16 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor'), async
       return res.status(404).json({ message: 'Leave request not found' });
     }
 
-    // Check permissions
-    if (leave.office !== req.user.office && req.user.role !== 'Admin') {
-      return res.status(403).json({ message: 'Access denied' });
+    // Check permissions - SystemAdmin can approve any leave
+    if (req.user.role !== 'SystemAdmin' && 
+        leave.office !== req.user.office && 
+        req.user.role !== 'Admin') {
+      return res.status(403).json({ 
+        message: 'Access denied',
+        userRole: req.user.role,
+        leaveOffice: leave.office,
+        userOffice: req.user.office
+      });
     }
 
     // Update leave status
@@ -136,15 +143,15 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor'), async
 
     res.json(leave);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error approving leave:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
 // @route   PUT /api/leaves/:id/reject
 // @desc    Reject leave request
-// @access  Private (Admin, Supervisor)
-router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor'), async (req, res) => {
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
@@ -155,9 +162,16 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor'), async 
       return res.status(404).json({ message: 'Leave request not found' });
     }
 
-    // Check permissions
-    if (leave.office !== req.user.office && req.user.role !== 'Admin') {
-      return res.status(403).json({ message: 'Access denied' });
+    // Check permissions - SystemAdmin can reject any leave
+    if (req.user.role !== 'SystemAdmin' && 
+        leave.office !== req.user.office && 
+        req.user.role !== 'Admin') {
+      return res.status(403).json({ 
+        message: 'Access denied',
+        userRole: req.user.role,
+        leaveOffice: leave.office,
+        userOffice: req.user.office
+      });
     }
 
     // Update leave status
@@ -187,8 +201,8 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor'), async 
 
     res.json(leave);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error rejecting leave:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
