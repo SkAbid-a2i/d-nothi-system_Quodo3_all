@@ -81,8 +81,8 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor'), async (req, res
 
     res.status(201).json(dropdown);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error creating dropdown:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -102,7 +102,12 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, r
 
     // Check permissions
     if (req.user.role === 'Supervisor' && dropdown.createdBy !== req.user.id) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ 
+        message: 'Access denied - Supervisors can only modify their own dropdowns',
+        userRole: req.user.role,
+        dropdownCreator: dropdown.createdBy,
+        currentUser: req.user.id
+      });
     }
 
     // Update dropdown fields
@@ -116,8 +121,8 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor'), async (req, r
 
     res.json(dropdown);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error updating dropdown:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

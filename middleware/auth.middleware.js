@@ -20,6 +20,13 @@ const authenticate = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
+    console.error('Authentication error:', err);
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token has expired' });
+    }
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
@@ -31,7 +38,11 @@ const authorize = (...roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ 
+        message: 'Access denied',
+        requiredRoles: roles,
+        userRole: req.user.role
+      });
     }
 
     next();

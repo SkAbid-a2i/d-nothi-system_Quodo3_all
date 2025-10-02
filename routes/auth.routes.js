@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { loginValidation } = require('../validators/auth.validator');
+const { authenticate } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
@@ -71,28 +72,20 @@ router.post('/login', async (req, res) => {
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
-router.get('/me', async (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ message: 'No token, authorization denied' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    const user = await User.findByPk(decoded.id, {
+    const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
     });
     
     if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'Token is not valid' });
+      return res.status(401).json({ message: 'User not found or inactive' });
     }
 
     res.json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error in /api/auth/me:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

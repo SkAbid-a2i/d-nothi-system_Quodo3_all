@@ -88,8 +88,8 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor'), async 
 
     res.status(201).json(leave);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error creating leave request:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

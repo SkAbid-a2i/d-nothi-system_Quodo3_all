@@ -17,8 +17,11 @@ const sequelize = require('./config/database');
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 'http://localhost:3000'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
@@ -62,8 +65,11 @@ app.use('/api/audit', auditRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Unhandled error:', err.stack);
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
+  });
 });
 
 // 404 handler
