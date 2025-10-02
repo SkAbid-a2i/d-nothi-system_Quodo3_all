@@ -68,14 +68,16 @@ const LeaveManagement = () => {
       setLeaves(response.data);
       
       // Log audit entry
-      auditLog.leaveCreated(response.data.length, user?.username || 'unknown');
+      if (user) {
+        auditLog.leaveFetched(response.data.length, user.username || 'unknown');
+      }
     } catch (error) {
       console.error('Error fetching leaves:', error);
       setError('Failed to fetch leave requests');
     } finally {
       setLoading(false);
     }
-  }, [user?.username]);
+  }, [user]);
   
   // Fetch leaves on component mount
   useEffect(() => {
@@ -119,17 +121,35 @@ const LeaveManagement = () => {
   ];
 
   const handleApproveLeave = (leave) => {
+    if (!leave || !leave.id) {
+      setError('Invalid leave selection');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
     setSelectedLeave(leave);
     setOpenApproveDialog(true);
   };
 
   const handleRejectLeave = (leave) => {
+    if (!leave || !leave.id) {
+      setError('Invalid leave selection');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
     setSelectedLeave(leave);
     setOpenRejectDialog(true);
   };
 
   const confirmApprove = async () => {
     try {
+      // Check if selectedLeave is not null before proceeding
+      if (!selectedLeave || !selectedLeave.id) {
+        console.error('Error: selectedLeave is null or missing id');
+        setError('Cannot approve leave: Invalid leave selection');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+      
       await leaveAPI.approveLeave(selectedLeave.id);
       
       // Update leave status to approved
@@ -140,7 +160,9 @@ const LeaveManagement = () => {
       ));
       
       // Log audit entry
-      auditLog.leaveApproved(selectedLeave.id, user?.username || 'unknown');
+      if (user) {
+        auditLog.leaveApproved(selectedLeave.id, user.username || 'unknown');
+      }
       
       setOpenApproveDialog(false);
       setSelectedLeave(null);
@@ -148,13 +170,21 @@ const LeaveManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error approving leave:', error);
-      setError('Failed to approve leave request');
+      setError('Failed to approve leave request: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
     }
   };
 
   const confirmReject = async () => {
     try {
+      // Check if selectedLeave is not null before proceeding
+      if (!selectedLeave || !selectedLeave.id) {
+        console.error('Error: selectedLeave is null or missing id');
+        setError('Cannot reject leave: Invalid leave selection');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+      
       await leaveAPI.rejectLeave(selectedLeave.id, { reason: 'Rejected by admin' });
       
       // Update leave status to rejected
@@ -165,7 +195,9 @@ const LeaveManagement = () => {
       ));
       
       // Log audit entry
-      auditLog.leaveRejected(selectedLeave.id, user?.username || 'unknown', 'Rejected by admin');
+      if (user) {
+        auditLog.leaveRejected(selectedLeave.id, user.username || 'unknown', 'Rejected by admin');
+      }
       
       setOpenRejectDialog(false);
       setSelectedLeave(null);
@@ -173,7 +205,7 @@ const LeaveManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error rejecting leave:', error);
-      setError('Failed to reject leave request');
+      setError('Failed to reject leave request: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -203,7 +235,9 @@ const LeaveManagement = () => {
       setLeaves([...leaves, newLeave]);
       
       // Log audit entry
-      auditLog.leaveCreated(response.data.id, user?.username || 'unknown');
+      if (user) {
+        auditLog.leaveCreated(response.data.id, user.username || 'unknown');
+      }
       
       // Reset form
       setStartDate('');
@@ -214,7 +248,7 @@ const LeaveManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error submitting leave:', error);
-      setError('Failed to submit leave request');
+      setError('Failed to submit leave request: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
     }
   };

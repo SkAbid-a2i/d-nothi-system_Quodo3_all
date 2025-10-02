@@ -26,7 +26,7 @@ router.get('/', authenticate, async (req, res) => {
         ]
       };
     }
-    // SystemAdmin can see all leaves
+    // SystemAdmin can see all leaves (no filter needed)
     
     const leaves = await Leave.findAll({ where, order: [['createdAt', 'DESC']] });
     res.json(leaves);
@@ -39,7 +39,7 @@ router.get('/', authenticate, async (req, res) => {
 // @route   POST /api/leaves
 // @desc    Request new leave
 // @access  Private (Agent, Admin, Supervisor)
-router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor'), async (req, res) => {
+router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { startDate, endDate, reason } = req.body;
 
@@ -52,6 +52,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor'), async 
     const leave = await Leave.create({
       userId: req.user.id,
       userName: req.user.fullName,
+      office: req.user.office, // Add office field
       startDate,
       endDate,
       reason,
@@ -107,15 +108,25 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor', 'Syste
     }
 
     // Check permissions - SystemAdmin can approve any leave
-    if (req.user.role !== 'SystemAdmin' && 
-        leave.office !== req.user.office && 
-        req.user.role !== 'Admin') {
-      return res.status(403).json({ 
-        message: 'Access denied',
-        userRole: req.user.role,
-        leaveOffice: leave.office,
-        userOffice: req.user.office
-      });
+    // For Admins, they can approve leaves from their office
+    // For Supervisors, they can approve leaves from their office
+    if (req.user.role !== 'SystemAdmin') {
+      if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+        if (leave.office !== req.user.office) {
+          return res.status(403).json({ 
+            message: 'Access denied - You can only approve leaves from your office',
+            userRole: req.user.role,
+            leaveOffice: leave.office,
+            userOffice: req.user.office
+          });
+        }
+      } else {
+        // Agents cannot approve leaves
+        return res.status(403).json({ 
+          message: 'Access denied - You do not have permission to approve leaves',
+          userRole: req.user.role
+        });
+      }
     }
 
     // Update leave status
@@ -163,15 +174,25 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'System
     }
 
     // Check permissions - SystemAdmin can reject any leave
-    if (req.user.role !== 'SystemAdmin' && 
-        leave.office !== req.user.office && 
-        req.user.role !== 'Admin') {
-      return res.status(403).json({ 
-        message: 'Access denied',
-        userRole: req.user.role,
-        leaveOffice: leave.office,
-        userOffice: req.user.office
-      });
+    // For Admins, they can reject leaves from their office
+    // For Supervisors, they can reject leaves from their office
+    if (req.user.role !== 'SystemAdmin') {
+      if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+        if (leave.office !== req.user.office) {
+          return res.status(403).json({ 
+            message: 'Access denied - You can only reject leaves from your office',
+            userRole: req.user.role,
+            leaveOffice: leave.office,
+            userOffice: req.user.office
+          });
+        }
+      } else {
+        // Agents cannot reject leaves
+        return res.status(403).json({ 
+          message: 'Access denied - You do not have permission to reject leaves',
+          userRole: req.user.role
+        });
+      }
     }
 
     // Update leave status

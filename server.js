@@ -17,11 +17,17 @@ const sequelize = require('./config/database');
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 'http://localhost:3000'],
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com'
+  ],
   credentials: true,
   optionsSuccessStatus: 200,
   exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));

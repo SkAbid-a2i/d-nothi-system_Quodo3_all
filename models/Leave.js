@@ -15,6 +15,10 @@ const Leave = sequelize.define('Leave', {
     type: DataTypes.STRING(255),
     allowNull: false
   },
+  // Add office field to match user's office
+  office: {
+    type: DataTypes.STRING(255)
+  },
   startDate: {
     type: DataTypes.DATE,
     allowNull: false
