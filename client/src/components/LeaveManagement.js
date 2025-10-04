@@ -50,7 +50,6 @@ const LeaveManagement = () => {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
@@ -229,14 +228,17 @@ const LeaveManagement = () => {
         auditLog.leaveApproved(selectedLeave.id, user.username || 'unknown');
       }
       
-      // Make sure dialog closes
-      console.log('Closing approve dialog');
+      // Close dialog first
       setOpenApproveDialog(false);
       setSelectedLeave(null);
-      setSuccess('Leave request approved successfully!');
-      showSnackbar('Leave request approved successfully!', 'success');
+      
+      // Show success notification
+      showSnackbar(`Leave request for ${selectedLeave.userName || selectedLeave.employee} has been approved!`, 'success');
+      
       // Refresh leave list to ensure UI is updated
-      fetchLeaves();
+      setTimeout(() => {
+        fetchLeaves();
+      }, 1000);
     } catch (error) {
       console.error('Error approving leave:', error);
       const errorMessage = 'Failed to approve leave request: ' + (error.response?.data?.message || error.message);
@@ -276,14 +278,17 @@ const LeaveManagement = () => {
         auditLog.leaveRejected(selectedLeave.id, user.username || 'unknown', 'Rejected by admin');
       }
       
-      // Make sure dialog closes
-      console.log('Closing reject dialog');
+      // Close dialog first
       setOpenRejectDialog(false);
       setSelectedLeave(null);
-      setSuccess('Leave request rejected successfully!');
-      showSnackbar('Leave request rejected successfully!', 'success');
+      
+      // Show success notification
+      showSnackbar(`Leave request for ${selectedLeave.userName || selectedLeave.employee} has been rejected!`, 'warning');
+      
       // Refresh leave list to ensure UI is updated
-      fetchLeaves();
+      setTimeout(() => {
+        fetchLeaves();
+      }, 1000);
     } catch (error) {
       console.error('Error rejecting leave:', error);
       const errorMessage = 'Failed to reject leave request: ' + (error.response?.data?.message || error.message);
@@ -298,7 +303,6 @@ const LeaveManagement = () => {
   const handleSubmitLeave = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     
     try {
       const leaveData = {
@@ -329,9 +333,8 @@ const LeaveManagement = () => {
       setEndDate('');
       setReason('');
       
-      setSuccess('Leave request submitted successfully!');
-      showSnackbar('Leave request submitted successfully!', 'success');
-      setTimeout(() => setSuccess(''), 3000);
+      // Show success notification
+      showSnackbar(`Leave request for ${newLeave.startDate} to ${newLeave.endDate} submitted successfully!`, 'success');
     } catch (error) {
       console.error('Error submitting leave:', error);
       setError('Failed to submit leave request: ' + (error.response?.data?.message || error.message));
@@ -368,12 +371,6 @@ const LeaveManagement = () => {
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
-            </Alert>
-          )}
-          
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
             </Alert>
           )}
           
@@ -665,45 +662,57 @@ const LeaveManagement = () => {
       )}
       
       {/* Approve Dialog */}
-      <Dialog open={openApproveDialog} onClose={() => {
-        setOpenApproveDialog(false);
-        setSelectedLeave(null);
-      }}>
-        <DialogTitle>{t('common.approve')} {t('leaves.leaveRequests')}</DialogTitle>
+      <Dialog 
+        open={openApproveDialog} 
+        onClose={() => {
+          setOpenApproveDialog(false);
+          setSelectedLeave(null);
+        }}
+        aria-labelledby="approve-dialog-title"
+      >
+        <DialogTitle id="approve-dialog-title">{t('common.approve')} {t('leaves.leaveRequests')}</DialogTitle>
         <DialogContent>
           <Typography>
-            {t('leaves.confirmApprove')}
+            {selectedLeave && `Are you sure you want to approve the leave request for ${selectedLeave.userName || selectedLeave.employee}?`}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => {
             setOpenApproveDialog(false);
             setSelectedLeave(null);
-          }}>Cancel</Button>
+          }}>
+            {t('common.cancel')}
+          </Button>
           <Button onClick={confirmApprove} variant="contained" color="success">
-            Approve
+            {t('common.approve')}
           </Button>
         </DialogActions>
       </Dialog>
       
       {/* Reject Dialog */}
-      <Dialog open={openRejectDialog} onClose={() => {
-        setOpenRejectDialog(false);
-        setSelectedLeave(null);
-      }}>
-        <DialogTitle>{t('common.reject')} {t('leaves.leaveRequests')}</DialogTitle>
+      <Dialog 
+        open={openRejectDialog} 
+        onClose={() => {
+          setOpenRejectDialog(false);
+          setSelectedLeave(null);
+        }}
+        aria-labelledby="reject-dialog-title"
+      >
+        <DialogTitle id="reject-dialog-title">{t('common.reject')} {t('leaves.leaveRequests')}</DialogTitle>
         <DialogContent>
           <Typography>
-            {t('leaves.confirmReject')}
+            {selectedLeave && `Are you sure you want to reject the leave request for ${selectedLeave.userName || selectedLeave.employee}?`}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => {
             setOpenRejectDialog(false);
             setSelectedLeave(null);
-          }}>Cancel</Button>
+          }}>
+            {t('common.cancel')}
+          </Button>
           <Button onClick={confirmReject} variant="contained" color="error">
-            Reject
+            {t('common.reject')}
           </Button>
         </DialogActions>
       </Dialog>
