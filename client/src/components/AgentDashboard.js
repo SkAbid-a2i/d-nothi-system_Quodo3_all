@@ -45,11 +45,9 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import { taskAPI, leaveAPI, dropdownAPI } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 
 const AgentDashboard = () => {
-  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
