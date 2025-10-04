@@ -17,8 +17,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Tabs,
-  Tab,
   Alert,
   Dialog,
   DialogTitle,
@@ -27,7 +25,6 @@ import {
   Chip
 } from '@mui/material';
 import { 
-  Add as AddIcon, 
   Edit as EditIcon, 
   Delete as DeleteIcon,
   Save as SaveIcon,
@@ -35,12 +32,10 @@ import {
 } from '@mui/icons-material';
 import { dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 
 const DropdownManagement = () => {
   const { user } = useAuth();
-  const { t } = useTranslation();
   const [dropdowns, setDropdowns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
