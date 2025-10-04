@@ -232,6 +232,8 @@ const LeaveManagement = () => {
       console.error('Error approving leave:', error);
       setError('Failed to approve leave request: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
+      // Make sure dialog closes even on error
+      setOpenApproveDialog(false);
     }
   };
 
@@ -269,6 +271,8 @@ const LeaveManagement = () => {
       console.error('Error rejecting leave:', error);
       setError('Failed to reject leave request: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
+      // Make sure dialog closes even on error
+      setOpenRejectDialog(false);
     }
   };
   

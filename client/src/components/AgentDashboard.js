@@ -656,63 +656,73 @@ const AgentDashboard = () => {
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
-              Team Performance
+              Recent Activity
             </Typography>
-            <Box sx={{ height: 'calc(100% - 40px)' }}>
-              {tasks.length > 0 ? (
-                <ResponsiveContainer width="100%" height="70%">
-                  <PieChart>
-                    <Pie
-                      data={getTeamPerformanceData()}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={60}
-                      fill="#8884d8"
-                      dataKey="count"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {getTeamPerformanceData().map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+            <Box sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
+              {tasks.length > 0 || leaves.length > 0 ? (
+                <Box>
+                  {/* Show recent tasks */}
+                  {[...tasks, ...leaves]
+                    .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+                    .slice(0, 10)
+                    .map((item, index) => (
+                      <Box 
+                        key={index} 
+                        sx={{ 
+                          p: 2, 
+                          mb: 1, 
+                          bgcolor: index % 2 === 0 ? 'grey.50' : 'white',
+                          borderRadius: 1,
+                          borderLeft: '4px solid',
+                          borderLeftColor: item.status === 'Completed' ? 'success.main' : 
+                                          item.status === 'Approved' ? 'success.main' : 
+                                          item.status === 'Rejected' ? 'error.main' : 
+                                          item.status === 'In Progress' ? 'primary.main' : 'warning.main'
+                        }}
+                      >
+                        <Typography variant="body2" fontWeight="bold">
+                          {item.description || item.reason || 'New activity'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {item.userName ? `By ${item.userName}` : 'System'} •{' '}
+                          {new Date(item.createdAt || item.date).toLocaleString()}
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Chip 
+                            label={item.status || 'Pending'} 
+                            size="small"
+                            color={
+                              item.status === 'Completed' || item.status === 'Approved' ? 'success' : 
+                              item.status === 'In Progress' ? 'primary' : 
+                              item.status === 'Rejected' ? 'error' : 'default'
+                            } 
+                          />
+                          {item.category && (
+                            <Chip 
+                              label={item.category} 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              color="info"
+                            />
+                          )}
+                          {item.service && (
+                            <Chip 
+                              label={item.service} 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              color="secondary"
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    ))
+                  }
+                </Box>
               ) : (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '70%' }}>
-                  <Typography color="text.secondary">No data available</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <Typography color="text.secondary">No recent activity</Typography>
                 </Box>
               )}
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Task Summary:
-                </Typography>
-                <Grid container spacing={1}>
-                  <Grid item xs={6}>
-                    <Typography variant="body2">
-                      Total Tasks: {tasks.length}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2">
-                      Completed: {tasks.filter(t => t.status === 'Completed').length}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2">
-                      In Progress: {tasks.filter(t => t.status === 'In Progress').length}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2">
-                      Pending: {tasks.filter(t => t.status === 'Pending').length}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Box>
             </Box>
           </Paper>
         </Grid>

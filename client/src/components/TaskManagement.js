@@ -21,29 +21,45 @@ import {
   Autocomplete,
   Alert,
   CircularProgress,
-  Snackbar
+  Snackbar,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  CardActions,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Edit as EditIcon, 
   Delete as DeleteIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Assignment as AssignmentIcon,
+  CheckCircle as CheckCircleIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-// import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 
 const TaskManagement = () => {
   const { user } = useAuth();
-  // const { t } = useTranslation();
   const [tasks, setTasks] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  // UI state
+  const [activeTab, setActiveTab] = useState(0);
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
   
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -57,9 +73,40 @@ const TaskManagement = () => {
   const [status, setStatus] = useState('Pending');
   const [assignedTo, setAssignedTo] = useState('');
   
+  // Edit task state
+  const [editingTask, setEditingTask] = useState(null);
+  const [editDate, setEditDate] = useState('');
+  const [editSelectedSource, setEditSelectedSource] = useState(null);
+  const [editSelectedCategory, setEditSelectedCategory] = useState(null);
+  const [editSelectedService, setEditSelectedService] = useState(null);
+  const [editDescription, setEditDescription] = useState('');
+  const [editStatus, setEditStatus] = useState('');
+  const [editAssignedTo, setEditAssignedTo] = useState('');
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Filter services when category changes (for create form)
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchServicesForCategory(selectedCategory.value);
+    } else {
+      setServices([]);
+      setSelectedService(null);
+    }
+  }, [selectedCategory]);
+
+  // Filter services when category changes (for edit form)
+  useEffect(() => {
+    if (editSelectedCategory) {
+      fetchServicesForCategory(editSelectedCategory.value, true);
+    } else {
+      setServices([]);
+      setEditSelectedService(null);
+    }
+  }, [editSelectedCategory]);
 
   const fetchTasks = useCallback(async () => {
     setDataLoading(true);
@@ -68,7 +115,7 @@ const TaskManagement = () => {
       setTasks(response.data);
       
       // Log audit entry
-      auditLog.taskCreated(response.data.length, user?.username || 'unknown');
+      auditLog.taskFetched(response.data.length, user?.username || 'unknown');
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setError('Failed to fetch tasks');
@@ -119,10 +166,6 @@ const TaskManagement = () => {
   };
 
   // Fetch dropdown values on component mount
-  useEffect(() => {
-    fetchDropdownValues();
-  }, []);
-
   const fetchDropdownValues = async () => {
     setLoading(true);
     try {
@@ -140,20 +183,14 @@ const TaskManagement = () => {
     }
   };
 
-  // Fetch services when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchServicesForCategory(selectedCategory.value);
-    } else {
-      setServices([]);
-      setSelectedService(null);
-    }
-  }, [selectedCategory]);
-
-  const fetchServicesForCategory = async (categoryValue) => {
+  const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
     try {
       const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
-      setServices(response.data);
+      if (isEdit) {
+        setEditSelectedService(response.data);
+      } else {
+        setServices(response.data);
+      }
     } catch (error) {
       console.error('Error fetching services:', error);
     }
@@ -169,12 +206,12 @@ const TaskManagement = () => {
       auditLog.taskDeleted(taskId, user?.username || 'unknown');
       
       setSuccess('Task deleted successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      showSnackbar('Task deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting task:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
       setError(`Failed to delete task: ${errorMessage}`);
-      setTimeout(() => setError(''), 5000);
+      showSnackbar(`Failed to delete task: ${errorMessage}`, 'error');
     }
   };
   
@@ -218,23 +255,549 @@ const TaskManagement = () => {
       setStatus('Pending');
       setAssignedTo('');
       
+      setOpenCreateDialog(false);
       setSuccess('Task created successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      showSnackbar('Task created successfully!', 'success');
     } catch (error) {
       console.error('Error creating task:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to create task';
       setError(`Failed to create task: ${errorMessage}`);
-      setTimeout(() => setError(''), 5000);
+      showSnackbar(`Failed to create task: ${errorMessage}`, 'error');
     }
   };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditDate(task.date || '');
+    setEditSelectedSource(sources.find(s => s.value === task.source) || null);
+    setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
+    setEditSelectedService(services.find(s => s.value === task.service) || null);
+    setEditDescription(task.description || '');
+    setEditStatus(task.status || 'Pending');
+    setEditAssignedTo(task.assignedTo || '');
+    setOpenEditDialog(true);
+  };
+
+  const handleUpdateTask = async () => {
+    try {
+      const taskData = {
+        date: editDate,
+        source: editSelectedSource?.value || '',
+        category: editSelectedCategory?.value || '',
+        service: editSelectedService?.value || '',
+        description: editDescription,
+        status: editStatus,
+        assignedTo: editAssignedTo,
+        office: user?.office || ''
+      };
+      
+      await taskAPI.updateTask(editingTask.id, taskData);
+      
+      // Update task in list
+      setTasks(tasks.map(task => 
+        task.id === editingTask.id ? { ...task, ...taskData } : task
+      ));
+      
+      // Log audit entry
+      auditLog.taskUpdated(editingTask.id, user?.username || 'unknown');
+      
+      setOpenEditDialog(false);
+      setEditingTask(null);
+      setSuccess('Task updated successfully!');
+      showSnackbar('Task updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating task:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task';
+      setError(`Failed to update task: ${errorMessage}`);
+      showSnackbar(`Failed to update task: ${errorMessage}`, 'error');
+    }
+  };
+
+  // Filter tasks based on search term and status
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = !searchTerm || 
+      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = !statusFilter || task.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Get task statistics
+  const getTaskStats = () => {
+    const stats = {
+      total: tasks.length,
+      pending: tasks.filter(t => t.status === 'Pending').length,
+      inProgress: tasks.filter(t => t.status === 'In Progress').length,
+      completed: tasks.filter(t => t.status === 'Completed').length
+    };
+    return stats;
+  };
+
+  const taskStats = getTaskStats();
 
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
-        Task Management
+        My Tasks
       </Typography>
       
-      {/* Task Form */}
+      {/* Task Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <AssignmentIcon sx={{ mr: 2, color: 'primary.main' }} />
+                <Typography variant="h5" component="div">
+                  {taskStats.total}
+                </Typography>
+              </Box>
+              <Typography color="text.secondary">
+                Total Tasks
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <HourglassEmptyIcon sx={{ mr: 2, color: 'warning.main' }} />
+                <Typography variant="h5" component="div">
+                  {taskStats.pending}
+                </Typography>
+              </Box>
+              <Typography color="text.secondary">
+                Pending
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <HourglassEmptyIcon sx={{ mr: 2, color: 'info.main' }} />
+                <Typography variant="h5" component="div">
+                  {taskStats.inProgress}
+                </Typography>
+              </Box>
+              <Typography color="text.secondary">
+                In Progress
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <CheckCircleIcon sx={{ mr: 2, color: 'success.main' }} />
+                <Typography variant="h5" component="div">
+                  {taskStats.completed}
+                </Typography>
+              </Box>
+              <Typography color="text.secondary">
+                Completed
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+      
+      {/* Task Tabs */}
+      <Paper sx={{ mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          indicatorColor="primary"
+          textColor="primary"
+        >
+          <Tab label="All Tasks" icon={<AssignmentIcon />} />
+          <Tab label="Create Task" icon={<AddIcon />} />
+        </Tabs>
+      </Paper>
+      
+      {/* All Tasks Tab */}
+      {activeTab === 0 && (
+        <Box>
+          {/* Task Filters */}
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={5}>
+                <TextField
+                  fullWidth
+                  label="Search Tasks"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    endAdornment: <SearchIcon />
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select 
+                    label="Status" 
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="Pending">Pending</MenuItem>
+                    <MenuItem value="In Progress">In Progress</MenuItem>
+                    <MenuItem value="Completed">Completed</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<FilterIcon />}
+                  sx={{ mr: 1 }}
+                >
+                  Apply Filters
+                </Button>
+                <Button 
+                  variant="outlined"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('');
+                  }}
+                >
+                  Clear
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
+          
+          {/* Task List */}
+          {dataLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Source</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Service</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Assigned To</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredTasks.map((task) => (
+                    <TableRow key={task.id}>
+                      <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell>{task.source || 'N/A'}</TableCell>
+                      <TableCell>{task.category || 'N/A'}</TableCell>
+                      <TableCell>{task.service || 'N/A'}</TableCell>
+                      <TableCell>{task.description || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={task.status || 'Pending'} 
+                          color={
+                            task.status === 'Completed' ? 'success' : 
+                            task.status === 'In Progress' ? 'primary' : 
+                            task.status === 'Pending' ? 'warning' : 'default'
+                          } 
+                        />
+                      </TableCell>
+                      <TableCell>{task.assignedTo || 'N/A'}</TableCell>
+                      <TableCell>
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={() => handleEditTask(task)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleDeleteTask(task.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      )}
+      
+      {/* Create Task Tab */}
+      {activeTab === 1 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Create New Task
+          </Typography>
+          <Grid container spacing={2} component="form" onSubmit={handleSubmitTask}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={sources}
+                  getOptionLabel={(option) => option.value}
+                  value={selectedSource}
+                  onChange={(event, newValue) => setSelectedSource(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Source" fullWidth />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={categories}
+                  getOptionLabel={(option) => option.value}
+                  value={selectedCategory}
+                  onChange={(event, newValue) => setSelectedCategory(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Category" fullWidth />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={services}
+                  getOptionLabel={(option) => option.value}
+                  value={selectedService}
+                  onChange={(event, newValue) => setSelectedService(newValue)}
+                  disabled={!selectedCategory}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      label="Service" 
+                      fullWidth 
+                      disabled={!selectedCategory}
+                    />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select 
+                  label="Status" 
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="In Progress">In Progress</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Assigned To"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Button 
+                variant="contained" 
+                startIcon={<AddIcon />} 
+                type="submit"
+                sx={{ mr: 2 }}
+              >
+                Create Task
+              </Button>
+              <Button 
+                variant="outlined"
+                onClick={() => setActiveTab(0)}
+              >
+                Cancel
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+      
+      {/* Create Task Dialog */}
+      <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create New Task</DialogTitle>
+        <DialogContent>
+          {/* Dialog content would go here if needed */}
+        </DialogContent>
+        <DialogActions>
+          {/* Dialog actions would go here if needed */}
+        </DialogActions>
+      </Dialog>
+      
+      {/* Edit Task Dialog */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={sources}
+                  getOptionLabel={(option) => option.value}
+                  value={editSelectedSource}
+                  onChange={(event, newValue) => setEditSelectedSource(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Source" fullWidth />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={categories}
+                  getOptionLabel={(option) => option.value}
+                  value={editSelectedCategory}
+                  onChange={(event, newValue) => setEditSelectedCategory(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Category" fullWidth />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={services}
+                  getOptionLabel={(option) => option.value}
+                  value={editSelectedService}
+                  onChange={(event, newValue) => setEditSelectedService(newValue)}
+                  disabled={!editSelectedCategory}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      label="Service" 
+                      fullWidth 
+                      disabled={!editSelectedCategory}
+                    />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={3}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select 
+                  label="Status" 
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                >
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="In Progress">In Progress</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Assigned To"
+                value={editAssignedTo}
+                onChange={(e) => setEditAssignedTo(e.target.value)}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button onClick={handleUpdateTask} variant="contained" color="primary">
+            Update Task
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Messages */}
       {dataLoading && (
         <Typography>Loading tasks...</Typography>
       )}
@@ -250,208 +813,6 @@ const TaskManagement = () => {
           {success}
         </Alert>
       )}
-      
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Create New Task
-        </Typography>
-        <Grid container spacing={2} component="form" onSubmit={handleSubmitTask}>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Date"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            {loading ? (
-              <CircularProgress size={24} />
-            ) : (
-              <Autocomplete
-                options={sources}
-                getOptionLabel={(option) => option.value}
-                value={selectedSource}
-                onChange={(event, newValue) => setSelectedSource(newValue)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Source" fullWidth />
-                )}
-              />
-            )}
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            {loading ? (
-              <CircularProgress size={24} />
-            ) : (
-              <Autocomplete
-                options={categories}
-                getOptionLabel={(option) => option.value}
-                value={selectedCategory}
-                onChange={(event, newValue) => setSelectedCategory(newValue)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Category" fullWidth />
-                )}
-              />
-            )}
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            {loading ? (
-              <CircularProgress size={24} />
-            ) : (
-              <Autocomplete
-                options={services}
-                getOptionLabel={(option) => option.value}
-                value={selectedService}
-                onChange={(event, newValue) => setSelectedService(newValue)}
-                disabled={!selectedCategory}
-                renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label="Service" 
-                    fullWidth 
-                    disabled={!selectedCategory}
-                  />
-                )}
-              />
-            )}
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Description"
-              multiline
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select 
-                label="Status" 
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="In Progress">In Progress</MenuItem>
-                <MenuItem value="Completed">Completed</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Assigned To"
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Button variant="contained" startIcon={<AddIcon />} type="submit">
-              Create Task
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-      
-      {/* Task Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={5}>
-            <TextField
-              fullWidth
-              label="Search Tasks"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                endAdornment: <SearchIcon />
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select 
-                label="Status" 
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="In Progress">In Progress</MenuItem>
-                <MenuItem value="Completed">Completed</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Button variant="outlined" sx={{ mr: 1 }}>
-              Filter
-            </Button>
-            <Button variant="outlined">
-              Clear
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-      
-      {/* Task List */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Date</TableCell>
-              <TableCell>Source</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Service</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Assigned To</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tasks.map((task) => (
-              <TableRow key={task.id}>
-                <TableCell>{task.date}</TableCell>
-                <TableCell>{task.source}</TableCell>
-                <TableCell>{task.category}</TableCell>
-                <TableCell>{task.service}</TableCell>
-                <TableCell>{task.description}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={task.status} 
-                    color={
-                      task.status === 'Completed' ? 'success' : 
-                      task.status === 'In Progress' ? 'primary' : 'default'
-                    } 
-                  />
-                </TableCell>
-                <TableCell>{task.assignedTo}</TableCell>
-                <TableCell>
-                  <IconButton size="small">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => handleDeleteTask(task.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
       
       {/* Snackbar for notifications */}
       <Snackbar 
