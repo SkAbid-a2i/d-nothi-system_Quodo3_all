@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Grid, 
   Paper, 
@@ -77,10 +77,29 @@ const AgentDashboard = () => {
   // Service filtering based on category for edit dialog
   const [filteredEditServices, setFilteredEditServices] = useState([]);
 
+  // Fetch tasks and leaves - useCallback to prevent recreation on every render
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch tasks
+      const tasksResponse = await taskAPI.getAllTasks();
+      setTasks(tasksResponse.data || []);
+      
+      // Fetch leaves
+      const leavesResponse = await leaveAPI.getAllLeaves();
+      setLeaves(leavesResponse.data || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      showSnackbar('Error fetching dashboard data: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Fetch tasks and leaves on component mount
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
   // Filter services when category changes in edit dialog
   useEffect(() => {
@@ -94,14 +113,16 @@ const AgentDashboard = () => {
     }
   }, [editCategory, editServices]);
 
-  // Listen for real-time notifications
+  // Listen for real-time notifications - with proper dependency array
   useEffect(() => {
     const handleTaskCreated = (data) => {
+      console.log('Task created notification received:', data);
       showSnackbar(`New task created: ${data.task.description}`, 'info');
       fetchDashboardData(); // Refresh data
     };
 
     const handleTaskUpdated = (data) => {
+      console.log('Task updated notification received:', data);
       if (data.deleted) {
         showSnackbar(`Task deleted: ${data.description}`, 'warning');
       } else {
@@ -111,16 +132,19 @@ const AgentDashboard = () => {
     };
 
     const handleLeaveRequested = (data) => {
+      console.log('Leave requested notification received:', data);
       showSnackbar(`New leave request from ${data.leave.userName}`, 'info');
       fetchDashboardData(); // Refresh data
     };
 
     const handleLeaveApproved = (data) => {
+      console.log('Leave approved notification received:', data);
       showSnackbar(`Leave request approved`, 'success');
       fetchDashboardData(); // Refresh data
     };
 
     const handleLeaveRejected = (data) => {
+      console.log('Leave rejected notification received:', data);
       showSnackbar(`Leave request rejected`, 'warning');
       fetchDashboardData(); // Refresh data
     };
@@ -140,7 +164,7 @@ const AgentDashboard = () => {
       notificationService.off('leaveApproved', handleLeaveApproved);
       notificationService.off('leaveRejected', handleLeaveRejected);
     };
-  }, []);
+  }, [fetchDashboardData]);
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -148,24 +172,6 @@ const AgentDashboard = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
-  };
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      // Fetch tasks
-      const tasksResponse = await taskAPI.getAllTasks();
-      setTasks(tasksResponse.data || []);
-      
-      // Fetch leaves
-      const leavesResponse = await leaveAPI.getAllLeaves();
-      setLeaves(leavesResponse.data || []);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      showSnackbar('Error fetching dashboard data: ' + error.message, 'error');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleExport = (format) => {
