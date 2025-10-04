@@ -67,21 +67,24 @@ const LeaveManagement = () => {
   
   const fetchLeaves = React.useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const response = await leaveAPI.getAllLeaves();
-      setLeaves(response.data);
+      setLeaves(response.data || []);
       
       // Log audit entry
       if (user) {
-        auditLog.leaveFetched(response.data.length, user.username || 'unknown');
+        auditLog.leaveFetched((response.data || []).length, user.username || 'unknown');
       }
     } catch (error) {
       console.error('Error fetching leaves:', error);
-      setError('Failed to fetch leave requests');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch leave requests. Please try again.';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, showSnackbar]);
   
   // Fetch leaves on component mount
   useEffect(() => {
@@ -205,7 +208,10 @@ const LeaveManagement = () => {
       if (!selectedLeave || !selectedLeave.id) {
         console.error('Error: selectedLeave is null or missing id');
         setError('Cannot approve leave: Invalid leave selection');
-        setTimeout(() => setError(''), 5000);
+        showSnackbar('Cannot approve leave: Invalid leave selection', 'error');
+        // Make sure dialog closes even on error
+        setOpenApproveDialog(false);
+        setSelectedLeave(null);
         return;
       }
       
@@ -227,13 +233,14 @@ const LeaveManagement = () => {
       setSelectedLeave(null);
       setSuccess('Leave request approved successfully!');
       showSnackbar('Leave request approved successfully!', 'success');
-      setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error approving leave:', error);
-      setError('Failed to approve leave request: ' + (error.response?.data?.message || error.message));
-      setTimeout(() => setError(''), 5000);
+      const errorMessage = 'Failed to approve leave request: ' + (error.response?.data?.message || error.message);
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
       // Make sure dialog closes even on error
       setOpenApproveDialog(false);
+      setSelectedLeave(null);
     }
   };
 
@@ -243,7 +250,10 @@ const LeaveManagement = () => {
       if (!selectedLeave || !selectedLeave.id) {
         console.error('Error: selectedLeave is null or missing id');
         setError('Cannot reject leave: Invalid leave selection');
-        setTimeout(() => setError(''), 5000);
+        showSnackbar('Cannot reject leave: Invalid leave selection', 'error');
+        // Make sure dialog closes even on error
+        setOpenRejectDialog(false);
+        setSelectedLeave(null);
         return;
       }
       
@@ -266,13 +276,14 @@ const LeaveManagement = () => {
       setSelectedLeave(null);
       setSuccess('Leave request rejected successfully!');
       showSnackbar('Leave request rejected successfully!', 'success');
-      setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error rejecting leave:', error);
-      setError('Failed to reject leave request: ' + (error.response?.data?.message || error.message));
-      setTimeout(() => setError(''), 5000);
+      const errorMessage = 'Failed to reject leave request: ' + (error.response?.data?.message || error.message);
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
       // Make sure dialog closes even on error
       setOpenRejectDialog(false);
+      setSelectedLeave(null);
     }
   };
   
