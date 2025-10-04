@@ -20,7 +20,8 @@ import {
   IconButton,
   Autocomplete,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Snackbar
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -32,6 +33,7 @@ import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 // import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
+import notificationService from '../services/notificationService';
 
 const TaskManagement = () => {
   const { user } = useAuth();
@@ -41,6 +43,7 @@ const TaskManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -79,6 +82,41 @@ const TaskManagement = () => {
     fetchTasks();
     fetchDropdownValues();
   }, [fetchTasks]);
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleTaskCreated = (data) => {
+      showSnackbar(`New task created: ${data.task.description}`, 'info');
+      fetchTasks(); // Refresh data
+    };
+
+    const handleTaskUpdated = (data) => {
+      if (data.deleted) {
+        showSnackbar(`Task deleted: ${data.description}`, 'warning');
+      } else {
+        showSnackbar(`Task updated: ${data.task.description}`, 'info');
+      }
+      fetchTasks(); // Refresh data
+    };
+
+    // Subscribe to notifications
+    notificationService.onTaskCreated(handleTaskCreated);
+    notificationService.onTaskUpdated(handleTaskUpdated);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('taskCreated', handleTaskCreated);
+      notificationService.off('taskUpdated', handleTaskUpdated);
+    };
+  }, [fetchTasks]);
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   // Fetch dropdown values on component mount
   useEffect(() => {
@@ -414,6 +452,22 @@ const TaskManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

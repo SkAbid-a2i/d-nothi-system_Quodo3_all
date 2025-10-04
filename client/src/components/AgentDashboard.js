@@ -23,7 +23,13 @@ import {
   Tabs,
   Tab,
   IconButton,
-  CircularProgress
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { 
   Assignment, 
@@ -34,10 +40,13 @@ import {
   Download as DownloadIcon,
   PieChart as PieChartIcon,
   BarChart as BarChartIcon,
-  ShowChart as LineChartIcon
+  ShowChart as LineChartIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
-import { taskAPI, leaveAPI } from '../services/api';
+import { taskAPI, leaveAPI, dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import notificationService from '../services/notificationService';
 
 const AgentDashboard = () => {
   const { user } = useAuth();
@@ -48,11 +57,98 @@ const AgentDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  // Edit task dialog state
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editDate, setEditDate] = useState('');
+  const [editSource, setEditSource] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editService, setEditService] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editStatus, setEditStatus] = useState('');
+  
+  // Dropdown options for edit dialog
+  const [editSources, setEditSources] = useState([]);
+  const [editCategories, setEditCategories] = useState([]);
+  const [editServices, setEditServices] = useState([]);
+  
+  // Service filtering based on category for edit dialog
+  const [filteredEditServices, setFilteredEditServices] = useState([]);
 
   // Fetch tasks and leaves on component mount
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Filter services when category changes in edit dialog
+  useEffect(() => {
+    if (editCategory && editServices.length > 0) {
+      const filtered = editServices.filter(svc => 
+        svc.parentValue === editCategory || !svc.parentValue
+      );
+      setFilteredEditServices(filtered);
+    } else {
+      setFilteredEditServices(editServices);
+    }
+  }, [editCategory, editServices]);
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleTaskCreated = (data) => {
+      showSnackbar(`New task created: ${data.task.description}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleTaskUpdated = (data) => {
+      if (data.deleted) {
+        showSnackbar(`Task deleted: ${data.description}`, 'warning');
+      } else {
+        showSnackbar(`Task updated: ${data.task.description}`, 'info');
+      }
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleLeaveRequested = (data) => {
+      showSnackbar(`New leave request from ${data.leave.userName}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleLeaveApproved = (data) => {
+      showSnackbar(`Leave request approved`, 'success');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleLeaveRejected = (data) => {
+      showSnackbar(`Leave request rejected`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
+    // Subscribe to notifications
+    notificationService.onTaskCreated(handleTaskCreated);
+    notificationService.onTaskUpdated(handleTaskUpdated);
+    notificationService.onLeaveRequested(handleLeaveRequested);
+    notificationService.onLeaveApproved(handleLeaveApproved);
+    notificationService.onLeaveRejected(handleLeaveRejected);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('taskCreated', handleTaskCreated);
+      notificationService.off('taskUpdated', handleTaskUpdated);
+      notificationService.off('leaveRequested', handleLeaveRequested);
+      notificationService.off('leaveApproved', handleLeaveApproved);
+      notificationService.off('leaveRejected', handleLeaveRejected);
+    };
+  }, []);
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -66,6 +162,7 @@ const AgentDashboard = () => {
       setLeaves(leavesResponse.data || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      showSnackbar('Error fetching dashboard data: ' + error.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -91,6 +188,74 @@ const AgentDashboard = () => {
   const filteredLeaves = leaves.filter(leave => 
     (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Handle task edit
+  const handleEditTask = async (task) => {
+    // Fetch dropdown values for edit dialog
+    try {
+      const [sourcesRes, categoriesRes, servicesRes] = await Promise.all([
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Service')
+      ]);
+      
+      setEditSources(sourcesRes.data || []);
+      setEditCategories(categoriesRes.data || []);
+      setEditServices(servicesRes.data || []);
+    } catch (error) {
+      console.error('Error fetching dropdown values for edit:', error);
+      setEditSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
+      setEditCategories(['IT Support', 'HR', 'Finance', 'Administration', 'Other']);
+      setEditServices(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
+    }
+    
+    // Set editing task data
+    setEditingTask(task);
+    setEditDate(task.date || '');
+    setEditSource(task.source || '');
+    setEditCategory(task.category || '');
+    setEditService(task.service || '');
+    setEditDescription(task.description || '');
+    setEditStatus(task.status || 'Pending');
+    
+    setOpenEditDialog(true);
+  };
+
+  // Handle task update
+  const handleUpdateTask = async () => {
+    try {
+      const updatedTaskData = {
+        date: editDate,
+        source: editSource,
+        category: editCategory,
+        service: editService,
+        description: editDescription,
+        status: editStatus
+      };
+      
+      await taskAPI.updateTask(editingTask.id, updatedTaskData);
+      
+      showSnackbar('Task updated successfully!', 'success');
+      setOpenEditDialog(false);
+      setEditingTask(null);
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error updating task:', error);
+      showSnackbar('Error updating task: ' + (error.response?.data?.message || error.message), 'error');
+    }
+  };
+
+  // Handle task delete
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await taskAPI.deleteTask(taskId);
+      showSnackbar('Task deleted successfully!', 'success');
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      showSnackbar('Error deleting task: ' + (error.response?.data?.message || error.message), 'error');
+    }
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -282,7 +447,9 @@ const AgentDashboard = () => {
                       <TableCell>Source</TableCell>
                       <TableCell>Category</TableCell>
                       <TableCell>Service</TableCell>
+                      <TableCell>Description</TableCell>
                       <TableCell>Status</TableCell>
+                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -292,6 +459,7 @@ const AgentDashboard = () => {
                         <TableCell>{task.source || 'N/A'}</TableCell>
                         <TableCell>{task.category || 'N/A'}</TableCell>
                         <TableCell>{task.service || 'N/A'}</TableCell>
+                        <TableCell>{task.description || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
                             label={task.status || 'Pending'} 
@@ -301,6 +469,14 @@ const AgentDashboard = () => {
                               task.status === 'Cancelled' ? 'error' : 'default'
                             } 
                           />
+                        </TableCell>
+                        <TableCell>
+                          <IconButton size="small" color="primary" onClick={() => handleEditTask(task)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton size="small" color="error" onClick={() => handleDeleteTask(task.id)}>
+                            <DeleteIcon />
+                          </IconButton>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -322,6 +498,7 @@ const AgentDashboard = () => {
                         <TableCell>End Date</TableCell>
                         <TableCell>Reason</TableCell>
                         <TableCell>Status</TableCell>
+                        <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -338,6 +515,11 @@ const AgentDashboard = () => {
                                 leave.status === 'Pending' ? 'warning' : 'error'
                               } 
                             />
+                          </TableCell>
+                          <TableCell>
+                            <IconButton size="small" color="primary">
+                              <EditIcon />
+                            </IconButton>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -363,6 +545,127 @@ const AgentDashboard = () => {
           </Paper>
         </Grid>
       </Grid>
+      
+      {/* Edit Task Dialog */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Source</InputLabel>
+                <Select
+                  value={editSource}
+                  onChange={(e) => setEditSource(e.target.value)}
+                  label="Source"
+                >
+                  {editSources.map((src) => (
+                    <MenuItem key={src.id || src.value} value={src.value || src}>
+                      {src.value || src}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  label="Category"
+                >
+                  {editCategories.map((cat) => (
+                    <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
+                      {cat.value || cat}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Service</InputLabel>
+                <Select
+                  value={editService}
+                  onChange={(e) => setEditService(e.target.value)}
+                  label="Service"
+                >
+                  {filteredEditServices.map((svc) => (
+                    <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
+                      {svc.value || svc}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={4}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  label="Status"
+                >
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="In Progress">In Progress</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button onClick={handleUpdateTask} variant="contained" color="primary">
+            Update Task
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
