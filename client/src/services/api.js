@@ -130,4 +130,12 @@ export const logAPI = {
   analyzeLogs: (params) => api.get('/logs/analyze', { params }),
 };
 
+// Permission template endpoints
+export const permissionAPI = {
+  getAllTemplates: () => api.get('/permissions/templates'),
+  createTemplate: (templateData) => api.post('/permissions/templates', templateData),
+  updateTemplate: (id, templateData) => api.put(`/permissions/templates/${id}`, templateData),
+  deleteTemplate: (id) => api.delete(`/permissions/templates/${id}`),
+};
+
 export default api;

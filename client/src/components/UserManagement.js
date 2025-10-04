@@ -37,7 +37,7 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon
 } from '@mui/icons-material';
-import { dropdownAPI, userAPI } from '../services/api';
+import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
@@ -69,11 +69,7 @@ const UserManagement = () => {
   const [dropdownToDelete, setDropdownToDelete] = useState(null);
   
   // Permission templates state
-  const [permissionTemplates, setPermissionTemplates] = useState(() => {
-    // Load templates from localStorage if available
-    const savedTemplates = localStorage.getItem('permissionTemplates');
-    return savedTemplates ? JSON.parse(savedTemplates) : [];
-  });
+  const [permissionTemplates, setPermissionTemplates] = useState([]);
   const [templateName, setTemplateName] = useState('');
   const [templatePermissions, setTemplatePermissions] = useState({
     manageTasks: true,
@@ -114,11 +110,22 @@ const UserManagement = () => {
     }
   }, [user?.username]);
 
+  const fetchPermissionTemplates = useCallback(async () => {
+    try {
+      const response = await permissionAPI.getAllTemplates();
+      setPermissionTemplates(response.data);
+    } catch (error) {
+      console.error('Error fetching permission templates:', error);
+      setError('Failed to fetch permission templates');
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
     fetchOffices();
     fetchDropdowns();
-  }, [fetchUsers]);
+    fetchPermissionTemplates();
+  }, [fetchUsers, fetchPermissionTemplates]);
 
   const fetchOffices = async () => {
     try {
@@ -411,51 +418,56 @@ const UserManagement = () => {
   };
 
   // Permission template handlers
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
       setError('Template name is required');
       setTimeout(() => setError(''), 5000);
       return;
     }
 
-    const newTemplate = {
-      id: editingTemplate ? editingTemplate.id : Date.now(),
-      name: templateName,
-      permissions: { ...templatePermissions }
-    };
+    try {
+      const templateData = {
+        name: templateName.trim(),
+        permissions: { ...templatePermissions }
+      };
 
-    let updatedTemplates;
-    if (editingTemplate) {
-      updatedTemplates = permissionTemplates.map(t => 
-        t.id === editingTemplate.id ? newTemplate : t
-      );
-      setSuccess('Template updated successfully!');
-    } else {
-      updatedTemplates = [...permissionTemplates, newTemplate];
-      setSuccess('Template created successfully!');
+      let response;
+      if (editingTemplate) {
+        // Update existing template
+        response = await permissionAPI.updateTemplate(editingTemplate.id, templateData);
+        setPermissionTemplates(permissionTemplates.map(t => 
+          t.id === editingTemplate.id ? response.data : t
+        ));
+        setSuccess('Template updated successfully!');
+      } else {
+        // Create new template
+        response = await permissionAPI.createTemplate(templateData);
+        setPermissionTemplates([...permissionTemplates, response.data]);
+        setSuccess('Template created successfully!');
+      }
+
+      // Reset form
+      setTemplateName('');
+      setTemplatePermissions({
+        manageTasks: true,
+        editTasks: true,
+        deleteTasks: true,
+        manageLeaves: true,
+        manageUsers: true,
+        manageDropdowns: true
+      });
+      setEditingTemplate(null);
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error saving template:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save template';
+      setError(editingTemplate ? `Failed to update template: ${errorMessage}` : `Failed to create template: ${errorMessage}`);
+      setTimeout(() => setError(''), 5000);
     }
-
-    setPermissionTemplates(updatedTemplates);
-    // Save to localStorage
-    localStorage.setItem('permissionTemplates', JSON.stringify(updatedTemplates));
-
-    // Reset form
-    setTemplateName('');
-    setTemplatePermissions({
-      manageTasks: true,
-      editTasks: true,
-      deleteTasks: true,
-      manageLeaves: true,
-      manageUsers: true,
-      manageDropdowns: true
-    });
-    setEditingTemplate(null);
-
-    setTimeout(() => setSuccess(''), 3000);
   };
 
   const handleEditTemplate = (template) => {
-    console.log('Editing template:', template);
     setTemplateName(template.name);
     setTemplatePermissions({ ...template.permissions });
     setEditingTemplate(template);
@@ -463,13 +475,18 @@ const UserManagement = () => {
     setActiveTab(1);
   };
 
-  const handleDeleteTemplate = (templateId) => {
-    const updatedTemplates = permissionTemplates.filter(t => t.id !== templateId);
-    setPermissionTemplates(updatedTemplates);
-    // Save to localStorage
-    localStorage.setItem('permissionTemplates', JSON.stringify(updatedTemplates));
-    setSuccess('Template deleted successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+  const handleDeleteTemplate = async (templateId) => {
+    try {
+      await permissionAPI.deleteTemplate(templateId);
+      const updatedTemplates = permissionTemplates.filter(t => t.id !== templateId);
+      setPermissionTemplates(updatedTemplates);
+      setSuccess('Template deleted successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      setError('Failed to delete template');
+      setTimeout(() => setError(''), 5000);
+    }
   };
 
   const handleCancelTemplate = () => {

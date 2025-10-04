@@ -107,6 +107,7 @@ const dropdownRoutes = require('./routes/dropdown.routes');
 const reportRoutes = require('./routes/report.routes');
 const auditRoutes = require('./routes/audit.routes');
 const logRoutes = require('./routes/log.routes');
+const permissionRoutes = require('./routes/permission.routes');
 
 // Use routes
 app.use('/api/auth', (req, res, next) => {
@@ -148,6 +149,11 @@ app.use('/api/logs', (req, res, next) => {
   logger.info('Log routes accessed', { endpoint: '/api/logs' + req.url });
   next();
 }, logRoutes);
+
+app.use('/api/permissions', (req, res, next) => {
+  logger.info('Permission routes accessed', { endpoint: '/api/permissions' + req.url });
+  next();
+}, permissionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
