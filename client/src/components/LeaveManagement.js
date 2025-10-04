@@ -133,7 +133,7 @@ const LeaveManagement = () => {
       notificationService.off('leaveApproved', handleLeaveApproved);
       notificationService.off('leaveRejected', handleLeaveRejected);
     };
-  }, [fetchLeaves]);
+  }, [fetchLeaves, showSnackbar]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
