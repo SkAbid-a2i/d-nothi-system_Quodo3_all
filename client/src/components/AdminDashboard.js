@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Grid, 
   Paper, 
@@ -24,7 +24,10 @@ import {
   Tab,
   IconButton,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  CircularProgress,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { 
   Assignment, 
@@ -37,47 +40,243 @@ import {
   BarChart as BarChartIcon,
   ShowChart as LineChartIcon,
   Check as CheckIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Person as PersonIcon,
+  Group as GroupIcon
 } from '@mui/icons-material';
+import { 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
+import { taskAPI, leaveAPI, userAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import notificationService from '../services/notificationService';
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [userFilter, setUserFilter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [leaves, setLeaves] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
-  // Mock data for team tasks
-  const teamTasks = [
-    { id: 1, user: 'John Doe', date: '2025-09-28', source: 'Email', category: 'IT Support', service: 'Hardware', status: 'Completed' },
-    { id: 2, user: 'Jane Smith', date: '2025-09-29', source: 'Phone', category: 'HR', service: 'Leave', status: 'In Progress' },
-    { id: 3, user: 'Bob Johnson', date: '2025-09-30', source: 'Walk-in', category: 'Finance', service: 'Billing', status: 'Pending' },
-  ];
+  // Fetch dashboard data
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch tasks
+      const tasksResponse = await taskAPI.getAllTasks();
+      setTasks(tasksResponse.data || []);
+      
+      // Fetch leaves
+      const leavesResponse = await leaveAPI.getAllLeaves();
+      setLeaves(leavesResponse.data || []);
+      
+      // Fetch users
+      const usersResponse = await userAPI.getAllUsers();
+      setUsers(usersResponse.data || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      showSnackbar('Error fetching dashboard data: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Mock data for pending leaves
-  const pendingLeaves = [
-    { id: 1, user: 'Alice Brown', startDate: '2025-10-15', endDate: '2025-10-17', reason: 'Personal work' },
-    { id: 2, user: 'Charlie Wilson', startDate: '2025-11-05', endDate: '2025-11-06', reason: 'Medical appointment' },
-  ];
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleTaskCreated = (data) => {
+      console.log('Task created notification received:', data);
+      showSnackbar(`New task created: ${data.task.description}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleTaskUpdated = (data) => {
+      console.log('Task updated notification received:', data);
+      if (data.deleted) {
+        showSnackbar(`Task deleted: ${data.description}`, 'warning');
+      } else {
+        showSnackbar(`Task updated: ${data.task.description}`, 'info');
+      }
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleLeaveRequested = (data) => {
+      console.log('Leave requested notification received:', data);
+      showSnackbar(`New leave request from ${data.leave.userName}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleLeaveApproved = (data) => {
+      console.log('Leave approved notification received:', data);
+      showSnackbar(`Leave request approved`, 'success');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleLeaveRejected = (data) => {
+      console.log('Leave rejected notification received:', data);
+      showSnackbar(`Leave request rejected`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
+    // Subscribe to notifications
+    notificationService.onTaskCreated(handleTaskCreated);
+    notificationService.onTaskUpdated(handleTaskUpdated);
+    notificationService.onLeaveRequested(handleLeaveRequested);
+    notificationService.onLeaveApproved(handleLeaveApproved);
+    notificationService.onLeaveRejected(handleLeaveRejected);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('taskCreated', handleTaskCreated);
+      notificationService.off('taskUpdated', handleTaskUpdated);
+      notificationService.off('leaveRequested', handleLeaveRequested);
+      notificationService.off('leaveApproved', handleLeaveApproved);
+      notificationService.off('leaveRejected', handleLeaveRejected);
+    };
+  }, [fetchDashboardData]);
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleExport = (format) => {
     // Implement export functionality
     console.log(`Exporting data as ${format}`);
+    showSnackbar(`Exporting data as ${format}`, 'info');
   };
 
-  const handleApproveLeave = (leaveId) => {
-    // Implement leave approval
-    console.log(`Approving leave ${leaveId}`);
+  const handleApproveLeave = async (leaveId) => {
+    try {
+      await leaveAPI.approveLeave(leaveId);
+      showSnackbar('Leave request approved successfully!', 'success');
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error approving leave:', error);
+      showSnackbar('Error approving leave: ' + error.message, 'error');
+    }
   };
 
-  const handleRejectLeave = (leaveId) => {
-    // Implement leave rejection
-    console.log(`Rejecting leave ${leaveId}`);
+  const handleRejectLeave = async (leaveId) => {
+    try {
+      await leaveAPI.rejectLeave(leaveId, { rejectionReason: 'Rejected by admin' });
+      showSnackbar('Leave request rejected successfully!', 'success');
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error rejecting leave:', error);
+      showSnackbar('Error rejecting leave: ' + error.message, 'error');
+    }
   };
   
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
+
+  // Get today's leaves
+  const getTodaysLeaves = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return leaves.filter(leave => {
+      const startDate = leave.startDate ? leave.startDate.split('T')[0] : '';
+      const endDate = leave.endDate ? leave.endDate.split('T')[0] : '';
+      return startDate <= today && endDate >= today && leave.status === 'Approved';
+    });
+  };
+
+  // Get team performance data
+  const getTeamPerformanceData = () => {
+    if (!tasks || tasks.length === 0) return [];
+    
+    // Group tasks by user
+    const userTaskCount = {};
+    tasks.forEach(task => {
+      const userName = task.userName || 'Unknown User';
+      userTaskCount[userName] = (userTaskCount[userName] || 0) + 1;
+    });
+    
+    // Convert to chart data format
+    return Object.keys(userTaskCount).map(userName => ({
+      name: userName,
+      tasks: userTaskCount[userName]
+    }));
+  };
+
+  // Get task distribution data
+  const getTaskDistributionData = () => {
+    if (!tasks || tasks.length === 0) return [];
+    
+    // Group tasks by category
+    const categoryCount = {};
+    tasks.forEach(task => {
+      const category = task.category || 'Unknown';
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+    });
+    
+    // Convert to chart data format
+    return Object.keys(categoryCount).map(category => ({
+      name: category,
+      count: categoryCount[category]
+    }));
+  };
+
+  // Filter team tasks based on search and user filter
+  const filteredTeamTasks = tasks.filter(task => {
+    const matchesSearch = !searchTerm || 
+      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesUser = !userFilter || 
+      (task.userName && task.userName.toLowerCase().includes(userFilter.toLowerCase()));
+    
+    return matchesSearch && matchesUser;
+  });
+
+  // Filter pending leaves
+  const filteredPendingLeaves = leaves.filter(leave => 
+    leave.status === 'Pending' && 
+    (!searchTerm || 
+      (leave.userName && leave.userName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase())))
+  );
+
+  // Get dashboard statistics
+  const getDashboardStats = () => {
+    return {
+      totalTasks: tasks.length,
+      pendingLeaves: leaves.filter(l => l.status === 'Pending').length,
+      approvedLeaves: leaves.filter(l => l.status === 'Approved').length,
+      todaysLeaves: getTodaysLeaves().length,
+      totalUsers: users.length
+    };
+  };
+
+  const stats = getDashboardStats();
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -85,15 +284,21 @@ const AdminDashboard = () => {
         Admin Dashboard
       </Typography>
       
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      
       <Grid container spacing={3}>
         {/* Summary Cards */}
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid item xs={12} md={6} lg={2.4}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
                 <Assignment sx={{ mr: 2, color: 'primary.main' }} />
                 <Typography variant="h5" component="div">
-                  24
+                  {stats.totalTasks}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -106,13 +311,13 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid item xs={12} md={6} lg={2.4}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
                 <EventAvailable sx={{ mr: 2, color: 'secondary.main' }} />
                 <Typography variant="h5" component="div">
-                  5
+                  {stats.pendingLeaves}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -125,17 +330,17 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid item xs={12} md={6} lg={2.4}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
-                <Assessment sx={{ mr: 2, color: 'success.main' }} />
+                <PersonIcon sx={{ mr: 2, color: 'success.main' }} />
                 <Typography variant="h5" component="div">
-                  8
+                  {stats.todaysLeaves}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
-                Reports Generated
+                On Leave Today
               </Typography>
             </CardContent>
             <CardActions>
@@ -144,17 +349,36 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid item xs={12} md={6} lg={2.4}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <GroupIcon sx={{ mr: 2, color: 'info.main' }} />
+                <Typography variant="h5" component="div">
+                  {stats.totalUsers}
+                </Typography>
+              </Box>
+              <Typography color="text.secondary">
+                Total Users
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small">View Details</Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={6} lg={2.4}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
                 <Notifications sx={{ mr: 2, color: 'warning.main' }} />
                 <Typography variant="h5" component="div">
-                  12
+                  {stats.approvedLeaves}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
-                Team Notifications
+                Approved Leaves
               </Typography>
             </CardContent>
             <CardActions>
@@ -234,12 +458,6 @@ const AdminDashboard = () => {
                   </Button>
                   <Button 
                     startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('Excel')}
-                  >
-                    Export Excel
-                  </Button>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('PDF')}
                   >
                     Export PDF
@@ -250,16 +468,78 @@ const AdminDashboard = () => {
           </Paper>
         </Grid>
         
-        {/* Charts and Tables */}
+        {/* Charts and Task Table */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Team Performance - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+              Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
             </Typography>
-            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography color="text.secondary">
-                {chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart Visualization
-              </Typography>
+            <Box sx={{ height: 300 }}>
+              {chartType === 'bar' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={getTaskDistributionData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="Task Count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              
+              {chartType === 'pie' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getTaskDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getTaskDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              
+              {chartType === 'line' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={getTaskDistributionData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} name="Task Count" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </Box>
           </Paper>
           
@@ -267,6 +547,7 @@ const AdminDashboard = () => {
             <Tabs value={activeTab} onChange={handleTabChange}>
               <Tab label="Team Tasks" />
               <Tab label="Pending Leaves" />
+              <Tab label="Who's on Leave Today" />
             </Tabs>
             
             {activeTab === 0 && (
@@ -279,23 +560,26 @@ const AdminDashboard = () => {
                       <TableCell>Source</TableCell>
                       <TableCell>Category</TableCell>
                       <TableCell>Service</TableCell>
+                      <TableCell>Description</TableCell>
                       <TableCell>Status</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {teamTasks.map((task) => (
+                    {filteredTeamTasks.map((task) => (
                       <TableRow key={task.id}>
-                        <TableCell>{task.user}</TableCell>
-                        <TableCell>{task.date}</TableCell>
-                        <TableCell>{task.source}</TableCell>
-                        <TableCell>{task.category}</TableCell>
-                        <TableCell>{task.service}</TableCell>
+                        <TableCell>{task.userName || 'N/A'}</TableCell>
+                        <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{task.source || 'N/A'}</TableCell>
+                        <TableCell>{task.category || 'N/A'}</TableCell>
+                        <TableCell>{task.service || 'N/A'}</TableCell>
+                        <TableCell>{task.description || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
-                            label={task.status} 
+                            label={task.status || 'Pending'} 
                             color={
                               task.status === 'Completed' ? 'success' : 
-                              task.status === 'In Progress' ? 'primary' : 'default'
+                              task.status === 'In Progress' ? 'primary' : 
+                              task.status === 'Cancelled' ? 'error' : 'default'
                             } 
                           />
                         </TableCell>
@@ -307,101 +591,155 @@ const AdminDashboard = () => {
             )}
             
             {activeTab === 1 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Pending Leave Requests
-                </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>User</TableCell>
-                        <TableCell>Start Date</TableCell>
-                        <TableCell>End Date</TableCell>
-                        <TableCell>Reason</TableCell>
-                        <TableCell>Actions</TableCell>
+              <TableContainer sx={{ mt: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Start Date</TableCell>
+                      <TableCell>End Date</TableCell>
+                      <TableCell>Reason</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredPendingLeaves.map((leave) => (
+                      <TableRow key={leave.id}>
+                        <TableCell>{leave.userName || 'N/A'}</TableCell>
+                        <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{leave.reason || 'N/A'}</TableCell>
+                        <TableCell>
+                          <IconButton 
+                            size="small" 
+                            color="success"
+                            onClick={() => handleApproveLeave(leave.id)}
+                          >
+                            <CheckIcon />
+                          </IconButton>
+                          <IconButton 
+                            size="small" 
+                            color="error"
+                            onClick={() => handleRejectLeave(leave.id)}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {pendingLeaves.map((leave) => (
-                        <TableRow key={leave.id}>
-                          <TableCell>{leave.user}</TableCell>
-                          <TableCell>{leave.startDate}</TableCell>
-                          <TableCell>{leave.endDate}</TableCell>
-                          <TableCell>{leave.reason}</TableCell>
-                          <TableCell>
-                            <IconButton 
-                              color="success" 
-                              size="small"
-                              onClick={() => handleApproveLeave(leave.id)}
-                            >
-                              <CheckIcon />
-                            </IconButton>
-                            <IconButton 
-                              color="error" 
-                              size="small"
-                              onClick={() => handleRejectLeave(leave.id)}
-                            >
-                              <CloseIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+            
+            {activeTab === 2 && (
+              <TableContainer sx={{ mt: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Start Date</TableCell>
+                      <TableCell>End Date</TableCell>
+                      <TableCell>Reason</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getTodaysLeaves().map((leave) => (
+                      <TableRow key={leave.id}>
+                        <TableCell>{leave.userName || 'N/A'}</TableCell>
+                        <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{leave.reason || 'N/A'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             )}
           </Paper>
         </Grid>
         
-        {/* Customizable Widgets */}
+        {/* Team Performance */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, mb: 3 }}>
+          <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
-              Customizable Widgets
+              Team Performance
             </Typography>
-            <Box sx={{ mb: 2 }}>
-              <FormControlLabel
-                control={<Switch defaultChecked />}
-                label="Task Summary"
-              />
-            </Box>
-            <Box sx={{ mb: 2 }}>
-              <FormControlLabel
-                control={<Switch defaultChecked />}
-                label="Leave Calendar"
-              />
-            </Box>
-            <Box sx={{ mb: 2 }}>
-              <FormControlLabel
-                control={<Switch />}
-                label="Performance Metrics"
-              />
-            </Box>
-            <Box sx={{ mb: 2 }}>
-              <FormControlLabel
-                control={<Switch defaultChecked />}
-                label="Team Availability"
-              />
-            </Box>
-            <Button variant="outlined" fullWidth>
-              Add Widget
-            </Button>
-          </Paper>
-          
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Who's on Leave Today
-            </Typography>
-            <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography color="text.secondary">
-                Leave Calendar View
-              </Typography>
+            <Box sx={{ height: 'calc(100% - 40px)' }}>
+              {tasks.length > 0 ? (
+                <ResponsiveContainer width="100%" height="70%">
+                  <PieChart>
+                    <Pie
+                      data={getTeamPerformanceData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={60}
+                      fill="#8884d8"
+                      dataKey="tasks"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getTeamPerformanceData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '70%' }}>
+                  <Typography color="text.secondary">No data available</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Performance Summary:
+                </Typography>
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Total Users: {users.length}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Active Tasks: {tasks.filter(t => t.status !== 'Completed').length}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Completed: {tasks.filter(t => t.status === 'Completed').length}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Pending Leaves: {leaves.filter(l => l.status === 'Pending').length}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
             </Box>
           </Paper>
         </Grid>
       </Grid>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
