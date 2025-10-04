@@ -230,6 +230,7 @@ const LeaveManagement = () => {
       }
       
       // Make sure dialog closes
+      console.log('Closing approve dialog');
       setOpenApproveDialog(false);
       setSelectedLeave(null);
       setSuccess('Leave request approved successfully!');
@@ -276,6 +277,7 @@ const LeaveManagement = () => {
       }
       
       // Make sure dialog closes
+      console.log('Closing reject dialog');
       setOpenRejectDialog(false);
       setSelectedLeave(null);
       setSuccess('Leave request rejected successfully!');
@@ -663,7 +665,10 @@ const LeaveManagement = () => {
       )}
       
       {/* Approve Dialog */}
-      <Dialog open={openApproveDialog} onClose={() => setOpenApproveDialog(false)}>
+      <Dialog open={openApproveDialog} onClose={() => {
+        setOpenApproveDialog(false);
+        setSelectedLeave(null);
+      }}>
         <DialogTitle>{t('common.approve')} {t('leaves.leaveRequests')}</DialogTitle>
         <DialogContent>
           <Typography>
@@ -671,7 +676,10 @@ const LeaveManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenApproveDialog(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setOpenApproveDialog(false);
+            setSelectedLeave(null);
+          }}>Cancel</Button>
           <Button onClick={confirmApprove} variant="contained" color="success">
             Approve
           </Button>
@@ -679,7 +687,10 @@ const LeaveManagement = () => {
       </Dialog>
       
       {/* Reject Dialog */}
-      <Dialog open={openRejectDialog} onClose={() => setOpenRejectDialog(false)}>
+      <Dialog open={openRejectDialog} onClose={() => {
+        setOpenRejectDialog(false);
+        setSelectedLeave(null);
+      }}>
         <DialogTitle>{t('common.reject')} {t('leaves.leaveRequests')}</DialogTitle>
         <DialogContent>
           <Typography>
@@ -687,7 +698,10 @@ const LeaveManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenRejectDialog(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setOpenRejectDialog(false);
+            setSelectedLeave(null);
+          }}>Cancel</Button>
           <Button onClick={confirmReject} variant="contained" color="error">
             Reject
           </Button>

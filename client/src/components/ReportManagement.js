@@ -377,6 +377,7 @@ const ReportManagement = () => {
                   <TableCell>Start Date</TableCell>
                   <TableCell>End Date</TableCell>
                   <TableCell>Reason</TableCell>
+                  <TableCell>User</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Approved By</TableCell>
                 </TableRow>
@@ -388,6 +389,7 @@ const ReportManagement = () => {
                     <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
                     <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
                     <TableCell>{leave.reason}</TableCell>
+                    <TableCell>{leave.userName}</TableCell>
                     <TableCell>
                       <Chip 
                         label={leave.status} 

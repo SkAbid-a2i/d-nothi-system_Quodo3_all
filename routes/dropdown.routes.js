@@ -92,7 +92,7 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
 router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { value, isActive } = req.body;
+    const { type, value, parentType, parentValue, isActive } = req.body;
 
     // Check if dropdown exists
     const dropdown = await Dropdown.findByPk(id);
@@ -113,7 +113,10 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin')
     }
 
     // Update dropdown fields
+    dropdown.type = type || dropdown.type;
     dropdown.value = value || dropdown.value;
+    dropdown.parentType = type === 'Service' ? parentType : undefined;
+    dropdown.parentValue = type === 'Service' ? parentValue : undefined;
     dropdown.isActive = isActive !== undefined ? isActive : dropdown.isActive;
 
     await dropdown.save();

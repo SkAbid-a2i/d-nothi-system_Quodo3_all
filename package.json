@@ -37,7 +37,7 @@
     "nodemailer": "^6.9.15",
     "pg": "^8.16.3",
     "react-scripts": "^5.0.1",
-    "recharts": "^3.2.1",
+    "recharts": "^2.12.7",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {

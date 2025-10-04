@@ -16,8 +16,8 @@ async function testAPI() {
     // Test auth endpoint
     try {
       const authResponse = await axios.post(`${baseURL}/auth/login`, {
-        username: 'testuser3',
-        password: 'password123'
+        username: 'admin',
+        password: 'admin123'
       });
       console.log('Auth endpoint working, token received');
       

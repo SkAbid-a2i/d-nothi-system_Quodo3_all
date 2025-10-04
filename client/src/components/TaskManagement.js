@@ -229,7 +229,9 @@ const TaskManagement = () => {
         description,
         status,
         assignedTo,
-        office: user?.office || ''
+        office: user?.office || '',
+        userId: user?.id, // Automatically add user ID
+        userName: user?.fullName || user?.username // Automatically add user name
       };
       
       const response = await taskAPI.createTask(taskData);
@@ -239,7 +241,7 @@ const TaskManagement = () => {
         id: response.data.id,
         ...taskData,
         userId: user?.id,
-        userName: user?.fullName
+        userName: user?.fullName || user?.username
       };
       setTasks([...tasks, newTask]);
       
@@ -288,7 +290,9 @@ const TaskManagement = () => {
         description: editDescription,
         status: editStatus,
         assignedTo: editAssignedTo,
-        office: user?.office || ''
+        office: user?.office || '',
+        userId: user?.id, // Automatically add user ID
+        userName: user?.fullName || user?.username // Automatically add user name
       };
       
       await taskAPI.updateTask(editingTask.id, taskData);
@@ -318,7 +322,8 @@ const TaskManagement = () => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase()));
+      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     
@@ -492,6 +497,7 @@ const TaskManagement = () => {
                     <TableCell>Category</TableCell>
                     <TableCell>Service</TableCell>
                     <TableCell>Description</TableCell>
+                    <TableCell>User</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Assigned To</TableCell>
                     <TableCell>Actions</TableCell>
@@ -505,6 +511,7 @@ const TaskManagement = () => {
                       <TableCell>{task.category || 'N/A'}</TableCell>
                       <TableCell>{task.service || 'N/A'}</TableCell>
                       <TableCell>{task.description || 'N/A'}</TableCell>
+                      <TableCell>{task.userName || 'N/A'}</TableCell>
                       <TableCell>
                         <Chip 
                           label={task.status || 'Pending'} 

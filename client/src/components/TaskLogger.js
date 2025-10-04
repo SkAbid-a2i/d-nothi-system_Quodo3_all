@@ -24,13 +24,17 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { 
   Add as AddIcon, 
-  Upload as UploadIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Search as SearchIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { taskAPI, dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,6 +48,7 @@ const TaskLogger = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [activeTab, setActiveTab] = useState(0);
   
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -52,10 +57,15 @@ const TaskLogger = () => {
   const [service, setService] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
-  const [file, setFile] = useState(null);
   
-  // Today's tasks state
-  const [todaysTasks, setTodaysTasks] = useState([]);
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  
+  // All tasks state (not just today's)
+  const [allTasks, setAllTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   
   // Edit task dialog state
@@ -129,22 +139,15 @@ const TaskLogger = () => {
     }
   };
 
-  // Fetch today's tasks
-  const fetchTodaysTasks = useCallback(async () => {
+  // Fetch all tasks
+  const fetchAllTasks = useCallback(async () => {
     setTasksLoading(true);
     try {
       const response = await taskAPI.getAllTasks();
-      const allTasks = response.data || [];
-      
-      // Filter tasks for today
-      const today = new Date().toISOString().split('T')[0];
-      const todayTasks = allTasks.filter(task => 
-        task.date && task.date.split('T')[0] === today
-      );
-      
-      setTodaysTasks(todayTasks);
+      const tasks = response.data || [];
+      setAllTasks(tasks);
     } catch (error) {
-      console.error('Error fetching today\'s tasks:', error);
+      console.error('Error fetching tasks:', error);
       showSnackbar(t('tasks.errorFetchingTasks') + ': ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setTasksLoading(false);
@@ -156,8 +159,8 @@ const TaskLogger = () => {
     const handleTaskCreated = (data) => {
       frontendLogger.info('Real-time task created notification received', data);
       showSnackbar(`New task created: ${data.task.description}`, 'info');
-      // Refresh today's tasks
-      fetchTodaysTasks();
+      // Refresh all tasks
+      fetchAllTasks();
     };
 
     const handleTaskUpdated = (data) => {
@@ -167,8 +170,8 @@ const TaskLogger = () => {
       } else {
         showSnackbar(`Task updated: ${data.task.description}`, 'info');
       }
-      // Refresh today's tasks
-      fetchTodaysTasks();
+      // Refresh all tasks
+      fetchAllTasks();
     };
 
     // Subscribe to notifications
@@ -180,12 +183,12 @@ const TaskLogger = () => {
       notificationService.off('taskCreated', handleTaskCreated);
       notificationService.off('taskUpdated', handleTaskUpdated);
     };
-  }, [fetchTodaysTasks]);
+  }, [fetchAllTasks]);
 
-  // Fetch today's tasks on component mount
+  // Fetch all tasks on component mount
   useEffect(() => {
-    fetchTodaysTasks();
-  }, [fetchTodaysTasks]);
+    fetchAllTasks();
+  }, [fetchAllTasks]);
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -193,6 +196,10 @@ const TaskLogger = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
 
   const handleSubmit = async (e) => {
@@ -206,25 +213,31 @@ const TaskLogger = () => {
         category,
         service,
         description,
-        status
+        status,
+        userId: user.id, // Automatically add user ID
+        userName: user.fullName || user.username, // Automatically add user name
+        office: user.office // Automatically add office
       };
-      
+
       const response = await taskAPI.createTask(taskData);
+      
+      // Add new task to list
+      const newTask = {
+        id: response.data.id,
+        ...taskData,
+        createdAt: new Date().toISOString()
+      };
+      setAllTasks([newTask, ...allTasks]);
       
       // Log audit entry
       auditLog.taskCreated(response.data.id, user?.username || 'unknown');
       
       // Reset form
-      setDate(new Date().toISOString().split('T')[0]);
       setSource('');
       setCategory('');
       setService('');
       setDescription('');
       setStatus('Pending');
-      setFile(null);
-      
-      // Refresh today's tasks
-      fetchTodaysTasks();
       
       showSnackbar(t('tasks.taskCreatedSuccessfully'), 'success');
     } catch (error) {
@@ -235,10 +248,9 @@ const TaskLogger = () => {
     }
   };
 
-  // Handle task edit
-  const handleEditTask = (task) => {
+  const handleEdit = (task) => {
     setEditingTask(task);
-    setEditDate(task.date ? task.date.split('T')[0] : '');
+    setEditDate(task.date || '');
     setEditSource(task.source || '');
     setEditCategory(task.category || '');
     setEditService(task.service || '');
@@ -247,10 +259,11 @@ const TaskLogger = () => {
     setOpenEditDialog(true);
   };
 
-  // Handle task update
-  const handleUpdateTask = async () => {
+  const handleUpdate = async () => {
+    if (!editingTask) return;
+    
     try {
-      const updatedTaskData = {
+      const taskData = {
         date: editDate,
         source: editSource,
         category: editCategory,
@@ -258,18 +271,19 @@ const TaskLogger = () => {
         description: editDescription,
         status: editStatus
       };
+
+      const response = await taskAPI.updateTask(editingTask.id, taskData);
       
-      await taskAPI.updateTask(editingTask.id, updatedTaskData);
+      // Update task in list
+      setAllTasks(allTasks.map(task => 
+        task.id === editingTask.id ? { ...response.data } : task
+      ));
       
       // Log audit entry
       auditLog.taskUpdated(editingTask.id, user?.username || 'unknown');
       
       setOpenEditDialog(false);
       setEditingTask(null);
-      
-      // Refresh today's tasks
-      fetchTodaysTasks();
-      
       showSnackbar(t('tasks.taskUpdatedSuccessfully'), 'success');
     } catch (error) {
       console.error('Error updating task:', error);
@@ -277,16 +291,15 @@ const TaskLogger = () => {
     }
   };
 
-  // Handle task delete
-  const handleDeleteTask = async (taskId) => {
+  const handleDelete = async (taskId) => {
     try {
       await taskAPI.deleteTask(taskId);
       
+      // Remove task from list
+      setAllTasks(allTasks.filter(task => task.id !== taskId));
+      
       // Log audit entry
       auditLog.taskDeleted(taskId, user?.username || 'unknown');
-      
-      // Refresh today's tasks
-      fetchTodaysTasks();
       
       showSnackbar(t('tasks.taskDeletedSuccessfully'), 'success');
     } catch (error) {
@@ -295,234 +308,419 @@ const TaskLogger = () => {
     }
   };
 
+  // Filter tasks based on search and filters
+  const filteredTasks = allTasks.filter(task => {
+    const matchesSearch = !searchTerm || 
+      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.source && task.source.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = !statusFilter || task.status === statusFilter;
+    const matchesSource = !sourceFilter || task.source === sourceFilter;
+    const matchesCategory = !categoryFilter || task.category === categoryFilter;
+    
+    return matchesSearch && matchesStatus && matchesSource && matchesCategory;
+  });
+
+  // Get today's tasks
+  const todaysTasks = allTasks.filter(task => {
+    const today = new Date().toISOString().split('T')[0];
+    return task.date && task.date.split('T')[0] === today;
+  });
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Pending': return 'warning';
+      case 'In Progress': return 'info';
+      case 'Completed': return 'success';
+      case 'Cancelled': return 'error';
+      default: return 'default';
+    }
+  };
+
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
+    <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
-        {t('tasks.taskLogger')}
+        {t('tasks.title')}
       </Typography>
       
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          {t('tasks.logNewTask')}
-        </Typography>
-        
-        <Grid container spacing={2} component="form" onSubmit={handleSubmit}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={t('tasks.date')}
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>{t('tasks.source')}</InputLabel>
-              <Select
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                label={t('tasks.source')}
-              >
-                {sources.map((src) => (
-                  <MenuItem key={src.id || src.value} value={src.value || src}>
-                    {src.value || src}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>{t('tasks.category')}</InputLabel>
-              <Select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                label={t('tasks.category')}
-              >
-                {categories.map((cat) => (
-                  <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
-                    {cat.value || cat}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>{t('tasks.service')}</InputLabel>
-              <Select
-                value={service}
-                onChange={(e) => setService(e.target.value)}
-                label={t('tasks.service')}
-              >
-                {filteredServices.map((svc) => (
-                  <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
-                    {svc.value || svc}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={t('tasks.description')}
-              multiline
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>{t('tasks.status')}</InputLabel>
-              <Select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                label={t('tasks.status')}
-              >
-                {statuses.map((stat) => (
-                  <MenuItem key={stat} value={stat}>
-                    <Chip 
-                      label={stat} 
-                      size="small" 
-                      color={
-                        stat === 'Completed' ? 'success' : 
-                        stat === 'In Progress' ? 'primary' : 
-                        stat === 'Cancelled' ? 'error' : 'default'
-                      } 
-                    />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              component="label"
-              startIcon={<UploadIcon />}
-            >
-              {t('tasks.uploadFile')}
-              <input
-                type="file"
-                hidden
-                onChange={(e) => setFile(e.target.files[0])}
-              />
-            </Button>
-            {file && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {file.name}
-              </Typography>
-            )}
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Button
-              type="submit"
-              variant="contained"
-              startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
-              disabled={loading}
-            >
-              {loading ? t('common.creating') : t('tasks.createTask')}
-            </Button>
-          </Grid>
-        </Grid>
+      <Paper sx={{ width: '100%', mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          indicatorColor="primary"
+          textColor="primary"
+        >
+          <Tab label={t('tasks.logNewTask')} icon={<AddIcon />} />
+          <Tab label={t('tasks.todayTasks')} icon={<SearchIcon />} />
+          <Tab label={t('tasks.allTasks')} icon={<SearchIcon />} />
+        </Tabs>
       </Paper>
       
-      {/* Today's Tasks */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Today's Tasks
-        </Typography>
-        
-        {tasksLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-            <CircularProgress />
-          </Box>
-        ) : todaysTasks.length === 0 ? (
-          <Typography color="text.secondary" align="center" sx={{ p: 2 }}>
-            No tasks logged today
+      {activeTab === 0 && (
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('tasks.logNewTask')}
           </Typography>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Source</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Service</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {todaysTasks.map((task) => (
-                  <TableRow key={task.id}>
-                    <TableCell>
-                      {task.createdAt ? new Date(task.createdAt).toLocaleTimeString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>{task.source || 'N/A'}</TableCell>
-                    <TableCell>{task.category || 'N/A'}</TableCell>
-                    <TableCell>{task.service || 'N/A'}</TableCell>
-                    <TableCell>{task.description || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={task.status || 'Pending'} 
-                        size="small"
-                        color={
-                          task.status === 'Completed' ? 'success' : 
-                          task.status === 'In Progress' ? 'primary' : 
-                          task.status === 'Cancelled' ? 'error' : 'default'
-                        } 
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton 
-                        size="small" 
-                        color="primary" 
-                        onClick={() => handleEditTask(task)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        color="error" 
-                        onClick={() => handleDeleteTask(task.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label={t('tasks.date')}
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth required>
+                  <InputLabel>{t('tasks.source')}</InputLabel>
+                  <Select
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    label={t('tasks.source')}
+                  >
+                    {sources.map((src) => (
+                      <MenuItem key={src.value || src} value={src.value || src}>
+                        {src.value || src}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth required>
+                  <InputLabel>{t('tasks.category')}</InputLabel>
+                  <Select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    label={t('tasks.category')}
+                  >
+                    {categories.map((cat) => (
+                      <MenuItem key={cat.value || cat} value={cat.value || cat}>
+                        {cat.value || cat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth required>
+                  <InputLabel>{t('tasks.service')}</InputLabel>
+                  <Select
+                    value={service}
+                    onChange={(e) => setService(e.target.value)}
+                    label={t('tasks.service')}
+                    disabled={!category}
+                  >
+                    {filteredServices.map((svc) => (
+                      <MenuItem key={svc.value || svc} value={svc.value || svc}>
+                        {svc.value || svc}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={t('tasks.description')}
+                  multiline
+                  rows={4}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('tasks.status')}</InputLabel>
+                  <Select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    label={t('tasks.status')}
+                  >
+                    {statuses.map((status) => (
+                      <MenuItem key={status} value={status}>
+                        {status}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label={t('tasks.user')}
+                  value={user?.fullName || user?.username || ''}
+                  disabled
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button 
+                    variant="contained" 
+                    startIcon={<AddIcon />} 
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={24} /> : t('tasks.createTask')}
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<CancelIcon />}
+                    onClick={() => {
+                      setSource('');
+                      setCategory('');
+                      setService('');
+                      setDescription('');
+                      setStatus('Pending');
+                    }}
+                  >
+                    {t('common.reset')}
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </form>
+        </Paper>
+      )}
+      
+      {activeTab === 1 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('tasks.todayTasks')}
+          </Typography>
+          
+          {tasksLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : todaysTasks.length === 0 ? (
+            <Typography color="textSecondary" align="center" sx={{ p: 3 }}>
+              {t('tasks.noTasksToday')}
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{t('tasks.time')}</TableCell>
+                    <TableCell>{t('tasks.source')}</TableCell>
+                    <TableCell>{t('tasks.category')}</TableCell>
+                    <TableCell>{t('tasks.service')}</TableCell>
+                    <TableCell>{t('tasks.description')}</TableCell>
+                    <TableCell>{t('tasks.user')}</TableCell>
+                    <TableCell>{t('tasks.status')}</TableCell>
+                    <TableCell>{t('common.actions')}</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+                </TableHead>
+                <TableBody>
+                  {todaysTasks.map((task) => (
+                    <TableRow key={task.id}>
+                      <TableCell>{task.date ? new Date(task.date).toLocaleTimeString() : 'N/A'}</TableCell>
+                      <TableCell>{task.source || 'N/A'}</TableCell>
+                      <TableCell>{task.category || 'N/A'}</TableCell>
+                      <TableCell>{task.service || 'N/A'}</TableCell>
+                      <TableCell>{task.description || 'N/A'}</TableCell>
+                      <TableCell>{task.userName || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={task.status || 'Pending'} 
+                          color={getStatusColor(task.status)} 
+                          size="small" 
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <IconButton size="small" onClick={() => handleEdit(task)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleDelete(task.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      )}
+      
+      {activeTab === 2 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('tasks.allTasks')}
+          </Typography>
+          
+          {/* Filters */}
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label={t('common.search')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    endAdornment: <SearchIcon fontSize="small" />
+                  }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('tasks.status')}</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    label={t('tasks.status')}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    {statuses.map((status) => (
+                      <MenuItem key={status} value={status}>
+                        {status}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('tasks.source')}</InputLabel>
+                  <Select
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value)}
+                    label={t('tasks.source')}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    {sources.map((src) => (
+                      <MenuItem key={src.value || src} value={src.value || src}>
+                        {src.value || src}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('tasks.category')}</InputLabel>
+                  <Select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    label={t('tasks.category')}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    {categories.map((cat) => (
+                      <MenuItem key={cat.value || cat} value={cat.value || cat}>
+                        {cat.value || cat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} md={3}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('');
+                      setSourceFilter('');
+                      setCategoryFilter('');
+                    }}
+                  >
+                    {t('common.reset')}
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </Paper>
+          
+          {tasksLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : filteredTasks.length === 0 ? (
+            <Typography color="textSecondary" align="center" sx={{ p: 3 }}>
+              {t('tasks.noTasksFound')}
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{t('tasks.date')}</TableCell>
+                    <TableCell>{t('tasks.time')}</TableCell>
+                    <TableCell>{t('tasks.source')}</TableCell>
+                    <TableCell>{t('tasks.category')}</TableCell>
+                    <TableCell>{t('tasks.service')}</TableCell>
+                    <TableCell>{t('tasks.description')}</TableCell>
+                    <TableCell>{t('tasks.user')}</TableCell>
+                    <TableCell>{t('tasks.status')}</TableCell>
+                    <TableCell>{t('common.actions')}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredTasks.map((task) => (
+                    <TableRow key={task.id}>
+                      <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell>{task.date ? new Date(task.date).toLocaleTimeString() : 'N/A'}</TableCell>
+                      <TableCell>{task.source || 'N/A'}</TableCell>
+                      <TableCell>{task.category || 'N/A'}</TableCell>
+                      <TableCell>{task.service || 'N/A'}</TableCell>
+                      <TableCell>{task.description || 'N/A'}</TableCell>
+                      <TableCell>{task.userName || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={task.status || 'Pending'} 
+                          color={getStatusColor(task.status)} 
+                          size="small" 
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <IconButton size="small" onClick={() => handleEdit(task)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleDelete(task.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      )}
       
       {/* Edit Task Dialog */}
       <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Task</DialogTitle>
+        <DialogTitle>{t('tasks.editTask')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Date"
+                label={t('tasks.date')}
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={editDate}
@@ -533,14 +731,14 @@ const TaskLogger = () => {
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
-                <InputLabel>Source</InputLabel>
+                <InputLabel>{t('tasks.source')}</InputLabel>
                 <Select
                   value={editSource}
                   onChange={(e) => setEditSource(e.target.value)}
-                  label="Source"
+                  label={t('tasks.source')}
                 >
                   {sources.map((src) => (
-                    <MenuItem key={src.id || src.value} value={src.value || src}>
+                    <MenuItem key={src.value || src} value={src.value || src}>
                       {src.value || src}
                     </MenuItem>
                   ))}
@@ -550,14 +748,14 @@ const TaskLogger = () => {
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>{t('tasks.category')}</InputLabel>
                 <Select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
-                  label="Category"
+                  label={t('tasks.category')}
                 >
                   {categories.map((cat) => (
-                    <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
+                    <MenuItem key={cat.value || cat} value={cat.value || cat}>
                       {cat.value || cat}
                     </MenuItem>
                   ))}
@@ -567,14 +765,15 @@ const TaskLogger = () => {
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
-                <InputLabel>Service</InputLabel>
+                <InputLabel>{t('tasks.service')}</InputLabel>
                 <Select
                   value={editService}
                   onChange={(e) => setEditService(e.target.value)}
-                  label="Service"
+                  label={t('tasks.service')}
+                  disabled={!editCategory}
                 >
                   {filteredEditServices.map((svc) => (
-                    <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
+                    <MenuItem key={svc.value || svc} value={svc.value || svc}>
                       {svc.value || svc}
                     </MenuItem>
                   ))}
@@ -585,7 +784,7 @@ const TaskLogger = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Description"
+                label={t('tasks.description')}
                 multiline
                 rows={4}
                 value={editDescription}
@@ -596,29 +795,44 @@ const TaskLogger = () => {
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
+                <InputLabel>{t('tasks.status')}</InputLabel>
                 <Select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  label="Status"
+                  label={t('tasks.status')}
                 >
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="In Progress">In Progress</MenuItem>
-                  <MenuItem value="Completed">Completed</MenuItem>
-                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                  {statuses.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={t('tasks.user')}
+                value={editingTask?.userName || ''}
+                disabled
+              />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-          <Button onClick={handleUpdateTask} variant="contained" color="primary">
-            Update Task
+          <Button onClick={() => setOpenEditDialog(false)}>{t('common.cancel')}</Button>
+          <Button 
+            onClick={handleUpdate} 
+            variant="contained" 
+            startIcon={<SaveIcon />}
+          >
+            {t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>
       
+      {/* Snackbar for notifications */}
       <Snackbar 
         open={snackbar.open} 
         autoHideDuration={6000} 

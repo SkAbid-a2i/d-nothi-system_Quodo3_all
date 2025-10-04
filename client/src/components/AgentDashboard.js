@@ -200,7 +200,8 @@ const AgentDashboard = () => {
   const filteredTasks = tasks.filter(task => 
     (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase()))
+    (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Filter leaves based on search term

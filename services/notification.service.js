@@ -6,12 +6,14 @@ class NotificationService {
 
   // Add a client to the notification service
   addClient(userId, response) {
-    // Set headers for SSE
+    // Set headers for SSE with proper CORS
     response.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'X-Accel-Buffering': 'no' // Disable buffering for nginx
     });
 
     // Send initial connection message

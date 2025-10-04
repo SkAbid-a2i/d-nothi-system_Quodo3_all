@@ -69,7 +69,11 @@ const UserManagement = () => {
   const [dropdownToDelete, setDropdownToDelete] = useState(null);
   
   // Permission templates state
-  const [permissionTemplates, setPermissionTemplates] = useState([]);
+  const [permissionTemplates, setPermissionTemplates] = useState(() => {
+    // Load templates from localStorage if available
+    const savedTemplates = localStorage.getItem('permissionTemplates');
+    return savedTemplates ? JSON.parse(savedTemplates) : [];
+  });
   const [templateName, setTemplateName] = useState('');
   const [templatePermissions, setTemplatePermissions] = useState({
     manageTasks: true,
@@ -420,15 +424,20 @@ const UserManagement = () => {
       permissions: { ...templatePermissions }
     };
 
+    let updatedTemplates;
     if (editingTemplate) {
-      setPermissionTemplates(templates => 
-        templates.map(t => t.id === editingTemplate.id ? newTemplate : t)
+      updatedTemplates = permissionTemplates.map(t => 
+        t.id === editingTemplate.id ? newTemplate : t
       );
       setSuccess('Template updated successfully!');
     } else {
-      setPermissionTemplates(templates => [...templates, newTemplate]);
+      updatedTemplates = [...permissionTemplates, newTemplate];
       setSuccess('Template created successfully!');
     }
+
+    setPermissionTemplates(updatedTemplates);
+    // Save to localStorage
+    localStorage.setItem('permissionTemplates', JSON.stringify(updatedTemplates));
 
     // Reset form
     setTemplateName('');
@@ -450,10 +459,15 @@ const UserManagement = () => {
     setTemplateName(template.name);
     setTemplatePermissions({ ...template.permissions });
     setEditingTemplate(template);
+    // Make sure we're on the correct tab
+    setActiveTab(1);
   };
 
   const handleDeleteTemplate = (templateId) => {
-    setPermissionTemplates(templates => templates.filter(t => t.id !== templateId));
+    const updatedTemplates = permissionTemplates.filter(t => t.id !== templateId);
+    setPermissionTemplates(updatedTemplates);
+    // Save to localStorage
+    localStorage.setItem('permissionTemplates', JSON.stringify(updatedTemplates));
     setSuccess('Template deleted successfully!');
     setTimeout(() => setSuccess(''), 3000);
   };
