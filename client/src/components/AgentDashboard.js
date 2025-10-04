@@ -44,6 +44,21 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
+import { 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 import { taskAPI, leaveAPI, dropdownAPI } from '../services/api';
 import notificationService from '../services/notificationService';
 
@@ -261,6 +276,42 @@ const AgentDashboard = () => {
     }
   };
 
+  // Get task distribution data for charts
+  const getTaskDistributionData = () => {
+    if (!tasks || tasks.length === 0) return [];
+    
+    // Group tasks by category
+    const categoryCount = {};
+    tasks.forEach(task => {
+      const category = task.category || 'Unknown';
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+    });
+    
+    // Convert to chart data format
+    return Object.keys(categoryCount).map(category => ({
+      name: category,
+      count: categoryCount[category]
+    }));
+  };
+
+  // Get team performance data
+  const getTeamPerformanceData = () => {
+    if (!tasks || tasks.length === 0) return [];
+    
+    // Group tasks by status
+    const statusCount = {};
+    tasks.forEach(task => {
+      const status = task.status || 'Pending';
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    });
+    
+    // Convert to chart data format
+    return Object.keys(statusCount).map(status => ({
+      name: status,
+      count: statusCount[status]
+    }));
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -429,10 +480,72 @@ const AgentDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
             </Typography>
-            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography color="text.secondary">
-                {chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart Visualization
-              </Typography>
+            <Box sx={{ height: 300 }}>
+              {chartType === 'bar' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={getTaskDistributionData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="Task Count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              
+              {chartType === 'pie' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getTaskDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getTaskDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              
+              {chartType === 'line' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={getTaskDistributionData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} name="Task Count" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </Box>
           </Paper>
           
@@ -451,6 +564,8 @@ const AgentDashboard = () => {
                       <TableCell>Source</TableCell>
                       <TableCell>Category</TableCell>
                       <TableCell>Service</TableCell>
+                      <TableCell>User</TableCell>
+                      <TableCell>Office</TableCell>
                       <TableCell>Description</TableCell>
                       <TableCell>Status</TableCell>
                       <TableCell>Actions</TableCell>
@@ -463,6 +578,8 @@ const AgentDashboard = () => {
                         <TableCell>{task.source || 'N/A'}</TableCell>
                         <TableCell>{task.category || 'N/A'}</TableCell>
                         <TableCell>{task.service || 'N/A'}</TableCell>
+                        <TableCell>{task.userName || 'N/A'}</TableCell>
+                        <TableCell>{task.office || 'N/A'}</TableCell>
                         <TableCell>{task.description || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
@@ -539,12 +656,63 @@ const AgentDashboard = () => {
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
-              Recent Activity
+              Team Performance
             </Typography>
-            <Box sx={{ height: 'calc(100% - 40px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography color="text.secondary">
-                Activity Timeline
-              </Typography>
+            <Box sx={{ height: 'calc(100% - 40px)' }}>
+              {tasks.length > 0 ? (
+                <ResponsiveContainer width="100%" height="70%">
+                  <PieChart>
+                    <Pie
+                      data={getTeamPerformanceData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={60}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getTeamPerformanceData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '70%' }}>
+                  <Typography color="text.secondary">No data available</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Task Summary:
+                </Typography>
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Total Tasks: {tasks.length}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Completed: {tasks.filter(t => t.status === 'Completed').length}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      In Progress: {tasks.filter(t => t.status === 'In Progress').length}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      Pending: {tasks.filter(t => t.status === 'Pending').length}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
             </Box>
           </Paper>
         </Grid>

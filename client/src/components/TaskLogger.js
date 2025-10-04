@@ -13,9 +13,25 @@ import {
   Chip,
   Snackbar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
-import { Add as AddIcon, Upload as UploadIcon } from '@mui/icons-material';
+import { 
+  Add as AddIcon, 
+  Upload as UploadIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
 import { taskAPI, dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -38,6 +54,20 @@ const TaskLogger = () => {
   const [status, setStatus] = useState('Pending');
   const [file, setFile] = useState(null);
   
+  // Today's tasks state
+  const [todaysTasks, setTodaysTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  
+  // Edit task dialog state
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editDate, setEditDate] = useState('');
+  const [editSource, setEditSource] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editService, setEditService] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editStatus, setEditStatus] = useState('');
+  
   // Dropdown options (fetched from API)
   const [sources, setSources] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -46,6 +76,7 @@ const TaskLogger = () => {
   
   // Service filtering based on category
   const [filteredServices, setFilteredServices] = useState([]);
+  const [filteredEditServices, setFilteredEditServices] = useState([]);
 
   // Fetch dropdown values on component mount
   useEffect(() => {
@@ -63,6 +94,18 @@ const TaskLogger = () => {
       setFilteredServices(services);
     }
   }, [category, services]);
+
+  // Filter services when edit category changes
+  useEffect(() => {
+    if (editCategory && services.length > 0) {
+      const filtered = services.filter(svc => 
+        svc.parentValue === editCategory || !svc.parentValue
+      );
+      setFilteredEditServices(filtered);
+    } else {
+      setFilteredEditServices(services);
+    }
+  }, [editCategory, services]);
 
   const fetchDropdownValues = async () => {
     try {
@@ -86,11 +129,35 @@ const TaskLogger = () => {
     }
   };
 
+  // Fetch today's tasks
+  const fetchTodaysTasks = async () => {
+    setTasksLoading(true);
+    try {
+      const response = await taskAPI.getAllTasks();
+      const allTasks = response.data || [];
+      
+      // Filter tasks for today
+      const today = new Date().toISOString().split('T')[0];
+      const todayTasks = allTasks.filter(task => 
+        task.date && task.date.split('T')[0] === today
+      );
+      
+      setTodaysTasks(todayTasks);
+    } catch (error) {
+      console.error('Error fetching today\'s tasks:', error);
+      showSnackbar(t('tasks.errorFetchingTasks') + ': ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
   // Listen for real-time notifications
   useEffect(() => {
     const handleTaskCreated = (data) => {
       frontendLogger.info('Real-time task created notification received', data);
       showSnackbar(`New task created: ${data.task.description}`, 'info');
+      // Refresh today's tasks
+      fetchTodaysTasks();
     };
 
     const handleTaskUpdated = (data) => {
@@ -100,6 +167,8 @@ const TaskLogger = () => {
       } else {
         showSnackbar(`Task updated: ${data.task.description}`, 'info');
       }
+      // Refresh today's tasks
+      fetchTodaysTasks();
     };
 
     // Subscribe to notifications
@@ -111,6 +180,11 @@ const TaskLogger = () => {
       notificationService.off('taskCreated', handleTaskCreated);
       notificationService.off('taskUpdated', handleTaskUpdated);
     };
+  }, []);
+
+  // Fetch today's tasks on component mount
+  useEffect(() => {
+    fetchTodaysTasks();
   }, []);
 
   const showSnackbar = (message, severity = 'success') => {
@@ -149,6 +223,9 @@ const TaskLogger = () => {
       setStatus('Pending');
       setFile(null);
       
+      // Refresh today's tasks
+      fetchTodaysTasks();
+      
       showSnackbar(t('tasks.taskCreatedSuccessfully'), 'success');
     } catch (error) {
       console.error('Error creating task:', error);
@@ -158,13 +235,73 @@ const TaskLogger = () => {
     }
   };
 
+  // Handle task edit
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditDate(task.date ? task.date.split('T')[0] : '');
+    setEditSource(task.source || '');
+    setEditCategory(task.category || '');
+    setEditService(task.service || '');
+    setEditDescription(task.description || '');
+    setEditStatus(task.status || 'Pending');
+    setOpenEditDialog(true);
+  };
+
+  // Handle task update
+  const handleUpdateTask = async () => {
+    try {
+      const updatedTaskData = {
+        date: editDate,
+        source: editSource,
+        category: editCategory,
+        service: editService,
+        description: editDescription,
+        status: editStatus
+      };
+      
+      await taskAPI.updateTask(editingTask.id, updatedTaskData);
+      
+      // Log audit entry
+      auditLog.taskUpdated(editingTask.id, user?.username || 'unknown');
+      
+      setOpenEditDialog(false);
+      setEditingTask(null);
+      
+      // Refresh today's tasks
+      fetchTodaysTasks();
+      
+      showSnackbar(t('tasks.taskUpdatedSuccessfully'), 'success');
+    } catch (error) {
+      console.error('Error updating task:', error);
+      showSnackbar(t('tasks.errorUpdatingTask') + ': ' + (error.response?.data?.message || error.message), 'error');
+    }
+  };
+
+  // Handle task delete
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await taskAPI.deleteTask(taskId);
+      
+      // Log audit entry
+      auditLog.taskDeleted(taskId, user?.username || 'unknown');
+      
+      // Refresh today's tasks
+      fetchTodaysTasks();
+      
+      showSnackbar(t('tasks.taskDeletedSuccessfully'), 'success');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      showSnackbar(t('tasks.errorDeletingTask') + ': ' + (error.response?.data?.message || error.message), 'error');
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Typography variant="h4" gutterBottom>
         {t('tasks.taskLogger')}
       </Typography>
       
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           {t('tasks.logNewTask')}
         </Typography>
@@ -303,6 +440,184 @@ const TaskLogger = () => {
           </Grid>
         </Grid>
       </Paper>
+      
+      {/* Today's Tasks */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Today's Tasks
+        </Typography>
+        
+        {tasksLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : todaysTasks.length === 0 ? (
+          <Typography color="text.secondary" align="center" sx={{ p: 2 }}>
+            No tasks logged today
+          </Typography>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Time</TableCell>
+                  <TableCell>Source</TableCell>
+                  <TableCell>Category</TableCell>
+                  <TableCell>Service</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {todaysTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell>
+                      {task.createdAt ? new Date(task.createdAt).toLocaleTimeString() : 'N/A'}
+                    </TableCell>
+                    <TableCell>{task.source || 'N/A'}</TableCell>
+                    <TableCell>{task.category || 'N/A'}</TableCell>
+                    <TableCell>{task.service || 'N/A'}</TableCell>
+                    <TableCell>{task.description || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={task.status || 'Pending'} 
+                        size="small"
+                        color={
+                          task.status === 'Completed' ? 'success' : 
+                          task.status === 'In Progress' ? 'primary' : 
+                          task.status === 'Cancelled' ? 'error' : 'default'
+                        } 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <IconButton 
+                        size="small" 
+                        color="primary" 
+                        onClick={() => handleEditTask(task)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        color="error" 
+                        onClick={() => handleDeleteTask(task.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+      
+      {/* Edit Task Dialog */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Source</InputLabel>
+                <Select
+                  value={editSource}
+                  onChange={(e) => setEditSource(e.target.value)}
+                  label="Source"
+                >
+                  {sources.map((src) => (
+                    <MenuItem key={src.id || src.value} value={src.value || src}>
+                      {src.value || src}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  label="Category"
+                >
+                  {categories.map((cat) => (
+                    <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
+                      {cat.value || cat}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Service</InputLabel>
+                <Select
+                  value={editService}
+                  onChange={(e) => setEditService(e.target.value)}
+                  label="Service"
+                >
+                  {filteredEditServices.map((svc) => (
+                    <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
+                      {svc.value || svc}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={4}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                required
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  label="Status"
+                >
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="In Progress">In Progress</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button onClick={handleUpdateTask} variant="contained" color="primary">
+            Update Task
+          </Button>
+        </DialogActions>
+      </Dialog>
       
       <Snackbar 
         open={snackbar.open} 
