@@ -3,6 +3,7 @@ const Leave = require('../models/Leave');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const emailService = require('../services/email.service');
+const notificationService = require('../services/notification.service');
 
 const router = express.Router();
 
@@ -57,6 +58,9 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       endDate,
       reason,
     });
+
+    // Notify about leave request
+    notificationService.notifyLeaveRequested(leave);
 
     // Send email notification to admin/supervisor
     try {
@@ -137,6 +141,9 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor', 'Syste
 
     await leave.save();
 
+    // Notify about leave approval
+    notificationService.notifyLeaveApproved(leave);
+
     // Send email notification to employee
     try {
       const employee = await User.findByPk(leave.userId);
@@ -203,6 +210,9 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'System
     leave.approvedAt = new Date();
 
     await leave.save();
+
+    // Notify about leave rejection
+    notificationService.notifyLeaveRejected(leave);
 
     // Send email notification to employee
     try {

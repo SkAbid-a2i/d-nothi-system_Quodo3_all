@@ -1,4 +1,5 @@
 import axios from 'axios';
+import frontendLogger from './frontendLogger';
 
 // Create axios instance
 const api = axios.create({
@@ -11,29 +12,53 @@ const api = axios.create({
 // Add a request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
+    const startTime = Date.now();
+    config.metadata = { startTime };
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    frontendLogger.logApiCall(config.method.toUpperCase(), config.url, 'pending', 0);
     return config;
   },
   (error) => {
+    frontendLogger.error('API Request Error', { error: error.message });
     return Promise.reject(error);
   }
 );
 
-// Add a response interceptor to handle token expiration
+// Add a response interceptor to handle token expiration and log responses
 api.interceptors.response.use(
   (response) => {
+    const duration = Date.now() - response.config.metadata.startTime;
+    frontendLogger.logApiCall(
+      response.config.method.toUpperCase(), 
+      response.config.url, 
+      response.status, 
+      duration
+    );
     return response;
   },
   (error) => {
+    const duration = Date.now() - (error.config?.metadata?.startTime || Date.now());
+    frontendLogger.logApiCall(
+      error.config?.method?.toUpperCase() || 'UNKNOWN', 
+      error.config?.url || 'UNKNOWN', 
+      error.response?.status || 'ERROR', 
+      duration,
+      error
+    );
+    
     if (error.response?.status === 401) {
       // Token expired or invalid, redirect to login
+      frontendLogger.warn('Authentication token expired or invalid, redirecting to login');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    
     return Promise.reject(error);
   }
 );
@@ -65,7 +90,7 @@ export const leaveAPI = {
   getAllLeaves: () => api.get('/leaves'),
   createLeave: (leaveData) => api.post('/leaves', leaveData),
   approveLeave: (id) => api.put(`/leaves/${id}/approve`),
-  rejectLeave: (id, rejectionData) => api.put(`/leaves/${id}/reject`),
+  rejectLeave: (id, rejectionData) => api.put(`/leaves/${id}/reject`, rejectionData),
 };
 
 // Dropdown endpoints
@@ -96,6 +121,13 @@ export const fileAPI = {
   getFiles: () => api.get('/files'),
   downloadFile: (id) => api.get(`/files/${id}/download`),
   deleteFile: (id) => api.delete(`/files/${id}`),
+};
+
+// Log endpoints
+export const logAPI = {
+  getLogs: (params) => api.get('/logs', { params }),
+  getRecentLogs: () => api.get('/logs/recent'),
+  analyzeLogs: (params) => api.get('/logs/analyze', { params }),
 };
 
 export default api;

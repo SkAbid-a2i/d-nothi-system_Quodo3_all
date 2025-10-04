@@ -1,27 +1,9 @@
 const express = require('express');
 const Task = require('../models/Task');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
-const multer = require('multer');
-const path = require('path');
+const notificationService = require('../services/notification.service');
 
 const router = express.Router();
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
-});
 
 // @route   GET /api/tasks
 // @desc    Get tasks (Agent: own tasks, Admin/Supervisor: team tasks)
@@ -40,7 +22,7 @@ router.get('/', authenticate, async (req, res) => {
     }
     // SystemAdmin can see all tasks
     
-    const tasks = await Task.findAll({ where, order: [['date', 'DESC']] });
+    const tasks = await Task.findAll({ where, order: [['createdAt', 'DESC']] });
     res.json(tasks);
   } catch (err) {
     console.error(err);
@@ -49,11 +31,11 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // @route   POST /api/tasks
-// @desc    Create new task
-// @access  Private (Agent, Admin, Supervisor, SystemAdmin)
-router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), upload.array('attachments', 5), async (req, res) => {
+// @desc    Create task
+// @access  Private (Agent, Admin, Supervisor)
+router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
-    const { date, source, category, service, description, status } = req.body;
+    const { date, source, category, service, description, status = 'Pending' } = req.body;
 
     // Create new task
     const task = await Task.create({
@@ -61,32 +43,20 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       source,
       category,
       service,
+      description,
+      status,
       userId: req.user.id,
       userName: req.user.fullName,
-      office: req.user.office,
-      description,
-      status: status || 'Pending',
+      office: req.user.office
     });
 
-    // Add attachments if any
-    if (req.files && req.files.length > 0) {
-      const attachments = req.files.map(file => ({
-        filename: file.originalname,
-        path: file.path,
-        size: file.size,
-      }));
-      
-      task.attachments = attachments;
-      await task.save();
-    }
-
-    // Log the action
-    // TODO: Implement audit logging
+    // Notify about task creation
+    notificationService.notifyTaskCreated(task);
 
     res.status(201).json(task);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error creating task:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -96,7 +66,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, source, category, service, description, status, comment } = req.body;
+    const { date, source, category, service, description, status, comments = [], attachments = [] } = req.body;
 
     // Check if task exists
     const task = await Task.findByPk(id);
@@ -105,42 +75,31 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     // Check permissions
-    if (req.user.role === 'Agent' && task.userId !== req.user.id) {
+    if (req.user.role !== 'SystemAdmin' && 
+        req.user.role !== 'Admin' && 
+        task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    if ((req.user.role === 'Supervisor' || req.user.role === 'Admin') && task.office !== req.user.office) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    // Update task fields
+    // Update task
     task.date = date || task.date;
     task.source = source || task.source;
     task.category = category || task.category;
     task.service = service || task.service;
     task.description = description || task.description;
     task.status = status || task.status;
-
-    // Add comment if provided
-    if (comment) {
-      const comments = [...task.comments, {
-        text: comment,
-        userId: req.user.id,
-        userName: req.user.fullName,
-        createdAt: new Date()
-      }];
-      task.comments = comments;
-    }
+    task.comments = comments;
+    task.attachments = attachments;
 
     await task.save();
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Notify about task update
+    notificationService.notifyTaskUpdated(task);
 
     res.json(task);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error updating task:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -158,23 +117,22 @@ router.delete('/:id', authenticate, async (req, res) => {
     }
 
     // Check permissions
-    if (req.user.role === 'Agent' && task.userId !== req.user.id) {
+    if (req.user.role !== 'SystemAdmin' && 
+        req.user.role !== 'Admin' && 
+        task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    if ((req.user.role === 'Supervisor' || req.user.role === 'Admin') && task.office !== req.user.office) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
+    // Delete task
     await task.destroy();
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Notify about task deletion
+    notificationService.notifyTaskUpdated({ ...task, deleted: true });
 
-    res.json({ message: 'Task deleted successfully' });
+    res.json({ message: 'Task removed' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error deleting task:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

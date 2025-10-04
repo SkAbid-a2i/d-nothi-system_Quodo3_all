@@ -10,355 +10,266 @@ import {
   InputLabel, 
   Select, 
   MenuItem,
-  Autocomplete,
-  LinearProgress,
-  Alert
+  Chip,
+  Snackbar,
+  Alert,
+  CircularProgress
 } from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Upload as UploadIcon
-} from '@mui/icons-material';
-import { dropdownAPI, taskAPI } from '../services/api';
+import { Add as AddIcon, Upload as UploadIcon } from '@mui/icons-material';
+import { taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
+import notificationService from '../services/notificationService';
+import frontendLogger from '../services/frontendLogger';
 
 const TaskLogger = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [sources, setSources] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [offices, setOffices] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [selectedSource, setSelectedSource] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedOffice, setSelectedOffice] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  // Form state
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [source, setSource] = useState('');
+  const [category, setCategory] = useState('');
+  const [service, setService] = useState('');
   const [description, setDescription] = useState('');
-  const [userInfo, setUserInfo] = useState('');
   const [status, setStatus] = useState('Pending');
-  const [comment, setComment] = useState('');
   const [file, setFile] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Dropdown options
+  const sources = ['Email', 'Phone', 'Walk-in', 'Online Form', 'Other'];
+  const categories = ['IT Support', 'HR', 'Finance', 'Administration', 'Other'];
+  const services = ['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other'];
+  const statuses = ['Pending', 'In Progress', 'Completed', 'Cancelled'];
 
-  // Fetch dropdown values on component mount
+  // Listen for real-time notifications
   useEffect(() => {
-    fetchDropdownValues();
+    const handleTaskCreated = (data) => {
+      frontendLogger.info('Real-time task created notification received', data);
+      showSnackbar(`New task created: ${data.task.description}`, 'info');
+    };
+
+    const handleTaskUpdated = (data) => {
+      frontendLogger.info('Real-time task updated notification received', data);
+      if (data.deleted) {
+        showSnackbar(`Task deleted: ${data.description}`, 'warning');
+      } else {
+        showSnackbar(`Task updated: ${data.task.description}`, 'info');
+      }
+    };
+
+    // Subscribe to notifications
+    notificationService.onTaskCreated(handleTaskCreated);
+    notificationService.onTaskUpdated(handleTaskUpdated);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('taskCreated', handleTaskCreated);
+      notificationService.off('taskUpdated', handleTaskUpdated);
+    };
   }, []);
 
-  const fetchDropdownValues = async () => {
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
-    try {
-      const [sourcesRes, categoriesRes, officesRes] = await Promise.all([
-        dropdownAPI.getDropdownValues('Source'),
-        dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office')
-      ]);
-      
-      setSources(sourcesRes.data);
-      setCategories(categoriesRes.data);
-      setOffices(officesRes.data);
-    } catch (error) {
-      console.error('Error fetching dropdown values:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch services when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchServicesForCategory(selectedCategory.value);
-    } else {
-      setServices([]);
-      setSelectedService(null);
-    }
-  }, [selectedCategory]);
-
-  const fetchServicesForCategory = async (categoryValue) => {
-    try {
-      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
-      setServices(response.data);
-    } catch (error) {
-      console.error('Error fetching services:', error);
-    }
-  };
-
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      // Check if file size would exceed quota
-      const newUsedStorage = 50 + (selectedFile.size / (1024 * 1024)); // Convert to MB
-      if (newUsedStorage > 500) {
-        alert('File upload would exceed your storage quota!');
-        return;
-      }
-      
-      setFile(selectedFile);
-      // Simulate upload progress
-      simulateUploadProgress();
-    }
-  };
-
-  const simulateUploadProgress = () => {
-    setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setSuccess('');
     
     try {
-      // Prepare task data
       const taskData = {
-        date: new Date().toISOString(),
-        source: selectedSource?.value,
-        category: selectedCategory?.value,
-        service: selectedService?.value,
-        userInfo,
-        office: selectedOffice?.value,
+        date,
+        source,
+        category,
+        service,
         description,
-        status,
-        comment,
-        file: file ? file.name : null
+        status
       };
       
-      // Create task (this will automatically create audit log on backend)
       const response = await taskAPI.createTask(taskData);
       
       // Log audit entry
       auditLog.taskCreated(response.data.id, user?.username || 'unknown');
       
       // Reset form
-      setSelectedSource(null);
-      setSelectedCategory(null);
-      setSelectedService(null);
-      setSelectedOffice(null);
+      setDate(new Date().toISOString().split('T')[0]);
+      setSource('');
+      setCategory('');
+      setService('');
       setDescription('');
-      setUserInfo('');
       setStatus('Pending');
-      setComment('');
       setFile(null);
-      setUploadProgress(0);
       
-      setSuccess('Task created successfully!');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      showSnackbar(t('tasks.taskCreatedSuccessfully'), 'success');
     } catch (error) {
       console.error('Error creating task:', error);
-      setError('Failed to create task. Please try again.');
+      showSnackbar(t('tasks.errorCreatingTask') + ': ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
       <Typography variant="h4" gutterBottom>
         {t('tasks.taskLogger')}
       </Typography>
       
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>
-          {t('tasks.createNewTask')}
+          {t('tasks.logNewTask')}
         </Typography>
         
-        {loading && (
-          <Box sx={{ width: '100%', mb: 2 }}>
-            <LinearProgress />
-          </Box>
-        )}
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Date & Time"
-                type="datetime-local"
-                defaultValue={new Date().toISOString().slice(0, 16)}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                options={sources}
-                getOptionLabel={(option) => option.value}
-                value={selectedSource}
-                onChange={(event, newValue) => setSelectedSource(newValue)}
-                renderInput={(params) => (
-                  <TextField {...params} label={t('tasks.source')} fullWidth />
-                )}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                options={categories}
-                getOptionLabel={(option) => option.value}
-                value={selectedCategory}
-                onChange={(event, newValue) => setSelectedCategory(newValue)}
-                renderInput={(params) => (
-                  <TextField {...params} label={t('tasks.category')} fullWidth />
-                )}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                options={services}
-                getOptionLabel={(option) => option.value}
-                value={selectedService}
-                onChange={(event, newValue) => setSelectedService(newValue)}
-                disabled={!selectedCategory}
-                renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label={t('tasks.service')} 
-                    fullWidth 
-                    disabled={!selectedCategory}
-                  />
-                )}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('tasks.assignedTo')}
-                value={userInfo}
-                onChange={(e) => setUserInfo(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                options={offices}
-                getOptionLabel={(option) => option.value}
-                value={selectedOffice}
-                onChange={(event, newValue) => setSelectedOffice(newValue)}
-                renderInput={(params) => (
-                  <TextField {...params} label={t('users.office')} fullWidth />
-                )}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label={t('tasks.description')}
-                multiline
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>{t('tasks.status')}</InputLabel>
-                <Select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  label="Status"
-                >
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="In Progress">In Progress</MenuItem>
-                  <MenuItem value="Completed">Completed</MenuItem>
-                  <MenuItem value="Cancelled">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label={t('tasks.description')}
-                multiline
-                rows={2}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Box sx={{ mb: 2 }}>
-                <input
-                  accept="*/*"
-                  style={{ display: 'none' }}
-                  id="file-upload"
-                  type="file"
-                  onChange={handleFileChange}
-                />
-                <label htmlFor="file-upload">
-                  <Button
-                    variant="outlined"
-                    component="span"
-                    startIcon={<UploadIcon />}
-                    fullWidth
-                  >
-                    {t('common.upload')}
-                  </Button>
-                </label>
-                
-                {file && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      Selected file: {file.name}
-                    </Typography>
-                    <LinearProgress variant="determinate" value={uploadProgress} />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                      <Typography variant="body2">
-                        {Math.round((50 / 500) * 100)}% of quota used
-                      </Typography>
-                      <Typography variant="body2">
-                        50 MB / 500 MB
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Button 
-                variant="contained" 
-                startIcon={<AddIcon />} 
-                type="submit"
-                fullWidth
-                size="large"
-              >
-                {t('common.submit')}
-              </Button>
-            </Grid>
+        <Grid container spacing={2} component="form" onSubmit={handleSubmit}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={t('tasks.date')}
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
           </Grid>
-        </form>
+          
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth required>
+              <InputLabel>{t('tasks.source')}</InputLabel>
+              <Select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                label={t('tasks.source')}
+              >
+                {sources.map((src) => (
+                  <MenuItem key={src} value={src}>{src}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth required>
+              <InputLabel>{t('tasks.category')}</InputLabel>
+              <Select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                label={t('tasks.category')}
+              >
+                {categories.map((cat) => (
+                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth required>
+              <InputLabel>{t('tasks.service')}</InputLabel>
+              <Select
+                value={service}
+                onChange={(e) => setService(e.target.value)}
+                label={t('tasks.service')}
+              >
+                {services.map((svc) => (
+                  <MenuItem key={svc} value={svc}>{svc}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('tasks.description')}
+              multiline
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>{t('tasks.status')}</InputLabel>
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                label={t('tasks.status')}
+              >
+                {statuses.map((stat) => (
+                  <MenuItem key={stat} value={stat}>
+                    <Chip 
+                      label={stat} 
+                      size="small" 
+                      color={
+                        stat === 'Completed' ? 'success' : 
+                        stat === 'In Progress' ? 'primary' : 
+                        stat === 'Cancelled' ? 'error' : 'default'
+                      } 
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              component="label"
+              startIcon={<UploadIcon />}
+            >
+              {t('tasks.uploadFile')}
+              <input
+                type="file"
+                hidden
+                onChange={(e) => setFile(e.target.files[0])}
+              />
+            </Button>
+            {file && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {file.name}
+              </Typography>
+            )}
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+              disabled={loading}
+            >
+              {loading ? t('common.creating') : t('tasks.createTask')}
+            </Button>
+          </Grid>
+        </Grid>
       </Paper>
+      
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

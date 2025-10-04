@@ -17,6 +17,7 @@ import ReportManagement from './components/ReportManagement';
 import Settings from './components/Settings';
 import Help from './components/Help';
 import Files from './components/Files';
+import LogMonitoring from './components/LogMonitoring';
 
 // Create theme
 const theme = createTheme({
@@ -120,6 +121,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Help />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/logs" 
+                element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                    <LogMonitoring />
                   </ProtectedRoute>
                 } 
               />

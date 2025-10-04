@@ -23,11 +23,13 @@ import {
   Assignment as TaskIcon,
   EventAvailable as LeaveIcon,
   People as UserIcon,
+  BarChart as ReportIcon,
   Settings as SettingsIcon,
   Help as HelpIcon,
   Logout as LogoutIcon,
   Brightness4 as DarkModeIcon,
-  Brightness7 as LightModeIcon
+  Brightness7 as LightModeIcon,
+  BugReport as LogIcon
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -46,12 +48,18 @@ const Layout = () => {
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.files'), icon: <TaskIcon />, path: '/files' },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
+    { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },
   ];
 
   // Add team tasks for Admin/Supervisor
   if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
     menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TaskIcon />, path: '/team-tasks' });
+  }
+
+  // Add log monitoring for SystemAdmin
+  if (user && user.role === 'SystemAdmin') {
+    menuItems.push({ text: 'Log Monitoring', icon: <LogIcon />, path: '/logs' });
   }
 
   const handleLogout = () => {

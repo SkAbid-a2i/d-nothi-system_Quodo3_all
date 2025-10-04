@@ -11,6 +11,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Import logger service
+const logger = require('./services/logger.service');
+// Import notification service
+const notificationService = require('./services/notification.service');
+
 // Database connection
 const sequelize = require('./config/database');
 
@@ -29,6 +34,35 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
+
+// Custom logging middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  
+  // Log request
+  logger.info('Incoming request', {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    timestamp: new Date().toISOString()
+  });
+
+  // Log response
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    logger.info('Request completed', {
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  next();
+});
+
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -37,18 +71,31 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 sequelize
   .authenticate()
   .then(() => {
-    console.log('Connected to TiDB database');
+    logger.info('Connected to TiDB database');
   })
   .catch(err => {
-    console.error('Unable to connect to TiDB database:', err);
+    logger.error('Unable to connect to TiDB database', { error: err.message, stack: err.stack });
   });
 
 // Simple route for testing
 app.get('/', (req, res) => {
+  logger.info('Root endpoint accessed');
   res.json({ 
     message: 'Welcome to Quodo3 API',
-    status: 'Server is running'
+    status: 'Server is running',
+    connectedClients: notificationService.getConnectedClients()
   });
+});
+
+// SSE endpoint for real-time notifications (must be after middleware)
+app.get('/api/notifications', (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) {
+    return res.status(400).json({ message: 'userId is required' });
+  }
+  
+  logger.info('User connected to notifications', { userId });
+  notificationService.addClient(userId, res);
 });
 
 // Import route files
@@ -59,19 +106,61 @@ const leaveRoutes = require('./routes/leave.routes');
 const dropdownRoutes = require('./routes/dropdown.routes');
 const reportRoutes = require('./routes/report.routes');
 const auditRoutes = require('./routes/audit.routes');
+const logRoutes = require('./routes/log.routes');
 
 // Use routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/leaves', leaveRoutes);
-app.use('/api/dropdowns', dropdownRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/audit', auditRoutes);
+app.use('/api/auth', (req, res, next) => {
+  logger.info('Auth routes accessed', { endpoint: '/api/auth' + req.url });
+  next();
+}, authRoutes);
+
+app.use('/api/users', (req, res, next) => {
+  logger.info('User routes accessed', { endpoint: '/api/users' + req.url });
+  next();
+}, userRoutes);
+
+app.use('/api/tasks', (req, res, next) => {
+  logger.info('Task routes accessed', { endpoint: '/api/tasks' + req.url });
+  next();
+}, taskRoutes);
+
+app.use('/api/leaves', (req, res, next) => {
+  logger.info('Leave routes accessed', { endpoint: '/api/leaves' + req.url });
+  next();
+}, leaveRoutes);
+
+app.use('/api/dropdowns', (req, res, next) => {
+  logger.info('Dropdown routes accessed', { endpoint: '/api/dropdowns' + req.url });
+  next();
+}, dropdownRoutes);
+
+app.use('/api/reports', (req, res, next) => {
+  logger.info('Report routes accessed', { endpoint: '/api/reports' + req.url });
+  next();
+}, reportRoutes);
+
+app.use('/api/audit', (req, res, next) => {
+  logger.info('Audit routes accessed', { endpoint: '/api/audit' + req.url });
+  next();
+}, auditRoutes);
+
+app.use('/api/logs', (req, res, next) => {
+  logger.info('Log routes accessed', { endpoint: '/api/logs' + req.url });
+  next();
+}, logRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.stack);
+  logger.error('Unhandled error', { 
+    error: err.message, 
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    params: req.params,
+    query: req.query
+  });
+  
   res.status(500).json({ 
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
@@ -80,25 +169,45 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use('*', (req, res) => {
+  logger.warn('Route not found', { url: req.originalUrl, method: req.method });
   res.status(404).json({ message: 'Route not found' });
 });
 
 // Start server
-app.listen(PORT, async () => {
-  console.log(`Server is running on port ${PORT}`);
+const server = app.listen(PORT, async () => {
+  logger.info(`Server is running on port ${PORT}`);
   
   // Sync database models
   try {
     // For TiDB, we'll sync without altering existing tables to avoid constraint issues
     await sequelize.sync({ alter: false });
-    console.log('Database synced successfully with TiDB');
+    logger.info('Database synced successfully with TiDB');
   } catch (error) {
-    console.error('Error syncing database with TiDB:', error);
+    logger.error('Error syncing database with TiDB', { error: error.message, stack: error.stack });
   }
   
   // Test email service
-  const emailService = require('./services/email.service');
-  console.log('Email service initialized');
+  try {
+    const emailService = require('./services/email.service');
+    logger.info('Email service initialized');
+  } catch (error) {
+    logger.error('Failed to initialize email service', { error: error.message, stack: error.stack });
+  }
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Process terminated');
+  });
 });
 
 module.exports = app;

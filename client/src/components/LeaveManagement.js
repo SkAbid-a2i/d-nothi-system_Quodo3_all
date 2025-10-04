@@ -24,7 +24,9 @@ import {
   DialogActions,
   Alert,
   Tabs,
-  Tab
+  Tab,
+  Snackbar,
+  CircularProgress
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -40,6 +42,8 @@ import { leaveAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
+import notificationService from '../services/notificationService';
+import frontendLogger from '../services/frontendLogger';
 
 const LeaveManagement = () => {
   const { user } = useAuth();
@@ -49,6 +53,7 @@ const LeaveManagement = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -84,6 +89,50 @@ const LeaveManagement = () => {
     fetchLeaves();
   }, [fetchLeaves]);
   
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleLeaveRequested = (data) => {
+      frontendLogger.info('Real-time leave requested notification received', data);
+      showSnackbar(`New leave request from ${data.leave.userName}`, 'info');
+      // Refresh leave list
+      fetchLeaves();
+    };
+
+    const handleLeaveApproved = (data) => {
+      frontendLogger.info('Real-time leave approved notification received', data);
+      showSnackbar(`Your leave request has been approved`, 'success');
+      // Refresh leave list
+      fetchLeaves();
+    };
+
+    const handleLeaveRejected = (data) => {
+      frontendLogger.info('Real-time leave rejected notification received', data);
+      showSnackbar(`Your leave request has been rejected`, 'warning');
+      // Refresh leave list
+      fetchLeaves();
+    };
+
+    // Subscribe to notifications
+    notificationService.onLeaveRequested(handleLeaveRequested);
+    notificationService.onLeaveApproved(handleLeaveApproved);
+    notificationService.onLeaveRejected(handleLeaveRejected);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('leaveRequested', handleLeaveRequested);
+      notificationService.off('leaveApproved', handleLeaveApproved);
+      notificationService.off('leaveRejected', handleLeaveRejected);
+    };
+  }, [fetchLeaves]);
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -167,6 +216,7 @@ const LeaveManagement = () => {
       setOpenApproveDialog(false);
       setSelectedLeave(null);
       setSuccess('Leave request approved successfully!');
+      showSnackbar('Leave request approved successfully!', 'success');
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error approving leave:', error);
@@ -202,6 +252,7 @@ const LeaveManagement = () => {
       setOpenRejectDialog(false);
       setSelectedLeave(null);
       setSuccess('Leave request rejected successfully!');
+      showSnackbar('Leave request rejected successfully!', 'success');
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error rejecting leave:', error);
@@ -245,6 +296,7 @@ const LeaveManagement = () => {
       setReason('');
       
       setSuccess('Leave request submitted successfully!');
+      showSnackbar('Leave request submitted successfully!', 'success');
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error submitting leave:', error);
@@ -609,6 +661,22 @@ const LeaveManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Snackbar for real-time notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
