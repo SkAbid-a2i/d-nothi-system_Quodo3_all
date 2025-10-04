@@ -229,10 +229,13 @@ const LeaveManagement = () => {
         auditLog.leaveApproved(selectedLeave.id, user.username || 'unknown');
       }
       
+      // Make sure dialog closes
       setOpenApproveDialog(false);
       setSelectedLeave(null);
       setSuccess('Leave request approved successfully!');
       showSnackbar('Leave request approved successfully!', 'success');
+      // Refresh leave list to ensure UI is updated
+      fetchLeaves();
     } catch (error) {
       console.error('Error approving leave:', error);
       const errorMessage = 'Failed to approve leave request: ' + (error.response?.data?.message || error.message);
@@ -272,10 +275,13 @@ const LeaveManagement = () => {
         auditLog.leaveRejected(selectedLeave.id, user.username || 'unknown', 'Rejected by admin');
       }
       
+      // Make sure dialog closes
       setOpenRejectDialog(false);
       setSelectedLeave(null);
       setSuccess('Leave request rejected successfully!');
       showSnackbar('Leave request rejected successfully!', 'success');
+      // Refresh leave list to ensure UI is updated
+      fetchLeaves();
     } catch (error) {
       console.error('Error rejecting leave:', error);
       const errorMessage = 'Failed to reject leave request: ' + (error.response?.data?.message || error.message);

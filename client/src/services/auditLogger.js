@@ -82,6 +82,11 @@ export const auditLog = {
       description: `Leave request created by ${creator}` 
     }),
     
+  leaveFetched: (count, fetcher) => 
+    createAuditLog('FETCH', 'LEAVE', { 
+      description: `Leave requests fetched by ${fetcher}. Total: ${count}` 
+    }),
+    
   leaveApproved: (leaveId, approver) => 
     createAuditLog('APPROVE', 'LEAVE', { 
       resourceId: leaveId, 
@@ -137,3 +142,5 @@ export const auditLog = {
 };
 
 export default auditLog;
+
+
