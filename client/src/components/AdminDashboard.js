@@ -31,7 +31,6 @@ import {
 import { 
   Assignment, 
   EventAvailable, 
-  Notifications,
   Search as SearchIcon,
   Download as DownloadIcon,
   PieChart as PieChartIcon,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -65,7 +65,15 @@ const LeaveManagement = () => {
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   
-  const fetchLeaves = React.useCallback(async () => {
+  const showSnackbar = useCallback((message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const fetchLeaves = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -126,14 +134,6 @@ const LeaveManagement = () => {
       notificationService.off('leaveRejected', handleLeaveRejected);
     };
   }, [fetchLeaves]);
-
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
