@@ -16,7 +16,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { Add as AddIcon, Upload as UploadIcon } from '@mui/icons-material';
-import { taskAPI } from '../services/api';
+import { taskAPI, dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
@@ -38,11 +38,53 @@ const TaskLogger = () => {
   const [status, setStatus] = useState('Pending');
   const [file, setFile] = useState(null);
   
-  // Dropdown options
-  const sources = ['Email', 'Phone', 'Walk-in', 'Online Form', 'Other'];
-  const categories = ['IT Support', 'HR', 'Finance', 'Administration', 'Other'];
-  const services = ['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other'];
-  const statuses = ['Pending', 'In Progress', 'Completed', 'Cancelled'];
+  // Dropdown options (fetched from API)
+  const [sources, setSources] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [statuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
+  
+  // Service filtering based on category
+  const [filteredServices, setFilteredServices] = useState([]);
+
+  // Fetch dropdown values on component mount
+  useEffect(() => {
+    fetchDropdownValues();
+  }, []);
+
+  // Filter services when category changes
+  useEffect(() => {
+    if (category && services.length > 0) {
+      const filtered = services.filter(svc => 
+        svc.parentValue === category || !svc.parentValue
+      );
+      setFilteredServices(filtered);
+    } else {
+      setFilteredServices(services);
+    }
+  }, [category, services]);
+
+  const fetchDropdownValues = async () => {
+    try {
+      // Fetch sources
+      const sourcesResponse = await dropdownAPI.getDropdownValues('Source');
+      setSources(sourcesResponse.data || []);
+      
+      // Fetch categories
+      const categoriesResponse = await dropdownAPI.getDropdownValues('Category');
+      setCategories(categoriesResponse.data || []);
+      
+      // Fetch services
+      const servicesResponse = await dropdownAPI.getDropdownValues('Service');
+      setServices(servicesResponse.data || []);
+    } catch (error) {
+      console.error('Error fetching dropdown values:', error);
+      // Fallback to hardcoded values if API fails
+      setSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
+      setCategories(['IT Support', 'HR', 'Finance', 'Administration', 'Other']);
+      setServices(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
+    }
+  };
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -149,7 +191,9 @@ const TaskLogger = () => {
                 label={t('tasks.source')}
               >
                 {sources.map((src) => (
-                  <MenuItem key={src} value={src}>{src}</MenuItem>
+                  <MenuItem key={src.value || src} value={src.value || src}>
+                    {src.value || src}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -164,7 +208,9 @@ const TaskLogger = () => {
                 label={t('tasks.category')}
               >
                 {categories.map((cat) => (
-                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                  <MenuItem key={cat.value || cat} value={cat.value || cat}>
+                    {cat.value || cat}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -178,8 +224,10 @@ const TaskLogger = () => {
                 onChange={(e) => setService(e.target.value)}
                 label={t('tasks.service')}
               >
-                {services.map((svc) => (
-                  <MenuItem key={svc} value={svc}>{svc}</MenuItem>
+                {filteredServices.map((svc) => (
+                  <MenuItem key={svc.value || svc} value={svc.value || svc}>
+                    {svc.value || svc}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>

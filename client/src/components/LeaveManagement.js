@@ -234,7 +234,8 @@ const LeaveManagement = () => {
         return;
       }
       
-      await leaveAPI.rejectLeave(selectedLeave.id, { reason: 'Rejected by admin' });
+      // Include rejection reason in the request
+      await leaveAPI.rejectLeave(selectedLeave.id, { rejectionReason: 'Rejected by admin' });
       
       // Update leave status to rejected
       setLeaves(leaves.map(leave => 

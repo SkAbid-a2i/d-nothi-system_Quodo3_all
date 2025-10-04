@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Grid, 
   Paper, 
@@ -22,7 +22,8 @@ import {
   Chip,
   Tabs,
   Tab,
-  IconButton
+  IconButton,
+  CircularProgress
 } from '@mui/material';
 import { 
   Assignment, 
@@ -35,27 +36,40 @@ import {
   BarChart as BarChartIcon,
   ShowChart as LineChartIcon
 } from '@mui/icons-material';
+import { taskAPI, leaveAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const AgentDashboard = () => {
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [leaves, setLeaves] = useState([]);
 
-  // Mock data for tasks
-  const tasks = [
-    { id: 1, date: '2025-09-28', source: 'Email', category: 'IT Support', service: 'Hardware', status: 'Completed' },
-    { id: 2, date: '2025-09-29', source: 'Phone', category: 'HR', service: 'Leave', status: 'In Progress' },
-    { id: 3, date: '2025-09-30', source: 'Walk-in', category: 'Finance', service: 'Billing', status: 'Pending' },
-    { id: 4, date: '2025-10-01', source: 'Email', category: 'IT Support', service: 'Software', status: 'Completed' },
-    { id: 5, date: '2025-10-02', source: 'Phone', category: 'HR', service: 'Recruitment', status: 'Pending' },
-  ];
+  // Fetch tasks and leaves on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  // Mock data for leaves
-  const leaves = [
-    { id: 1, startDate: '2025-10-15', endDate: '2025-10-17', reason: 'Personal work', status: 'Approved' },
-    { id: 2, startDate: '2025-11-05', endDate: '2025-11-06', reason: 'Medical appointment', status: 'Pending' },
-  ];
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch tasks
+      const tasksResponse = await taskAPI.getAllTasks();
+      setTasks(tasksResponse.data || []);
+      
+      // Fetch leaves
+      const leavesResponse = await leaveAPI.getAllLeaves();
+      setLeaves(leavesResponse.data || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleExport = (format) => {
     // Implement export functionality
@@ -66,11 +80,29 @@ const AgentDashboard = () => {
     setActiveTab(newValue);
   };
 
+  // Filter tasks based on search term
+  const filteredTasks = tasks.filter(task => 
+    task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.service.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filter leaves based on search term
+  const filteredLeaves = leaves.filter(leave => 
+    leave.reason.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
         Agent Dashboard
       </Typography>
+      
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <CircularProgress />
+        </Box>
+      )}
       
       <Grid container spacing={3}>
         {/* Task Summary Cards */}
@@ -80,7 +112,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Assignment sx={{ mr: 2, color: 'primary.main' }} />
                 <Typography variant="h5" component="div">
-                  12
+                  {tasks.length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -99,7 +131,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <EventAvailable sx={{ mr: 2, color: 'secondary.main' }} />
                 <Typography variant="h5" component="div">
-                  3
+                  {leaves.filter(l => l.status === 'Pending').length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -254,9 +286,9 @@ const AgentDashboard = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {tasks.map((task) => (
+                    {filteredTasks.map((task) => (
                       <TableRow key={task.id}>
-                        <TableCell>{task.date}</TableCell>
+                        <TableCell>{new Date(task.date).toLocaleDateString()}</TableCell>
                         <TableCell>{task.source}</TableCell>
                         <TableCell>{task.category}</TableCell>
                         <TableCell>{task.service}</TableCell>
@@ -292,10 +324,10 @@ const AgentDashboard = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {leaves.map((leave) => (
+                      {filteredLeaves.map((leave) => (
                         <TableRow key={leave.id}>
-                          <TableCell>{leave.startDate}</TableCell>
-                          <TableCell>{leave.endDate}</TableCell>
+                          <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
                           <TableCell>{leave.reason}</TableCell>
                           <TableCell>
                             <Chip 
