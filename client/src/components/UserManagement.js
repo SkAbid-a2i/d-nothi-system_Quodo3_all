@@ -68,6 +68,19 @@ const UserManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dropdownToDelete, setDropdownToDelete] = useState(null);
   
+  // Permission templates state
+  const [permissionTemplates, setPermissionTemplates] = useState([]);
+  const [templateName, setTemplateName] = useState('');
+  const [templatePermissions, setTemplatePermissions] = useState({
+    manageTasks: true,
+    editTasks: true,
+    deleteTasks: true,
+    manageLeaves: true,
+    manageUsers: true,
+    manageDropdowns: true
+  });
+  const [editingTemplate, setEditingTemplate] = useState(null);
+
   // Form state
   const [formData, setFormData] = useState({
     fullName: '',
@@ -378,6 +391,70 @@ const UserManagement = () => {
     setEditingDropdown(null);
   };
 
+  // Permission template handlers
+  const handleSaveTemplate = () => {
+    if (!templateName.trim()) {
+      setError('Template name is required');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+
+    const newTemplate = {
+      id: editingTemplate ? editingTemplate.id : Date.now(),
+      name: templateName,
+      permissions: { ...templatePermissions }
+    };
+
+    if (editingTemplate) {
+      setPermissionTemplates(templates => 
+        templates.map(t => t.id === editingTemplate.id ? newTemplate : t)
+      );
+      setSuccess('Template updated successfully!');
+    } else {
+      setPermissionTemplates(templates => [...templates, newTemplate]);
+      setSuccess('Template created successfully!');
+    }
+
+    // Reset form
+    setTemplateName('');
+    setTemplatePermissions({
+      manageTasks: true,
+      editTasks: true,
+      deleteTasks: true,
+      manageLeaves: true,
+      manageUsers: true,
+      manageDropdowns: true
+    });
+    setEditingTemplate(null);
+
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const handleEditTemplate = (template) => {
+    setTemplateName(template.name);
+    setTemplatePermissions({ ...template.permissions });
+    setEditingTemplate(template);
+  };
+
+  const handleDeleteTemplate = (templateId) => {
+    setPermissionTemplates(templates => templates.filter(t => t.id !== templateId));
+    setSuccess('Template deleted successfully!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const handleCancelTemplate = () => {
+    setTemplateName('');
+    setTemplatePermissions({
+      manageTasks: true,
+      editTasks: true,
+      deleteTasks: true,
+      manageLeaves: true,
+      manageUsers: true,
+      manageDropdowns: true
+    });
+    setEditingTemplate(null);
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -646,6 +723,8 @@ const UserManagement = () => {
                       fullWidth
                       label="Template Name"
                       placeholder="e.g., Supervisor Template"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -655,37 +734,85 @@ const UserManagement = () => {
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6} md={4}>
                         <FormControlLabel
-                          control={<Switch defaultChecked />}
+                          control={
+                            <Switch 
+                              checked={templatePermissions.manageTasks}
+                              onChange={(e) => setTemplatePermissions({
+                                ...templatePermissions,
+                                manageTasks: e.target.checked
+                              })}
+                            />
+                          }
                           label={t('tasks.title')}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={4}>
                         <FormControlLabel
-                          control={<Switch defaultChecked />}
+                          control={
+                            <Switch 
+                              checked={templatePermissions.editTasks}
+                              onChange={(e) => setTemplatePermissions({
+                                ...templatePermissions,
+                                editTasks: e.target.checked
+                              })}
+                            />
+                          }
                           label={`${t('common.edit')} ${t('tasks.title')}`}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={4}>
                         <FormControlLabel
-                          control={<Switch defaultChecked />}
+                          control={
+                            <Switch 
+                              checked={templatePermissions.deleteTasks}
+                              onChange={(e) => setTemplatePermissions({
+                                ...templatePermissions,
+                                deleteTasks: e.target.checked
+                              })}
+                            />
+                          }
                           label={`${t('common.delete')} ${t('tasks.title')}`}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={4}>
                         <FormControlLabel
-                          control={<Switch defaultChecked />}
+                          control={
+                            <Switch 
+                              checked={templatePermissions.manageLeaves}
+                              onChange={(e) => setTemplatePermissions({
+                                ...templatePermissions,
+                                manageLeaves: e.target.checked
+                              })}
+                            />
+                          }
                           label={`${t('common.manage')} ${t('leaves.title')}`}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={4}>
                         <FormControlLabel
-                          control={<Switch defaultChecked />}
+                          control={
+                            <Switch 
+                              checked={templatePermissions.manageUsers}
+                              onChange={(e) => setTemplatePermissions({
+                                ...templatePermissions,
+                                manageUsers: e.target.checked
+                              })}
+                            />
+                          }
                           label={`${t('common.manage')} ${t('users.title')}`}
                         />
                       </Grid>
                       <Grid item xs={12} sm={6} md={4}>
                         <FormControlLabel
-                          control={<Switch defaultChecked />}
+                          control={
+                            <Switch 
+                              checked={templatePermissions.manageDropdowns}
+                              onChange={(e) => setTemplatePermissions({
+                                ...templatePermissions,
+                                manageDropdowns: e.target.checked
+                              })}
+                            />
+                          }
                           label={`${t('common.manage')} ${t('users.dropdownManagement')}`}
                         />
                       </Grid>
@@ -693,10 +820,17 @@ const UserManagement = () => {
                   </Grid>
                   <Grid item xs={12}>
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Button variant="contained" startIcon={<SaveIcon />}>
+                      <Button 
+                        variant="contained" 
+                        startIcon={<SaveIcon />}
+                        onClick={handleSaveTemplate}
+                      >
                         Save Template
                       </Button>
-                      <Button variant="outlined">
+                      <Button 
+                        variant="outlined"
+                        onClick={handleCancelTemplate}
+                      >
                         Cancel
                       </Button>
                     </Box>
@@ -717,30 +851,31 @@ const UserManagement = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        <TableRow>
-                          <TableCell>Admin Template</TableCell>
-                          <TableCell>Full Access</TableCell>
-                          <TableCell>
-                            <IconButton size="small">
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton size="small">
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell>Supervisor Template</TableCell>
-                          <TableCell>Limited Access</TableCell>
-                          <TableCell>
-                            <IconButton size="small">
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton size="small">
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
+                        {permissionTemplates.map((template) => (
+                          <TableRow key={template.id}>
+                            <TableCell>{template.name}</TableCell>
+                            <TableCell>
+                              {Object.entries(template.permissions)
+                                .filter(([key, value]) => value)
+                                .map(([key]) => key)
+                                .join(', ')}
+                            </TableCell>
+                            <TableCell>
+                              <IconButton 
+                                size="small"
+                                onClick={() => handleEditTemplate(template)}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton 
+                                size="small"
+                                onClick={() => handleDeleteTemplate(template.id)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </TableContainer>
