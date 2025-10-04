@@ -294,24 +294,6 @@ const AgentDashboard = () => {
     }));
   };
 
-  // Get team performance data
-  const getTeamPerformanceData = () => {
-    if (!tasks || tasks.length === 0) return [];
-    
-    // Group tasks by status
-    const statusCount = {};
-    tasks.forEach(task => {
-      const status = task.status || 'Pending';
-      statusCount[status] = (statusCount[status] || 0) + 1;
-    });
-    
-    // Convert to chart data format
-    return Object.keys(statusCount).map(status => ({
-      name: status,
-      count: statusCount[status]
-    }));
-  };
-
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>

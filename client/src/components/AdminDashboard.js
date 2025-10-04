@@ -23,8 +23,6 @@ import {
   Tabs,
   Tab,
   IconButton,
-  Switch,
-  FormControlLabel,
   CircularProgress,
   Snackbar,
   Alert
@@ -32,7 +30,6 @@ import {
 import { 
   Assignment, 
   EventAvailable, 
-  Assessment, 
   Notifications,
   Search as SearchIcon,
   Download as DownloadIcon,
@@ -60,11 +57,9 @@ import {
   Cell
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
