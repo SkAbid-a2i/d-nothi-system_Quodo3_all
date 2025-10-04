@@ -446,6 +446,7 @@ const UserManagement = () => {
   };
 
   const handleEditTemplate = (template) => {
+    console.log('Editing template:', template);
     setTemplateName(template.name);
     setTemplatePermissions({ ...template.permissions });
     setEditingTemplate(template);

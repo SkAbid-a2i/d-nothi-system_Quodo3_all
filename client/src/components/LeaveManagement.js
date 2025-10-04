@@ -110,14 +110,14 @@ const LeaveManagement = () => {
 
     const handleLeaveApproved = (data) => {
       frontendLogger.info('Real-time leave approved notification received', data);
-      showSnackbar(`Your leave request has been approved`, 'success');
+      showSnackbar(`Leave request has been approved`, 'success');
       // Refresh leave list
       fetchLeaves();
     };
 
     const handleLeaveRejected = (data) => {
       frontendLogger.info('Real-time leave rejected notification received', data);
-      showSnackbar(`Your leave request has been rejected`, 'warning');
+      showSnackbar(`Leave request has been rejected`, 'warning');
       // Refresh leave list
       fetchLeaves();
     };

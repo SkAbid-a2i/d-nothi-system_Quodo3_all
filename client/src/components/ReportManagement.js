@@ -103,31 +103,45 @@ const ReportManagement = () => {
     setSuccess('');
     
     try {
-      const params = {
-        startDate,
-        endDate,
-        userId: userId || undefined,
-        status: status || undefined,
-        format
-      };
+      // Create a hidden link and trigger download
+      const params = new URLSearchParams({
+        startDate: startDate || '',
+        endDate: endDate || '',
+        userId: userId || '',
+        status: status || '',
+        format: format
+      });
       
-      if (reportType === 'task') {
-        await reportAPI.getTaskReport(params);
-      } else if (reportType === 'leave') {
-        await reportAPI.getLeaveReport(params);
-      } else if (reportType === 'summary') {
-        await reportAPI.getSummaryReport(params);
+      let endpoint;
+      if (activeTab === 0) {
+        endpoint = `/api/reports/tasks?${params}`;
+      } else if (activeTab === 1) {
+        endpoint = `/api/reports/leaves?${params}`;
+      } else {
+        endpoint = `/api/reports/summary?${params}`;
       }
       
-      // In a real implementation, this would download the file
-      // For now, we'll just log the action
-      auditLog.reportExported(`${reportType} Report`, format, user?.username || 'unknown');
+      // Create download link
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const downloadUrl = `${apiUrl}${endpoint}`;
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Log audit entry
+      const reportTypeName = activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : 'Summary';
+      auditLog.reportExported(`${reportTypeName} Report`, format, user?.username || 'unknown');
       
       setSuccess(`Report exported as ${format.toUpperCase()} successfully!`);
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error exporting report:', error);
-      setError(`Failed to export report as ${format.toUpperCase()}`);
+      setError(`Failed to export report as ${format.toUpperCase()}: ${error.message}`);
       setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);

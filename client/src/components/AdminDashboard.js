@@ -401,8 +401,8 @@ const AdminDashboard = () => {
         {/* Charts Section */}
         <Grid item xs={12} lg={8}>
           <Paper sx={{ p: 2, height: '100%', boxShadow: 3, borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: { xs: 1, sm: 0 } }}>
                 Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
               </Typography>
               <Box>
@@ -433,7 +433,7 @@ const AdminDashboard = () => {
               </Box>
             </Box>
             
-            <Box sx={{ height: 350, mt: 2 }}>
+            <Box sx={{ height: { xs: 300, sm: 350 }, mt: 2 }}>
               {chartType === 'bar' && (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
