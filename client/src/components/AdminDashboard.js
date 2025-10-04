@@ -652,7 +652,7 @@ const AdminDashboard = () => {
             <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable">
               <Tab label="Team Tasks" icon={<Assignment />} iconPosition="start" />
               <Tab label="Pending Leaves" icon={<EventAvailable />} iconPosition="start" />
-              <Tab label="Who's on Leave Today" icon={<CalendarToday />} iconPosition="start" />
+              <Tab label="Who's on Leave Today" icon={<CalendarIcon />} iconPosition="start" />
             </Tabs>
             
             <Box sx={{ mt: 2 }}>
