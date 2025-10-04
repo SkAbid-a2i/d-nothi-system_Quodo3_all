@@ -82,14 +82,14 @@ const AgentDashboard = () => {
 
   // Filter tasks based on search term
   const filteredTasks = tasks.filter(task => 
-    task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.service.toLowerCase().includes(searchTerm.toLowerCase())
+    (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Filter leaves based on search term
   const filteredLeaves = leaves.filter(leave => 
-    leave.reason.toLowerCase().includes(searchTerm.toLowerCase())
+    (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -288,16 +288,17 @@ const AgentDashboard = () => {
                   <TableBody>
                     {filteredTasks.map((task) => (
                       <TableRow key={task.id}>
-                        <TableCell>{new Date(task.date).toLocaleDateString()}</TableCell>
-                        <TableCell>{task.source}</TableCell>
-                        <TableCell>{task.category}</TableCell>
-                        <TableCell>{task.service}</TableCell>
+                        <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{task.source || 'N/A'}</TableCell>
+                        <TableCell>{task.category || 'N/A'}</TableCell>
+                        <TableCell>{task.service || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
-                            label={task.status} 
+                            label={task.status || 'Pending'} 
                             color={
                               task.status === 'Completed' ? 'success' : 
-                              task.status === 'In Progress' ? 'primary' : 'default'
+                              task.status === 'In Progress' ? 'primary' : 
+                              task.status === 'Cancelled' ? 'error' : 'default'
                             } 
                           />
                         </TableCell>
@@ -326,12 +327,12 @@ const AgentDashboard = () => {
                     <TableBody>
                       {filteredLeaves.map((leave) => (
                         <TableRow key={leave.id}>
-                          <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                          <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                          <TableCell>{leave.reason}</TableCell>
+                          <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell>{leave.reason || 'N/A'}</TableCell>
                           <TableCell>
                             <Chip 
-                              label={leave.status} 
+                              label={leave.status || 'Pending'} 
                               color={
                                 leave.status === 'Approved' ? 'success' : 
                                 leave.status === 'Pending' ? 'warning' : 'error'

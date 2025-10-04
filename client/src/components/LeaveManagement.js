@@ -168,6 +168,17 @@ const LeaveManagement = () => {
     { id: 3, message: 'Reminder: Team meeting tomorrow', time: '1 day ago', type: 'reminder' }
   ];
 
+  // Filter leaves based on search term and status
+  const filteredLeaves = leaves.filter(leave => {
+    const matchesSearch = !searchTerm || 
+      (leave.employee && leave.employee.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = !statusFilter || leave.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   const handleApproveLeave = (leave) => {
     if (!leave || !leave.id) {
       setError('Invalid leave selection');
@@ -444,16 +455,16 @@ const LeaveManagement = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {leaves.map((leave) => (
+                {filteredLeaves.map((leave) => (
                   <TableRow key={leave.id}>
-                    <TableCell>{leave.employee}</TableCell>
-                    <TableCell>{leave.startDate}</TableCell>
-                    <TableCell>{leave.endDate}</TableCell>
-                    <TableCell>{leave.reason}</TableCell>
-                    <TableCell>{leave.appliedDate}</TableCell>
+                    <TableCell>{leave.employee || leave.userName || 'N/A'}</TableCell>
+                    <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>{leave.reason || 'N/A'}</TableCell>
+                    <TableCell>{leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell>
                       <Chip 
-                        label={leave.status} 
+                        label={leave.status || 'Pending'} 
                         color={
                           leave.status === 'Approved' ? 'success' : 
                           leave.status === 'Rejected' ? 'error' : 'warning'

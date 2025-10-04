@@ -191,7 +191,7 @@ const TaskLogger = () => {
                 label={t('tasks.source')}
               >
                 {sources.map((src) => (
-                  <MenuItem key={src.value || src} value={src.value || src}>
+                  <MenuItem key={src.id || src.value} value={src.value || src}>
                     {src.value || src}
                   </MenuItem>
                 ))}
@@ -208,7 +208,7 @@ const TaskLogger = () => {
                 label={t('tasks.category')}
               >
                 {categories.map((cat) => (
-                  <MenuItem key={cat.value || cat} value={cat.value || cat}>
+                  <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
                     {cat.value || cat}
                   </MenuItem>
                 ))}
@@ -225,7 +225,7 @@ const TaskLogger = () => {
                 label={t('tasks.service')}
               >
                 {filteredServices.map((svc) => (
-                  <MenuItem key={svc.value || svc} value={svc.value || svc}>
+                  <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
                     {svc.value || svc}
                   </MenuItem>
                 ))}
