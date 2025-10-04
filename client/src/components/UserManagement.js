@@ -721,16 +721,10 @@ const UserManagement = () => {
                           <TableCell>Admin Template</TableCell>
                           <TableCell>Full Access</TableCell>
                           <TableCell>
-                            <IconButton size="small" onClick={() => {
-                              // Log audit entry
-                              auditLog.userRoleChanged('admin-template', 'template', 'admin', user?.username || 'unknown');
-                            }}>
+                            <IconButton size="small">
                               <EditIcon />
                             </IconButton>
-                            <IconButton size="small" onClick={() => {
-                              // Log audit entry
-                              auditLog.userRoleChanged('admin-template', 'admin', 'deleted', user?.username || 'unknown');
-                            }}>
+                            <IconButton size="small">
                               <DeleteIcon />
                             </IconButton>
                           </TableCell>
@@ -739,16 +733,10 @@ const UserManagement = () => {
                           <TableCell>Supervisor Template</TableCell>
                           <TableCell>Limited Access</TableCell>
                           <TableCell>
-                            <IconButton size="small" onClick={() => {
-                              // Log audit entry
-                              auditLog.userRoleChanged('supervisor-template', 'template', 'supervisor', user?.username || 'unknown');
-                            }}>
+                            <IconButton size="small">
                               <EditIcon />
                             </IconButton>
-                            <IconButton size="small" onClick={() => {
-                              // Log audit entry
-                              auditLog.userRoleChanged('supervisor-template', 'supervisor', 'deleted', user?.username || 'unknown');
-                            }}>
+                            <IconButton size="small">
                               <DeleteIcon />
                             </IconButton>
                           </TableCell>
@@ -872,82 +860,6 @@ const UserManagement = () => {
                           </TableCell>
                         </TableRow>
                       ))}
-                      <TableRow>
-                        <TableCell>Source</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownUpdated('email', user?.username || 'unknown', 'Source');
-                          }}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownDeleted('email', user?.username || 'unknown', 'Source');
-                          }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Category</TableCell>
-                        <TableCell>IT Support</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownUpdated('it-support', user?.username || 'unknown', 'Category');
-                          }}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownDeleted('it-support', user?.username || 'unknown', 'Category');
-                          }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Service</TableCell>
-                        <TableCell>Hardware</TableCell>
-                        <TableCell>IT Support</TableCell>
-                        <TableCell>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownUpdated('hardware', user?.username || 'unknown', 'Service');
-                          }}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownDeleted('hardware', user?.username || 'unknown', 'Service');
-                          }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Office</TableCell>
-                        <TableCell>Head Office</TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownUpdated('head-office', user?.username || 'unknown', 'Office');
-                          }}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => {
-                            // Log audit entry
-                            auditLog.dropdownDeleted('head-office', user?.username || 'unknown', 'Office');
-                          }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
                     </TableBody>
                   </Table>
                 </TableContainer>

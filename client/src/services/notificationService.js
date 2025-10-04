@@ -6,6 +6,7 @@ class NotificationService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // 1 second
+    this.userId = null;
   }
 
   // Connect to the notification service
@@ -14,6 +15,8 @@ class NotificationService {
       console.error('User ID is required to connect to notifications');
       return;
     }
+
+    this.userId = userId;
 
     // Close existing connection if any
     this.disconnect();
@@ -59,6 +62,13 @@ class NotificationService {
       this.reconnectAttempts++;
       console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
       
+      // Clear previous event source
+      if (this.eventSource) {
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+      
+      // Retry connection after delay
       setTimeout(() => {
         this.connect(userId);
       }, this.reconnectDelay * this.reconnectAttempts); // Exponential backoff

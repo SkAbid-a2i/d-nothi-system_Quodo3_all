@@ -48,6 +48,7 @@ const Layout = () => {
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.files'), icon: <TaskIcon />, path: '/files' },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
+    { text: 'Dropdown Management', icon: <TaskIcon />, path: '/dropdowns', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },
   ];
