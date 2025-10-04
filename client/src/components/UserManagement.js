@@ -301,10 +301,24 @@ const UserManagement = () => {
     setError('');
     setSuccess('');
     
+    // Validate input
+    if (!dropdownValue.trim()) {
+      setError('Dropdown value is required');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
+    // For Service type, validate parent category
+    if (selectedDropdownType === 'Service' && !parentCategory) {
+      setError('Parent category is required for Service type');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     try {
       const dropdownData = {
         type: selectedDropdownType,
-        value: dropdownValue,
+        value: dropdownValue.trim(),
         parentType: selectedDropdownType === 'Service' ? 'Category' : undefined,
         parentValue: selectedDropdownType === 'Service' ? parentCategory : undefined
       };
@@ -341,7 +355,8 @@ const UserManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error saving dropdown:', error);
-      setError(editingDropdown ? 'Failed to update dropdown value' : 'Failed to create dropdown value');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save dropdown value';
+      setError(editingDropdown ? `Failed to update dropdown value: ${errorMessage}` : `Failed to create dropdown value: ${errorMessage}`);
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -889,6 +904,19 @@ const UserManagement = () => {
               <Typography variant="h6" gutterBottom>
                 {t('users.dropdownManagement')}
               </Typography>
+              
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              
+              {success && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {success}
+                </Alert>
+              )}
+              
               <Paper sx={{ p: 3, mb: 3 }}>
                 <Grid container spacing={3}>
                   <Grid item xs={12}>
@@ -901,7 +929,13 @@ const UserManagement = () => {
                       <InputLabel>{t('users.dropdownType')}</InputLabel>
                       <Select 
                         value={selectedDropdownType}
-                        onChange={(e) => setSelectedDropdownType(e.target.value)}
+                        onChange={(e) => {
+                          setSelectedDropdownType(e.target.value);
+                          // Reset parent category when changing type
+                          if (e.target.value !== 'Service') {
+                            setParentCategory('');
+                          }
+                        }}
                         label={t('users.dropdownType')}
                       >
                         {dropdownTypes.map(type => (
@@ -917,6 +951,7 @@ const UserManagement = () => {
                       placeholder={t('users.enterDropdownValue')}
                       value={dropdownValue}
                       onChange={(e) => setDropdownValue(e.target.value)}
+                      required
                     />
                   </Grid>
                   {selectedDropdownType === 'Service' && (
@@ -960,9 +995,22 @@ const UserManagement = () => {
               </Paper>
               
               <Paper sx={{ p: 3 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  {t('users.manageDropdownValues')}
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    {t('users.manageDropdownValues')}
+                  </Typography>
+                  <FormControl sx={{ minWidth: 120 }}>
+                    <InputLabel>Filter by Type</InputLabel>
+                    <Select
+                      value={selectedDropdownType}
+                      onChange={(e) => setSelectedDropdownType(e.target.value)}
+                    >
+                      {dropdownTypes.map(type => (
+                        <MenuItem key={type} value={type}>{type}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
                 <TableContainer>
                   <Table>
                     <TableHead>
@@ -974,9 +1022,21 @@ const UserManagement = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {dropdowns.map((dropdown) => (
+                      {dropdowns
+                        .filter(d => d.type === selectedDropdownType)
+                        .map((dropdown) => (
                         <TableRow key={dropdown.id}>
-                          <TableCell>{dropdown.type}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={dropdown.type} 
+                              size="small" 
+                              color={
+                                dropdown.type === 'Source' ? 'primary' :
+                                dropdown.type === 'Category' ? 'secondary' :
+                                dropdown.type === 'Service' ? 'success' : 'warning'
+                              }
+                            />
+                          </TableCell>
                           <TableCell>{dropdown.value}</TableCell>
                           <TableCell>{dropdown.parentValue || '-'}</TableCell>
                           <TableCell>
@@ -988,6 +1048,7 @@ const UserManagement = () => {
                             </IconButton>
                             <IconButton 
                               size="small" 
+                              color="error"
                               onClick={() => openDeleteDialog(dropdown)}
                             >
                               <DeleteIcon />
