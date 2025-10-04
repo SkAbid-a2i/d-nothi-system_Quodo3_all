@@ -49,7 +49,7 @@ import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 
 const AgentDashboard = () => {
-  const { user } = useAuth(); // Keep this as it's used in the fetchDashboardData dependency array
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,7 +78,6 @@ const AgentDashboard = () => {
   const [filteredEditServices, setFilteredEditServices] = useState([]);
 
   // Fetch tasks and leaves - useCallback to prevent recreation on every render
-  // Include user in dependencies to ensure fresh data when user changes
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
@@ -95,7 +94,7 @@ const AgentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]); // Add user to dependencies to ensure data refresh when user changes
+  }, []); // Remove user from dependencies as it's not used in the function
 
   // Fetch tasks and leaves on component mount
   useEffect(() => {
