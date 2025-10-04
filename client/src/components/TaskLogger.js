@@ -12,8 +12,7 @@ import {
   MenuItem,
   Chip,
   Snackbar,
-  Alert,
-  CircularProgress
+  Alert
 } from '@mui/material';
 import { Add as AddIcon, Upload as UploadIcon } from '@mui/icons-material';
 import { taskAPI } from '../services/api';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -34,7 +34,7 @@ const LogMonitoring = () => {
   const [timeRange, setTimeRange] = useState('24h');
   const [analysis, setAnalysis] = useState(null);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     if (user?.role !== 'SystemAdmin') {
       setError('Access denied. Only SystemAdmin users can view logs.');
       return;
@@ -64,11 +64,11 @@ const LogMonitoring = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, logLevel, timeRange, user]);
 
   useEffect(() => {
     fetchLogs();
-  }, [activeTab, logLevel, timeRange, user]);
+  }, [fetchLogs]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);

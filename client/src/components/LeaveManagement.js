@@ -25,8 +25,7 @@ import {
   Alert,
   Tabs,
   Tab,
-  Snackbar,
-  CircularProgress
+  Snackbar
 } from '@mui/material';
 import { 
   Add as AddIcon, 
