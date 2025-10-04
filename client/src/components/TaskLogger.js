@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -130,7 +130,7 @@ const TaskLogger = () => {
   };
 
   // Fetch today's tasks
-  const fetchTodaysTasks = async () => {
+  const fetchTodaysTasks = useCallback(async () => {
     setTasksLoading(true);
     try {
       const response = await taskAPI.getAllTasks();
@@ -149,7 +149,7 @@ const TaskLogger = () => {
     } finally {
       setTasksLoading(false);
     }
-  };
+  }, [t]);
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -180,12 +180,12 @@ const TaskLogger = () => {
       notificationService.off('taskCreated', handleTaskCreated);
       notificationService.off('taskUpdated', handleTaskUpdated);
     };
-  }, []);
+  }, [fetchTodaysTasks]);
 
   // Fetch today's tasks on component mount
   useEffect(() => {
     fetchTodaysTasks();
-  }, []);
+  }, [fetchTodaysTasks]);
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
