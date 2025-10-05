@@ -18,7 +18,6 @@ import Settings from './components/Settings';
 import Help from './components/Help';
 import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
-import DatabaseViewer from './components/DatabaseViewer';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -108,13 +107,6 @@ function App() {
                 <ProtectedRoute allowedRoles={['SystemAdmin']}>
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <UserManagement />
-                  </Layout>
-                </ProtectedRoute>
-              } />
-              <Route path="/database" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
-                    <DatabaseViewer />
                   </Layout>
                 </ProtectedRoute>
               } />

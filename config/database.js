@@ -1,7 +1,5 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
 
 // Create Sequelize instance
 const sequelize = new Sequelize(
@@ -30,28 +28,6 @@ const sequelize = new Sequelize(
     }
   }
 );
-
-// Load all models
-const models = {};
-
-// Read all model files
-const modelsDir = path.join(__dirname, '../models');
-fs.readdirSync(modelsDir)
-  .filter(file => file.endsWith('.js'))
-  .forEach(file => {
-    const model = require(path.join(modelsDir, file));
-    models[model.name] = model;
-  });
-
-// Set up associations if any
-Object.keys(models).forEach(modelName => {
-  if (models[modelName].associate) {
-    models[modelName].associate(models);
-  }
-});
-
-// Add models to sequelize instance
-sequelize.models = models;
 
 // Test the connection
 sequelize

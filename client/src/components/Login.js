@@ -26,24 +26,11 @@ const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Redirect based on user role after authentication
+  // Redirect to dashboard after authentication
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Role-based redirect
-      switch (user.role) {
-        case 'SystemAdmin':
-          // SystemAdmin users go to database view first
-          navigate('/database');
-          break;
-        case 'Admin':
-        case 'Supervisor':
-          navigate('/team-tasks');
-          break;
-        case 'Agent':
-        default:
-          navigate('/dashboard');
-          break;
-      }
+      // All users go to dashboard after login
+      navigate('/dashboard');
     }
   }, [isAuthenticated, user, navigate]);
 

@@ -29,8 +29,7 @@ import {
   Logout as LogoutIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
-  BugReport as LogIcon,
-  Storage as DatabaseIcon
+  BugReport as LogIcon
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -57,9 +56,8 @@ const Layout = ({ darkMode, toggleDarkMode }) => {
     menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TaskIcon />, path: '/team-tasks' });
   }
 
-  // Add database and log monitoring for SystemAdmin
+  // Add log monitoring for SystemAdmin
   if (user && user.role === 'SystemAdmin') {
-    menuItems.splice(4, 0, { text: 'Database', icon: <DatabaseIcon />, path: '/database' });
     menuItems.push({ text: 'Log Monitoring', icon: <LogIcon />, path: '/logs' });
   }
 
