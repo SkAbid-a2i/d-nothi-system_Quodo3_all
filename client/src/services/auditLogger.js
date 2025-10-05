@@ -99,6 +99,12 @@ export const auditLog = {
       description: `Leave request rejected by ${rejecter}. Reason: ${reason}` 
     }),
     
+  leaveUpdated: (leaveId, updater) => 
+    createAuditLog('UPDATE', 'LEAVE', { 
+      resourceId: leaveId, 
+      description: `Leave request updated by ${updater}` 
+    }),
+    
   leaveDeleted: (leaveId, deleter) => 
     createAuditLog('DELETE', 'LEAVE', { 
       resourceId: leaveId, 

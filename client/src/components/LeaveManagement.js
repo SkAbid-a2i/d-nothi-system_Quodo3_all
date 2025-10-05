@@ -72,6 +72,13 @@ const LeaveManagement = () => {
     reason: ''
   });
   
+  // Main form state (separate from edit form)
+  const [mainFormState, setMainFormState] = useState({
+    startDate: '',
+    endDate: '',
+    reason: ''
+  });
+  
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   }, []);
@@ -210,9 +217,24 @@ const LeaveManagement = () => {
       [field]: value
     }));
   };
+  
+  const handleMainFormChange = (field, value) => {
+    setMainFormState(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const resetForm = () => {
     setFormState({
+      startDate: '',
+      endDate: '',
+      reason: ''
+    });
+  };
+  
+  const resetMainForm = () => {
+    setMainFormState({
       startDate: '',
       endDate: '',
       reason: ''
@@ -295,9 +317,7 @@ const LeaveManagement = () => {
       showSnackbar(`Leave Request approved!`, 'success');
       
       // Refresh leave list to ensure UI is updated
-      setTimeout(() => {
-        fetchLeaves();
-      }, 1000);
+      fetchLeaves();
     } catch (error) {
       console.error('Error approving leave:', error);
       const errorMessage = 'Failed to approve leave request: ' + (error.response?.data?.message || error.message);
@@ -342,9 +362,7 @@ const LeaveManagement = () => {
       showSnackbar(`Leave Request rejected!`, 'warning');
       
       // Refresh leave list to ensure UI is updated
-      setTimeout(() => {
-        fetchLeaves();
-      }, 1000);
+      fetchLeaves();
     } catch (error) {
       console.error('Error rejecting leave:', error);
       const errorMessage = 'Failed to reject leave request: ' + (error.response?.data?.message || error.message);
@@ -448,9 +466,9 @@ const LeaveManagement = () => {
     
     try {
       const leaveData = {
-        startDate: formState.startDate,
-        endDate: formState.endDate,
-        reason: formState.reason,
+        startDate: mainFormState.startDate,
+        endDate: mainFormState.endDate,
+        reason: mainFormState.reason,
         appliedDate: new Date().toISOString().split('T')[0]
       };
       
@@ -470,8 +488,8 @@ const LeaveManagement = () => {
         auditLog.leaveCreated(response.data.id, user.username || 'unknown');
       }
       
-      // Reset form
-      resetForm();
+      // Reset main form
+      resetMainForm();
       
       // Show success notification
       showSnackbar(`Leave request for ${newLeave.startDate} to ${newLeave.endDate} submitted successfully!`, 'success');
@@ -528,8 +546,8 @@ const LeaveManagement = () => {
                     label={t('leaves.startDate')}
                     type="date"
                     InputLabelProps={{ shrink: true }}
-                    value={formState.startDate}
-                    onChange={(e) => handleFormChange('startDate', e.target.value)}
+                    value={mainFormState.startDate}
+                    onChange={(e) => handleMainFormChange('startDate', e.target.value)}
                     required
                   />
                 </Grid>
@@ -539,8 +557,8 @@ const LeaveManagement = () => {
                     label={t('leaves.endDate')}
                     type="date"
                     InputLabelProps={{ shrink: true }}
-                    value={formState.endDate}
-                    onChange={(e) => handleFormChange('endDate', e.target.value)}
+                    value={mainFormState.endDate}
+                    onChange={(e) => handleMainFormChange('endDate', e.target.value)}
                     required
                   />
                 </Grid>
@@ -550,8 +568,8 @@ const LeaveManagement = () => {
                     label={t('leaves.reason')}
                     multiline
                     rows={3}
-                    value={formState.reason}
-                    onChange={(e) => handleFormChange('reason', e.target.value)}
+                    value={mainFormState.reason}
+                    onChange={(e) => handleMainFormChange('reason', e.target.value)}
                     required
                   />
                 </Grid>
