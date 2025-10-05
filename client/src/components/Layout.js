@@ -34,7 +34,7 @@ import {
 
 const drawerWidth = 240;
 
-const Layout = ({ darkMode, toggleDarkMode }) => {
+const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -145,7 +145,7 @@ const Layout = ({ darkMode, toggleDarkMode }) => {
       
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-        <Outlet />
+        {children || <Outlet />}
       </Box>
     </Box>
   );
