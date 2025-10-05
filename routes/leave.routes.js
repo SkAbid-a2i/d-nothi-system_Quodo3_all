@@ -237,4 +237,76 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'System
   }
 });
 
+// @route   PUT /api/leaves/:id
+// @desc    Update leave request
+// @access  Private (Owner, Admin, Supervisor)
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, reason } = req.body;
+
+    // Check if leave request exists
+    const leave = await Leave.findByPk(id);
+    if (!leave) {
+      return res.status(404).json({ message: 'Leave request not found' });
+    }
+
+    // Check permissions
+    if (req.user.role !== 'SystemAdmin' && 
+        req.user.role !== 'Admin' && 
+        req.user.role !== 'Supervisor' &&
+        leave.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Validate dates if provided
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      return res.status(400).json({ message: 'End date must be after start date' });
+    }
+
+    // Update leave
+    leave.startDate = startDate || leave.startDate;
+    leave.endDate = endDate || leave.endDate;
+    leave.reason = reason || leave.reason;
+
+    await leave.save();
+
+    res.json(leave);
+  } catch (err) {
+    console.error('Error updating leave:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// @route   DELETE /api/leaves/:id
+// @desc    Delete leave request
+// @access  Private (Owner, Admin, Supervisor)
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if leave request exists
+    const leave = await Leave.findByPk(id);
+    if (!leave) {
+      return res.status(404).json({ message: 'Leave request not found' });
+    }
+
+    // Check permissions
+    if (req.user.role !== 'SystemAdmin' && 
+        req.user.role !== 'Admin' && 
+        req.user.role !== 'Supervisor' &&
+        leave.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Delete leave
+    await leave.destroy();
+
+    res.json({ message: 'Leave request removed' });
+  } catch (err) {
+    console.error('Error deleting leave:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

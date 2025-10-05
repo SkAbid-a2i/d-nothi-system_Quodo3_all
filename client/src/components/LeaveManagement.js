@@ -57,7 +57,10 @@ const LeaveManagement = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [openApproveDialog, setOpenApproveDialog] = useState(false);
   const [openRejectDialog, setOpenRejectDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
+  const [editingLeave, setEditingLeave] = useState(null);
   
   // Form state
   const [startDate, setStartDate] = useState('');
@@ -201,6 +204,122 @@ const LeaveManagement = () => {
     setOpenRejectDialog(true);
   };
 
+  const handleEditLeave = (leave) => {
+    if (!leave || !leave.id) {
+      setError('Invalid leave selection');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    setEditingLeave(leave);
+    setStartDate(leave.startDate ? new Date(leave.startDate).toISOString().split('T')[0] : '');
+    setEndDate(leave.endDate ? new Date(leave.endDate).toISOString().split('T')[0] : '');
+    setReason(leave.reason || '');
+    setOpenEditDialog(true);
+  };
+
+  const handleDeleteLeave = (leave) => {
+    if (!leave || !leave.id) {
+      setError('Invalid leave selection');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    setSelectedLeave(leave);
+    setOpenDeleteDialog(true);
+  };
+
+  const confirmEditLeave = async () => {
+    try {
+      if (!editingLeave || !editingLeave.id) {
+        setError('Invalid leave selection');
+        showSnackbar('Cannot edit leave: Invalid leave selection', 'error');
+        setOpenEditDialog(false);
+        setEditingLeave(null);
+        return;
+      }
+
+      const leaveData = {
+        startDate,
+        endDate,
+        reason
+      };
+
+      // Update leave through API
+      await leaveAPI.updateLeave(editingLeave.id, leaveData);
+
+      // Update leave in state
+      setLeaves(leaves.map(leave => 
+        leave.id === editingLeave.id 
+          ? { ...leave, ...leaveData } 
+          : leave
+      ));
+
+      // Log audit entry
+      if (user) {
+        auditLog.leaveUpdated(editingLeave.id, user.username || 'unknown');
+      }
+
+      // Close dialog and reset form
+      setOpenEditDialog(false);
+      setEditingLeave(null);
+      setStartDate('');
+      setEndDate('');
+      setReason('');
+
+      // Show success notification
+      showSnackbar('Leave request updated successfully!', 'success');
+
+      // Refresh leave list
+      fetchLeaves();
+    } catch (error) {
+      console.error('Error updating leave:', error);
+      const errorMessage = 'Failed to update leave request: ' + (error.response?.data?.message || error.message);
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+      setOpenEditDialog(false);
+      setEditingLeave(null);
+    }
+  };
+
+  const confirmDeleteLeave = async () => {
+    try {
+      if (!selectedLeave || !selectedLeave.id) {
+        setError('Invalid leave selection');
+        showSnackbar('Cannot delete leave: Invalid leave selection', 'error');
+        setOpenDeleteDialog(false);
+        setSelectedLeave(null);
+        return;
+      }
+
+      // Delete leave through API
+      await leaveAPI.deleteLeave(selectedLeave.id);
+
+      // Remove leave from state
+      setLeaves(leaves.filter(leave => leave.id !== selectedLeave.id));
+
+      // Log audit entry
+      if (user) {
+        auditLog.leaveDeleted(selectedLeave.id, user.username || 'unknown');
+      }
+
+      // Close dialog
+      setOpenDeleteDialog(false);
+      setSelectedLeave(null);
+
+      // Show success notification
+      showSnackbar('Leave request deleted successfully!', 'success');
+
+      // Refresh leave list
+      fetchLeaves();
+    } catch (error) {
+      console.error('Error deleting leave:', error);
+      const errorMessage = 'Failed to delete leave request: ' + (error.response?.data?.message || error.message);
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+      setOpenDeleteDialog(false);
+      setSelectedLeave(null);
+    }
+  };
+
   const confirmApprove = async () => {
     try {
       // Check if selectedLeave is not null before proceeding
@@ -233,7 +352,7 @@ const LeaveManagement = () => {
       setSelectedLeave(null);
       
       // Show success notification
-      showSnackbar(`Leave request for ${selectedLeave.userName || selectedLeave.employee} has been approved!`, 'success');
+      showSnackbar(`Leave Request approved!`, 'success');
       
       // Refresh leave list to ensure UI is updated
       setTimeout(() => {
@@ -283,7 +402,7 @@ const LeaveManagement = () => {
       setSelectedLeave(null);
       
       // Show success notification
-      showSnackbar(`Leave request for ${selectedLeave.userName || selectedLeave.employee} has been rejected!`, 'warning');
+      showSnackbar(`Leave Request rejected!`, 'warning');
       
       // Refresh leave list to ensure UI is updated
       setTimeout(() => {
@@ -510,10 +629,16 @@ const LeaveManagement = () => {
                           </IconButton>
                         </>
                       )}
-                      <IconButton size="small">
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleEditLeave(leave)}
+                      >
                         <EditIcon />
                       </IconButton>
-                      <IconButton size="small">
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleDeleteLeave(leave)}
+                      >
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
@@ -713,6 +838,102 @@ const LeaveManagement = () => {
           </Button>
           <Button onClick={confirmReject} variant="contained" color="error">
             {t('common.reject')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Edit Dialog */}
+      <Dialog 
+        open={openEditDialog} 
+        onClose={() => {
+          setOpenEditDialog(false);
+          setEditingLeave(null);
+          setStartDate('');
+          setEndDate('');
+          setReason('');
+        }}
+        aria-labelledby="edit-dialog-title"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="edit-dialog-title">{t('common.edit')} {t('leaves.leaveRequests')}</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={t('leaves.startDate')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={t('leaves.endDate')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={t('leaves.reason')}
+                multiline
+                rows={3}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                required
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenEditDialog(false);
+            setEditingLeave(null);
+            setStartDate('');
+            setEndDate('');
+            setReason('');
+          }}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={confirmEditLeave} variant="contained" color="primary">
+            {t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Delete Dialog */}
+      <Dialog 
+        open={openDeleteDialog} 
+        onClose={() => {
+          setOpenDeleteDialog(false);
+          setSelectedLeave(null);
+        }}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">{t('common.delete')} {t('leaves.leaveRequests')}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {selectedLeave && `Are you sure you want to delete the leave request for ${selectedLeave.userName || selectedLeave.employee}?`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenDeleteDialog(false);
+            setSelectedLeave(null);
+          }}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={confirmDeleteLeave} variant="contained" color="error">
+            {t('common.delete')}
           </Button>
         </DialogActions>
       </Dialog>

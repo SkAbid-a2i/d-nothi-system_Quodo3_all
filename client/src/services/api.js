@@ -89,6 +89,8 @@ export const taskAPI = {
 export const leaveAPI = {
   getAllLeaves: () => api.get('/leaves'),
   createLeave: (leaveData) => api.post('/leaves', leaveData),
+  updateLeave: (id, leaveData) => api.put(`/leaves/${id}`, leaveData),
+  deleteLeave: (id) => api.delete(`/leaves/${id}`),
   approveLeave: (id) => api.put(`/leaves/${id}/approve`),
   rejectLeave: (id, rejectionData) => api.put(`/leaves/${id}/reject`, rejectionData),
 };
