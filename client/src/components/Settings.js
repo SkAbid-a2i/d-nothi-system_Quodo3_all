@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -13,16 +13,47 @@ import {
   Switch,
   FormControlLabel,
   Tabs,
-  Tab
+  Tab,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { useTranslation } from '../contexts/TranslationContext';
 
-const Settings = () => {
+const Settings = ({ darkMode, setDarkMode }) => {
   const { t, changeLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
+  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
+  // Load saved language preference
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') || 'en';
+    setCurrentLanguage(savedLanguage);
+  }, []);
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  const handleLanguageChange = (language) => {
+    setCurrentLanguage(language);
+    changeLanguage(language);
+    showSnackbar(t('settings.settingsSaved'), 'success');
+  };
+
+  const handleThemeChange = (theme) => {
+    const isDark = theme === 'dark';
+    setDarkMode(isDark);
+    localStorage.setItem('theme', theme);
+    showSnackbar(t('settings.settingsSaved'), 'success');
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -76,15 +107,15 @@ const Settings = () => {
                   <FormControl fullWidth>
                     <InputLabel>{t('users.role')}</InputLabel>
                     <Select defaultValue="SystemAdmin">
-                      <MenuItem value="Agent">Agent</MenuItem>
-                      <MenuItem value="Supervisor">Supervisor</MenuItem>
-                      <MenuItem value="Admin">Admin</MenuItem>
-                      <MenuItem value="SystemAdmin">System Administrator</MenuItem>
+                      <MenuItem value="Agent">{t('users.role.agent')}</MenuItem>
+                      <MenuItem value="Supervisor">{t('users.role.supervisor')}</MenuItem>
+                      <MenuItem value="Admin">{t('users.role.admin')}</MenuItem>
+                      <MenuItem value="SystemAdmin">{t('users.role.systemAdmin')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
-                  <Button variant="contained">
+                  <Button variant="contained" onClick={() => showSnackbar(t('settings.settingsSaved'), 'success')}>
                     {t('common.save')}
                   </Button>
                 </Grid>
@@ -121,7 +152,7 @@ const Settings = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Button variant="contained">
+                  <Button variant="contained" onClick={() => showSnackbar(t('settings.settingsSaved'), 'success')}>
                     {t('settings.changePassword')}
                   </Button>
                 </Grid>
@@ -153,8 +184,8 @@ const Settings = () => {
                   <FormControl fullWidth>
                     <InputLabel>{t('settings.language')}</InputLabel>
                     <Select 
-                      defaultValue="en"
-                      onChange={(e) => changeLanguage(e.target.value)}
+                      value={currentLanguage}
+                      onChange={(e) => handleLanguageChange(e.target.value)}
                     >
                       <MenuItem value="en">English</MenuItem>
                       <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
@@ -164,9 +195,12 @@ const Settings = () => {
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel>{t('settings.theme')}</InputLabel>
-                    <Select defaultValue="light">
-                      <MenuItem value="light">Light</MenuItem>
-                      <MenuItem value="dark">Dark</MenuItem>
+                    <Select 
+                      value={darkMode ? 'dark' : 'light'}
+                      onChange={(e) => handleThemeChange(e.target.value)}
+                    >
+                      <MenuItem value="light">{t('settings.theme.light')}</MenuItem>
+                      <MenuItem value="dark">{t('settings.theme.dark')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -183,7 +217,7 @@ const Settings = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Button variant="contained">
+                  <Button variant="contained" onClick={() => showSnackbar(t('settings.settingsSaved'), 'success')}>
                     {t('common.save')}
                   </Button>
                 </Grid>
@@ -192,6 +226,21 @@ const Settings = () => {
           )}
         </Box>
       </Paper>
+      
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

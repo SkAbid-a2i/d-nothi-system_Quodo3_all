@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -34,12 +34,11 @@ import {
 
 const drawerWidth = 240;
 
-const Layout = () => {
+const Layout = ({ darkMode, toggleDarkMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const [darkMode, setDarkMode] = useState(false);
 
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
@@ -71,24 +70,20 @@ const Layout = () => {
     navigate(path);
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            D-Nothi Task Management
+            D-Nothi Task Management System
           </Typography>
           <FormControlLabel
             control={<Switch checked={darkMode} onChange={toggleDarkMode} />}
             label={darkMode ? <LightModeIcon /> : <DarkModeIcon />}
           />
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            Welcome, {user?.fullName || 'User'}
+          <Typography variant="body2" sx={{ mr: 2, ml: 1 }}>
+            {t('common.welcome')}, {user?.fullName || user?.username || 'User'}
           </Typography>
           <Button 
             color="inherit" 

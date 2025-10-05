@@ -21,7 +21,21 @@ const bn = {
     optional: 'ঐচ্ছিক',
     value: 'মান',
     parent: 'পিতা মাতা',
-    manage: 'পরিচালনা করুন'
+    manage: 'পরিচালনা করুন',
+    actions: 'ক্রিয়াকলাপ',
+    status: 'অবস্থা',
+    date: 'তারিখ',
+    description: 'বর্ণনা',
+    reason: 'কারণ',
+    startDate: 'শুরুর তারিখ',
+    endDate: 'শেষ তারিখ',
+    appliedDate: 'আবেদনের তারিখ',
+    employee: 'কর্মচারী',
+    name: 'নাম',
+    email: 'ইমেইল',
+    role: 'ভূমিকা',
+    office: 'অফিস',
+    welcome: 'স্বাগতম'
   },
   
   // Navigation
@@ -30,23 +44,23 @@ const bn = {
     taskLogger: 'টাস্ক লগার',
     myTasks: 'আমার টাস্কগুলি',
     teamTasks: 'দলের টাস্কগুলি',
-    leaves: 'ছুটি',
-    files: 'ফাইলসমূহ',
+    leaves: 'ছুটি ম্যানেজমেন্ট',
+    files: 'ফাইল ম্যানেজমেন্ট',
     adminConsole: 'অ্যাডমিন কনসোল',
     reports: 'প্রতিবেদন',
     settings: 'সেটিংস',
-    help: 'সাহায্য',
+    help: 'সাহায্য এবং সমর্থন',
     logout: 'লগআউট'
   },
   
   // Login
   login: {
-    title: 'D-Nothi-তে সাইন ইন করুন',
+    title: 'D-Nothi সিস্টেমে সাইন ইন করুন',
     username: 'ব্যবহারকারীর নাম বা ইমেল',
     password: 'পাসওয়ার্ড',
     rememberMe: 'আমাকে মনে রাখুন',
     forgotPassword: 'পাসওয়ার্ড ভুলে গেছেন?',
-    noAccount: 'অ্যাকাউন্ট নেই? সাইন আপ করুন',
+    noAccount: 'অ্যাকাউন্ট নেই? প্রশাসকের সাথে যোগাযোগ করুন',
     signIn: 'সাইন ইন করুন'
   },
   
@@ -82,17 +96,25 @@ const bn = {
     title: 'টাস্ক ম্যানেজমেন্ট',
     taskLogger: 'টাস্ক লগার',
     createNewTask: 'নতুন টাস্ক তৈরি করুন',
-    date: 'তারিখ',
+    date: 'টাস্ক তারিখ',
     source: 'উৎস',
     category: 'বিভাগ',
     service: 'সেবা',
-    description: 'বর্ণনা',
+    description: 'টাস্ক বর্ণনা',
     status: 'অবস্থা',
     assignedTo: 'নির্ধারিত',
     actions: 'ক্রিয়াকলাপ',
     pending: 'মুলতুবি',
     inProgress: 'চলমান',
-    completed: 'সম্পন্ন'
+    completed: 'সম্পন্ন',
+    cancelled: 'বাতিল',
+    errorFetchingTasks: 'টাস্কগুলি আনতে ত্রুটি',
+    taskCreated: 'টাস্ক সফলভাবে তৈরি হয়েছে',
+    taskUpdated: 'টাস্ক সফলভাবে আপডেট হয়েছে',
+    taskDeleted: 'টাস্ক সফলভাবে মুছে ফেলা হয়েছে',
+    taskCreationFailed: 'টাস্ক তৈরি করতে ব্যর্থ',
+    taskUpdateFailed: 'টাস্ক আপডেট করতে ব্যর্থ',
+    taskDeletionFailed: 'টাস্ক মুছে ফেলতে ব্যর্থ'
   },
   
   // Leave Management
@@ -101,28 +123,38 @@ const bn = {
     requestNewLeave: 'নতুন ছুটির অনুরোধ করুন',
     startDate: 'শুরুর তারিখ',
     endDate: 'শেষ তারিখ',
-    reason: 'কারণ',
+    reason: 'ছুটির কারণ',
     submitRequest: 'ছুটির অনুরোধ জমা দিন',
     leaveRequests: 'ছুটির অনুরোধ',
     employee: 'কর্মচারী',
     appliedDate: 'আবেদনের তারিখ',
-    calendar: 'ক্যালেন্ডার',
-    notifications: 'বিজ্ঞপ্তি'
+    calendar: 'ছুটি ক্যালেন্ডার',
+    notifications: 'বিজ্ঞপ্তি',
+    leaveCreated: 'ছুটির অনুরোধ সফলভাবে জমা হয়েছে',
+    leaveUpdated: 'ছুটির অনুরোধ সফলভাবে আপডেট হয়েছে',
+    leaveDeleted: 'ছুটির অনুরোধ সফলভাবে মুছে ফেলা হয়েছে',
+    leaveApproved: 'ছুটির অনুরোধ সফলভাবে অনুমোদন হয়েছে',
+    leaveRejected: 'ছুটির অনুরোধ সফলভাবে প্রত্যাখ্যান হয়েছে',
+    leaveCreationFailed: 'ছুটির অনুরোধ জমা দিতে ব্যর্থ',
+    leaveUpdateFailed: 'ছুটির অনুরোধ আপডেট করতে ব্যর্থ',
+    leaveDeletionFailed: 'ছুটির অনুরোধ মুছে ফেলতে ব্যর্থ',
+    leaveApprovalFailed: 'ছুটির অনুরোধ অনুমোদন করতে ব্যর্থ',
+    leaveRejectionFailed: 'ছুটির অনুরোধ প্রত্যাখ্যান করতে ব্যর্থ'
   },
   
   // User Management
   users: {
-    title: 'সিস্টেম অ্যাডমিন কনসোল',
+    title: 'সিস্টেম প্রশাসন',
     userManagement: 'ব্যবহারকারী ম্যানেজমেন্ট',
     permissionTemplates: 'অনুমতি টেমপ্লেট',
     dropdownManagement: 'ড্রপডাউন ম্যানেজমেন্ট',
     createNewUser: 'নতুন ব্যবহারকারী তৈরি করুন',
     fullName: 'পূর্ণ নাম',
     username: 'ব্যবহারকারীর নাম',
-    email: 'ইমেইল',
-    role: 'ভূমিকা',
-    office: 'অফিস',
-    status: 'অবস্থা',
+    email: 'ইমেইল ঠিকানা',
+    role: 'ব্যবহারকারী ভূমিকা',
+    office: 'অফিস অবস্থান',
+    status: 'অ্যাকাউন্ট অবস্থা',
     active: 'সক্রিয়',
     inactive: 'নিষ্ক্রিয়',
     createUser: 'ব্যবহারকারী তৈরি করুন',
@@ -132,7 +164,21 @@ const bn = {
     dropdownType: 'ড্রপডাউন ধরন',
     enterDropdownValue: 'ড্রপডাউন মান লিখুন',
     selectCategoryFirst: 'পরিষেবার জন্য প্রথমে বিভাগ নির্বাচন করুন',
-    manageDropdownValues: 'ড্রপডাউন মানগুলি পরিচালনা করুন'
+    manageDropdownValues: 'ড্রপডাউন মানগুলি পরিচালনা করুন',
+    userCreated: 'ব্যবহারকারী সফলভাবে তৈরি হয়েছে',
+    userUpdated: 'ব্যবহারকারী সফলভাবে আপডেট হয়েছে',
+    userDeleted: 'ব্যবহারকারী সফলভাবে মুছে ফেলা হয়েছে',
+    userStatusUpdated: 'ব্যবহারকারীর অবস্থা সফলভাবে আপডেট হয়েছে',
+    userCreationFailed: 'ব্যবহারকারী তৈরি করতে ব্যর্থ',
+    userUpdateFailed: 'ব্যবহারকারী আপডেট করতে ব্যর্থ',
+    userDeletionFailed: 'ব্যবহারকারী মুছে ফেলতে ব্যর্থ',
+    userStatusUpdateFailed: 'ব্যবহারকারীর অবস্থা আপডেট করতে ব্যর্থ',
+    role: {
+      agent: 'এজেন্ট',
+      supervisor: 'সুপারভাইজার',
+      admin: 'প্রশাসক',
+      systemAdmin: 'সিস্টেম প্রশাসক'
+    }
   },
   
   // Files
@@ -140,11 +186,15 @@ const bn = {
     title: 'ফাইল ম্যানেজমেন্ট',
     storageUsage: 'স্টোরেজ ব্যবহার',
     uploadFile: 'ফাইল আপলোড করুন',
-    name: 'নাম',
-    type: 'ধরন',
-    size: 'আকার',
-    uploaded: 'আপলোড হয়েছে',
-    owner: 'মালিক'
+    name: 'ফাইলের নাম',
+    type: 'ফাইলের ধরন',
+    size: 'ফাইলের আকার',
+    uploaded: 'আপলোডের তারিখ',
+    owner: 'আপলোড করেছেন',
+    fileUploaded: 'ফাইল সফলভাবে আপলোড হয়েছে',
+    fileUploadFailed: 'ফাইল আপলোড করতে ব্যর্থ',
+    fileDeleted: 'ফাইল সফলভাবে মুছে ফেলা হয়েছে',
+    fileDeletionFailed: 'ফাইল মুছে ফেলতে ব্যর্থ'
   },
   
   // Reports
@@ -159,17 +209,23 @@ const bn = {
     generateReport: 'প্রতিবেদন তৈরি করুন',
     taskReport: 'টাস্ক প্রতিবেদন',
     leaveReport: 'ছুটি প্রতিবেদন',
-    activityReport: 'কার্যকলাপ প্রতিবেদন'
+    activityReport: 'কার্যকলাপ প্রতিবেদন',
+    reportGenerated: 'প্রতিবেদন সফলভাবে তৈরি হয়েছে',
+    reportGenerationFailed: 'প্রতিবেদন তৈরি করতে ব্যর্থ'
   },
   
   // Settings
   settings: {
-    title: 'সেটিংস',
-    profile: 'প্রোফাইল',
-    security: 'নিরাপত্তা',
-    application: 'অ্যাপ্লিকেশন',
+    title: 'সিস্টেম সেটিংস',
+    profile: 'প্রোফাইল সেটিংস',
+    security: 'নিরাপত্তা সেটিংস',
+    application: 'অ্যাপ্লিকেশন সেটিংস',
     language: 'ভাষা',
     theme: 'থিম',
+    theme: {
+      light: 'আলো',
+      dark: 'অন্ধকার'
+    },
     notifications: 'বিজ্ঞপ্তি সক্ষম করুন',
     autoRefresh: 'ড্যাশবোর্ড স্বয়ংক্রিয়-রিফ্রেশ করুন',
     currentPassword: 'বর্তমান পাসওয়ার্ড',
@@ -177,15 +233,17 @@ const bn = {
     confirmNewPassword: 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
     changePassword: 'পাসওয়ার্ড পরিবর্তন করুন',
     enable2FA: 'দুই-ফ্যাক্টর প্রমাণীকরণ সক্ষম করুন',
-    configure2FA: '2FA কনফিগার করুন'
+    configure2FA: '2FA কনফিগার করুন',
+    settingsSaved: 'সেটিংস সফলভাবে সংরক্ষিত হয়েছে',
+    settingsSaveFailed: 'সেটিংস সংরক্ষণ করতে ব্যর্থ'
   },
   
   // Help
   help: {
-    title: 'সাহায্য এবং টিউটোরিয়াল',
+    title: 'সাহায্য এবং সমর্থন',
     videoTutorial: 'ভিডিও টিউটোরিয়াল',
     userGuide: 'ব্যবহারকারী গাইড',
-    faq: 'FAQ',
+    faq: 'প্রায়শই জিজ্ঞাসিত প্রশ্ন',
     needHelp: 'আরও সাহায্য প্রয়োজন?',
     contactSupport: 'আপনার যদি কোনও প্রশ্ন থাকে বা সহায়তা প্রয়োজন হয়, তবে অনুগ্রহ করে আমাদের সমর্থন দলের সাথে যোগাযোগ করুন support@d-nothi.com-এ',
     faqItems: {
@@ -199,7 +257,7 @@ const bn = {
       },
       exportReports: {
         question: 'আমি কীভাবে প্রতিবেদন রপ্তানি করতে পারি?',
-        answer: 'ড্যাশবোর্ডে, CSV, Excel বা PDF ফর্ম্যাটে প্রতিবেদন ডাউনলোড করতে রপ্তানি বোতামগুলি ব্যবহার করুন।'
+        answer: 'ড্যাশবোর্ডে, সিএসভি, এক্সেল বা পিডিএফ ফর্ম্যাটে প্রতিবেদন ডাউনলোড করতে রপ্তানি বোতামগুলি ব্যবহার করুন।'
       }
     }
   }

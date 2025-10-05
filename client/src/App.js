@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -19,22 +19,40 @@ import Help from './components/Help';
 import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
 
-// Create theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#967bb6', // Lavender
-    },
-    secondary: {
-      main: '#98fb98', // Pale Green
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-});
-
 function App() {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Load saved theme preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+    }
+  }, []);
+
+  // Create theme based on dark mode state
+  const theme = createTheme({
+    palette: {
+      mode: darkMode ? 'dark' : 'light',
+      primary: {
+        main: '#967bb6', // Lavender
+      },
+      secondary: {
+        main: '#98fb98', // Pale Green
+      },
+      background: {
+        default: darkMode ? '#121212' : '#f5f5f5',
+        paper: darkMode ? '#1e1e1e' : '#ffffff',
+      },
+    },
+  });
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -43,7 +61,7 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route element={<Layout />}>
+              <Route element={<Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />}>
               <Route 
                 path="/dashboard" 
                 element={
@@ -112,7 +130,7 @@ function App() {
                 path="/settings" 
                 element={
                   <ProtectedRoute>
-                    <Settings />
+                    <Settings darkMode={darkMode} setDarkMode={setDarkMode} />
                   </ProtectedRoute>
                 } 
               />

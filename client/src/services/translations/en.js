@@ -18,10 +18,24 @@ const en = {
     reject: 'Reject',
     view: 'View',
     details: 'Details',
-    optional: 'optional',
+    optional: 'Optional',
     value: 'Value',
     parent: 'Parent',
-    manage: 'Manage'
+    manage: 'Manage',
+    actions: 'Actions',
+    status: 'Status',
+    date: 'Date',
+    description: 'Description',
+    reason: 'Reason',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    appliedDate: 'Applied Date',
+    employee: 'Employee',
+    name: 'Name',
+    email: 'Email',
+    role: 'Role',
+    office: 'Office',
+    welcome: 'Welcome'
   },
   
   // Navigation
@@ -30,23 +44,23 @@ const en = {
     taskLogger: 'Task Logger',
     myTasks: 'My Tasks',
     teamTasks: 'Team Tasks',
-    leaves: 'Leaves',
-    files: 'Files',
+    leaves: 'Leave Management',
+    files: 'File Management',
     adminConsole: 'Admin Console',
     reports: 'Reports',
     settings: 'Settings',
-    help: 'Help',
+    help: 'Help & Support',
     logout: 'Logout'
   },
   
   // Login
   login: {
-    title: 'Sign in to D-Nothi',
+    title: 'Sign in to D-Nothi System',
     username: 'Username or Email',
     password: 'Password',
     rememberMe: 'Remember me',
     forgotPassword: 'Forgot password?',
-    noAccount: "Don't have an account? Sign Up",
+    noAccount: "Don't have an account? Contact Administrator",
     signIn: 'Sign In'
   },
   
@@ -82,17 +96,25 @@ const en = {
     title: 'Task Management',
     taskLogger: 'Task Logger',
     createNewTask: 'Create New Task',
-    date: 'Date',
+    date: 'Task Date',
     source: 'Source',
     category: 'Category',
     service: 'Service',
-    description: 'Description',
+    description: 'Task Description',
     status: 'Status',
     assignedTo: 'Assigned To',
     actions: 'Actions',
     pending: 'Pending',
     inProgress: 'In Progress',
-    completed: 'Completed'
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    errorFetchingTasks: 'Error fetching tasks',
+    taskCreated: 'Task created successfully',
+    taskUpdated: 'Task updated successfully',
+    taskDeleted: 'Task deleted successfully',
+    taskCreationFailed: 'Failed to create task',
+    taskUpdateFailed: 'Failed to update task',
+    taskDeletionFailed: 'Failed to delete task'
   },
   
   // Leave Management
@@ -101,28 +123,38 @@ const en = {
     requestNewLeave: 'Request New Leave',
     startDate: 'Start Date',
     endDate: 'End Date',
-    reason: 'Reason',
+    reason: 'Reason for Leave',
     submitRequest: 'Submit Leave Request',
     leaveRequests: 'Leave Requests',
     employee: 'Employee',
     appliedDate: 'Applied Date',
-    calendar: 'Calendar',
-    notifications: 'Notifications'
+    calendar: 'Leave Calendar',
+    notifications: 'Notifications',
+    leaveCreated: 'Leave request submitted successfully',
+    leaveUpdated: 'Leave request updated successfully',
+    leaveDeleted: 'Leave request deleted successfully',
+    leaveApproved: 'Leave request approved successfully',
+    leaveRejected: 'Leave request rejected successfully',
+    leaveCreationFailed: 'Failed to submit leave request',
+    leaveUpdateFailed: 'Failed to update leave request',
+    leaveDeletionFailed: 'Failed to delete leave request',
+    leaveApprovalFailed: 'Failed to approve leave request',
+    leaveRejectionFailed: 'Failed to reject leave request'
   },
   
   // User Management
   users: {
-    title: 'System Admin Console',
+    title: 'System Administration',
     userManagement: 'User Management',
     permissionTemplates: 'Permission Templates',
     dropdownManagement: 'Dropdown Management',
     createNewUser: 'Create New User',
     fullName: 'Full Name',
     username: 'Username',
-    email: 'Email',
-    role: 'Role',
-    office: 'Office',
-    status: 'Status',
+    email: 'Email Address',
+    role: 'User Role',
+    office: 'Office Location',
+    status: 'Account Status',
     active: 'Active',
     inactive: 'Inactive',
     createUser: 'Create User',
@@ -132,7 +164,21 @@ const en = {
     dropdownType: 'Dropdown Type',
     enterDropdownValue: 'Enter dropdown value',
     selectCategoryFirst: 'Select Category first for Service',
-    manageDropdownValues: 'Manage Dropdown Values'
+    manageDropdownValues: 'Manage Dropdown Values',
+    userCreated: 'User created successfully',
+    userUpdated: 'User updated successfully',
+    userDeleted: 'User deleted successfully',
+    userStatusUpdated: 'User status updated successfully',
+    userCreationFailed: 'Failed to create user',
+    userUpdateFailed: 'Failed to update user',
+    userDeletionFailed: 'Failed to delete user',
+    userStatusUpdateFailed: 'Failed to update user status',
+    role: {
+      agent: 'Agent',
+      supervisor: 'Supervisor',
+      admin: 'Administrator',
+      systemAdmin: 'System Administrator'
+    }
   },
   
   // Files
@@ -140,11 +186,15 @@ const en = {
     title: 'File Management',
     storageUsage: 'Storage Usage',
     uploadFile: 'Upload File',
-    name: 'Name',
-    type: 'Type',
-    size: 'Size',
-    uploaded: 'Uploaded',
-    owner: 'Owner'
+    name: 'File Name',
+    type: 'File Type',
+    size: 'File Size',
+    uploaded: 'Upload Date',
+    owner: 'Uploaded By',
+    fileUploaded: 'File uploaded successfully',
+    fileUploadFailed: 'Failed to upload file',
+    fileDeleted: 'File deleted successfully',
+    fileDeletionFailed: 'Failed to delete file'
   },
   
   // Reports
@@ -159,17 +209,23 @@ const en = {
     generateReport: 'Generate Report',
     taskReport: 'Task Report',
     leaveReport: 'Leave Report',
-    activityReport: 'Activity Report'
+    activityReport: 'Activity Report',
+    reportGenerated: 'Report generated successfully',
+    reportGenerationFailed: 'Failed to generate report'
   },
   
   // Settings
   settings: {
-    title: 'Settings',
-    profile: 'Profile',
-    security: 'Security',
-    application: 'Application',
+    title: 'System Settings',
+    profile: 'Profile Settings',
+    security: 'Security Settings',
+    application: 'Application Settings',
     language: 'Language',
     theme: 'Theme',
+    theme: {
+      light: 'Light',
+      dark: 'Dark'
+    },
     notifications: 'Enable Notifications',
     autoRefresh: 'Auto-refresh Dashboard',
     currentPassword: 'Current Password',
@@ -177,15 +233,17 @@ const en = {
     confirmNewPassword: 'Confirm New Password',
     changePassword: 'Change Password',
     enable2FA: 'Enable Two-Factor Authentication',
-    configure2FA: 'Configure 2FA'
+    configure2FA: 'Configure 2FA',
+    settingsSaved: 'Settings saved successfully',
+    settingsSaveFailed: 'Failed to save settings'
   },
   
   // Help
   help: {
-    title: 'Help & Tutorial',
+    title: 'Help & Support',
     videoTutorial: 'Video Tutorial',
     userGuide: 'User Guide',
-    faq: 'FAQ',
+    faq: 'Frequently Asked Questions',
     needHelp: 'Need More Help?',
     contactSupport: 'If you have any questions or need assistance, please contact our support team at support@d-nothi.com',
     faqItems: {
