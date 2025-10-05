@@ -9,15 +9,12 @@
       }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
-  "env": {
-    "REACT_APP_API_URL": "https://quodo3-backend.onrender.com/api"
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -28,5 +25,8 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://quodo3-backend.onrender.com/api"
+  }
 }
