@@ -1,58 +1,49 @@
+require('dotenv').config();
 const sequelize = require('./config/database');
 const User = require('./models/User');
+const Task = require('./models/Task');
+const Leave = require('./models/Leave');
 
-async function testDatabaseConnection() {
+async function testDatabase() {
   try {
-    // Test database connection
+    // Connect to database
     await sequelize.authenticate();
-    console.log('✅ Connection to TiDB has been established successfully.');
+    console.log('Connected to database successfully');
     
-    // Test fetching users
-    console.log('\n🔍 Fetching users from database...');
-    const users = await User.findAll({
-      attributes: { exclude: ['password'] }, // Exclude password field
-      limit: 5 // Limit to 5 users for testing
-    });
+    // Check if tables exist by querying them
+    console.log('Checking Users table...');
+    const userCount = await User.count();
+    console.log(`Users table exists with ${userCount} records`);
     
-    console.log(`\n✅ Found ${users.length} users:`);
-    users.forEach((user, index) => {
-      console.log(`\nUser ${index + 1}:`);
-      console.log(`  ID: ${user.id}`);
-      console.log(`  Username: ${user.username}`);
-      console.log(`  Email: ${user.email}`);
-      console.log(`  Full Name: ${user.fullName}`);
-      console.log(`  Role: ${user.role}`);
-      console.log(`  Office: ${user.office}`);
-      console.log(`  Active: ${user.isActive}`);
-      console.log(`  Created At: ${user.createdAt}`);
-    });
-    
-    // Test finding a specific user
-    console.log('\n🔍 Testing user lookup by username...');
-    const adminUser = await User.findOne({
-      where: { username: 'admin' },
-      attributes: { exclude: ['password'] }
-    });
-    
-    if (adminUser) {
-      console.log('\n✅ Found admin user:');
-      console.log(`  ID: ${adminUser.id}`);
-      console.log(`  Username: ${adminUser.username}`);
-      console.log(`  Email: ${adminUser.email}`);
-      console.log(`  Role: ${adminUser.role}`);
-    } else {
-      console.log('❌ Admin user not found');
+    if (userCount > 0) {
+      const users = await User.findAll({ limit: 5 });
+      console.log('Sample users:');
+      users.forEach(user => {
+        console.log(`- ${user.username} (${user.role}) - Active: ${user.isActive}`);
+      });
     }
     
-    // Close connection
-    await sequelize.close();
-    console.log('\n🔒 Database connection closed.');
+    console.log('Checking Tasks table...');
+    try {
+      const taskCount = await Task.count();
+      console.log(`Tasks table exists with ${taskCount} records`);
+    } catch (error) {
+      console.log('Tasks table may not exist yet:', error.message);
+    }
     
+    console.log('Checking Leaves table...');
+    try {
+      const leaveCount = await Leave.count();
+      console.log(`Leaves table exists with ${leaveCount} records`);
+    } catch (error) {
+      console.log('Leaves table may not exist yet:', error.message);
+    }
+    
+    process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Error testing database:', error);
     process.exit(1);
   }
 }
 
-// Run the test
-testDatabaseConnection();
+testDatabase();
