@@ -26,7 +26,7 @@ import {
   Tabs,
   Tab,
   Snackbar,
-  CircularProgress
+
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -92,15 +92,6 @@ const LeaveManagement = () => {
       ...prev,
       [dialogType]: { open: false, leave: null }
     }));
-  };
-
-  const closeAllDialogs = () => {
-    setDialogs({
-      approve: { open: false, leave: null },
-      reject: { open: false, leave: null },
-      edit: { open: false, leave: null },
-      delete: { open: false, leave: null }
-    });
   };
 
   const fetchLeaves = useCallback(async () => {
