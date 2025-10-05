@@ -19,6 +19,7 @@ import Help from './components/Help';
 import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
 import DebugComponent from './components/DebugComponent';
+import TestComponent from './components/TestComponent';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -63,6 +64,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/debug" element={<DebugComponent />} />
+              <Route path="/test" element={<TestComponent />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
