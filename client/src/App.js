@@ -18,6 +18,7 @@ import Settings from './components/Settings';
 import Help from './components/Help';
 import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
+import DatabaseViewer from './components/DatabaseViewer';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -61,98 +62,92 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route element={<Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />}>
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/tasks" 
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/tasks" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <TaskLogger />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/my-tasks" 
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/my-tasks" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <AgentDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/team-tasks" 
-                element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Supervisor']}>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/team-tasks" element={
+                <ProtectedRoute allowedRoles={['Admin', 'Supervisor']}>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/leaves" 
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/leaves" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <LeaveManagement />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/files" 
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/files" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <Files />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <UserManagement />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/reports" 
-                element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/database" element={
+                <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+                    <DatabaseViewer />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/reports" element={
+                <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <ReportManagement />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <Settings darkMode={darkMode} setDarkMode={setDarkMode} />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/help" 
-                element={
-                  <ProtectedRoute>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/help" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <Help />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/logs" 
-                element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/logs" element={
+                <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
                     <LogMonitoring />
-                  </ProtectedRoute>
-                } 
-              />
-            </Route>
-          </Routes>
-        </Router>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </Router>
         </TranslationProvider>
       </AuthProvider>
     </ThemeProvider>

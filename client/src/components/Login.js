@@ -32,7 +32,8 @@ const Login = () => {
       // Role-based redirect
       switch (user.role) {
         case 'SystemAdmin':
-          navigate('/admin');
+          // SystemAdmin users go to database view first
+          navigate('/database');
           break;
         case 'Admin':
         case 'Supervisor':
