@@ -100,6 +100,21 @@ const LeaveManagement = () => {
       [dialogType]: { open: false, leave: null }
     }));
   };
+  
+  // Force close dialog to ensure it closes even if there are state issues
+  const forceCloseDialog = (dialogType) => {
+    setDialogs(prev => ({
+      ...prev,
+      [dialogType]: { open: false, leave: null }
+    }));
+    // Add a small delay and then force close again to ensure it's closed
+    setTimeout(() => {
+      setDialogs(prev => ({
+        ...prev,
+        [dialogType]: { open: false, leave: null }
+      }));
+    }, 100);
+  };
 
   const fetchLeaves = useCallback(async () => {
     setLoading(true);
@@ -126,6 +141,11 @@ const LeaveManagement = () => {
   useEffect(() => {
     fetchLeaves();
   }, [fetchLeaves]);
+  
+  // Debug dialog states
+  useEffect(() => {
+    console.log('Dialog states updated:', dialogs);
+  }, [dialogs]);
   
   // Listen for real-time notifications
   useEffect(() => {
@@ -293,12 +313,12 @@ const LeaveManagement = () => {
         console.error('Error: selectedLeave is null or missing id');
         setError('Cannot approve leave: Invalid leave selection');
         showSnackbar('Cannot approve leave: Invalid leave selection', 'error');
-        closeDialog('approve');
+        forceCloseDialog('approve');
         return;
       }
       
       // Close dialog immediately to provide better UX
-      closeDialog('approve');
+      forceCloseDialog('approve');
       
       const response = await leaveAPI.approveLeave(selectedLeave.id);
       console.log('Approve API response:', response);
@@ -326,7 +346,7 @@ const LeaveManagement = () => {
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
       // Make sure dialog closes even on error
-      closeDialog('approve');
+      forceCloseDialog('approve');
     }
   };
 
@@ -339,12 +359,12 @@ const LeaveManagement = () => {
         console.error('Error: selectedLeave is null or missing id');
         setError('Cannot reject leave: Invalid leave selection');
         showSnackbar('Cannot reject leave: Invalid leave selection', 'error');
-        closeDialog('reject');
+        forceCloseDialog('reject');
         return;
       }
       
       // Close dialog immediately to provide better UX
-      closeDialog('reject');
+      forceCloseDialog('reject');
       
       // Include rejection reason in the request
       const response = await leaveAPI.rejectLeave(selectedLeave.id, { rejectionReason: 'Rejected by admin' });
@@ -373,7 +393,7 @@ const LeaveManagement = () => {
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
       // Make sure dialog closes even on error
-      closeDialog('reject');
+      forceCloseDialog('reject');
     }
   };
 
@@ -839,7 +859,10 @@ const LeaveManagement = () => {
       {/* Approve Dialog */}
       <Dialog 
         open={dialogs.approve.open} 
-        onClose={() => closeDialog('approve')}
+        onClose={() => {
+          console.log('Approve dialog closing');
+          forceCloseDialog('approve');
+        }}
         aria-labelledby="approve-dialog-title"
       >
         <DialogTitle id="approve-dialog-title">{t('common.approve')} {t('leaves.leaveRequests')}</DialogTitle>
@@ -849,7 +872,10 @@ const LeaveManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => closeDialog('approve')}>
+          <Button onClick={() => {
+            console.log('Cancel approve clicked');
+            forceCloseDialog('approve');
+          }}>
             {t('common.cancel')}
           </Button>
           <Button onClick={confirmApprove} variant="contained" color="success">
@@ -861,7 +887,10 @@ const LeaveManagement = () => {
       {/* Reject Dialog */}
       <Dialog 
         open={dialogs.reject.open} 
-        onClose={() => closeDialog('reject')}
+        onClose={() => {
+          console.log('Reject dialog closing');
+          forceCloseDialog('reject');
+        }}
         aria-labelledby="reject-dialog-title"
       >
         <DialogTitle id="reject-dialog-title">{t('common.reject')} {t('leaves.leaveRequests')}</DialogTitle>
@@ -871,7 +900,10 @@ const LeaveManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => closeDialog('reject')}>
+          <Button onClick={() => {
+            console.log('Cancel reject clicked');
+            forceCloseDialog('reject');
+          }}>
             {t('common.cancel')}
           </Button>
           <Button onClick={confirmReject} variant="contained" color="error">
