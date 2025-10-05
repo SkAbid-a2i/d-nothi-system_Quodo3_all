@@ -99,6 +99,12 @@ export const auditLog = {
       description: `Leave request rejected by ${rejecter}. Reason: ${reason}` 
     }),
     
+  leaveDeleted: (leaveId, deleter) => 
+    createAuditLog('DELETE', 'LEAVE', { 
+      resourceId: leaveId, 
+      description: `Leave request deleted by ${deleter}` 
+    }),
+    
   // Dropdown actions
   dropdownCreated: (dropdownId, creator, type) => 
     createAuditLog('CREATE', 'DROPDOWN', { 
