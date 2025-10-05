@@ -120,15 +120,19 @@ const LeaveManagement = () => {
     setLoading(true);
     setError('');
     try {
+      console.log('Fetching leaves...');
       const response = await leaveAPI.getAllLeaves();
+      console.log('Leaves response:', response);
       setLeaves(response.data || []);
       
       // Log audit entry
       if (user) {
         auditLog.leaveFetched((response.data || []).length, user.username || 'unknown');
       }
+      console.log('Leaves fetched successfully, count:', (response.data || []).length);
     } catch (error) {
       console.error('Error fetching leaves:', error);
+      console.error('Error response:', error.response);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch leave requests. Please try again.';
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
@@ -139,6 +143,7 @@ const LeaveManagement = () => {
   
   // Fetch leaves on component mount
   useEffect(() => {
+    console.log('LeaveManagement component mounted, fetching leaves...');
     fetchLeaves();
   }, [fetchLeaves]);
   

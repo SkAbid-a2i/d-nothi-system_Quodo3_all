@@ -143,11 +143,15 @@ const TaskLogger = () => {
   const fetchAllTasks = useCallback(async () => {
     setTasksLoading(true);
     try {
+      console.log('Fetching all tasks...');
       const response = await taskAPI.getAllTasks();
+      console.log('Tasks response:', response);
       const tasks = response.data || [];
       setAllTasks(tasks);
+      console.log('Tasks fetched successfully, count:', tasks.length);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      console.error('Error response:', error.response);
       showSnackbar(t('tasks.errorFetchingTasks') + ': ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setTasksLoading(false);
@@ -187,6 +191,7 @@ const TaskLogger = () => {
 
   // Fetch all tasks on component mount
   useEffect(() => {
+    console.log('TaskLogger component mounted, fetching tasks...');
     fetchAllTasks();
   }, [fetchAllTasks]);
 

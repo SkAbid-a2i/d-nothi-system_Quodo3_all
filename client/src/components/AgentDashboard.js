@@ -94,15 +94,24 @@ const AgentDashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
+      console.log('Fetching dashboard data...');
+      
       // Fetch tasks
+      console.log('Fetching tasks...');
       const tasksResponse = await taskAPI.getAllTasks();
+      console.log('Tasks response:', tasksResponse);
       setTasks(tasksResponse.data || []);
       
       // Fetch leaves
+      console.log('Fetching leaves...');
       const leavesResponse = await leaveAPI.getAllLeaves();
+      console.log('Leaves response:', leavesResponse);
       setLeaves(leavesResponse.data || []);
+      
+      console.log('Dashboard data fetched successfully');
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error response:', error.response);
       showSnackbar('Error fetching dashboard data: ' + error.message, 'error');
     } finally {
       setLoading(false);
@@ -111,6 +120,7 @@ const AgentDashboard = () => {
 
   // Fetch tasks and leaves on component mount
   useEffect(() => {
+    console.log('AgentDashboard component mounted, fetching data...');
     fetchDashboardData();
   }, [fetchDashboardData]);
 

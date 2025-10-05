@@ -15,7 +15,8 @@ import {
   Chip, 
   IconButton,
   LinearProgress,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { 
   Search as SearchIcon,
@@ -25,7 +26,7 @@ import {
   Folder as FolderIcon,
   InsertDriveFile as FileIcon
 } from '@mui/icons-material';
-// import { fileAPI } from '../services/api';
+import { fileAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { auditLog } from '../services/auditLogger';
 
@@ -38,6 +39,7 @@ const Files = () => {
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const fetchStorageInfo = useCallback(async () => {
     try {
@@ -52,27 +54,26 @@ const Files = () => {
 
   // Fetch user storage info and files on component mount
   useEffect(() => {
+    console.log('Files component mounted, fetching data...');
     fetchStorageInfo();
     fetchFiles();
   }, [fetchStorageInfo]);
 
   const fetchFiles = async () => {
-    // setLoading(true);
+    setLoading(true);
     try {
+      console.log('Fetching files...');
       // In a real implementation, this would fetch actual files from the backend
-      // For now, we'll use mock data
-      const mockFiles = [
-        { id: 1, name: 'task_report_september.pdf', type: 'pdf', size: '2.4 MB', uploaded: '2025-09-28', owner: 'John Doe' },
-        { id: 2, name: 'meeting_notes.docx', type: 'doc', size: '0.8 MB', uploaded: '2025-09-29', owner: 'Jane Smith' },
-        { id: 3, name: 'project_plan.xlsx', type: 'xls', size: '1.2 MB', uploaded: '2025-09-30', owner: 'Bob Johnson' },
-        { id: 4, name: 'screenshot.png', type: 'img', size: '0.5 MB', uploaded: '2025-10-01', owner: 'Alice Brown' },
-      ];
-      setFiles(mockFiles);
+      const response = await fileAPI.getFiles();
+      console.log('Files response:', response);
+      setFiles(response.data || []);
+      console.log('Files fetched successfully, count:', (response.data || []).length);
     } catch (error) {
       console.error('Error fetching files:', error);
+      console.error('Error response:', error.response);
       setError('Failed to fetch files');
     } finally {
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -176,6 +177,13 @@ const Files = () => {
         </Alert>
       )}
       
+      {/* Loading indicator */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      
       {/* Storage Summary */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
@@ -202,8 +210,8 @@ const Files = () => {
                 onChange={handleFileUpload}
               />
               <label htmlFor="file-upload">
-                <Button
-                  variant="contained"
+                <Button 
+                  variant="contained" 
                   component="span"
                   startIcon={<UploadIcon />}
                 >
@@ -213,21 +221,12 @@ const Files = () => {
             </Box>
           </Grid>
         </Grid>
-        
-        {uploadProgress > 0 && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Uploading file...
-            </Typography>
-            <LinearProgress variant="determinate" value={uploadProgress} />
-          </Box>
-        )}
       </Paper>
       
-      {/* File Filters */}
+      {/* File Search */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={8}>
             <TextField
               fullWidth
               label="Search Files"
@@ -238,20 +237,19 @@ const Files = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button variant="outlined" sx={{ mr: 1 }}>
-                Filter
-              </Button>
-              <Button variant="outlined">
-                Clear
-              </Button>
-            </Box>
+          <Grid item xs={12} sm={4}>
+            <Button 
+              variant="outlined" 
+              startIcon={<SearchIcon />}
+              fullWidth
+            >
+              Search
+            </Button>
           </Grid>
         </Grid>
       </Paper>
       
-      {/* File List */}
+      {/* Files Table */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -268,10 +266,8 @@ const Files = () => {
             {files.map((file) => (
               <TableRow key={file.id}>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {getFileIcon(file.type)}
-                    <Typography sx={{ ml: 1 }}>{file.name}</Typography>
-                  </Box>
+                  {getFileIcon(file.type)}
+                  {file.name}
                 </TableCell>
                 <TableCell>
                   <Chip 

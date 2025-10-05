@@ -97,13 +97,17 @@ const UserManagement = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
+      console.log('Fetching users...');
       const response = await userAPI.getAllUsers();
+      console.log('Users response:', response);
       setUsers(response.data);
       
       // Log audit entry
       auditLog.userCreated(response.data.length, user?.username || 'unknown');
+      console.log('Users fetched successfully, count:', response.data.length);
     } catch (error) {
       console.error('Error fetching users:', error);
+      console.error('Error response:', error.response);
       setError('Failed to fetch users');
     } finally {
       setLoading(false);
@@ -112,15 +116,20 @@ const UserManagement = () => {
 
   const fetchPermissionTemplates = useCallback(async () => {
     try {
+      console.log('Fetching permission templates...');
       const response = await permissionAPI.getAllTemplates();
+      console.log('Permission templates response:', response);
       setPermissionTemplates(response.data);
+      console.log('Permission templates fetched successfully, count:', response.data.length);
     } catch (error) {
       console.error('Error fetching permission templates:', error);
+      console.error('Error response:', error.response);
       setError('Failed to fetch permission templates');
     }
   }, []);
 
   useEffect(() => {
+    console.log('UserManagement component mounted, fetching data...');
     fetchUsers();
     fetchOffices();
     fetchDropdowns();
