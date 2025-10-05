@@ -286,6 +286,7 @@ const LeaveManagement = () => {
   // Confirm actions
   const confirmApprove = async () => {
     const selectedLeave = dialogs.approve.leave;
+    console.log('Attempting to approve leave:', selectedLeave);
     try {
       // Check if selectedLeave is not null before proceeding
       if (!selectedLeave || !selectedLeave.id) {
@@ -296,7 +297,11 @@ const LeaveManagement = () => {
         return;
       }
       
-      await leaveAPI.approveLeave(selectedLeave.id);
+      // Close dialog immediately to provide better UX
+      closeDialog('approve');
+      
+      const response = await leaveAPI.approveLeave(selectedLeave.id);
+      console.log('Approve API response:', response);
       
       // Update leave status to approved
       setLeaves(leaves.map(leave => 
@@ -309,9 +314,6 @@ const LeaveManagement = () => {
       if (user) {
         auditLog.leaveApproved(selectedLeave.id, user.username || 'unknown');
       }
-      
-      // Close dialog
-      closeDialog('approve');
       
       // Show success notification
       showSnackbar(`Leave Request approved!`, 'success');
@@ -330,6 +332,7 @@ const LeaveManagement = () => {
 
   const confirmReject = async () => {
     const selectedLeave = dialogs.reject.leave;
+    console.log('Attempting to reject leave:', selectedLeave);
     try {
       // Check if selectedLeave is not null before proceeding
       if (!selectedLeave || !selectedLeave.id) {
@@ -340,8 +343,12 @@ const LeaveManagement = () => {
         return;
       }
       
+      // Close dialog immediately to provide better UX
+      closeDialog('reject');
+      
       // Include rejection reason in the request
-      await leaveAPI.rejectLeave(selectedLeave.id, { rejectionReason: 'Rejected by admin' });
+      const response = await leaveAPI.rejectLeave(selectedLeave.id, { rejectionReason: 'Rejected by admin' });
+      console.log('Reject API response:', response);
       
       // Update leave status to rejected
       setLeaves(leaves.map(leave => 
@@ -354,9 +361,6 @@ const LeaveManagement = () => {
       if (user) {
         auditLog.leaveRejected(selectedLeave.id, user.username || 'unknown', 'Rejected by admin');
       }
-      
-      // Close dialog
-      closeDialog('reject');
       
       // Show success notification
       showSnackbar(`Leave Request rejected!`, 'warning');
