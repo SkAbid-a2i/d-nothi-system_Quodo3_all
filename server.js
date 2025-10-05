@@ -26,7 +26,10 @@ app.use(cors({
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     'http://localhost:3000',
     'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com'
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app'
   ],
   credentials: true,
   optionsSuccessStatus: 200,

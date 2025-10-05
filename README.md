@@ -76,7 +76,7 @@ A comprehensive web application for organizations to manage tasks, leaves, repor
 ## Deployment & Hosting
 - Database: TiDB (cloud database)
 - Backend: Render (free service)
-- Frontend: Netlify (fast and globally accessible)
+- Frontend: Vercel (modern and fast deployment)
 
 ## Setup Instructions
 
@@ -105,7 +105,7 @@ A comprehensive web application for organizations to manage tasks, leaves, repor
 
 ## Deployment Instructions
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+See [DEPLOYMENT_VERCEL_RENDER.md](DEPLOYMENT_VERCEL_RENDER.md) for detailed deployment instructions for Vercel + Render setup.
 
 ## Environment Variables
 
@@ -135,11 +135,12 @@ EMAIL_FROM=D-Nothi Task Management <no-reply@d-nothi.com>
 # Server Configuration
 NODE_ENV=development
 PORT=5000
+FRONTEND_URL=https://d-nothi-system-quodo3-all.vercel.app
 ```
 
 ### Frontend (client/.env)
 ```
-REACT_APP_API_URL=http://localhost:5000/api
+REACT_APP_API_URL=https://quodo3-backend.onrender.com/api
 ```
 
 ## Project Structure
