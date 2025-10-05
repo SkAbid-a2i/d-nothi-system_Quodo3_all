@@ -111,6 +111,7 @@ const reportRoutes = require('./routes/report.routes');
 const auditRoutes = require('./routes/audit.routes');
 const logRoutes = require('./routes/log.routes');
 const permissionRoutes = require('./routes/permission.routes');
+const fileRoutes = require('./routes/file.routes');
 
 // Use routes
 app.use('/api/auth', (req, res, next) => {
@@ -157,6 +158,11 @@ app.use('/api/permissions', (req, res, next) => {
   logger.info('Permission routes accessed', { endpoint: '/api/permissions' + req.url });
   next();
 }, permissionRoutes);
+
+app.use('/api/files', (req, res, next) => {
+  logger.info('File routes accessed', { endpoint: '/api/files' + req.url });
+  next();
+}, fileRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

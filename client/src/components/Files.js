@@ -63,7 +63,6 @@ const Files = () => {
     setLoading(true);
     try {
       console.log('Fetching files...');
-      // In a real implementation, this would fetch actual files from the backend
       const response = await fileAPI.getFiles();
       console.log('Files response:', response);
       setFiles(response.data || []);
@@ -71,7 +70,7 @@ const Files = () => {
     } catch (error) {
       console.error('Error fetching files:', error);
       console.error('Error response:', error.response);
-      setError('Failed to fetch files');
+      setError('Failed to fetch files: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -80,50 +79,84 @@ const Files = () => {
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Check if file size would exceed quota
-      const fileSizeMB = file.size / (1024 * 1024);
-      const newUsedStorage = usedStorage + fileSizeMB;
+      setLoading(true);
+      setError('');
+      setSuccess('');
       
-      if (newUsedStorage > storageQuota) {
-        setError('File upload would exceed your storage quota!');
-        setTimeout(() => setError(''), 5000);
-        return;
+      try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Upload file to backend
+        const response = await fileAPI.uploadFile(formData);
+        
+        // Update storage info
+        const fileSizeMB = file.size / (1024 * 1024);
+        setUsedStorage(prev => prev + fileSizeMB);
+        
+        // Log audit entry
+        auditLog.fileUploaded(file.name, user?.username || 'unknown', `${fileSizeMB.toFixed(2)} MB`);
+        
+        // Refresh file list
+        await fetchFiles();
+        
+        setSuccess(response.data?.message || 'File uploaded successfully!');
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        console.error('Error response:', error.response);
+        setError('Failed to upload file: ' + (error.response?.data?.message || error.message));
+      } finally {
+        setLoading(false);
+        setTimeout(() => setSuccess(''), 3000);
       }
-      
-      // In a real implementation, this would upload the file to the backend
-      // For now, we'll simulate the upload
-      simulateUploadProgress();
-      setUsedStorage(newUsedStorage);
-      
-      // Log audit entry
-      auditLog.fileUploaded(file.name, user?.username || 'unknown', `${fileSizeMB.toFixed(2)} MB`);
-      
-      setSuccess('File uploaded successfully!');
-      setTimeout(() => setSuccess(''), 3000);
     }
   };
 
-  const simulateUploadProgress = () => {
-    setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+  const handleDownload = async (fileId) => {
+    try {
+      // Implement file download logic
+      await fileAPI.downloadFile(fileId);
+      auditLog.fileDownloaded(`file_${fileId}`, user?.username || 'unknown');
+      setSuccess('File download started!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      console.error('Error response:', error.response);
+      setError('Failed to download file: ' + (error.response?.data?.message || error.message));
+    }
   };
 
-  const handleDownload = (fileId) => {
-    // Implement file download logic
-    auditLog.fileDownloaded(`file_${fileId}`, user?.username || 'unknown');
+  const handleDelete = async (fileId) => {
+    try {
+      // Implement file deletion logic
+      await fileAPI.deleteFile(fileId);
+      auditLog.fileDeleted(`file_${fileId}`, user?.username || 'unknown');
+      
+      // Refresh file list
+      await fetchFiles();
+      
+      setSuccess('File deleted successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      console.error('Error response:', error.response);
+      setError('Failed to delete file: ' + (error.response?.data?.message || error.message));
+    }
   };
 
-  const handleDelete = (fileId) => {
-    // Implement file deletion logic
-    auditLog.fileDeleted(`file_${fileId}`, user?.username || 'unknown');
+  // Format file size for display
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   const getFileIcon = (fileType) => {
@@ -258,7 +291,6 @@ const Files = () => {
               <TableCell>Type</TableCell>
               <TableCell>Size</TableCell>
               <TableCell>Uploaded</TableCell>
-              <TableCell>Owner</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -266,19 +298,18 @@ const Files = () => {
             {files.map((file) => (
               <TableRow key={file.id}>
                 <TableCell>
-                  {getFileIcon(file.type)}
-                  {file.name}
+                  {getFileIcon(file.mimeType)}
+                  {file.originalName}
                 </TableCell>
                 <TableCell>
                   <Chip 
-                    label={getFileTypeLabel(file.type)} 
+                    label={getFileTypeLabel(file.mimeType)} 
                     size="small" 
                     variant="outlined"
                   />
                 </TableCell>
-                <TableCell>{file.size}</TableCell>
-                <TableCell>{file.uploaded}</TableCell>
-                <TableCell>{file.owner}</TableCell>
+                <TableCell>{formatFileSize(file.size)}</TableCell>
+                <TableCell>{formatDate(file.uploadedAt)}</TableCell>
                 <TableCell>
                   <IconButton size="small" onClick={() => handleDownload(file.id)}>
                     <DownloadIcon />
