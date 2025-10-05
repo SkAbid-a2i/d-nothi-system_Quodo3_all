@@ -148,4 +148,5 @@ function App() {
   );
 }
 
+// Force redeployment - commit 549dfa3 fix
 export default App;
