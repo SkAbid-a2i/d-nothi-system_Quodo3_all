@@ -123,13 +123,16 @@ const LeaveManagement = () => {
       console.log('Fetching leaves...');
       const response = await leaveAPI.getAllLeaves();
       console.log('Leaves response:', response);
-      setLeaves(response.data || []);
+      // Ensure we're setting an array - API might return an object with data property
+      const leavesData = Array.isArray(response.data) ? response.data : 
+                        response.data?.data || response.data || [];
+      setLeaves(leavesData);
       
       // Log audit entry
       if (user) {
-        auditLog.leaveFetched((response.data || []).length, user.username || 'unknown');
+        auditLog.leaveFetched(leavesData.length, user.username || 'unknown');
       }
-      console.log('Leaves fetched successfully, count:', (response.data || []).length);
+      console.log('Leaves fetched successfully, count:', leavesData.length);
     } catch (error) {
       console.error('Error fetching leaves:', error);
       console.error('Error response:', error.response);

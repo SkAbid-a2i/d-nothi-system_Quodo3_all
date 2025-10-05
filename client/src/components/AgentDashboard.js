@@ -100,13 +100,19 @@ const AgentDashboard = () => {
       console.log('Fetching tasks...');
       const tasksResponse = await taskAPI.getAllTasks();
       console.log('Tasks response:', tasksResponse);
-      setTasks(tasksResponse.data || []);
+      // Ensure we're setting an array - API might return an object with data property
+      const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                       tasksResponse.data?.data || tasksResponse.data || [];
+      setTasks(tasksData);
       
       // Fetch leaves
       console.log('Fetching leaves...');
       const leavesResponse = await leaveAPI.getAllLeaves();
       console.log('Leaves response:', leavesResponse);
-      setLeaves(leavesResponse.data || []);
+      // Ensure we're setting an array - API might return an object with data property
+      const leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
+                        leavesResponse.data?.data || leavesResponse.data || [];
+      setLeaves(leavesData);
       
       console.log('Dashboard data fetched successfully');
     } catch (error) {

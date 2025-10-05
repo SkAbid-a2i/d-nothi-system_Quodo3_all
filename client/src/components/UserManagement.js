@@ -100,11 +100,14 @@ const UserManagement = () => {
       console.log('Fetching users...');
       const response = await userAPI.getAllUsers();
       console.log('Users response:', response);
-      setUsers(response.data);
+      // Ensure we're setting an array - API might return an object with data property
+      const usersData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      setUsers(usersData);
       
       // Log audit entry
-      auditLog.userCreated(response.data.length, user?.username || 'unknown');
-      console.log('Users fetched successfully, count:', response.data.length);
+      auditLog.userCreated(usersData.length, user?.username || 'unknown');
+      console.log('Users fetched successfully, count:', usersData.length);
     } catch (error) {
       console.error('Error fetching users:', error);
       console.error('Error response:', error.response);

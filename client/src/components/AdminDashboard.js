@@ -79,15 +79,24 @@ const AdminDashboard = () => {
     try {
       // Fetch tasks
       const tasksResponse = await taskAPI.getAllTasks();
-      setTasks(tasksResponse.data || []);
+      // Ensure we're setting an array - API might return an object with data property
+      const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                       tasksResponse.data?.data || tasksResponse.data || [];
+      setTasks(tasksData);
       
       // Fetch leaves
       const leavesResponse = await leaveAPI.getAllLeaves();
-      setLeaves(leavesResponse.data || []);
+      // Ensure we're setting an array - API might return an object with data property
+      const leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
+                        leavesResponse.data?.data || leavesResponse.data || [];
+      setLeaves(leavesData);
       
       // Fetch users
       const usersResponse = await userAPI.getAllUsers();
-      setUsers(usersResponse.data || []);
+      // Ensure we're setting an array - API might return an object with data property
+      const usersData = Array.isArray(usersResponse.data) ? usersResponse.data : 
+                       usersResponse.data?.data || usersResponse.data || [];
+      setUsers(usersData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       showSnackbar('Error fetching dashboard data: ' + error.message, 'error');

@@ -146,9 +146,11 @@ const TaskLogger = () => {
       console.log('Fetching all tasks...');
       const response = await taskAPI.getAllTasks();
       console.log('Tasks response:', response);
-      const tasks = response.data || [];
-      setAllTasks(tasks);
-      console.log('Tasks fetched successfully, count:', tasks.length);
+      // Ensure we're setting an array - API might return an object with data property
+      const tasksData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      setAllTasks(tasksData);
+      console.log('Tasks fetched successfully, count:', tasksData.length);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       console.error('Error response:', error.response);
