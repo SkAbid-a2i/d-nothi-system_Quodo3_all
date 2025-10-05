@@ -42,8 +42,15 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 import frontendLogger from '../services/frontendLogger';
+import ModernTaskLogger from './ModernTaskLogger';
 
 const TaskLogger = () => {
+  // For now, we'll use the modern task logger
+  // You can switch back to the original component if needed
+  return <ModernTaskLogger />;
+  
+  // Original implementation (commented out for now)
+  /*
   const { user } = useAuth();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -205,41 +212,31 @@ const TaskLogger = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // Validation
+    if (!date || !source || !category || !description) {
+      showSnackbar(t('tasks.pleaseFillAllFields'), 'error');
+      return;
+    }
     
     try {
+      setLoading(true);
+      
       const taskData = {
         date,
         source,
         category,
         service,
         description,
-        status,
-        userId: user.id, // Automatically add user ID
-        userName: user.fullName || user.username, // Automatically add user name
-        office: user.office // Automatically add office
+        status
       };
-
-      const response = await taskAPI.createTask(taskData);
       
-      // Add new task to list
-      const newTask = {
-        id: response.data.id,
-        ...taskData,
-        createdAt: new Date().toISOString()
-      };
-      setAllTasks([newTask, ...allTasks]);
-      
-      // Log audit entry
-      auditLog.taskCreated(response.data.id, user?.username || 'unknown');
+      await taskAPI.createTask(taskData);
       
       // Reset form
+      setDate(new Date().toISOString().split('T')[0]);
       setSource('');
       setCategory('');
       setService('');
@@ -247,6 +244,9 @@ const TaskLogger = () => {
       setStatus('Pending');
       
       showSnackbar(t('tasks.taskCreatedSuccessfully'), 'success');
+      
+      // Refresh tasks
+      fetchAllTasks();
     } catch (error) {
       console.error('Error creating task:', error);
       showSnackbar(t('tasks.errorCreatingTask') + ': ' + (error.response?.data?.message || error.message), 'error');
@@ -255,7 +255,26 @@ const TaskLogger = () => {
     }
   };
 
-  const handleEdit = (task) => {
+  const handleEditTask = async (task) => {
+    // Fetch dropdown values for edit dialog
+    try {
+      const [sourcesRes, categoriesRes, servicesRes] = await Promise.all([
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Service')
+      ]);
+      
+      setSources(sourcesRes.data || []);
+      setCategories(categoriesRes.data || []);
+      setServices(servicesRes.data || []);
+    } catch (error) {
+      console.error('Error fetching dropdown values for edit:', error);
+      setSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
+      setCategories(['IT Support', 'HR', 'Finance', 'Administration', 'Other']);
+      setServices(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
+    }
+    
+    // Set editing task data
     setEditingTask(task);
     setEditDate(task.date || '');
     setEditSource(task.source || '');
@@ -263,14 +282,13 @@ const TaskLogger = () => {
     setEditService(task.service || '');
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
+    
     setOpenEditDialog(true);
   };
 
-  const handleUpdate = async () => {
-    if (!editingTask) return;
-    
+  const handleUpdateTask = async () => {
     try {
-      const taskData = {
+      const updatedTaskData = {
         date: editDate,
         source: editSource,
         category: editCategory,
@@ -278,51 +296,37 @@ const TaskLogger = () => {
         description: editDescription,
         status: editStatus
       };
-
-      const response = await taskAPI.updateTask(editingTask.id, taskData);
       
-      // Update task in list
-      setAllTasks(allTasks.map(task => 
-        task.id === editingTask.id ? { ...response.data } : task
-      ));
+      await taskAPI.updateTask(editingTask.id, updatedTaskData);
       
-      // Log audit entry
-      auditLog.taskUpdated(editingTask.id, user?.username || 'unknown');
-      
+      showSnackbar('Task updated successfully!', 'success');
       setOpenEditDialog(false);
       setEditingTask(null);
-      showSnackbar(t('tasks.taskUpdatedSuccessfully'), 'success');
+      fetchAllTasks(); // Refresh data
     } catch (error) {
       console.error('Error updating task:', error);
-      showSnackbar(t('tasks.errorUpdatingTask') + ': ' + (error.response?.data?.message || error.message), 'error');
+      showSnackbar('Error updating task: ' + (error.response?.data?.message || error.message), 'error');
     }
   };
 
-  const handleDelete = async (taskId) => {
+  const handleDeleteTask = async (taskId) => {
     try {
       await taskAPI.deleteTask(taskId);
-      
-      // Remove task from list
-      setAllTasks(allTasks.filter(task => task.id !== taskId));
-      
-      // Log audit entry
-      auditLog.taskDeleted(taskId, user?.username || 'unknown');
-      
-      showSnackbar(t('tasks.taskDeletedSuccessfully'), 'success');
+      showSnackbar('Task deleted successfully!', 'success');
+      fetchAllTasks(); // Refresh data
     } catch (error) {
       console.error('Error deleting task:', error);
-      showSnackbar(t('tasks.errorDeletingTask') + ': ' + (error.response?.data?.message || error.message), 'error');
+      showSnackbar('Error deleting task: ' + (error.response?.data?.message || error.message), 'error');
     }
   };
 
   // Filter tasks based on search and filters
   const filteredTasks = allTasks.filter(task => {
     const matchesSearch = !searchTerm || 
-      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.source && task.source.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
+      task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.userName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     const matchesSource = !sourceFilter || task.source === sourceFilter;
@@ -331,20 +335,14 @@ const TaskLogger = () => {
     return matchesSearch && matchesStatus && matchesSource && matchesCategory;
   });
 
-  // Get today's tasks
-  const todaysTasks = allTasks.filter(task => {
-    const today = new Date().toISOString().split('T')[0];
-    return task.date && task.date.split('T')[0] === today;
-  });
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Pending': return 'warning';
-      case 'In Progress': return 'info';
-      case 'Completed': return 'success';
-      case 'Cancelled': return 'error';
-      default: return 'default';
-    }
+  // Get today's tasks
+  const getTodaysTasks = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return allTasks.filter(task => task.date === today);
   };
 
   return (
@@ -515,7 +513,7 @@ const TaskLogger = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : todaysTasks.length === 0 ? (
+          ) : getTodaysTasks().length === 0 ? (
             <Typography color="textSecondary" align="center" sx={{ p: 3 }}>
               {t('tasks.noTasksToday')}
             </Typography>
@@ -535,7 +533,7 @@ const TaskLogger = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {todaysTasks.map((task) => (
+                  {getTodaysTasks().map((task) => (
                     <TableRow key={task.id}>
                       <TableCell>{task.date ? new Date(task.date).toLocaleTimeString() : 'N/A'}</TableCell>
                       <TableCell>{task.source || 'N/A'}</TableCell>
@@ -551,10 +549,10 @@ const TaskLogger = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <IconButton size="small" onClick={() => handleEdit(task)}>
+                        <IconButton size="small" onClick={() => handleEditTask(task)}>
                           <EditIcon />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleDelete(task.id)}>
+                        <IconButton size="small" onClick={() => handleDeleteTask(task.id)}>
                           <DeleteIcon />
                         </IconButton>
                       </TableCell>
@@ -703,10 +701,10 @@ const TaskLogger = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <IconButton size="small" onClick={() => handleEdit(task)}>
+                        <IconButton size="small" onClick={() => handleEditTask(task)}>
                           <EditIcon />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleDelete(task.id)}>
+                        <IconButton size="small" onClick={() => handleDeleteTask(task.id)}>
                           <DeleteIcon />
                         </IconButton>
                       </TableCell>
@@ -830,7 +828,7 @@ const TaskLogger = () => {
         <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)}>{t('common.cancel')}</Button>
           <Button 
-            onClick={handleUpdate} 
+            onClick={handleUpdateTask} 
             variant="contained" 
             startIcon={<SaveIcon />}
           >

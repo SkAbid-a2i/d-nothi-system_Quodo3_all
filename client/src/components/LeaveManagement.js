@@ -44,8 +44,15 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 import frontendLogger from '../services/frontendLogger';
+import ModernLeaveManagement from './ModernLeaveManagement';
 
 const LeaveManagement = () => {
+  // For now, we'll use the modern leave management
+  // You can switch back to the original component if needed
+  return <ModernLeaveManagement />;
+  
+  // Original implementation (commented out for now)
+  /*
   const { user } = useAuth();
   const { t } = useTranslation();
   const [leaves, setLeaves] = useState([]);
@@ -201,337 +208,114 @@ const LeaveManagement = () => {
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
     
-    const weeks = [];
-    let week = Array(7).fill(null);
-    
-    // Fill in the days
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dayOfWeek = (firstDay + day - 1) % 7;
-      week[dayOfWeek] = day;
+    const calendarData = [];
+    for (let i = 0; i < 42; i++) {
+      const day = i - firstDay + 1;
+      const isCurrentMonth = day > 0 && day <= daysInMonth;
+      const date = isCurrentMonth 
+        ? new Date(today.getFullYear(), today.getMonth(), day)
+        : day <= 0 
+          ? new Date(today.getFullYear(), today.getMonth() - 1, daysInMonth + day)
+          : new Date(today.getFullYear(), today.getMonth() + 1, day - daysInMonth);
       
-      if (dayOfWeek === 6 || day === daysInMonth) {
-        weeks.push([...week]);
-        week = Array(7).fill(null);
-      }
+      calendarData.push({
+        day,
+        date: date.toISOString().split('T')[0],
+        isCurrentMonth,
+        isToday: date.toDateString() === today.toDateString(),
+        leaves: leaves.filter(leave => {
+          const leaveDate = new Date(leave.startDate);
+          return leaveDate.toDateString() === date.toDateString() && leave.status === 'Approved';
+        }).length
+      });
     }
     
-    return weeks;
+    return calendarData;
   };
   
-  const calendarData = getCalendarData();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!mainFormState.startDate || !mainFormState.endDate || !mainFormState.reason) {
+      showSnackbar(t('leaves.pleaseFillAllFields'), 'error');
+      return;
+    }
+    
+    // Date validation
+    const startDate = new Date(mainFormState.startDate);
+    const endDate = new Date(mainFormState.endDate);
+    
+    if (startDate > endDate) {
+      showSnackbar(t('leaves.endDateAfterStartDate'), 'error');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const leaveData = {
+        startDate: mainFormState.startDate,
+        endDate: mainFormState.endDate,
+        reason: mainFormState.reason
+      };
+      
+      await leaveAPI.createLeave(leaveData);
+      
+      // Reset form
+      setMainFormState({
+        startDate: '',
+        endDate: '',
+        reason: ''
+      });
+      
+      showSnackbar(t('leaves.leaveRequestSubmitted'), 'success');
+      
+      // Refresh leaves
+      fetchLeaves();
+    } catch (error) {
+      console.error('Error submitting leave request:', error);
+      showSnackbar(t('leaves.errorSubmittingRequest') + ': ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  // Mock notifications data
-  const notifications = [
-    { id: 1, message: 'John Doe has requested leave for Oct 1-3', time: '2 hours ago', type: 'leave' },
-    { id: 2, message: 'Jane Smith\'s leave request approved', time: '1 day ago', type: 'approval' },
-    { id: 3, message: 'Reminder: Team meeting tomorrow', time: '1 day ago', type: 'reminder' }
-  ];
-
-  // Filter leaves based on search term and status
+  const handleApproveLeave = async (leaveId) => {
+    try {
+      await leaveAPI.approveLeave(leaveId);
+      showSnackbar('Leave request approved successfully!', 'success');
+      fetchLeaves(); // Refresh data
+      closeDialog('approve');
+    } catch (error) {
+      console.error('Error approving leave:', error);
+      showSnackbar('Error approving leave: ' + error.message, 'error');
+    }
+  };
+  
+  const handleRejectLeave = async (leaveId, rejectionReason) => {
+    try {
+      await leaveAPI.rejectLeave(leaveId, { rejectionReason });
+      showSnackbar('Leave request rejected successfully!', 'success');
+      fetchLeaves(); // Refresh data
+      closeDialog('reject');
+    } catch (error) {
+      console.error('Error rejecting leave:', error);
+      showSnackbar('Error rejecting leave: ' + error.message, 'error');
+    }
+  };
+  
+  // Filter leaves based on search and status
   const filteredLeaves = leaves.filter(leave => {
     const matchesSearch = !searchTerm || 
-      (leave.employee && leave.employee.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()));
+      leave.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      leave.userName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = !statusFilter || leave.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
-
-  // Form handlers
-  const handleFormChange = (field, value) => {
-    setFormState(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
   
-  const handleMainFormChange = (field, value) => {
-    setMainFormState(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const resetForm = () => {
-    setFormState({
-      startDate: '',
-      endDate: '',
-      reason: ''
-    });
-  };
-  
-  const resetMainForm = () => {
-    setMainFormState({
-      startDate: '',
-      endDate: '',
-      reason: ''
-    });
-  };
-
-  // Action handlers
-  const handleApproveLeave = (leave) => {
-    if (!leave || !leave.id) {
-      setError('Invalid leave selection');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-    openDialog('approve', leave);
-  };
-
-  const handleRejectLeave = (leave) => {
-    if (!leave || !leave.id) {
-      setError('Invalid leave selection');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-    openDialog('reject', leave);
-  };
-
-  const handleEditLeave = (leave) => {
-    if (!leave || !leave.id) {
-      setError('Invalid leave selection');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-    setFormState({
-      startDate: leave.startDate ? new Date(leave.startDate).toISOString().split('T')[0] : '',
-      endDate: leave.endDate ? new Date(leave.endDate).toISOString().split('T')[0] : '',
-      reason: leave.reason || ''
-    });
-    openDialog('edit', leave);
-  };
-
-  const handleDeleteLeave = (leave) => {
-    if (!leave || !leave.id) {
-      setError('Invalid leave selection');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-    openDialog('delete', leave);
-  };
-
-  // Confirm actions
-  const confirmApprove = async () => {
-    const selectedLeave = dialogs.approve.leave;
-    console.log('Attempting to approve leave:', selectedLeave);
-    try {
-      // Check if selectedLeave is not null before proceeding
-      if (!selectedLeave || !selectedLeave.id) {
-        console.error('Error: selectedLeave is null or missing id');
-        setError('Cannot approve leave: Invalid leave selection');
-        showSnackbar('Cannot approve leave: Invalid leave selection', 'error');
-        forceCloseDialog('approve');
-        return;
-      }
-      
-      // Close dialog immediately to provide better UX
-      forceCloseDialog('approve');
-      
-      const response = await leaveAPI.approveLeave(selectedLeave.id);
-      console.log('Approve API response:', response);
-      
-      // Update leave status to approved
-      setLeaves(leaves.map(leave => 
-        leave.id === selectedLeave.id 
-          ? { ...leave, status: 'Approved' } 
-          : leave
-      ));
-      
-      // Log audit entry
-      if (user) {
-        auditLog.leaveApproved(selectedLeave.id, user.username || 'unknown');
-      }
-      
-      // Show success notification
-      showSnackbar(`Leave Request approved!`, 'success');
-      
-      // Refresh leave list to ensure UI is updated
-      fetchLeaves();
-    } catch (error) {
-      console.error('Error approving leave:', error);
-      const errorMessage = 'Failed to approve leave request: ' + (error.response?.data?.message || error.message);
-      setError(errorMessage);
-      showSnackbar(errorMessage, 'error');
-      // Make sure dialog closes even on error
-      forceCloseDialog('approve');
-    }
-  };
-
-  const confirmReject = async () => {
-    const selectedLeave = dialogs.reject.leave;
-    console.log('Attempting to reject leave:', selectedLeave);
-    try {
-      // Check if selectedLeave is not null before proceeding
-      if (!selectedLeave || !selectedLeave.id) {
-        console.error('Error: selectedLeave is null or missing id');
-        setError('Cannot reject leave: Invalid leave selection');
-        showSnackbar('Cannot reject leave: Invalid leave selection', 'error');
-        forceCloseDialog('reject');
-        return;
-      }
-      
-      // Close dialog immediately to provide better UX
-      forceCloseDialog('reject');
-      
-      // Include rejection reason in the request
-      const response = await leaveAPI.rejectLeave(selectedLeave.id, { rejectionReason: 'Rejected by admin' });
-      console.log('Reject API response:', response);
-      
-      // Update leave status to rejected
-      setLeaves(leaves.map(leave => 
-        leave.id === selectedLeave.id 
-          ? { ...leave, status: 'Rejected' } 
-          : leave
-      ));
-      
-      // Log audit entry
-      if (user) {
-        auditLog.leaveRejected(selectedLeave.id, user.username || 'unknown', 'Rejected by admin');
-      }
-      
-      // Show success notification
-      showSnackbar(`Leave Request rejected!`, 'warning');
-      
-      // Refresh leave list to ensure UI is updated
-      fetchLeaves();
-    } catch (error) {
-      console.error('Error rejecting leave:', error);
-      const errorMessage = 'Failed to reject leave request: ' + (error.response?.data?.message || error.message);
-      setError(errorMessage);
-      showSnackbar(errorMessage, 'error');
-      // Make sure dialog closes even on error
-      forceCloseDialog('reject');
-    }
-  };
-
-  const confirmEditLeave = async () => {
-    const editingLeave = dialogs.edit.leave;
-    try {
-      if (!editingLeave || !editingLeave.id) {
-        setError('Invalid leave selection');
-        showSnackbar('Cannot edit leave: Invalid leave selection', 'error');
-        closeDialog('edit');
-        return;
-      }
-
-      const leaveData = {
-        startDate: formState.startDate,
-        endDate: formState.endDate,
-        reason: formState.reason
-      };
-
-      // Update leave through API
-      await leaveAPI.updateLeave(editingLeave.id, leaveData);
-
-      // Update leave in state
-      setLeaves(leaves.map(leave => 
-        leave.id === editingLeave.id 
-          ? { ...leave, ...leaveData } 
-          : leave
-      ));
-
-      // Log audit entry
-      if (user) {
-        auditLog.leaveUpdated(editingLeave.id, user.username || 'unknown');
-      }
-
-      // Close dialog and reset form
-      closeDialog('edit');
-      resetForm();
-
-      // Show success notification
-      showSnackbar('Leave request updated successfully!', 'success');
-
-      // Refresh leave list
-      fetchLeaves();
-    } catch (error) {
-      console.error('Error updating leave:', error);
-      const errorMessage = 'Failed to update leave request: ' + (error.response?.data?.message || error.message);
-      setError(errorMessage);
-      showSnackbar(errorMessage, 'error');
-      closeDialog('edit');
-    }
-  };
-
-  const confirmDeleteLeave = async () => {
-    const selectedLeave = dialogs.delete.leave;
-    try {
-      if (!selectedLeave || !selectedLeave.id) {
-        setError('Invalid leave selection');
-        showSnackbar('Cannot delete leave: Invalid leave selection', 'error');
-        closeDialog('delete');
-        return;
-      }
-
-      // Delete leave through API
-      await leaveAPI.deleteLeave(selectedLeave.id);
-
-      // Remove leave from state
-      setLeaves(leaves.filter(leave => leave.id !== selectedLeave.id));
-
-      // Log audit entry
-      if (user) {
-        auditLog.leaveDeleted(selectedLeave.id, user.username || 'unknown');
-      }
-
-      // Close dialog
-      closeDialog('delete');
-
-      // Show success notification
-      showSnackbar('Leave request deleted successfully!', 'success');
-
-      // Refresh leave list
-      fetchLeaves();
-    } catch (error) {
-      console.error('Error deleting leave:', error);
-      const errorMessage = 'Failed to delete leave request: ' + (error.response?.data?.message || error.message);
-      setError(errorMessage);
-      showSnackbar(errorMessage, 'error');
-      closeDialog('delete');
-    }
-  };
-
-  const handleSubmitLeave = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    try {
-      const leaveData = {
-        startDate: mainFormState.startDate,
-        endDate: mainFormState.endDate,
-        reason: mainFormState.reason,
-        appliedDate: new Date().toISOString().split('T')[0]
-      };
-      
-      const response = await leaveAPI.createLeave(leaveData);
-      
-      // Add new leave to list
-      const newLeave = {
-        id: response.data.id,
-        employee: user?.fullName || user?.username || 'Current User',
-        ...leaveData,
-        status: 'Pending'
-      };
-      setLeaves([...leaves, newLeave]);
-      
-      // Log audit entry
-      if (user) {
-        auditLog.leaveCreated(response.data.id, user.username || 'unknown');
-      }
-      
-      // Reset main form
-      resetMainForm();
-      
-      // Show success notification
-      showSnackbar(`Leave request for ${newLeave.startDate} to ${newLeave.endDate} submitted successfully!`, 'success');
-    } catch (error) {
-      console.error('Error submitting leave:', error);
-      setError('Failed to submit leave request: ' + (error.response?.data?.message || error.message));
-      setTimeout(() => setError(''), 5000);
-    }
-  };
-
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -570,7 +354,7 @@ const LeaveManagement = () => {
             <Typography variant="h6" gutterBottom>
               {t('leaves.requestNewLeave')}
             </Typography>
-            <form onSubmit={handleSubmitLeave}>
+            <form onSubmit={handleSubmit}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <TextField

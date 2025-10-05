@@ -32,21 +32,146 @@ function App() {
     }
   }, []);
 
-  // Create theme based on dark mode state
+  // Create theme based on dark mode state with modern color palette
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: '#967bb6', // Lavender
+        main: '#667eea', // Modern blue gradient start
+        light: '#764ba2', // Purple for lighter accents
+        dark: '#5a67d8', // Darker blue for contrast
+        contrastText: '#ffffff'
       },
       secondary: {
-        main: '#98fb98', // Pale Green
+        main: '#f093fb', // Modern pink
+        light: '#f5b4fb',
+        dark: '#ec69f0',
+        contrastText: '#ffffff'
       },
       background: {
-        default: darkMode ? '#121212' : '#f5f5f5',
-        paper: darkMode ? '#1e1e1e' : '#ffffff',
+        default: darkMode ? '#0f172a' : '#f8fafc',
+        paper: darkMode ? '#1e293b' : '#ffffff',
       },
+      success: {
+        main: '#10b981', // Modern green
+        light: '#34d399',
+        dark: '#059669'
+      },
+      warning: {
+        main: '#f59e0b', // Modern amber
+        light: '#fbbf24',
+        dark: '#d97706'
+      },
+      error: {
+        main: '#ef4444', // Modern red
+        light: '#f87171',
+        dark: '#dc2626'
+      },
+      info: {
+        main: '#3b82f6', // Modern blue
+        light: '#60a5fa',
+        dark: '#2563eb'
+      }
     },
+    typography: {
+      fontFamily: [
+        'Inter',
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Roboto',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif'
+      ].join(','),
+      h1: {
+        fontWeight: 700,
+        letterSpacing: '-0.5px'
+      },
+      h2: {
+        fontWeight: 700,
+        letterSpacing: '-0.3px'
+      },
+      h3: {
+        fontWeight: 600,
+        letterSpacing: '-0.2px'
+      },
+      h4: {
+        fontWeight: 600
+      },
+      h5: {
+        fontWeight: 600
+      },
+      h6: {
+        fontWeight: 600
+      },
+      button: {
+        fontWeight: 600,
+        textTransform: 'none'
+      }
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 8,
+            padding: '10px 20px',
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+            }
+          },
+          contained: {
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            '&:hover': {
+              boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)'
+            }
+          }
+        }
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            boxShadow: darkMode 
+              ? '0 10px 25px rgba(0, 0, 0, 0.3)' 
+              : '0 10px 25px rgba(0, 0, 0, 0.05)'
+          }
+        }
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            boxShadow: darkMode 
+              ? '0 4px 12px rgba(0, 0, 0, 0.2)' 
+              : '0 4px 12px rgba(0, 0, 0, 0.08)'
+          }
+        }
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 8
+            }
+          }
+        }
+      }
+    },
+    shape: {
+      borderRadius: 8
+    },
+    shadows: [
+      'none',
+      darkMode 
+        ? '0 1px 3px rgba(0, 0, 0, 0.2)' 
+        : '0 1px 3px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 2px 6px rgba(0, 0, 0, 0.2)' 
+        : '0 2px 6px rgba(0, 0, 0, 0.1)',
+      // ... rest of shadows array would be defined
+    ]
   });
 
   const toggleDarkMode = () => {

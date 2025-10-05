@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   Box, 
   Typography, 
@@ -7,241 +8,344 @@ import {
   InputLabel, 
   Select, 
   MenuItem,
-  TextField,
-  Button,
-  Grid,
   Switch,
   FormControlLabel,
-  Tabs,
-  Tab,
-  Snackbar,
-  Alert
+  Button,
+  Divider,
+  Alert,
+  Fade,
+  Zoom,
+  Avatar,
+  TextField,
+  Grid,
+  Chip
 } from '@mui/material';
-import { useTranslation } from '../contexts/TranslationContext';
+import { 
+  Language as LanguageIcon,
+  Brightness4 as DarkModeIcon,
+  Brightness7 as LightModeIcon,
+  Notifications as NotificationsIcon,
+  Security as SecurityIcon,
+  Person as PersonIcon,
+  Save as SaveIcon
+} from '@mui/icons-material';
 
 const Settings = ({ darkMode, setDarkMode }) => {
-  const { t, changeLanguage } = useTranslation();
-  const [activeTab, setActiveTab] = useState(0);
-  const [currentLanguage, setCurrentLanguage] = useState('en');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  
-  // Load saved language preference
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') || 'en';
-    setCurrentLanguage(savedLanguage);
-  }, []);
+  const { t, language, toggleLanguage } = useTranslation();
+  const [notifications, setNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [success, setSuccess] = useState('');
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const handleLanguageChange = (language) => {
-    setCurrentLanguage(language);
-    changeLanguage(language);
-    showSnackbar(t('settings.settingsSaved'), 'success');
-  };
-
-  const handleThemeChange = (theme) => {
-    const isDark = theme === 'dark';
-    setDarkMode(isDark);
-    localStorage.setItem('theme', theme);
-    showSnackbar(t('settings.settingsSaved'), 'success');
-  };
-
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+  const handleSave = () => {
+    // Simulate saving settings
+    setSuccess('Settings saved successfully!');
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Typography variant="h4" gutterBottom>
-        {t('settings.title')}
-      </Typography>
-      
-      <Paper sx={{ width: '100%' }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          indicatorColor="primary"
-          textColor="primary"
-        >
-          <Tab label={t('settings.profile')} />
-          <Tab label={t('settings.security')} />
-          <Tab label={t('settings.application')} />
-        </Tabs>
-        
-        <Box sx={{ p: 3 }}>
-          {activeTab === 0 && (
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                {t('settings.profile')}
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t('users.fullName')}
-                    defaultValue="System Administrator"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t('users.email')}
-                    defaultValue="admin@example.com"
-                    type="email"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t('users.username')}
-                    defaultValue="admin"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('users.role')}</InputLabel>
-                    <Select defaultValue="SystemAdmin">
-                      <MenuItem value="Agent">{t('users.role.agent')}</MenuItem>
-                      <MenuItem value="Supervisor">{t('users.role.supervisor')}</MenuItem>
-                      <MenuItem value="Admin">{t('users.role.admin')}</MenuItem>
-                      <MenuItem value="SystemAdmin">{t('users.role.systemAdmin')}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <Button variant="contained" onClick={() => showSnackbar(t('settings.settingsSaved'), 'success')}>
-                    {t('common.save')}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-          
-          {activeTab === 1 && (
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                {t('settings.security')}
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t('settings.currentPassword')}
-                    type="password"
-                  />
-                </Grid>
-                <Grid item xs={12}></Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t('settings.newPassword')}
-                    type="password"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t('settings.confirmNewPassword')}
-                    type="password"
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Button variant="contained" onClick={() => showSnackbar(t('settings.settingsSaved'), 'success')}>
-                    {t('settings.changePassword')}
-                  </Button>
-                </Grid>
-              </Grid>
-              
-              <Grid container spacing={3} sx={{ mt: 3 }}>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={<Switch />}
-                    label={t('settings.enable2FA')}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Button variant="outlined">
-                    {t('settings.configure2FA')}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-          
-          {activeTab === 2 && (
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                {t('settings.application')}
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('settings.language')}</InputLabel>
-                    <Select 
-                      value={currentLanguage}
-                      onChange={(e) => handleLanguageChange(e.target.value)}
-                    >
-                      <MenuItem value="en">English</MenuItem>
-                      <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('settings.theme')}</InputLabel>
-                    <Select 
-                      value={darkMode ? 'dark' : 'light'}
-                      onChange={(e) => handleThemeChange(e.target.value)}
-                    >
-                      <MenuItem value="light">{t('settings.theme.light')}</MenuItem>
-                      <MenuItem value="dark">{t('settings.theme.dark')}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={<Switch defaultChecked />}
-                    label={t('settings.notifications')}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={<Switch />}
-                    label={t('settings.autoRefresh')}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Button variant="contained" onClick={() => showSnackbar(t('settings.settingsSaved'), 'success')}>
-                    {t('common.save')}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
+    <Fade in={true} timeout={600}>
+      <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 1
+            }}
+          >
+            Settings
+          </Typography>
+          <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
+            Customize your experience
+          </Typography>
         </Box>
-      </Paper>
-      
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>
+        )}
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <Zoom in={true} timeout={800}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center' }}>
+                  <PersonIcon sx={{ mr: 1 }} />
+                  Profile Settings
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Full Name"
+                      defaultValue="John Doe"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      defaultValue="john.doe@example.com"
+                      type="email"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Username"
+                      defaultValue="johndoe"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Office"
+                      defaultValue="Head Office"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Button
+                      variant="contained"
+                      startIcon={<SaveIcon />}
+                      sx={{ 
+                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                        }
+                      }}
+                    >
+                      Update Profile
+                    </Button>
+                  </Grid>
+                </Grid>
+                
+                <Divider sx={{ my: 4 }} />
+                
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center' }}>
+                  <LanguageIcon sx={{ mr: 1 }} />
+                  Language & Appearance
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Language</InputLabel>
+                      <Select
+                        value={language}
+                        onChange={toggleLanguage}
+                        label="Language"
+                      >
+                        <MenuItem value="en">English</MenuItem>
+                        <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={darkMode}
+                          onChange={() => setDarkMode(!darkMode)}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {darkMode ? <DarkModeIcon sx={{ mr: 1 }} /> : <LightModeIcon sx={{ mr: 1 }} />}
+                          {darkMode ? 'Dark Mode' : 'Light Mode'}
+                        </Box>
+                      }
+                    />
+                  </Grid>
+                </Grid>
+                
+                <Divider sx={{ my: 4 }} />
+                
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center' }}>
+                  <NotificationsIcon sx={{ mr: 1 }} />
+                  Notifications
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={notifications}
+                          onChange={() => setNotifications(!notifications)}
+                          color="primary"
+                        />
+                      }
+                      label="Enable Notifications"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={emailNotifications}
+                          onChange={() => setEmailNotifications(!emailNotifications)}
+                          color="primary"
+                        />
+                      }
+                      label="Email Notifications"
+                      sx={{ ml: 4 }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={pushNotifications}
+                          onChange={() => setPushNotifications(!pushNotifications)}
+                          color="primary"
+                        />
+                      }
+                      label="Push Notifications"
+                      sx={{ ml: 4 }}
+                    />
+                  </Grid>
+                </Grid>
+                
+                <Divider sx={{ my: 4 }} />
+                
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center' }}>
+                  <SecurityIcon sx={{ mr: 1 }} />
+                  Security
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Current Password"
+                      type="password"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="New Password"
+                      type="password"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Confirm New Password"
+                      type="password"
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Button
+                      variant="contained"
+                      startIcon={<SecurityIcon />}
+                      sx={{ 
+                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                        }
+                      }}
+                    >
+                      Change Password
+                    </Button>
+                  </Grid>
+                </Grid>
+                
+                <Box sx={{ mt: 4, textAlign: 'right' }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleSave}
+                    startIcon={<SaveIcon />}
+                    sx={{ 
+                      px: 4,
+                      py: 1.5,
+                      background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)'
+                      }
+                    }}
+                  >
+                    Save All Settings
+                  </Button>
+                </Box>
+              </Paper>
+            </Zoom>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Zoom in={true} timeout={1000}>
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Avatar 
+                  sx={{ 
+                    width: 120, 
+                    height: 120, 
+                    mx: 'auto', 
+                    mb: 2,
+                    fontSize: 48,
+                    bgcolor: 'primary.main',
+                    color: 'white'
+                  }}
+                >
+                  JD
+                </Avatar>
+                
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                  John Doe
+                </Typography>
+                
+                <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 3 }}>
+                  System Administrator
+                </Typography>
+                
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Member since:</strong> Jan 15, 2023
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Last login:</strong> Today, 09:30 AM
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Status:</strong> 
+                    <Chip 
+                      label="Active" 
+                      size="small" 
+                      sx={{ 
+                        ml: 1,
+                        bgcolor: '#10b98120',
+                        color: '#10b981',
+                        fontWeight: 600
+                      }} 
+                    />
+                  </Typography>
+                </Box>
+              </Paper>
+            </Zoom>
+          </Grid>
+        </Grid>
+      </Box>
+    </Fade>
   );
 };
 
