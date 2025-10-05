@@ -17,5 +17,16 @@
   ],
   "env": {
     "REACT_APP_API_URL": "https://quodo3-backend.onrender.com/api"
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app"
+        }
+      ]
+    }
+  ]
 }
