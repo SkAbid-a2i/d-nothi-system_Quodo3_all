@@ -6,7 +6,6 @@ import {
   AppBar, 
   Toolbar, 
   Typography, 
-  Button, 
   Box,
   Drawer,
   List,
@@ -26,8 +25,7 @@ import {
   Fade,
   CircularProgress,
   useTheme,
-  useMediaQuery,
-  Collapse
+  useMediaQuery
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -40,19 +38,11 @@ import {
   Logout as LogoutIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
-  BugReport as LogIcon,
   Notifications as NotificationsIcon,
   AccountCircle,
   Language as LanguageIcon,
-  Security as SecurityIcon,
-  ListAlt as ListAltIcon,
-  Business as BusinessIcon,
   Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-  Upload as UploadIcon,
-  Folder as FolderIcon
+  ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
@@ -137,11 +127,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  // State for collapsible admin menu
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
@@ -192,11 +179,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     setNotificationAnchor(null);
   };
 
-  // Toggle admin submenu
-  const handleAdminMenuToggle = () => {
-    setAdminMenuOpen(!adminMenuOpen);
-  };
-
   // Fetch real notifications
   const fetchNotifications = async () => {
     if (loadingNotifications) return;
@@ -228,7 +210,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   // Handle screen size changes
   useEffect(() => {
     const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 960);
       // Auto-collapse drawer on small screens
       if (window.innerWidth < 960) {
         setDrawerOpen(false);

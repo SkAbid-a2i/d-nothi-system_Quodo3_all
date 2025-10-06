@@ -54,7 +54,6 @@ const DropdownManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -91,16 +90,12 @@ const DropdownManagement = () => {
       setDropdowns(response.data || []);
       
       // Get unique types for dropdown type selection
-      const uniqueTypes = [...new Set((response.data || [])
-        .filter(d => d.isActive)
-        .map(d => d.type))];
-      setTypes(uniqueTypes);
+      // Note: We don't need to store types in state as we use dropdownTypes constant
     } catch (error) {
       console.error('Error fetching dropdowns:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch dropdown values. Please try again.';
       setError(errorMessage);
       setDropdowns([]); // Set to empty array so the UI still works
-      setTypes([]); // Set to empty array so the UI still works
     } finally {
       setLoading(false);
     }

@@ -6,10 +6,6 @@ import {
   Paper, 
   TextField, 
   Button, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -23,8 +19,6 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  Tabs,
-  Tab,
   Snackbar,
   CircularProgress,
   Checkbox,
@@ -35,9 +29,6 @@ import {
   Add as AddIcon, 
   Edit as EditIcon, 
   Delete as DeleteIcon,
-  Check as CheckIcon,
-  Close as CloseIcon,
-  Search as SearchIcon,
   Save as SaveIcon,
   Cancel as CancelIcon
 } from '@mui/icons-material';
@@ -50,7 +41,6 @@ const PermissionTemplateManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
   
   const [searchTerm, setSearchTerm] = useState('');
   

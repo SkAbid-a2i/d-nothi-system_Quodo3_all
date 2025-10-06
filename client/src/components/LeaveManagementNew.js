@@ -119,15 +119,6 @@ const LeaveManagement = () => {
     }));
   };
 
-  const closeAllDialogs = () => {
-    setDialogs({
-      approve: { open: false, leave: null },
-      reject: { open: false, leave: null },
-      edit: { open: false, leave: null },
-      delete: { open: false, leave: null }
-    });
-  };
-
   const fetchLeaves = useCallback(async () => {
     setLoading(true);
     setError('');

@@ -34,9 +34,7 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
-  Divider,
-  Tooltip
+  ListItemSecondaryAction
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -54,7 +52,6 @@ import {
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 
