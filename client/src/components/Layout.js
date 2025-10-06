@@ -425,8 +425,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
                 <StyledListItem 
                   button
-                  selected={location.pathname === '/admin/permission-templates' || 
-                           (location.pathname === '/admin' && window.location.hash === '#permission-templates')}
+                  selected={location.pathname === '/admin/permission-templates'}
                   onClick={() => handleNavigation('/admin/permission-templates')}
                 >
                   <ListItemIcon>
@@ -436,8 +435,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 </StyledListItem>
                 <StyledListItem 
                   button
-                  selected={location.pathname === '/admin/dropdowns' || 
-                           (location.pathname === '/admin' && window.location.hash === '#dropdowns')}
+                  selected={location.pathname === '/admin/dropdowns'}
                   onClick={() => handleNavigation('/admin/dropdowns')}
                 >
                   <ListItemIcon>

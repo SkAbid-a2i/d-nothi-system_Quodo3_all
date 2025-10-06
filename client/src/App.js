@@ -22,6 +22,7 @@ import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
 import DebugComponent from './components/DebugComponent';
 import TestComponent from './components/TestComponent';
+import ApiTest from './components/ApiTest';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -192,6 +193,7 @@ function App() {
               <Route path="/" element={<Login />} />
               <Route path="/debug" element={<DebugComponent />} />
               <Route path="/test" element={<TestComponent />} />
+              <Route path="/api-test" element={<ApiTest />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
