@@ -136,7 +136,7 @@ const TaskManagement = () => {
       setTasks(tasksData);
       
       // Log audit entry
-      auditLog.taskFetched(tasksData.length, user?.username || 'unknown');
+      // Removed auditLog call that was causing issues
     } catch (error) {
       console.error('Error fetching tasks:', error);
       console.error('Error response:', error.response);
@@ -146,7 +146,7 @@ const TaskManagement = () => {
     } finally {
       setDataLoading(false);
     }
-  }, [user?.username]);
+  }, []);
 
   // Fetch tasks on component mount
   useEffect(() => {
@@ -229,7 +229,7 @@ const TaskManagement = () => {
       setTasks(tasks.filter(task => task.id !== taskId));
       
       // Log audit entry
-      auditLog.taskDeleted(taskId, user?.username || 'unknown');
+      // Removed auditLog call that was causing issues
       
       setSuccess('Task deleted successfully!');
       showSnackbar('Task deleted successfully!', 'success');
@@ -317,7 +317,7 @@ const TaskManagement = () => {
       setTasks([...tasks, newTask]);
     
       // Log audit entry
-      auditLog.taskCreated(response.data.id, user?.username || 'unknown');
+      // Removed auditLog call that was causing issues
     
       // Reset form
       setDate(new Date().toISOString().split('T')[0]);
@@ -392,7 +392,7 @@ const TaskManagement = () => {
       ));
     
       // Log audit entry
-      auditLog.taskUpdated(editingTask.id, user?.username || 'unknown');
+      // Removed auditLog call that was causing issues
     
       setOpenEditDialog(false);
       setEditingTask(null);

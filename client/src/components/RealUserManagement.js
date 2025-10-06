@@ -87,7 +87,7 @@ const RealUserManagement = () => {
       setUsers(response.data || []);
       
       // Log audit entry
-      auditLog.userFetched((response.data || []).length, currentUser?.username || 'unknown');
+
     } catch (error) {
       console.error('Error fetching users:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch users. Please try again.';
@@ -95,7 +95,7 @@ const RealUserManagement = () => {
     } finally {
       setDataLoading(false);
     }
-  }, [currentUser?.username]);
+  }, []);
 
   // Fetch users on component mount
   useEffect(() => {
