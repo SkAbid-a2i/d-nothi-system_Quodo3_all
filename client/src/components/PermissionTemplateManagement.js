@@ -87,7 +87,10 @@ const PermissionTemplateManagement = () => {
       setTemplates(response.data || []);
     } catch (error) {
       console.error('Error fetching permission templates:', error);
-      setError('Error fetching permission templates: ' + error.message);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch permission templates. Please try again.';
+      setError(errorMessage);
+      // Set templates to empty array so UI still works
+      setTemplates([]);
     } finally {
       setLoading(false);
     }

@@ -91,7 +91,10 @@ const DropdownManagement = () => {
       setDropdowns(response.data || []);
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
-      setError('Error fetching dropdown values: ' + error.message);
+      const errorMessage = error.response?.data?.message || error.message || 'Error fetching dropdown values. Please try again.';
+      setError(errorMessage);
+      // Set dropdowns to empty array so UI still works
+      setDropdowns([]);
     } finally {
       setLoading(false);
     }

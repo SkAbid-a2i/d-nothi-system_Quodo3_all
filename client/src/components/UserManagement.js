@@ -156,6 +156,8 @@ const UserManagement = () => {
       console.error('Error fetching permission templates:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch permission templates. Please try again.';
       setError(errorMessage);
+      // Even if there's an error, we should still show the tab
+      setPermissionTemplates([]); // Set to empty array so the UI still works
     }
   }, []);
 
@@ -184,6 +186,9 @@ const UserManagement = () => {
       console.error('Error fetching dropdowns:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch dropdown values. Please try again.';
       setError(errorMessage);
+      // Even if there's an error, we should still show the tab
+      setDropdowns([]); // Set to empty array so the UI still works
+      setCategories([]); // Set to empty array so the UI still works
     }
   };
 
@@ -400,8 +405,49 @@ const UserManagement = () => {
     });
   };
 
+  // Handle hash-based navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      switch (hash) {
+        case '#permission-templates':
+          setActiveTab(1);
+          break;
+        case '#dropdowns':
+          setActiveTab(2);
+          break;
+        default:
+          setActiveTab(0);
+      }
+    };
+
+    // Set initial tab based on hash
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    
+    // Update URL hash when tab changes
+    switch (newValue) {
+      case 1:
+        window.location.hash = 'permission-templates';
+        break;
+      case 2:
+        window.location.hash = 'dropdowns';
+        break;
+      default:
+        window.location.hash = '';
+        window.history.replaceState(null, null, ' ');
+    }
   };
 
   // User management handlers

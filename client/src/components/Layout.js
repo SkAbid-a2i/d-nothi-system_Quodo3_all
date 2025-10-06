@@ -433,8 +433,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                   <Box key={item.text}>
                     <StyledListItem 
                       button
-                      selected={location.pathname.startsWith('/admin')}
-                      onClick={handleAdminMenuToggle}
+                      selected={location.pathname === '/admin'}
+                      onClick={() => handleNavigation('/admin')}
                     >
                       <ListItemIcon>
                         {item.icon}
@@ -448,8 +448,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                         <StyledListItem 
                           button
                           sx={{ pl: 4 }}
-                          selected={location.pathname === '/admin/permission-templates'}
-                          onClick={() => handleNavigation('/admin/permission-templates')}
+                          selected={location.hash === '#permission-templates'}
+                          onClick={() => {
+                            handleNavigation('/admin#permission-templates');
+                          }}
                         >
                           <ListItemIcon>
                             <SecurityIcon />
@@ -459,8 +461,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                         <StyledListItem 
                           button
                           sx={{ pl: 4 }}
-                          selected={location.pathname === '/admin/dropdowns'}
-                          onClick={() => handleNavigation('/admin/dropdowns')}
+                          selected={location.hash === '#dropdowns'}
+                          onClick={() => {
+                            handleNavigation('/admin#dropdowns');
+                          }}
                         >
                           <ListItemIcon>
                             <ListAltIcon />
