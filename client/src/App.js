@@ -25,7 +25,6 @@ import DebugComponent from './components/DebugComponent';
 import TestComponent from './components/TestComponent';
 import ApiTest from './components/ApiTest';
 import TaskDebug from './components/TaskDebug';
-import TestAdminConsole from './components/TestAdminConsole';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -239,13 +238,6 @@ function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<AdminConsole />} />
-              </Route>
-              <Route path="/test-admin" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<TestAdminConsole />} />
               </Route>
               <Route path="/reports" element={
                 <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
