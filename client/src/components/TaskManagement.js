@@ -78,6 +78,8 @@ const TaskManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+  const [offices, setOffices] = useState([]); // Add offices state
+  const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
@@ -89,6 +91,7 @@ const TaskManagement = () => {
   const [editSelectedSource, setEditSelectedSource] = useState(null);
   const [editSelectedCategory, setEditSelectedCategory] = useState(null);
   const [editSelectedService, setEditSelectedService] = useState(null);
+  const [editSelectedOffice, setEditSelectedOffice] = useState(null); // Add edit selected office state
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('');
   const [editFiles, setEditFiles] = useState([]); // Edit file upload state
@@ -190,13 +193,15 @@ const TaskManagement = () => {
   const fetchDropdownValues = async () => {
     setLoading(true);
     try {
-      const [sourcesRes, categoriesRes] = await Promise.all([
+      const [sourcesRes, categoriesRes, officesRes] = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
-        dropdownAPI.getDropdownValues('Category')
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Office') // Add office dropdown values
       ]);
-      
+    
       setSources(sourcesRes.data);
       setCategories(categoriesRes.data);
+      setOffices(officesRes.data); // Set offices data
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
     } finally {
@@ -277,16 +282,16 @@ const TaskManagement = () => {
         source: selectedSource?.value || '',
         category: selectedCategory?.value || '',
         service: selectedService?.value || '',
+        office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
         description,
         status,
         // Removed assignedTo from taskData
-        office: user?.office || '',
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
-      
+    
       console.log('Creating task with data:', taskData);
-      
+    
       // For now, we'll store file names in the files array
       // In a real implementation, you would upload files to a storage service
       const fileData = files.map(file => ({
@@ -295,13 +300,13 @@ const TaskManagement = () => {
         type: file.type,
         lastModified: file.lastModified
       }));
-      
+    
       taskData.files = fileData;
-      
+    
       const response = await taskAPI.createTask(taskData);
-      
+    
       console.log('Task creation response:', response);
-      
+    
       // Add new task to list
       const newTask = {
         id: response.data.id,
@@ -310,15 +315,16 @@ const TaskManagement = () => {
         userName: user?.fullName || user?.username
       };
       setTasks([...tasks, newTask]);
-      
+    
       // Log audit entry
       auditLog.taskCreated(response.data.id, user?.username || 'unknown');
-      
+    
       // Reset form
       setDate(new Date().toISOString().split('T')[0]);
       setSelectedSource(null);
       setSelectedCategory(null);
       setSelectedService(null);
+      setSelectedOffice(null); // Reset selected office
       setDescription('');
       setStatus('Pending');
       setFiles([]); // Reset files
@@ -342,6 +348,7 @@ const TaskManagement = () => {
     setEditSelectedSource(sources.find(s => s.value === task.source) || null);
     setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
     setEditSelectedService(services.find(s => s.value === task.service) || null);
+    setEditSelectedOffice(offices.find(o => o.value === task.office) || null); // Set edit selected office
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
     setEditFiles(task.files || []); // Set existing files
@@ -356,14 +363,14 @@ const TaskManagement = () => {
         source: editSelectedSource?.value || '',
         category: editSelectedCategory?.value || '',
         service: editSelectedService?.value || '',
+        office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
         description: editDescription,
         status: editStatus,
         // Removed assignedTo from taskData
-        office: user?.office || '',
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
-      
+    
       // For now, we'll store file names in the files array
       // In a real implementation, you would upload files to a storage service
       const fileData = editFiles.map(file => 
@@ -374,19 +381,19 @@ const TaskManagement = () => {
           lastModified: file.lastModified
         }
       );
-      
+    
       taskData.files = fileData;
-      
+    
       await taskAPI.updateTask(editingTask.id, taskData);
-      
+    
       // Update task in list
       setTasks(tasks.map(task => 
         task.id === editingTask.id ? { ...task, ...taskData } : task
       ));
-      
+    
       // Log audit entry
       auditLog.taskUpdated(editingTask.id, user?.username || 'unknown');
-      
+    
       setOpenEditDialog(false);
       setEditingTask(null);
       setSuccess('Task updated successfully!');
@@ -763,6 +770,22 @@ const TaskManagement = () => {
               )}
             </Grid>
             
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={offices}
+                  getOptionLabel={(option) => option.value}
+                  value={selectedOffice}
+                  onChange={(event, newValue) => setSelectedOffice(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Office" fullWidth />
+                  )}
+                />
+              )}
+            </Grid>
+            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -933,6 +956,22 @@ const TaskManagement = () => {
                       fullWidth 
                       disabled={!editSelectedCategory}
                     />
+                  )}
+                />
+              )}
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <Autocomplete
+                  options={offices}
+                  getOptionLabel={(option) => option.value}
+                  value={editSelectedOffice}
+                  onChange={(event, newValue) => setEditSelectedOffice(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Office" fullWidth />
                   )}
                 />
               )}

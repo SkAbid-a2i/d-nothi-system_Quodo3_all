@@ -35,7 +35,7 @@ router.get('/', authenticate, async (req, res) => {
 // @access  Private (Agent, Admin, Supervisor)
 router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
-    const { date, source, category, service, description, status = 'Pending' } = req.body;
+    const { date, source, category, service, description, status = 'Pending', files = [] } = req.body;
 
     // Create new task
     const task = await Task.create({
@@ -45,6 +45,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       service,
       description,
       status,
+      files,
       userId: req.user.id,
       userName: req.user.fullName,
       office: req.user.office
@@ -66,7 +67,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, source, category, service, description, status, comments = [], attachments = [] } = req.body;
+    const { date, source, category, service, description, status, comments = [], attachments = [], files = [] } = req.body;
 
     // Check if task exists
     const task = await Task.findByPk(id);
@@ -90,6 +91,7 @@ router.put('/:id', authenticate, async (req, res) => {
     task.status = status || task.status;
     task.comments = comments;
     task.attachments = attachments;
+    task.files = files;
 
     await task.save();
 
