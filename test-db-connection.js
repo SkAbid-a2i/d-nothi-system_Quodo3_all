@@ -1,29 +1,26 @@
-require('dotenv').config();
 const sequelize = require('./config/database');
+const PermissionTemplate = require('./models/PermissionTemplate');
+const Dropdown = require('./models/Dropdown');
 
 async function testConnection() {
   try {
-    console.log('Testing database connection...');
-    console.log('Host:', process.env.DB_HOST);
-    console.log('Port:', process.env.DB_PORT);
-    console.log('Database:', process.env.DB_NAME);
-    console.log('User:', process.env.DB_USER);
-    // Don't log password for security
-    
+    // Test database connection
     await sequelize.authenticate();
-    console.log('✅ Connection to TiDB has been established successfully.');
+    console.log('Database connection has been established successfully.');
     
-    // Test a simple query
-    const [results] = await sequelize.query('SELECT 1 + 1 AS solution');
-    console.log('✅ Query test successful:', results[0].solution);
+    // Test PermissionTemplate table
+    const permissionTemplates = await PermissionTemplate.findAll();
+    console.log(`Found ${permissionTemplates.length} permission templates`);
     
+    // Test Dropdown table
+    const dropdowns = await Dropdown.findAll();
+    console.log(`Found ${dropdowns.length} dropdown values`);
+    
+    // Close connection
     await sequelize.close();
-    console.log('🔒 Database connection closed.');
+    console.log('Connection closed.');
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error.message);
-    if (error.parent) {
-      console.error('❌ Detailed error:', error.parent.message);
-    }
+    console.error('Unable to connect to the database:', error);
   }
 }
 

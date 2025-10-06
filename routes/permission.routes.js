@@ -1,6 +1,7 @@
 const express = require('express');
 const PermissionTemplate = require('../models/PermissionTemplate');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const notificationService = require('../services/notification.service');
 
 const router = express.Router();
 
@@ -44,6 +45,13 @@ router.post('/templates', authenticate, authorize('SystemAdmin'), async (req, re
       createdBy: req.user.id
     });
 
+    // Send notification
+    notificationService.notifyPermissionTemplateCreated({
+      id: template.id,
+      name: template.name,
+      permissions: template.permissions,
+    });
+
     res.status(201).json(template);
   } catch (err) {
     console.error('Error creating permission template:', err);
@@ -85,6 +93,13 @@ router.put('/templates/:id', authenticate, authorize('SystemAdmin'), async (req,
 
     await template.save();
 
+    // Send notification
+    notificationService.notifyPermissionTemplateUpdated({
+      id: template.id,
+      name: template.name,
+      permissions: template.permissions,
+    });
+
     res.json(template);
   } catch (err) {
     console.error('Error updating permission template:', err);
@@ -105,8 +120,17 @@ router.delete('/templates/:id', authenticate, authorize('SystemAdmin'), async (r
       return res.status(404).json({ message: 'Permission template not found' });
     }
 
+    // Store template name for notification before deletion
+    const templateName = template.name;
+
     // Delete template
     await template.destroy();
+
+    // Send notification
+    notificationService.notifyPermissionTemplateDeleted({
+      id: template.id,
+      name: templateName,
+    });
 
     res.json({ message: 'Permission template deleted successfully' });
   } catch (err) {

@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { userValidation } = require('../validators/user.validator');
 const sequelize = require('sequelize');
+const notificationService = require('../services/notification.service');
 
 const router = express.Router();
 
@@ -55,8 +56,15 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       office,
     });
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Send notification
+    notificationService.notifyUserCreated({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      office: user.office,
+    });
 
     res.status(201).json({
       id: user.id,
@@ -96,8 +104,16 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
 
     await user.save();
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Send notification
+    notificationService.notifyUserUpdated({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      office: user.office,
+      isActive: user.isActive,
+    });
 
     res.json({
       id: user.id,
@@ -131,8 +147,15 @@ router.delete('/:id', authenticate, authorize('SystemAdmin'), async (req, res) =
     user.isActive = false;
     await user.save();
 
-    // Log the action
-    // TODO: Implement audit logging
+    // Send notification
+    notificationService.notifyUserDeleted({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      office: user.office,
+    });
 
     res.json({ message: 'User deactivated successfully' });
   } catch (err) {

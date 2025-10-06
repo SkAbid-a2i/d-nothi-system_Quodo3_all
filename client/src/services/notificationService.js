@@ -21,7 +21,10 @@ class NotificationService {
     // Close existing connection if any
     this.disconnect();
 
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    // Use REACT_APP_API_URL if available, otherwise default to current origin for production
+    const apiUrl = process.env.REACT_APP_API_URL || 
+                  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 
+                   `${window.location.origin}/api`);
     const url = `${apiUrl}/notifications?userId=${userId}`;
 
     try {
@@ -143,6 +146,51 @@ class NotificationService {
   // Listen for leave rejections
   onLeaveRejected(callback) {
     this.on('leaveRejected', callback);
+  }
+
+  // Listen for user creation
+  onUserCreated(callback) {
+    this.on('userCreated', callback);
+  }
+
+  // Listen for user updates
+  onUserUpdated(callback) {
+    this.on('userUpdated', callback);
+  }
+
+  // Listen for user deletions
+  onUserDeleted(callback) {
+    this.on('userDeleted', callback);
+  }
+
+  // Listen for dropdown creation
+  onDropdownCreated(callback) {
+    this.on('dropdownCreated', callback);
+  }
+
+  // Listen for dropdown updates
+  onDropdownUpdated(callback) {
+    this.on('dropdownUpdated', callback);
+  }
+
+  // Listen for dropdown deletions
+  onDropdownDeleted(callback) {
+    this.on('dropdownDeleted', callback);
+  }
+
+  // Listen for permission template creation
+  onPermissionTemplateCreated(callback) {
+    this.on('permissionTemplateCreated', callback);
+  }
+
+  // Listen for permission template updates
+  onPermissionTemplateUpdated(callback) {
+    this.on('permissionTemplateUpdated', callback);
+  }
+
+  // Listen for permission template deletions
+  onPermissionTemplateDeleted(callback) {
+    this.on('permissionTemplateDeleted', callback);
   }
 }
 

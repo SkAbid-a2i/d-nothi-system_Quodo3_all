@@ -416,15 +416,22 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               position: 'absolute',
               right: 10,
               top: 10,
-              color: 'white',
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              color: theme.palette.mode === 'dark' ? 'white' : '#667eea',
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(102, 126, 234, 0.1)',
+              border: theme.palette.mode === 'dark' ? 'none' : '1px solid rgba(102, 126, 234, 0.3)',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(102, 126, 234, 0.2)',
                 transform: 'scale(1.1)',
               },
               transition: 'all 0.2s ease-in-out',
               boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-              zIndex: 1200
+              zIndex: 1200,
+              // Improved visibility
+              minWidth: 40,
+              minHeight: 40,
+              '& .MuiSvgIcon-root': {
+                fontSize: '1.5rem'
+              }
             }}
           >
             {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
@@ -437,23 +444,32 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             mb: 3,
             p: 2,
             borderRadius: 2,
-            background: 'rgba(255, 255, 255, 0.1)'
+            background: 'rgba(255, 255, 255, 0.1)',
+            justifyContent: 'center',
+            // Ensure full collapse when drawer is closed
+            width: drawerOpen ? 'auto' : 40,
+            height: drawerOpen ? 'auto' : 40,
+            overflow: 'hidden'
           }}>
             <Avatar sx={{ 
-              width: 48, 
-              height: 48,
+              width: drawerOpen ? 48 : 32, 
+              height: drawerOpen ? 48 : 32,
               bgcolor: 'secondary.main',
               color: 'white',
-              mr: 2
+              mr: drawerOpen ? 2 : 0,
+              fontSize: drawerOpen ? 'default' : '0.7rem',
+              // Ensure avatar doesn't prevent collapse
+              minWidth: drawerOpen ? 48 : 32,
+              minHeight: drawerOpen ? 48 : 32
             }}>
               {user?.username?.charAt(0)?.toUpperCase() || 'U'}
             </Avatar>
             {drawerOpen && (
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'white' }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user?.fullName || user?.username || 'User'}
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user?.role || 'User'}
                 </Typography>
               </Box>

@@ -500,9 +500,18 @@ const AgentDashboard = () => {
         {/* Charts and Task Table */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+              </Typography>
+              <Button 
+                size="small" 
+                variant="outlined" 
+                onClick={() => handleViewDetails('taskDistribution', getTaskDistributionData())}
+              >
+                View Details
+              </Button>
+            </Box>
             <Box sx={{ height: 300 }}>
               {chartType === 'bar' && (
                 <ResponsiveContainer width="100%" height="100%">
@@ -686,13 +695,13 @@ const AgentDashboard = () => {
             <Box sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
               {tasks.length > 0 || leaves.length > 0 ? (
                 <Box>
-                  {/* Show recent tasks */}
-                  {[...tasks, ...leaves]
+                  {/* Show recent tasks and leaves */}
+                  {[...tasks.map(t => ({...t, type: 'task'})), ...leaves.map(l => ({...l, type: 'leave'}))]
                     .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
                     .slice(0, 10)
                     .map((item, index) => (
                       <Box 
-                        key={index} 
+                        key={`${item.type}-${item.id}`} 
                         sx={{ 
                           p: 2, 
                           mb: 1, 
@@ -706,7 +715,7 @@ const AgentDashboard = () => {
                         }}
                       >
                         <Typography variant="body2" fontWeight="bold">
-                          {item.description || item.reason || 'New activity'}
+                          {item.type === 'task' ? (item.description || 'New task') : (item.reason || 'New leave request')}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {item.userName ? `By ${item.userName}` : 'System'} •{' '}
@@ -722,7 +731,7 @@ const AgentDashboard = () => {
                               item.status === 'Rejected' ? 'error' : 'default'
                             } 
                           />
-                          {item.category && (
+                          {item.type === 'task' && item.category && (
                             <Chip 
                               label={item.category} 
                               size="small" 
@@ -730,7 +739,7 @@ const AgentDashboard = () => {
                               color="info"
                             />
                           )}
-                          {item.service && (
+                          {item.type === 'task' && item.service && (
                             <Chip 
                               label={item.service} 
                               size="small" 
@@ -762,6 +771,7 @@ const AgentDashboard = () => {
             {viewDetailsDialog.type === 'leaves' && 'Leave Details'}
             {viewDetailsDialog.type === 'reports' && 'Report Details'}
             {viewDetailsDialog.type === 'notifications' && 'Notification Details'}
+            {viewDetailsDialog.type === 'taskDistribution' && 'Task Distribution Details'}
           </Box>
         </DialogTitle>
         <DialogContent>
@@ -884,6 +894,64 @@ const AgentDashboard = () => {
                 <Typography variant="body2">
                   <strong>Task Updated:</strong> Task "Implement new feature" status changed to In Progress (2023-06-13 11:30)
                 </Typography>
+              </Box>
+            </Box>
+          )}
+          
+          {viewDetailsDialog.type === 'taskDistribution' && (
+            <Box>
+              <DialogContentText sx={{ mb: 2 }}>
+                Detailed view of task distribution by category.
+              </DialogContentText>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Task Count</TableCell>
+                      <TableCell>Percentage</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {viewDetailsDialog.data?.map((item, index) => {
+                      const total = viewDetailsDialog.data.reduce((sum, curr) => sum + curr.count, 0);
+                      const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+                      return (
+                        <TableRow key={item.name}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.count}</TableCell>
+                          <TableCell>{percentage}%</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Visualization
+                </Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={viewDetailsDialog.data}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="count" fill="#8884d8" name="Task Count" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
               </Box>
             </Box>
           )}

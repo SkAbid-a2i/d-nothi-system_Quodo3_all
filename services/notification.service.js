@@ -130,6 +130,123 @@ class NotificationService {
     this.sendToUser(leave.userId, notification);
   }
 
+  // Notify about user creation
+  notifyUserCreated(user) {
+    const notification = {
+      type: 'userCreated',
+      userId: user.id,
+      user: user,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about user update
+  notifyUserUpdated(user) {
+    const notification = {
+      type: 'userUpdated',
+      userId: user.id,
+      user: user,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about user deletion
+  notifyUserDeleted(user) {
+    const notification = {
+      type: 'userDeleted',
+      userId: user.id,
+      username: user.username,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about dropdown creation
+  notifyDropdownCreated(dropdown) {
+    const notification = {
+      type: 'dropdownCreated',
+      dropdownId: dropdown.id,
+      dropdown: dropdown,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about dropdown update
+  notifyDropdownUpdated(dropdown) {
+    const notification = {
+      type: 'dropdownUpdated',
+      dropdownId: dropdown.id,
+      dropdown: dropdown,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about dropdown deletion
+  notifyDropdownDeleted(dropdown) {
+    const notification = {
+      type: 'dropdownDeleted',
+      dropdownId: dropdown.id,
+      dropdownValue: dropdown.value,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about permission template creation
+  notifyPermissionTemplateCreated(template) {
+    const notification = {
+      type: 'permissionTemplateCreated',
+      templateId: template.id,
+      template: template,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about permission template update
+  notifyPermissionTemplateUpdated(template) {
+    const notification = {
+      type: 'permissionTemplateUpdated',
+      templateId: template.id,
+      template: template,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
+  // Notify about permission template deletion
+  notifyPermissionTemplateDeleted(template) {
+    const notification = {
+      type: 'permissionTemplateDeleted',
+      templateId: template.id,
+      templateName: template.name,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all admins
+    this.broadcast(notification);
+  }
+
   // Get number of connected clients
   getConnectedClients() {
     return this.clients.size;

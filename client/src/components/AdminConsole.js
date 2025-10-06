@@ -1,16 +1,8 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Tabs, 
-  Tab, 
-  Paper,
-  Fade
-} from '@mui/material';
-import AdminConsole_Original from './AdminConsole_Original';
+import React from 'react';
+import AdminConsole_Commit737cdc2 from './AdminConsole_Commit737cdc2';
 
 const AdminConsole = () => {
-  return <AdminConsole_Original />;
+  return <AdminConsole_Commit737cdc2 />;
 };
 
 export default AdminConsole;

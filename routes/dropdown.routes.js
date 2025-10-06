@@ -1,6 +1,7 @@
 const express = require('express');
 const Dropdown = require('../models/Dropdown');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const notificationService = require('../services/notification.service');
 
 const router = express.Router();
 
@@ -76,6 +77,15 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
       createdBy: req.user.id,
     });
 
+    // Send notification
+    notificationService.notifyDropdownCreated({
+      id: dropdown.id,
+      type: dropdown.type,
+      value: dropdown.value,
+      parentType: dropdown.parentType,
+      parentValue: dropdown.parentValue,
+    });
+
     // Log the action
     // TODO: Implement audit logging
 
@@ -121,6 +131,16 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin')
 
     await dropdown.save();
 
+    // Send notification
+    notificationService.notifyDropdownUpdated({
+      id: dropdown.id,
+      type: dropdown.type,
+      value: dropdown.value,
+      parentType: dropdown.parentType,
+      parentValue: dropdown.parentValue,
+      isActive: dropdown.isActive,
+    });
+
     // Log the action
     // TODO: Implement audit logging
 
@@ -159,6 +179,13 @@ router.delete('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmi
     // Don't actually delete, just deactivate
     dropdown.isActive = false;
     await dropdown.save();
+
+    // Send notification
+    notificationService.notifyDropdownDeleted({
+      id: dropdown.id,
+      type: dropdown.type,
+      value: dropdown.value,
+    });
 
     // Log the action
     // TODO: Implement audit logging
