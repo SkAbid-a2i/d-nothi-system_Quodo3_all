@@ -412,123 +412,183 @@ const ModernTaskLogger = () => {
             </Zoom>
           </Grid>
           
-          {/* Task List */}
+          {/* Task List and Recent Activity */}
           <Grid item xs={12} lg={8}>
-            <Paper sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Recent Tasks
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    size="small"
-                    placeholder="Search tasks..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
-                    }}
-                  />
-                  
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      label="Status"
-                    >
-                      <MenuItem value="">All</MenuItem>
-                      {statuses.map(status => (
-                        <MenuItem key={status} value={status}>{status}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-              </Box>
-              
-              <Tabs 
-                value={activeTab} 
-                onChange={handleTabChange} 
-                sx={{ mb: 2 }}
-                TabIndicatorProps={{ style: { background: 'linear-gradient(45deg, #667eea, #764ba2)' } }}
-              >
-                <Tab label="All Tasks" />
-                <Tab label="My Tasks" />
-              </Tabs>
-              
-              {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Source</TableCell>
-                        <TableCell>Category</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredTasks.map((task) => (
-                        <TableRow 
-                          key={task.id} 
-                          sx={{ 
-                            '&:hover': { 
-                              backgroundColor: 'action.hover',
-                              transform: 'scale(1.01)',
-                              transition: 'all 0.2s ease'
-                            }
-                          }}
+            <Grid container spacing={3}>
+              {/* Task History */}
+              <Grid item xs={12} md={7}>
+                <Paper sx={{ p: 3, height: '100%' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Task History
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <TextField
+                        size="small"
+                        placeholder="Search tasks..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        InputProps={{
+                          startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
+                        }}
+                      />
+                      
+                      <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <InputLabel>Status</InputLabel>
+                        <Select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          label="Status"
                         >
-                          <TableCell>{task.date}</TableCell>
-                          <TableCell>{task.source}</TableCell>
-                          <TableCell>{task.category}</TableCell>
-                          <TableCell>{task.description}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={task.status} 
-                              size="small"
-                              sx={{ 
-                                bgcolor: task.status === 'Completed' ? '#10b98120' : 
-                                        task.status === 'In Progress' ? '#3b82f620' : 
-                                        task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
-                                color: task.status === 'Completed' ? '#10b981' : 
-                                      task.status === 'In Progress' ? '#3b82f6' : 
-                                      task.status === 'Cancelled' ? '#ef4444' : '#f59e0b',
-                                fontWeight: 600
-                              }} 
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <IconButton 
-                              size="small" 
-                              color="primary" 
-                              onClick={() => handleEditTask(task)}
-                              sx={{ mr: 1 }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton 
-                              size="small" 
-                              color="error" 
-                              onClick={() => handleDeleteTask(task.id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Paper>
+                          <MenuItem value="">All</MenuItem>
+                          {statuses.map(status => (
+                            <MenuItem key={status} value={status}>{status}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  </Box>
+                  
+                  <Tabs 
+                    value={activeTab} 
+                    onChange={handleTabChange} 
+                    sx={{ mb: 2 }}
+                    TabIndicatorProps={{ style: { background: 'linear-gradient(45deg, #667eea, #764ba2)' } }}
+                  >
+                    <Tab label="All Tasks" />
+                    <Tab label="My Tasks" />
+                  </Tabs>
+                  
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                      <TableContainer>
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Date</TableCell>
+                              <TableCell>Source</TableCell>
+                              <TableCell>Category</TableCell>
+                              <TableCell>Description</TableCell>
+                              <TableCell>Status</TableCell>
+                              <TableCell>Actions</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredTasks.map((task) => (
+                              <TableRow 
+                                key={task.id} 
+                                sx={{ 
+                                  '&:hover': { 
+                                    backgroundColor: 'action.hover',
+                                    transform: 'scale(1.01)',
+                                    transition: 'all 0.2s ease'
+                                  }
+                                }}
+                              >
+                                <TableCell>{task.date}</TableCell>
+                                <TableCell>{task.source}</TableCell>
+                                <TableCell>{task.category}</TableCell>
+                                <TableCell>{task.description}</TableCell>
+                                <TableCell>
+                                  <Chip 
+                                    label={task.status} 
+                                    size="small"
+                                    sx={{ 
+                                      bgcolor: task.status === 'Completed' ? '#10b98120' : 
+                                              task.status === 'In Progress' ? '#3b82f620' : 
+                                              task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
+                                      color: task.status === 'Completed' ? '#10b981' : 
+                                            task.status === 'In Progress' ? '#3b82f6' : 
+                                            task.status === 'Cancelled' ? '#ef4444' : '#f59e0b',
+                                      fontWeight: 600
+                                    }} 
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <IconButton 
+                                    size="small" 
+                                    color="primary" 
+                                    onClick={() => handleEditTask(task)}
+                                    sx={{ mr: 1 }}
+                                  >
+                                    <EditIcon />
+                                  </IconButton>
+                                  <IconButton 
+                                    size="small" 
+                                    color="error" 
+                                    onClick={() => handleDeleteTask(task.id)}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  )}
+                </Paper>
+              </Grid>
+              
+              {/* Recent Activity */}
+              <Grid item xs={12} md={5}>
+                <Paper sx={{ p: 3, height: '100%' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                    Recent Activity
+                  </Typography>
+                  
+                  <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                    {mockTasks.slice(0, 5).map((task, index) => (
+                      <Box 
+                        key={task.id} 
+                        sx={{ 
+                          p: 2, 
+                          mb: 2, 
+                          bgcolor: index % 2 === 0 ? 'grey.50' : 'white',
+                          borderRadius: 2,
+                          borderLeft: '4px solid',
+                          borderLeftColor: task.status === 'Completed' ? 'success.main' : 
+                                          task.status === 'In Progress' ? 'primary.main' : 
+                                          task.status === 'Cancelled' ? 'error.main' : 'warning.main'
+                        }}
+                      >
+                        <Typography variant="body2" fontWeight="bold">
+                          {task.description}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {task.userName} • {task.date}
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Chip 
+                            label={task.status} 
+                            size="small"
+                            sx={{ 
+                              bgcolor: task.status === 'Completed' ? '#10b98120' : 
+                                      task.status === 'In Progress' ? '#3b82f620' : 
+                                      task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
+                              color: task.status === 'Completed' ? '#10b981' : 
+                                    task.status === 'In Progress' ? '#3b82f6' : 
+                                    task.status === 'Cancelled' ? '#ef4444' : '#f59e0b'
+                            }} 
+                          />
+                          <Chip 
+                            label={task.category} 
+                            size="small" 
+                            sx={{ ml: 1, bgcolor: 'info.light', color: 'info.contrastText' }}
+                          />
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
           </Grid>
         </Grid>
         

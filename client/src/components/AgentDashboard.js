@@ -30,7 +30,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  DialogContentText
+  DialogContentText,
+  Autocomplete
 } from '@mui/material';
 import { 
   Assignment, 
@@ -74,7 +75,11 @@ const AgentDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
+  const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
   const [leaves, setLeaves] = useState([]);
+  const [allLeaves, setAllLeaves] = useState([]); // Store all leaves for filtering
+  const [users, setUsers] = useState([]); // Add users state for filtering
+  const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
   // View Details dialog state
@@ -113,6 +118,9 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
+      // Store all tasks for filtering
+      setAllTasks(tasksData);
+      
       // Filter tasks based on user role
       if (user) {
         if (user.role === 'Agent') {
@@ -140,6 +148,9 @@ const AgentDashboard = () => {
       // Filter leaves based on user role
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
+      
+      // Store all leaves for filtering
+      setAllLeaves(leavesData);
       
       // Filter leaves based on user role
       if (user) {
@@ -276,17 +287,21 @@ const AgentDashboard = () => {
     setViewDetailsDialog({ open: false, type: '', data: null });
   };
 
-  // Filter tasks based on search term
+  // Filter tasks based on search term and user
   const filteredTasks = tasks.filter(task => 
-    (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))
+    (searchTerm === '' || 
+      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+    (selectedUser === null || task.userName === selectedUser.value)
   );
 
-  // Filter leaves based on search term
+  // Filter leaves based on search term and user
   const filteredLeaves = leaves.filter(leave => 
-    (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()))
+    (searchTerm === '' || 
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+    (selectedUser === null || leave.userName === selectedUser.value)
   );
 
   // Handle task edit
@@ -506,7 +521,21 @@ const AgentDashboard = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} sm={6}>
+              {(user.role === 'Admin' || user.role === 'Supervisor') && (
+                <Grid item xs={12} sm={3}>
+                  <Autocomplete
+                    options={users}
+                    getOptionLabel={(option) => option.label || option}
+                    value={selectedUser}
+                    onChange={(event, newValue) => setSelectedUser(newValue)}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Filter by User" fullWidth />
+                    )}
+                  />
+                </Grid>
+              )}
+              
+              <Grid item xs={12} sm={3}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <IconButton 
                     color={chartType === 'pie' ? 'primary' : 'default'}

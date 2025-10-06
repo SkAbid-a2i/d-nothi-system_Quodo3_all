@@ -59,6 +59,7 @@ import autoRefreshService from '../services/autoRefreshService';
 const TaskManagement = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
+  const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
   const [dataLoading, setDataLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -79,6 +80,8 @@ const TaskManagement = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [offices, setOffices] = useState([]); // Add offices state
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
+  const [users, setUsers] = useState([]); // Add users state for filtering
+  const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
@@ -100,6 +103,7 @@ const TaskManagement = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [userFilter, setUserFilter] = useState(''); // Add user filter
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -131,6 +135,9 @@ const TaskManagement = () => {
       // Filter tasks based on user role
       let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
+      
+      // Store all tasks for filtering
+      setAllTasks(tasksData);
       
       // Filter tasks based on user role
       if (user) {
@@ -214,15 +221,26 @@ const TaskManagement = () => {
   const fetchDropdownValues = async () => {
     setLoading(true);
     try {
-      const [sourcesRes, categoriesRes, officesRes] = await Promise.all([
+      const [sourcesRes, categoriesRes, officesRes, usersRes] = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office') // Add office dropdown values
+        dropdownAPI.getDropdownValues('Office'), // Add office dropdown values
+        taskAPI.getAllUsers() // Fetch users for filtering
       ]);
     
       setSources(sourcesRes.data);
       setCategories(categoriesRes.data);
       setOffices(officesRes.data); // Set offices data
+      
+      // Process users data for Autocomplete
+      if (usersRes.data) {
+        const userData = usersRes.data.map(user => ({
+          id: user.id,
+          label: `${user.fullName || user.username} (${user.username})`,
+          value: user.username
+        }));
+        setUsers(userData);
+      }
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
     } finally {
@@ -427,7 +445,7 @@ const TaskManagement = () => {
     }
   };
 
-  // Filter tasks based on search term and status
+  // Filter tasks based on search term, status, and user
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -437,7 +455,9 @@ const TaskManagement = () => {
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesUser = !userFilter || task.userName === userFilter;
+    
+    return matchesSearch && matchesStatus && matchesUser;
   });
 
   // Get task statistics
@@ -473,6 +493,7 @@ const TaskManagement = () => {
         // For total tasks, clear filters to show all
         setStatusFilter('');
         setSearchTerm('');
+        setUserFilter('');
         break;
     }
     
@@ -589,7 +610,7 @@ const TaskManagement = () => {
           {/* Task Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={5}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -600,7 +621,7 @@ const TaskManagement = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid item xs={12} sm={2}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select 
@@ -615,7 +636,24 @@ const TaskManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              {(user.role === 'Admin' || user.role === 'Supervisor') && (
+                <Grid item xs={12} sm={3}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={users}
+                      getOptionLabel={(option) => option.label || option}
+                      value={users.find(u => u.value === userFilter) || null}
+                      onChange={(event, newValue) => setUserFilter(newValue ? newValue.value : '')}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Filter by User" fullWidth />
+                      )}
+                    />
+                  )}
+                </Grid>
+              )}
+              <Grid item xs={12} sm={3}>
                 <Button 
                   variant="outlined" 
                   startIcon={<FilterIcon />}
@@ -628,6 +666,7 @@ const TaskManagement = () => {
                   onClick={() => {
                     setSearchTerm('');
                     setStatusFilter('');
+                    setUserFilter('');
                   }}
                 >
                   Clear
