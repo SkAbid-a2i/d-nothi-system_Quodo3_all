@@ -1,9 +1,9 @@
 import React from 'react';
-import RealUserManagement from './RealUserManagement';
+import AdminConsole from './AdminConsole';
 
 const UserManagement = () => {
-  // Use the real user management component with API integration
-  return <RealUserManagement />;
+  // Use the comprehensive admin console component with all functionalities
+  return <AdminConsole />;
 };
 
 export default UserManagement;
