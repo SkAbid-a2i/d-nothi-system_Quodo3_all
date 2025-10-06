@@ -231,13 +231,6 @@ function App() {
               }>
                 <Route index element={<LeaveManagement />} />
               </Route>
-              <Route path="/files" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Files />} />
-              </Route>
               <Route path="/admin" element={
                 <ProtectedRoute allowedRoles={['SystemAdmin']}>
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />

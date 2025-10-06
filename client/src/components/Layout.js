@@ -26,7 +26,8 @@ import {
   Fade,
   CircularProgress,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Collapse
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -47,7 +48,11 @@ import {
   ListAlt as ListAltIcon,
   Business as BusinessIcon,
   Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon
+  ChevronLeft as ChevronLeftIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Upload as UploadIcon,
+  Folder as FolderIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
@@ -75,6 +80,21 @@ const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
+    // Improved scrollbar design
+    '&::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: '4px',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: 'rgba(255, 255, 255, 0.3)',
+      borderRadius: '4px',
+      '&:hover': {
+        background: 'rgba(255, 255, 255, 0.5)',
+      }
+    }
   },
 }));
 
@@ -132,13 +152,14 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // State for collapsible admin menu
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
     { text: t('navigation.taskLogger'), icon: <TaskIcon />, path: '/tasks' },
     { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
-    { text: t('navigation.files'), icon: <TaskIcon />, path: '/files' },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },
@@ -147,11 +168,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   // Add team tasks for Admin/Supervisor
   if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
     menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TaskIcon />, path: '/team-tasks' });
-  }
-
-  // Add log monitoring for SystemAdmin
-  if (user && user.role === 'SystemAdmin') {
-    menuItems.push({ text: 'Log Monitoring', icon: <LogIcon />, path: '/logs' });
   }
 
   const handleDrawerToggle = () => {
@@ -186,6 +202,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setNotificationAnchor(null);
+  };
+
+  // Toggle admin submenu
+  const handleAdminMenuToggle = () => {
+    setAdminMenuOpen(!adminMenuOpen);
   };
 
   // Fetch real notifications
@@ -268,7 +289,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2 }}
           >
             <MenuIcon />
           </IconButton>
@@ -369,7 +390,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         }}
       >
         <Toolbar />
-        <Box sx={{ overflow: 'auto', p: 2 }}>
+        <Box sx={{ overflow: 'auto', p: 2, height: 'calc(100% - 64px)' }}>
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -387,14 +408,16 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             }}>
               {user?.username?.charAt(0)?.toUpperCase() || 'U'}
             </Avatar>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'white' }}>
-                {user?.fullName || user?.username || 'User'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                {user?.role || 'User'}
-              </Typography>
-            </Box>
+            {drawerOpen && (
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'white' }}>
+                  {user?.fullName || user?.username || 'User'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  {user?.role || 'User'}
+                </Typography>
+              </Box>
+            )}
           </Box>
           
           <List>
@@ -402,6 +425,52 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               // Check if the menu item should be visible based on user role
               if (item.allowedRoles && !item.allowedRoles.includes(user?.role)) {
                 return null;
+              }
+              
+              // Special handling for Admin Console to make it collapsible
+              if (item.path === '/admin' && user && user.role === 'SystemAdmin') {
+                return (
+                  <Box key={item.text}>
+                    <StyledListItem 
+                      button
+                      selected={location.pathname.startsWith('/admin')}
+                      onClick={handleAdminMenuToggle}
+                    >
+                      <ListItemIcon>
+                        {item.icon}
+                      </ListItemIcon>
+                      {drawerOpen && <ListItemText primary={item.text} />}
+                      {drawerOpen && (adminMenuOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                    </StyledListItem>
+                    
+                    <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
+                      <List component="div" disablePadding>
+                        <StyledListItem 
+                          button
+                          sx={{ pl: 4 }}
+                          selected={location.pathname === '/admin/permission-templates'}
+                          onClick={() => handleNavigation('/admin/permission-templates')}
+                        >
+                          <ListItemIcon>
+                            <SecurityIcon />
+                          </ListItemIcon>
+                          {drawerOpen && <ListItemText primary="Permission Templates" />}
+                        </StyledListItem>
+                        <StyledListItem 
+                          button
+                          sx={{ pl: 4 }}
+                          selected={location.pathname === '/admin/dropdowns'}
+                          onClick={() => handleNavigation('/admin/dropdowns')}
+                        >
+                          <ListItemIcon>
+                            <ListAltIcon />
+                          </ListItemIcon>
+                          {drawerOpen && <ListItemText primary="Dropdown Management" />}
+                        </StyledListItem>
+                      </List>
+                    </Collapse>
+                  </Box>
+                );
               }
               
               return (
@@ -414,49 +483,23 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                   <ListItemIcon>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText primary={item.text} />
+                  {drawerOpen && <ListItemText primary={item.text} />}
                 </StyledListItem>
               );
             })}
             
-            {/* Admin Console Submenu for SystemAdmin */}
-            {user && user.role === 'SystemAdmin' && (
-              <>
-                <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
-                <StyledListItem 
-                  button
-                  selected={location.pathname === '/admin/permission-templates'}
-                  onClick={() => handleNavigation('/admin/permission-templates')}
-                >
-                  <ListItemIcon>
-                    <SecurityIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Permission Templates" />
-                </StyledListItem>
-                <StyledListItem 
-                  button
-                  selected={location.pathname === '/admin/dropdowns'}
-                  onClick={() => handleNavigation('/admin/dropdowns')}
-                >
-                  <ListItemIcon>
-                    <ListAltIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Dropdown Management" />
-                </StyledListItem>
-              </>
-            )}
+            <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
+            <StyledListItem 
+              button
+              selected={location.pathname === '/settings'}
+              onClick={() => handleNavigation('/settings')}
+            >
+              <ListItemIcon>
+                <SettingsIcon />
+              </ListItemIcon>
+              {drawerOpen && <ListItemText primary={t('navigation.settings')} />}
+            </StyledListItem>
           </List>
-          <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
-          <StyledListItem 
-            button
-            selected={location.pathname === '/settings'}
-            onClick={() => handleNavigation('/settings')}
-          >
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary={t('navigation.settings')} />
-          </StyledListItem>
         </Box>
       </StyledDrawer>
       

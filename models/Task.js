@@ -50,6 +50,11 @@ const Task = sequelize.define('Task', {
   attachments: {
     type: DataTypes.JSON, // Store attachments as JSON array
     defaultValue: []
+  },
+  // File upload field
+  files: {
+    type: DataTypes.JSON, // Store file information as JSON array
+    defaultValue: []
   }
   // Removed assignedTo field as requested
 }, {

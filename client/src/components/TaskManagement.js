@@ -30,7 +30,13 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Divider,
+  Tooltip
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -41,7 +47,10 @@ import {
   Assignment as AssignmentIcon,
   CheckCircle as CheckCircleIcon,
   HourglassEmpty as HourglassEmptyIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Upload as UploadIcon,
+  Description as DescriptionIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -71,6 +80,7 @@ const TaskManagement = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
+  const [files, setFiles] = useState([]); // File upload state
   // Removed assignedTo state as requested
   
   // Edit task state
@@ -81,6 +91,7 @@ const TaskManagement = () => {
   const [editSelectedService, setEditSelectedService] = useState(null);
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('');
+  const [editFiles, setEditFiles] = useState([]); // Edit file upload state
   // Removed editAssignedTo state as requested
   const [openEditDialog, setOpenEditDialog] = useState(false);
   
@@ -225,6 +236,28 @@ const TaskManagement = () => {
     }
   };
   
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+  };
+  
+  // Handle edit file selection
+  const handleEditFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setEditFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+  };
+  
+  // Remove file from create form
+  const removeFile = (index) => {
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+  
+  // Remove file from edit form
+  const removeEditFile = (index) => {
+    setEditFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+  
   const handleSubmitTask = async (e) => {
     e.preventDefault();
     setError('');
@@ -238,6 +271,7 @@ const TaskManagement = () => {
     }
     
     try {
+      // Prepare task data
       const taskData = {
         date,
         source: selectedSource?.value || '',
@@ -252,6 +286,17 @@ const TaskManagement = () => {
       };
       
       console.log('Creating task with data:', taskData);
+      
+      // For now, we'll store file names in the files array
+      // In a real implementation, you would upload files to a storage service
+      const fileData = files.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      }));
+      
+      taskData.files = fileData;
       
       const response = await taskAPI.createTask(taskData);
       
@@ -276,6 +321,7 @@ const TaskManagement = () => {
       setSelectedService(null);
       setDescription('');
       setStatus('Pending');
+      setFiles([]); // Reset files
       // Removed assignedTo reset
       
       setOpenCreateDialog(false);
@@ -298,6 +344,7 @@ const TaskManagement = () => {
     setEditSelectedService(services.find(s => s.value === task.service) || null);
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
+    setEditFiles(task.files || []); // Set existing files
     // Removed editAssignedTo assignment
     setOpenEditDialog(true);
   };
@@ -316,6 +363,19 @@ const TaskManagement = () => {
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
+      
+      // For now, we'll store file names in the files array
+      // In a real implementation, you would upload files to a storage service
+      const fileData = editFiles.map(file => 
+        typeof file === 'string' ? file : {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        }
+      );
+      
+      taskData.files = fileData;
       
       await taskAPI.updateTask(editingTask.id, taskData);
       
@@ -565,6 +625,7 @@ const TaskManagement = () => {
                     <TableCell>Description</TableCell>
                     <TableCell>User</TableCell>
                     <TableCell>Status</TableCell>
+                    <TableCell>Files</TableCell>
                     {/* Removed Assigned To column */}
                     <TableCell>Actions</TableCell>
                   </TableRow>
@@ -587,6 +648,21 @@ const TaskManagement = () => {
                             task.status === 'Pending' ? 'warning' : 'default'
                           } 
                         />
+                      </TableCell>
+                      <TableCell>
+                        {task.files && task.files.length > 0 ? (
+                          <Tooltip title={`${task.files.length} file(s)`}>
+                            <Chip 
+                              icon={<DescriptionIcon />} 
+                              label={task.files.length} 
+                              size="small" 
+                              color="primary" 
+                              variant="outlined" 
+                            />
+                          </Tooltip>
+                        ) : (
+                          'N/A'
+                        )}
                       </TableCell>
                       {/* Removed Assigned To cell */}
                       <TableCell>
@@ -714,7 +790,51 @@ const TaskManagement = () => {
               </FormControl>
             </Grid>
             
-            {/* Removed Assigned To field */}
+            {/* File Upload Field */}
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+              >
+                Upload Files
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleFileChange}
+                  multiple
+                />
+              </Button>
+              
+              {/* Display selected files */}
+              {files.length > 0 && (
+                <Paper sx={{ mt: 2, p: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Selected Files:
+                  </Typography>
+                  <List dense>
+                    {files.map((file, index) => (
+                      <ListItem key={index}>
+                        <ListItemText
+                          primary={file.name}
+                          secondary={`${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton 
+                            edge="end" 
+                            aria-label="delete"
+                            onClick={() => removeFile(index)}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              )}
+            </Grid>
             
             <Grid item xs={12}>
               <Button 
@@ -823,7 +943,7 @@ const TaskManagement = () => {
                 fullWidth
                 label="Description"
                 multiline
-                rows={3}
+                rows={4}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 required
@@ -841,11 +961,56 @@ const TaskManagement = () => {
                   <MenuItem value="Pending">Pending</MenuItem>
                   <MenuItem value="In Progress">In Progress</MenuItem>
                   <MenuItem value="Completed">Completed</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             
-            {/* Removed Assigned To field */}
+            {/* File Upload Field for Edit */}
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+              >
+                Add More Files
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleEditFileChange}
+                  multiple
+                />
+              </Button>
+              
+              {/* Display existing and selected files */}
+              {(editFiles.length > 0 || files.length > 0) && (
+                <Paper sx={{ mt: 2, p: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Files:
+                  </Typography>
+                  <List dense>
+                    {editFiles.map((file, index) => (
+                      <ListItem key={`edit-${index}`}>
+                        <ListItemText
+                          primary={typeof file === 'string' ? file : file.name}
+                          secondary={typeof file === 'string' ? 'Existing file' : `${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton 
+                            edge="end" 
+                            aria-label="delete"
+                            onClick={() => removeEditFile(index)}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              )}
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
