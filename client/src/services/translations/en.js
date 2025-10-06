@@ -1,5 +1,5 @@
-const en = {
-  // Common
+const translations = {
+  // Common labels
   common: {
     save: 'Save',
     cancel: 'Cancel',
@@ -35,6 +35,9 @@ const en = {
     email: 'Email',
     role: 'Role',
     office: 'Office',
+    description: 'Description',
+    status: 'Status',
+    actions: 'Actions',
     welcome: 'Welcome'
   },
   
@@ -102,7 +105,6 @@ const en = {
     service: 'Service',
     description: 'Task Description',
     status: 'Status',
-    assignedTo: 'Assigned To',
     actions: 'Actions',
     pending: 'Pending',
     inProgress: 'In Progress',
@@ -263,4 +265,6 @@ const en = {
   }
 };
 
-export default en;
+export default translations;
+
+

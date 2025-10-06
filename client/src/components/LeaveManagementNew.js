@@ -26,7 +26,8 @@ import {
   Tabs,
   Tab,
   Snackbar,
-  CircularProgress
+  CircularProgress,
+  styled
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -44,6 +45,29 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 import frontendLogger from '../services/frontendLogger';
+
+// Styled Tab component for better design
+const StyledTab = styled(Tab)(({ theme }) => ({
+  textTransform: 'none',
+  fontWeight: theme.typography.fontWeightRegular,
+  fontSize: theme.typography.pxToRem(15),
+  marginRight: theme.spacing(1),
+  color: 'rgba(0, 0, 0, 0.7)',
+  '&.Mui-selected': {
+    color: '#667eea',
+    fontWeight: theme.typography.fontWeightMedium,
+  },
+  '&.Mui-focusVisible': {
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+  },
+}));
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  borderBottom: '1px solid #e8e8e8',
+  '& .MuiTabs-indicator': {
+    backgroundColor: '#667eea',
+  },
+}));
 
 const LeaveManagement = () => {
   const { user } = useAuth();
@@ -498,16 +522,16 @@ const LeaveManagement = () => {
       </Typography>
       
       <Paper sx={{ mb: 3 }}>
-        <Tabs
+        <StyledTabs
           value={activeTab}
           onChange={handleTabChange}
-          indicatorColor="primary"
-          textColor="primary"
+          variant="scrollable"
+          scrollButtons="auto"
         >
-          <Tab label={t('leaves.leaveRequests')} icon={<SearchIcon />} />
-          <Tab label={t('leaves.calendar')} icon={<CalendarIcon />} />
-          <Tab label={t('leaves.notifications')} icon={<NotificationsIcon />} />
-        </Tabs>
+          <StyledTab label={t('leaves.leaveRequests')} icon={<SearchIcon />} iconPosition="start" />
+          <StyledTab label={t('leaves.calendar')} icon={<CalendarIcon />} iconPosition="start" />
+          <StyledTab label={t('leaves.notifications')} icon={<NotificationsIcon />} iconPosition="start" />
+        </StyledTabs>
       </Paper>
       
       {activeTab === 0 && (

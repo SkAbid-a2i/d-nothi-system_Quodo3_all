@@ -29,7 +29,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  DialogContentText
 } from '@mui/material';
 import { 
   Assignment, 
@@ -42,7 +43,8 @@ import {
   BarChart as BarChartIcon,
   ShowChart as LineChartIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -71,6 +73,9 @@ const AgentDashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  // View Details dialog state
+  const [viewDetailsDialog, setViewDetailsDialog] = useState({ open: false, type: '', data: null });
   
   // Edit task dialog state
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -212,6 +217,16 @@ const AgentDashboard = () => {
     setActiveTab(newValue);
   };
 
+  // Handle View Details button click
+  const handleViewDetails = (type, data = null) => {
+    setViewDetailsDialog({ open: true, type, data });
+  };
+
+  // Close View Details dialog
+  const handleCloseViewDetails = () => {
+    setViewDetailsDialog({ open: false, type: '', data: null });
+  };
+
   // Filter tasks based on search term
   const filteredTasks = tasks.filter(task => 
     (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -311,6 +326,15 @@ const AgentDashboard = () => {
     }));
   };
 
+  // Mock data for reports (in a real app, this would come from the backend)
+  const mockReports = [
+    { id: 1, name: 'Weekly Task Report', generatedAt: '2023-06-15 14:30:00', filter: 'Last 7 days' },
+    { id: 2, name: 'Monthly Leave Report', generatedAt: '2023-06-01 09:15:00', filter: 'June 2023' },
+    { id: 3, name: 'Quarterly Performance Report', generatedAt: '2023-04-01 16:45:00', filter: 'Q2 2023' },
+    { id: 4, name: 'Annual Summary Report', generatedAt: '2022-12-31 18:00:00', filter: 'Year 2022' },
+    { id: 5, name: 'Department-wise Task Distribution', generatedAt: '2023-06-10 11:20:00', filter: 'All departments' }
+  ];
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -339,7 +363,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('tasks', tasks)}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -358,7 +382,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('leaves', leaves.filter(l => l.status === 'Pending'))}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -369,7 +393,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Assessment sx={{ mr: 2, color: 'success.main' }} />
                 <Typography variant="h5" component="div">
-                  5
+                  {mockReports.length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -377,7 +401,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('reports', mockReports)}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -396,7 +420,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('notifications')}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -555,58 +579,60 @@ const AgentDashboard = () => {
             </Tabs>
             
             {activeTab === 0 && (
-              <TableContainer sx={{ mt: 2 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Source</TableCell>
-                      <TableCell>Category</TableCell>
-                      <TableCell>Service</TableCell>
-                      <TableCell>User</TableCell>
-                      <TableCell>Office</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredTasks.map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
-                        <TableCell>{task.source || 'N/A'}</TableCell>
-                        <TableCell>{task.category || 'N/A'}</TableCell>
-                        <TableCell>{task.service || 'N/A'}</TableCell>
-                        <TableCell>{task.userName || 'N/A'}</TableCell>
-                        <TableCell>{task.office || 'N/A'}</TableCell>
-                        <TableCell>{task.description || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={task.status || 'Pending'} 
-                            color={
-                              task.status === 'Completed' ? 'success' : 
-                              task.status === 'In Progress' ? 'primary' : 
-                              task.status === 'Cancelled' ? 'error' : 'default'
-                            } 
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <IconButton size="small" color="primary" onClick={() => handleEditTask(task)}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" color="error" onClick={() => handleDeleteTask(task.id)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
+              <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto' }}>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Source</TableCell>
+                        <TableCell>Category</TableCell>
+                        <TableCell>Service</TableCell>
+                        <TableCell>User</TableCell>
+                        <TableCell>Office</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Actions</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {filteredTasks.map((task) => (
+                        <TableRow key={task.id}>
+                          <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell>{task.source || 'N/A'}</TableCell>
+                          <TableCell>{task.category || 'N/A'}</TableCell>
+                          <TableCell>{task.service || 'N/A'}</TableCell>
+                          <TableCell>{task.userName || 'N/A'}</TableCell>
+                          <TableCell>{task.office || 'N/A'}</TableCell>
+                          <TableCell>{task.description || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={task.status || 'Pending'} 
+                              color={
+                                task.status === 'Completed' ? 'success' : 
+                                task.status === 'In Progress' ? 'primary' : 
+                                task.status === 'Cancelled' ? 'error' : 'default'
+                              } 
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <IconButton size="small" color="primary" onClick={() => handleEditTask(task)}>
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteTask(task.id)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
             )}
             
             {activeTab === 1 && (
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto' }}>
                 <Typography variant="h6" gutterBottom>
                   Leave History
                 </Typography>
@@ -726,6 +752,146 @@ const AgentDashboard = () => {
           </Paper>
         </Grid>
       </Grid>
+      
+      {/* View Details Dialog */}
+      <Dialog open={viewDetailsDialog.open} onClose={handleCloseViewDetails} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <InfoIcon sx={{ mr: 1 }} />
+            {viewDetailsDialog.type === 'tasks' && 'Task Details'}
+            {viewDetailsDialog.type === 'leaves' && 'Leave Details'}
+            {viewDetailsDialog.type === 'reports' && 'Report Details'}
+            {viewDetailsDialog.type === 'notifications' && 'Notification Details'}
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {viewDetailsDialog.type === 'tasks' && (
+            <Box>
+              <DialogContentText sx={{ mb: 2 }}>
+                Showing all tasks in the system.
+              </DialogContentText>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>User</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {viewDetailsDialog.data?.map((task) => (
+                      <TableRow key={task.id}>
+                        <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{task.userName || 'N/A'}</TableCell>
+                        <TableCell>{task.description || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={task.status || 'Pending'} 
+                            size="small"
+                            color={
+                              task.status === 'Completed' ? 'success' : 
+                              task.status === 'In Progress' ? 'primary' : 
+                              task.status === 'Cancelled' ? 'error' : 'default'
+                            } 
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+          
+          {viewDetailsDialog.type === 'leaves' && (
+            <Box>
+              <DialogContentText sx={{ mb: 2 }}>
+                Showing pending leave requests.
+              </DialogContentText>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Start Date</TableCell>
+                      <TableCell>End Date</TableCell>
+                      <TableCell>Reason</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {viewDetailsDialog.data?.map((leave) => (
+                      <TableRow key={leave.id}>
+                        <TableCell>{leave.userName || 'N/A'}</TableCell>
+                        <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{leave.reason || 'N/A'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+          
+          {viewDetailsDialog.type === 'reports' && (
+            <Box>
+              <DialogContentText sx={{ mb: 2 }}>
+                Showing all generated reports with their details.
+              </DialogContentText>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Report Name</TableCell>
+                      <TableCell>Generated At</TableCell>
+                      <TableCell>Filter Criteria</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {viewDetailsDialog.data?.map((report) => (
+                      <TableRow key={report.id}>
+                        <TableCell>{report.name}</TableCell>
+                        <TableCell>{report.generatedAt}</TableCell>
+                        <TableCell>{report.filter}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+          
+          {viewDetailsDialog.type === 'notifications' && (
+            <Box>
+              <DialogContentText>
+                Showing recent notifications and alerts.
+              </DialogContentText>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Task Created:</strong> New task "Fix login issue" created by John Doe (2023-06-15 14:30)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Leave Approved:</strong> Annual leave request approved for Jane Smith (2023-06-15 10:15)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Task Completed:</strong> Task "Update documentation" marked as completed by Mike Johnson (2023-06-14 16:45)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Leave Rejected:</strong> Sick leave request rejected for Sarah Wilson (2023-06-14 09:20)
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Task Updated:</strong> Task "Implement new feature" status changed to In Progress (2023-06-13 11:30)
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseViewDetails}>Close</Button>
+        </DialogActions>
+      </Dialog>
       
       {/* Edit Task Dialog */}
       <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>

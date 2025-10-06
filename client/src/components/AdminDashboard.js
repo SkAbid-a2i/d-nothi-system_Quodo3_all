@@ -26,7 +26,8 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-  Divider
+  Divider,
+  styled
 } from '@mui/material';
 import { 
   Assignment, 
@@ -60,6 +61,29 @@ import {
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import notificationService from '../services/notificationService';
+
+// Styled Tab component for better design
+const StyledTab = styled(Tab)(({ theme }) => ({
+  textTransform: 'none',
+  fontWeight: theme.typography.fontWeightRegular,
+  fontSize: theme.typography.pxToRem(15),
+  marginRight: theme.spacing(1),
+  color: 'rgba(0, 0, 0, 0.7)',
+  '&.Mui-selected': {
+    color: '#667eea',
+    fontWeight: theme.typography.fontWeightMedium,
+  },
+  '&.Mui-focusVisible': {
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+  },
+}));
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  borderBottom: '1px solid #e8e8e8',
+  '& .MuiTabs-indicator': {
+    backgroundColor: '#667eea',
+  },
+}));
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState('weekly');
@@ -747,11 +771,28 @@ const AdminDashboard = () => {
         {/* Data Tables */}
         <Grid item xs={12}>
           <Paper sx={{ p: 2 }}>
-            <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable">
-              <Tab label="Team Tasks" icon={<Assignment />} iconPosition="start" />
-              <Tab label="Pending Leaves" icon={<EventAvailable />} iconPosition="start" />
-              <Tab label="Who's on Leave Today" icon={<CalendarIcon />} iconPosition="start" />
-            </Tabs>
+            <StyledTabs 
+              value={activeTab} 
+              onChange={handleTabChange} 
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <StyledTab 
+                label="Team Tasks" 
+                icon={<Assignment />} 
+                iconPosition="start" 
+              />
+              <StyledTab 
+                label="Pending Leaves" 
+                icon={<EventAvailable />} 
+                iconPosition="start" 
+              />
+              <StyledTab 
+                label="Who's on Leave Today" 
+                icon={<CalendarIcon />} 
+                iconPosition="start" 
+              />
+            </StyledTabs>
             
             <Box sx={{ mt: 2 }}>
               {activeTab === 0 && (

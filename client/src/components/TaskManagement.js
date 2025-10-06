@@ -71,7 +71,7 @@ const TaskManagement = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
-  const [assignedTo, setAssignedTo] = useState('');
+  // Removed assignedTo state as requested
   
   // Edit task state
   const [editingTask, setEditingTask] = useState(null);
@@ -81,7 +81,7 @@ const TaskManagement = () => {
   const [editSelectedService, setEditSelectedService] = useState(null);
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('');
-  const [editAssignedTo, setEditAssignedTo] = useState('');
+  // Removed editAssignedTo state as requested
   const [openEditDialog, setOpenEditDialog] = useState(false);
   
   // Search and filter state
@@ -228,7 +228,7 @@ const TaskManagement = () => {
         service: selectedService?.value || '',
         description,
         status,
-        assignedTo,
+        // Removed assignedTo from taskData
         office: user?.office || '',
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
@@ -255,7 +255,7 @@ const TaskManagement = () => {
       setSelectedService(null);
       setDescription('');
       setStatus('Pending');
-      setAssignedTo('');
+      // Removed assignedTo reset
       
       setOpenCreateDialog(false);
       setSuccess('Task created successfully!');
@@ -276,7 +276,7 @@ const TaskManagement = () => {
     setEditSelectedService(services.find(s => s.value === task.service) || null);
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
-    setEditAssignedTo(task.assignedTo || '');
+    // Removed editAssignedTo assignment
     setOpenEditDialog(true);
   };
 
@@ -289,7 +289,7 @@ const TaskManagement = () => {
         service: editSelectedService?.value || '',
         description: editDescription,
         status: editStatus,
-        assignedTo: editAssignedTo,
+        // Removed assignedTo from taskData
         office: user?.office || '',
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
@@ -364,6 +364,9 @@ const TaskManagement = () => {
                 Total Tasks
               </Typography>
             </CardContent>
+            <CardActions>
+              <Button size="small">View Details</Button>
+            </CardActions>
           </Card>
         </Grid>
         
@@ -380,6 +383,9 @@ const TaskManagement = () => {
                 Pending
               </Typography>
             </CardContent>
+            <CardActions>
+              <Button size="small">View Details</Button>
+            </CardActions>
           </Card>
         </Grid>
         
@@ -396,6 +402,9 @@ const TaskManagement = () => {
                 In Progress
               </Typography>
             </CardContent>
+            <CardActions>
+              <Button size="small">View Details</Button>
+            </CardActions>
           </Card>
         </Grid>
         
@@ -412,6 +421,9 @@ const TaskManagement = () => {
                 Completed
               </Typography>
             </CardContent>
+            <CardActions>
+              <Button size="small">View Details</Button>
+            </CardActions>
           </Card>
         </Grid>
       </Grid>
@@ -499,7 +511,7 @@ const TaskManagement = () => {
                     <TableCell>Description</TableCell>
                     <TableCell>User</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Assigned To</TableCell>
+                    {/* Removed Assigned To column */}
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -522,7 +534,7 @@ const TaskManagement = () => {
                           } 
                         />
                       </TableCell>
-                      <TableCell>{task.assignedTo || 'N/A'}</TableCell>
+                      {/* Removed Assigned To cell */}
                       <TableCell>
                         <IconButton 
                           size="small" 
@@ -648,14 +660,7 @@ const TaskManagement = () => {
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Assigned To"
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-              />
-            </Grid>
+            {/* Removed Assigned To field */}
             
             <Grid item xs={12}>
               <Button 
@@ -786,14 +791,7 @@ const TaskManagement = () => {
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Assigned To"
-                value={editAssignedTo}
-                onChange={(e) => setEditAssignedTo(e.target.value)}
-              />
-            </Grid>
+            {/* Removed Assigned To field */}
           </Grid>
         </DialogContent>
         <DialogActions>

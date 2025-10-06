@@ -1,5 +1,5 @@
-const bn = {
-  // Common
+const translations = {
+  // Common labels
   common: {
     save: 'সংরক্ষণ করুন',
     cancel: 'বাতিল করুন',
@@ -25,7 +25,7 @@ const bn = {
     actions: 'ক্রিয়াকলাপ',
     status: 'অবস্থা',
     date: 'তারিখ',
-    description: 'বর্ণনা',
+    description: 'বিবরণ',
     reason: 'কারণ',
     startDate: 'শুরুর তারিখ',
     endDate: 'শেষ তারিখ',
@@ -35,6 +35,9 @@ const bn = {
     email: 'ইমেইল',
     role: 'ভূমিকা',
     office: 'অফিস',
+    description: 'বিবরণ',
+    status: 'অবস্থা',
+    actions: 'ক্রিয়াকলাপ',
     welcome: 'স্বাগতম'
   },
   
@@ -102,7 +105,6 @@ const bn = {
     service: 'সেবা',
     description: 'টাস্ক বর্ণনা',
     status: 'অবস্থা',
-    assignedTo: 'নির্ধারিত',
     actions: 'ক্রিয়াকলাপ',
     pending: 'মুলতুবি',
     inProgress: 'চলমান',
@@ -263,4 +265,6 @@ const bn = {
   }
 };
 
-export default bn;
+export default translations;
+
+

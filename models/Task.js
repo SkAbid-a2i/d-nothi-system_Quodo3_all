@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/database.js';
 
 const Task = sequelize.define('Task', {
   id: {
@@ -51,6 +51,7 @@ const Task = sequelize.define('Task', {
     type: DataTypes.JSON, // Store attachments as JSON array
     defaultValue: []
   }
+  // Removed assignedTo field as requested
 }, {
   timestamps: true,
   tableName: 'tasks',
@@ -58,4 +59,4 @@ const Task = sequelize.define('Task', {
   collate: 'utf8mb4_unicode_ci'
 });
 
-module.exports = Task;
+export default Task;
