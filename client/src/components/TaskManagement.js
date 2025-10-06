@@ -128,9 +128,26 @@ const TaskManagement = () => {
       const response = await taskAPI.getAllTasks();
       console.log('Tasks response:', response);
       
-      // Ensure we're setting an array - API might return an object with data property
-      const tasksData = Array.isArray(response.data) ? response.data : 
+      // Filter tasks based on user role
+      let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
+      
+      // Filter tasks based on user role
+      if (user) {
+        if (user.role === 'Agent') {
+          // Agents only see their own tasks
+          tasksData = tasksData.filter(task => 
+            task.userId === user.id || task.userName === user.username
+          );
+        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
+          // Admins and Supervisors see tasks from their office
+          // But they are also agents, so they should see their own tasks AND their team's tasks
+          tasksData = tasksData.filter(task => 
+            task.office === user.office
+          );
+        }
+        // SystemAdmin sees all tasks (no filtering needed)
+      }
       
       setTasks(tasksData);
     } catch (error) {
@@ -142,7 +159,7 @@ const TaskManagement = () => {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [user]); // Add user to dependencies
 
   // Fetch tasks on component mount
   useEffect(() => {

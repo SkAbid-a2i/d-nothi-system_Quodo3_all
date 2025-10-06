@@ -299,6 +299,17 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             D-Nothi Task Management
           </Typography>
           
+          {/* Collapse/Expand button moved to top bar */}
+          <Tooltip title={drawerOpen ? "Collapse menu" : "Expand menu"}>
+            <IconButton
+              color="inherit"
+              onClick={handleDrawerToggle}
+              sx={{ mx: 1 }}
+            >
+              {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+            </IconButton>
+          </Tooltip>
+          
           <Tooltip title="Notifications">
             <IconButton
               size="large"
@@ -377,34 +388,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           keepMounted: true, // Better open performance on mobile.
         }}
       >
-        <Toolbar>
-          <IconButton
-            onClick={handleDrawerToggle}
-            sx={{
-              position: 'absolute',
-              right: 10,
-              top: 10,
-              color: theme.palette.mode === 'dark' ? 'white' : '#ffffff',
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-              border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(0, 0, 0, 0.3)',
-              '&:hover': {
-                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-                transform: 'scale(1.1)',
-              },
-              transition: 'all 0.2s ease-in-out',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-              zIndex: 1200,
-              // Improved visibility
-              minWidth: 40,
-              minHeight: 40,
-              '& .MuiSvgIcon-root': {
-                fontSize: '1.5rem'
-              }
-            }}
-          >
-            {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
-          </IconButton>
-        </Toolbar>
+        <Toolbar />
         <Box sx={{ overflow: 'hidden', p: 2, height: 'calc(100% - 64px)', overflowY: 'auto' }}>
           <Box sx={{ 
             display: 'flex', 
@@ -502,7 +486,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       <Box component="main" sx={{ 
         flexGrow: 1, 
         p: { xs: 1, sm: 2, md: 3 },
-        width: { xs: '100%', md: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)` }
+        width: { xs: '100%', md: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)` },
+        transition: theme.transitions.create('width', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
       }}>
         <Toolbar />
         <Fade in={true} timeout={500}>
