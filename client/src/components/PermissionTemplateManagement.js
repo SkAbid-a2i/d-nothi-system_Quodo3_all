@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -43,6 +43,7 @@ import {
 } from '@mui/icons-material';
 import { permissionAPI } from '../services/api';
 import notificationService from '../services/notificationService';
+import autoRefreshService from '../services/autoRefreshService';
 
 const PermissionTemplateManagement = () => {
   const [templates, setTemplates] = useState([]);
@@ -79,7 +80,7 @@ const PermissionTemplateManagement = () => {
   });
 
   // Fetch permission templates
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -94,12 +95,20 @@ const PermissionTemplateManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch templates on component mount
   useEffect(() => {
     fetchTemplates();
-  }, []);
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('PermissionTemplateManagement', 'permissionTemplates', fetchTemplates, 30000);
+    
+    // Clean up subscription on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('PermissionTemplateManagement');
+    };
+  }, [fetchTemplates]);
 
   // Listen for real-time notifications
   useEffect(() => {

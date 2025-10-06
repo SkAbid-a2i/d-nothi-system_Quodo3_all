@@ -54,6 +54,7 @@ import {
 import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
+import autoRefreshService from '../services/autoRefreshService';
 
 const UserManagement = () => {
   const { user: currentUser } = useAuth();
@@ -198,7 +199,19 @@ const UserManagement = () => {
     fetchOffices();
     fetchDropdowns();
     fetchPermissionTemplates();
-  }, [fetchUsers, fetchPermissionTemplates]);
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('UserManagement', 'users', fetchUsers, 30000);
+    autoRefreshService.subscribe('UserManagement-templates', 'permissionTemplates', fetchPermissionTemplates, 30000);
+    autoRefreshService.subscribe('UserManagement-dropdowns', 'dropdowns', fetchDropdowns, 30000);
+    
+    // Clean up subscriptions on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('UserManagement');
+      autoRefreshService.unsubscribe('UserManagement-templates');
+      autoRefreshService.unsubscribe('UserManagement-dropdowns');
+    };
+  }, [fetchUsers, fetchPermissionTemplates, fetchDropdowns]);
 
   // Listen for real-time notifications
   useEffect(() => {

@@ -80,21 +80,8 @@ const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
     }),
-    // Improved scrollbar design
-    '&::-webkit-scrollbar': {
-      width: '8px',
-    },
-    '&::-webkit-scrollbar-track': {
-      background: 'rgba(255, 255, 255, 0.1)',
-      borderRadius: '4px',
-    },
-    '&::-webkit-scrollbar-thumb': {
-      background: 'rgba(255, 255, 255, 0.3)',
-      borderRadius: '4px',
-      '&:hover': {
-        background: 'rgba(255, 255, 255, 0.5)',
-      }
-    }
+    // Remove scrollbar
+    overflow: 'hidden'
   },
 }));
 
@@ -416,11 +403,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               position: 'absolute',
               right: 10,
               top: 10,
-              color: theme.palette.mode === 'dark' ? 'white' : '#667eea',
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(102, 126, 234, 0.1)',
-              border: theme.palette.mode === 'dark' ? 'none' : '1px solid rgba(102, 126, 234, 0.3)',
+              color: theme.palette.mode === 'dark' ? 'white' : '#ffffff',
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+              border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(0, 0, 0, 0.3)',
               '&:hover': {
-                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(102, 126, 234, 0.2)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
                 transform: 'scale(1.1)',
               },
               transition: 'all 0.2s ease-in-out',
@@ -437,7 +424,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
         </Toolbar>
-        <Box sx={{ overflow: 'auto', p: 2, height: 'calc(100% - 64px)' }}>
+        <Box sx={{ overflow: 'hidden', p: 2, height: 'calc(100% - 64px)', overflowY: 'auto' }}>
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 

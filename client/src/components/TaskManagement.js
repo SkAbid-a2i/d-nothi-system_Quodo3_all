@@ -56,6 +56,7 @@ import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
+import autoRefreshService from '../services/autoRefreshService';
 
 const TaskManagement = () => {
   const { user } = useAuth();
@@ -134,9 +135,6 @@ const TaskManagement = () => {
                        response.data?.data || response.data || [];
       
       setTasks(tasksData);
-      
-      // Log audit entry
-      // Removed auditLog call that was causing issues
     } catch (error) {
       console.error('Error fetching tasks:', error);
       console.error('Error response:', error.response);
@@ -152,6 +150,14 @@ const TaskManagement = () => {
   useEffect(() => {
     fetchTasks();
     fetchDropdownValues();
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
+    
+    // Clean up subscription on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('TaskManagement');
+    };
   }, [fetchTasks]);
 
   // Listen for real-time notifications

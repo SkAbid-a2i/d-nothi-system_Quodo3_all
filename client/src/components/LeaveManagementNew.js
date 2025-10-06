@@ -45,6 +45,7 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 import frontendLogger from '../services/frontendLogger';
+import autoRefreshService from '../services/autoRefreshService';
 
 // Styled Tab component for better design
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -132,12 +133,22 @@ const LeaveManagement = () => {
     setError('');
     try {
       const response = await leaveAPI.getAllLeaves();
-      setLeaves(response.data || []);
+      let leavesData = response.data || [];
       
-      // Log audit entry
-      if (user) {
-        auditLog.leaveFetched((response.data || []).length, user.username || 'unknown');
+      // Filter leaves based on user role
+      if (user && user.role === 'Agent') {
+        // Agents only see their own leaves
+        leavesData = leavesData.filter(leave => 
+          leave.userId === user.id || leave.userName === user.username
+        );
+      } else if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
+        // Admins and Supervisors see leaves from their office
+        leavesData = leavesData.filter(leave => 
+          leave.office === user.office
+        );
       }
+      
+      setLeaves(leavesData);
     } catch (error) {
       console.error('Error fetching leaves:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch leave requests. Please try again.';
@@ -147,10 +158,18 @@ const LeaveManagement = () => {
       setLoading(false);
     }
   }, [user, showSnackbar]);
-  
+
   // Fetch leaves on component mount
   useEffect(() => {
     fetchLeaves();
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('LeaveManagement', 'leaves', fetchLeaves, 30000);
+    
+    // Clean up subscription on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('LeaveManagement');
+    };
   }, [fetchLeaves]);
   
   // Listen for real-time notifications
@@ -193,43 +212,154 @@ const LeaveManagement = () => {
     setActiveTab(newValue);
   };
   
-  // Mock calendar data for demonstration
+  // Generate calendar data for the current month
   const getCalendarData = () => {
     const today = new Date();
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+    const year = today.getFullYear();
+    const month = today.getMonth();
     
+    // Get first day of month and last day of month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Get day of week for first day (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfWeek = firstDay.getDay();
+    
+    // Create array to hold all days
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add all days of the month
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      days.push(day);
+    }
+    
+    // Group into weeks (7 days per week)
     const weeks = [];
-    let week = Array(7).fill(null);
-    
-    // Fill in the days
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dayOfWeek = (firstDay + day - 1) % 7;
-      week[dayOfWeek] = day;
-      
-      if (dayOfWeek === 6 || day === daysInMonth) {
-        weeks.push([...week]);
-        week = Array(7).fill(null);
-      }
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
     }
     
     return weeks;
   };
   
-  const calendarData = getCalendarData();
+  // Get leave data for calendar display
+  const getLeaveCalendarData = () => {
+    const calendarData = getCalendarData();
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // Create a map of leave dates
+    const leaveMap = {};
+    leaves.forEach(leave => {
+      if (leave.startDate && leave.endDate) {
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        
+        // Only include leaves for current month
+        if (start.getFullYear() === currentYear && start.getMonth() === currentMonth) {
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            if (d.getMonth() === currentMonth) {
+              const dateKey = d.getDate();
+              if (!leaveMap[dateKey]) {
+                leaveMap[dateKey] = [];
+              }
+              leaveMap[dateKey].push({
+                userName: leave.userName || leave.employee,
+                status: leave.status
+              });
+            }
+          }
+        }
+      }
+    });
+    
+    return { calendarData, leaveMap };
+  };
   
-  // Mock notifications data
-  const notifications = [
-    { id: 1, message: 'John Doe has requested leave for Oct 1-3', time: '2 hours ago', type: 'leave' },
-    { id: 2, message: 'Jane Smith\'s leave request approved', time: '1 day ago', type: 'approval' },
-    { id: 3, message: 'Reminder: Team meeting tomorrow', time: '1 day ago', type: 'reminder' }
-  ];
+  const { calendarData, leaveMap } = getLeaveCalendarData();
+  
+  // Get notifications for the current user based on their role
+  const getUserNotifications = () => {
+    // In a real implementation, this would fetch from the backend
+    // For now, we'll create mock notifications based on user role
+    const notifications = [];
+    
+    if (user) {
+      if (user.role === 'Agent') {
+        // Agents see their own leave notifications
+        leaves.filter(l => l.userId === user.id || l.userName === user.username)
+          .forEach(leave => {
+            if (leave.status === 'Approved') {
+              notifications.push({
+                id: `approved-${leave.id}`,
+                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been approved`,
+                time: '2 hours ago',
+                type: 'approval'
+              });
+            } else if (leave.status === 'Rejected') {
+              notifications.push({
+                id: `rejected-${leave.id}`,
+                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been rejected`,
+                time: '1 day ago',
+                type: 'rejection'
+              });
+            }
+          });
+      } else if (user.role === 'Admin' || user.role === 'Supervisor') {
+        // Admins/Supervisors see notifications for their team
+        leaves.filter(l => l.office === user.office)
+          .forEach(leave => {
+            notifications.push({
+              id: `requested-${leave.id}`,
+              message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
+              time: '2 hours ago',
+              type: 'leave'
+            });
+            
+            if (leave.status === 'Approved') {
+              notifications.push({
+                id: `approved-${leave.id}`,
+                message: `${leave.userName || leave.employee}'s leave request has been approved`,
+                time: '1 day ago',
+                type: 'approval'
+              });
+            } else if (leave.status === 'Rejected') {
+              notifications.push({
+                id: `rejected-${leave.id}`,
+                message: `${leave.userName || leave.employee}'s leave request has been rejected`,
+                time: '1 day ago',
+                type: 'rejection'
+              });
+            }
+          });
+      }
+    }
+    
+    // Add some general notifications
+    notifications.push({
+      id: 'reminder-1',
+      message: 'Reminder: Team meeting tomorrow at 10:00 AM',
+      time: '1 day ago',
+      type: 'reminder'
+    });
+    
+    return notifications;
+  };
+
+  const notifications = getUserNotifications();
 
   // Filter leaves based on search term and status
   const filteredLeaves = leaves.filter(leave => {
     const matchesSearch = !searchTerm || 
       (leave.employee && leave.employee.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()));
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (leave.userName && leave.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = !statusFilter || leave.status === statusFilter;
     
@@ -321,9 +451,6 @@ const LeaveManagement = () => {
         auditLog.leaveApproved(selectedLeave.id, user.username || 'unknown');
       }
       
-      // Close dialog
-      closeDialog('approve');
-      
       // Show success notification
       showSnackbar(`Leave Request approved!`, 'success');
       
@@ -336,7 +463,8 @@ const LeaveManagement = () => {
       const errorMessage = 'Failed to approve leave request: ' + (error.response?.data?.message || error.message);
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
-      // Make sure dialog closes even on error
+    } finally {
+      // Always close the dialog
       closeDialog('approve');
     }
   };
@@ -368,9 +496,6 @@ const LeaveManagement = () => {
         auditLog.leaveRejected(selectedLeave.id, user.username || 'unknown', 'Rejected by admin');
       }
       
-      // Close dialog
-      closeDialog('reject');
-      
       // Show success notification
       showSnackbar(`Leave Request rejected!`, 'warning');
       
@@ -383,7 +508,8 @@ const LeaveManagement = () => {
       const errorMessage = 'Failed to reject leave request: ' + (error.response?.data?.message || error.message);
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
-      // Make sure dialog closes even on error
+    } finally {
+      // Always close the dialog
       closeDialog('reject');
     }
   };
@@ -484,7 +610,10 @@ const LeaveManagement = () => {
         startDate: formState.startDate,
         endDate: formState.endDate,
         reason: formState.reason,
-        appliedDate: new Date().toISOString().split('T')[0]
+        appliedDate: new Date().toISOString().split('T')[0],
+        userId: user.id,
+        userName: user.username || user.fullName,
+        office: user.office
       };
       
       const response = await leaveAPI.createLeave(leaveData);
@@ -720,7 +849,7 @@ const LeaveManagement = () => {
             <Box sx={{ width: '100%', maxWidth: 800 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Button variant="outlined">Previous</Button>
-                <Typography variant="h6">October 2025</Typography>
+                <Typography variant="h6">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Typography>
                 <Button variant="outlined">Next</Button>
               </Box>
               <Table>
@@ -746,57 +875,34 @@ const LeaveManagement = () => {
                             height: 100, 
                             verticalAlign: 'top',
                             position: 'relative',
-                            bgcolor: day === 1 || day === 2 || day === 3 ? 'primary.light' : 'transparent'
+                            bgcolor: day ? 'transparent' : 'transparent'
                           }}
                         >
                           {day && (
                             <>
                               <Typography variant="body2">{day}</Typography>
-                              {day === 1 && (
-                                <Box sx={{ 
-                                  position: 'absolute', 
-                                  bottom: 2, 
-                                  left: 2, 
-                                  right: 2, 
-                                  bgcolor: 'success.main', 
-                                  color: 'white', 
-                                  fontSize: '0.7rem', 
-                                  p: 0.5, 
-                                  borderRadius: 1 
-                                }}>
-                                  John: Leave
+                              {leaveMap[day] && leaveMap[day].map((leave, index) => (
+                                <Box 
+                                  key={index}
+                                  sx={{ 
+                                    position: 'absolute', 
+                                    bottom: 2 + (index * 20), 
+                                    left: 2, 
+                                    right: 2, 
+                                    bgcolor: leave.status === 'Approved' ? 'success.main' : 
+                                            leave.status === 'Rejected' ? 'error.main' : 'warning.main', 
+                                    color: 'white', 
+                                    fontSize: '0.7rem', 
+                                    p: 0.5, 
+                                    borderRadius: 1,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
+                                >
+                                  {leave.userName}: {leave.status}
                                 </Box>
-                              )}
-                              {day === 2 && (
-                                <Box sx={{ 
-                                  position: 'absolute', 
-                                  bottom: 2, 
-                                  left: 2, 
-                                  right: 2, 
-                                  bgcolor: 'success.main', 
-                                  color: 'white', 
-                                  fontSize: '0.7rem', 
-                                  p: 0.5, 
-                                  borderRadius: 1 
-                                }}>
-                                  John: Leave
-                                </Box>
-                              )}
-                              {day === 3 && (
-                                <Box sx={{ 
-                                  position: 'absolute', 
-                                  bottom: 2, 
-                                  left: 2, 
-                                  right: 2, 
-                                  bgcolor: 'success.main', 
-                                  color: 'white', 
-                                  fontSize: '0.7rem', 
-                                  p: 0.5, 
-                                  borderRadius: 1 
-                                }}>
-                                  John: Leave
-                                </Box>
-                              )}
+                              ))}
                             </>
                           )}
                         </TableCell>
@@ -835,7 +941,8 @@ const LeaveManagement = () => {
                         size="small" 
                         color={
                           notification.type === 'leave' ? 'primary' : 
-                          notification.type === 'approval' ? 'success' : 'default'
+                          notification.type === 'approval' ? 'success' : 
+                          notification.type === 'rejection' ? 'error' : 'default'
                         } 
                       />
                     </TableCell>

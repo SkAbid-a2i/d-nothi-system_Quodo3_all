@@ -62,9 +62,12 @@ import {
   Cell
 } from 'recharts';
 import { taskAPI, leaveAPI, dropdownAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
+import autoRefreshService from '../services/autoRefreshService';
 
 const AgentDashboard = () => {
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,22 +104,40 @@ const AgentDashboard = () => {
     try {
       console.log('Fetching dashboard data...');
       
-      // Fetch tasks
-      console.log('Fetching tasks...');
+      // Fetch tasks - only fetch tasks assigned to the current user
+      console.log('Fetching tasks for user:', user?.username);
       const tasksResponse = await taskAPI.getAllTasks();
       console.log('Tasks response:', tasksResponse);
-      // Ensure we're setting an array - API might return an object with data property
-      const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+      
+      // Filter tasks to only show those assigned to the current user
+      let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
+      
+      // If user is an Agent, only show their tasks
+      if (user && user.role === 'Agent') {
+        tasksData = tasksData.filter(task => 
+          task.assignedTo === user.id || task.userName === user.username || task.userId === user.id
+        );
+      }
+      
       setTasks(tasksData);
       
-      // Fetch leaves
-      console.log('Fetching leaves...');
+      // Fetch leaves - only fetch leaves for the current user
+      console.log('Fetching leaves for user:', user?.username);
       const leavesResponse = await leaveAPI.getAllLeaves();
       console.log('Leaves response:', leavesResponse);
-      // Ensure we're setting an array - API might return an object with data property
-      const leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
+      
+      // Filter leaves to only show those for the current user
+      let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
+      
+      // If user is an Agent, only show their leaves
+      if (user && user.role === 'Agent') {
+        leavesData = leavesData.filter(leave => 
+          leave.userId === user.id || leave.userName === user.username
+        );
+      }
+      
       setLeaves(leavesData);
       
       console.log('Dashboard data fetched successfully');
@@ -127,12 +148,20 @@ const AgentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, []); // Remove user from dependencies as it's not used in the function
+  }, [user]); // Add user to dependencies
 
   // Fetch tasks and leaves on component mount
   useEffect(() => {
     console.log('AgentDashboard component mounted, fetching data...');
     fetchDashboardData();
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('AgentDashboard', 'dashboard', fetchDashboardData, 30000);
+    
+    // Clean up subscription on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('AgentDashboard');
+    };
   }, [fetchDashboardData]);
 
   // Filter services when category changes in edit dialog
@@ -500,18 +529,9 @@ const AgentDashboard = () => {
         {/* Charts and Task Table */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6">
-                Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
-              </Typography>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                onClick={() => handleViewDetails('taskDistribution', getTaskDistributionData())}
-              >
-                View Details
-              </Button>
-            </Box>
+            <Typography variant="h6" gutterBottom>
+              Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+            </Typography>
             <Box sx={{ height: 300 }}>
               {chartType === 'bar' && (
                 <ResponsiveContainer width="100%" height="100%">
@@ -695,7 +715,7 @@ const AgentDashboard = () => {
             <Box sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
               {tasks.length > 0 || leaves.length > 0 ? (
                 <Box>
-                  {/* Show recent tasks and leaves */}
+                  {/* Show recent tasks and leaves for the current user only */}
                   {[...tasks.map(t => ({...t, type: 'task'})), ...leaves.map(l => ({...l, type: 'leave'}))]
                     .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
                     .slice(0, 10)
@@ -771,14 +791,13 @@ const AgentDashboard = () => {
             {viewDetailsDialog.type === 'leaves' && 'Leave Details'}
             {viewDetailsDialog.type === 'reports' && 'Report Details'}
             {viewDetailsDialog.type === 'notifications' && 'Notification Details'}
-            {viewDetailsDialog.type === 'taskDistribution' && 'Task Distribution Details'}
           </Box>
         </DialogTitle>
         <DialogContent>
           {viewDetailsDialog.type === 'tasks' && (
             <Box>
               <DialogContentText sx={{ mb: 2 }}>
-                Showing all tasks in the system.
+                Showing all tasks assigned to you.
               </DialogContentText>
               <TableContainer>
                 <Table>
@@ -818,7 +837,7 @@ const AgentDashboard = () => {
           {viewDetailsDialog.type === 'leaves' && (
             <Box>
               <DialogContentText sx={{ mb: 2 }}>
-                Showing pending leave requests.
+                Showing pending leave requests for you.
               </DialogContentText>
               <TableContainer>
                 <Table>
@@ -894,64 +913,6 @@ const AgentDashboard = () => {
                 <Typography variant="body2">
                   <strong>Task Updated:</strong> Task "Implement new feature" status changed to In Progress (2023-06-13 11:30)
                 </Typography>
-              </Box>
-            </Box>
-          )}
-          
-          {viewDetailsDialog.type === 'taskDistribution' && (
-            <Box>
-              <DialogContentText sx={{ mb: 2 }}>
-                Detailed view of task distribution by category.
-              </DialogContentText>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Category</TableCell>
-                      <TableCell>Task Count</TableCell>
-                      <TableCell>Percentage</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {viewDetailsDialog.data?.map((item, index) => {
-                      const total = viewDetailsDialog.data.reduce((sum, curr) => sum + curr.count, 0);
-                      const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
-                      return (
-                        <TableRow key={item.name}>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell>{item.count}</TableCell>
-                          <TableCell>{percentage}%</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Visualization
-                </Typography>
-                <Box sx={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={viewDetailsDialog.data}
-                      margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#8884d8" name="Task Count" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
               </Box>
             </Box>
           )}

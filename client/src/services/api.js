@@ -67,6 +67,8 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   getCurrentUser: () => api.get('/auth/me'),
+  changePassword: (passwordData) => api.put('/auth/change-password', passwordData),
+  updateProfile: (profileData) => api.put('/auth/profile', profileData),
 };
 
 // User endpoints

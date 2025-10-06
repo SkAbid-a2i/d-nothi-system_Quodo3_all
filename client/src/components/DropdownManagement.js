@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -47,6 +47,7 @@ import {
 } from '@mui/icons-material';
 import { dropdownAPI } from '../services/api';
 import notificationService from '../services/notificationService';
+import autoRefreshService from '../services/autoRefreshService';
 
 const DropdownManagement = () => {
   const [dropdowns, setDropdowns] = useState([]);
@@ -82,28 +83,41 @@ const DropdownManagement = () => {
     { value: 'Office', label: 'Office', icon: <BusinessIcon /> }
   ];
 
-  // Fetch dropdown values
-  const fetchDropdowns = async () => {
+  const fetchDropdowns = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const response = await dropdownAPI.getAllDropdowns();
       setDropdowns(response.data || []);
+      
+      // Get unique types for dropdown type selection
+      const uniqueTypes = [...new Set((response.data || [])
+        .filter(d => d.isActive)
+        .map(d => d.type))];
+      setTypes(uniqueTypes);
     } catch (error) {
-      console.error('Error fetching dropdown values:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error fetching dropdown values. Please try again.';
+      console.error('Error fetching dropdowns:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch dropdown values. Please try again.';
       setError(errorMessage);
-      // Set dropdowns to empty array so UI still works
-      setDropdowns([]);
+      setDropdowns([]); // Set to empty array so the UI still works
+      setTypes([]); // Set to empty array so the UI still works
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch dropdowns on component mount
   useEffect(() => {
     fetchDropdowns();
-  }, []);
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('DropdownManagement', 'dropdowns', fetchDropdowns, 30000);
+    
+    // Clean up subscription on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('DropdownManagement');
+    };
+  }, [fetchDropdowns]);
 
   // Listen for real-time notifications
   useEffect(() => {

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Box, 
   Typography, 
@@ -18,7 +19,8 @@ import {
   Avatar,
   TextField,
   Grid,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { 
   Language as LanguageIcon,
@@ -29,18 +31,104 @@ import {
   Person as PersonIcon,
   Save as SaveIcon
 } from '@mui/icons-material';
+import { authAPI } from '../services/api';
 
 const Settings = ({ darkMode, setDarkMode }) => {
-  const { t, language, toggleLanguage } = useTranslation();
+  const { t } = useTranslation();
+  const { user, updateUser } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  // Profile state
+  const [profileData, setProfileData] = useState({
+    fullName: '',
+    email: '',
+    username: '',
+    office: ''
+  });
+  
+  // Password state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
-  const handleSave = () => {
-    // Simulate saving settings
-    setSuccess('Settings saved successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+  // Initialize profile data from user context
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        username: user.username || '',
+        office: user.office || ''
+      });
+    }
+  }, [user]);
+
+  const handleProfileChange = (field, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handlePasswordChange = (field, value) => {
+    setPasswordData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleUpdateProfile = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await authAPI.updateProfile(profileData);
+      // Update user in context
+      updateUser(response.data);
+      setSuccess('Profile updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to update profile: ' + (err.response?.data?.message || err.message));
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setError('New passwords do not match');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    try {
+      await authAPI.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      setSuccess('Password changed successfully!');
+      // Reset password fields
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to change password: ' + (err.response?.data?.message || err.message));
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,8 +152,12 @@ const Settings = ({ darkMode, setDarkMode }) => {
           </Typography>
         </Box>
 
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>
+        )}
+        
         {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>{success}</Alert>
         )}
 
         <Grid container spacing={3}>
@@ -82,7 +174,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     <TextField
                       fullWidth
                       label="Full Name"
-                      defaultValue="John Doe"
+                      value={profileData.fullName}
+                      onChange={(e) => handleProfileChange('fullName', e.target.value)}
                     />
                   </Grid>
                   
@@ -90,7 +183,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     <TextField
                       fullWidth
                       label="Email"
-                      defaultValue="john.doe@example.com"
+                      value={profileData.email}
+                      onChange={(e) => handleProfileChange('email', e.target.value)}
                       type="email"
                     />
                   </Grid>
@@ -99,7 +193,9 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     <TextField
                       fullWidth
                       label="Username"
-                      defaultValue="johndoe"
+                      value={profileData.username}
+                      onChange={(e) => handleProfileChange('username', e.target.value)}
+                      disabled
                     />
                   </Grid>
                   
@@ -107,14 +203,17 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     <TextField
                       fullWidth
                       label="Office"
-                      defaultValue="Head Office"
+                      value={profileData.office}
+                      onChange={(e) => handleProfileChange('office', e.target.value)}
                     />
                   </Grid>
                   
                   <Grid item xs={12}>
                     <Button
                       variant="contained"
-                      startIcon={<SaveIcon />}
+                      startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                      onClick={handleUpdateProfile}
+                      disabled={loading}
                       sx={{ 
                         background: 'linear-gradient(45deg, #667eea, #764ba2)',
                         '&:hover': {
@@ -124,7 +223,7 @@ const Settings = ({ darkMode, setDarkMode }) => {
                         }
                       }}
                     >
-                      Update Profile
+                      {loading ? 'Updating...' : 'Update Profile'}
                     </Button>
                   </Grid>
                 </Grid>
@@ -141,8 +240,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     <FormControl fullWidth>
                       <InputLabel>Language</InputLabel>
                       <Select
-                        value={language}
-                        onChange={toggleLanguage}
+                        value={t.language}
+                        onChange={(e) => t.toggleLanguage(e.target.value)}
                         label="Language"
                       >
                         <MenuItem value="en">English</MenuItem>
@@ -233,6 +332,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       fullWidth
                       label="Current Password"
                       type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
                     />
                   </Grid>
                   
@@ -241,6 +342,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       fullWidth
                       label="New Password"
                       type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
                     />
                   </Grid>
                   
@@ -249,13 +352,17 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       fullWidth
                       label="Confirm New Password"
                       type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
                     />
                   </Grid>
                   
                   <Grid item xs={12}>
                     <Button
                       variant="contained"
-                      startIcon={<SecurityIcon />}
+                      startIcon={loading ? <CircularProgress size={20} /> : <SecurityIcon />}
+                      onClick={handleChangePassword}
+                      disabled={loading}
                       sx={{ 
                         background: 'linear-gradient(45deg, #667eea, #764ba2)',
                         '&:hover': {
@@ -265,31 +372,10 @@ const Settings = ({ darkMode, setDarkMode }) => {
                         }
                       }}
                     >
-                      Change Password
+                      {loading ? 'Changing...' : 'Change Password'}
                     </Button>
                   </Grid>
                 </Grid>
-                
-                <Box sx={{ mt: 4, textAlign: 'right' }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleSave}
-                    startIcon={<SaveIcon />}
-                    sx={{ 
-                      px: 4,
-                      py: 1.5,
-                      background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                      '&:hover': {
-                        background: 'linear-gradient(45deg, #764ba2, #667eea)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)'
-                      }
-                    }}
-                  >
-                    Save All Settings
-                  </Button>
-                </Box>
               </Paper>
             </Zoom>
           </Grid>
@@ -308,20 +394,20 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     color: 'white'
                   }}
                 >
-                  JD
+                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                 </Avatar>
                 
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                  John Doe
+                  {user?.fullName || user?.username || 'User'}
                 </Typography>
                 
                 <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 3 }}>
-                  System Administrator
+                  {user?.role || 'User'}
                 </Typography>
                 
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Member since:</strong> Jan 15, 2023
+                    <strong>Member since:</strong> {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     <strong>Last login:</strong> Today, 09:30 AM

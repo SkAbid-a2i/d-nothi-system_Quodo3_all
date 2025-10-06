@@ -1,4 +1,6 @@
 // Frontend service for handling real-time notifications using Server-Sent Events
+import autoRefreshService from './autoRefreshService';
+
 class NotificationService {
   constructor() {
     this.eventSource = null;
@@ -41,6 +43,9 @@ class NotificationService {
           const data = JSON.parse(event.data);
           console.log('Received notification:', data);
           this.emit(data.type, data);
+          
+          // Trigger immediate refresh for relevant data types
+          this.triggerAutoRefresh(data.type);
         } catch (error) {
           console.error('Error parsing notification:', error);
         }
@@ -56,6 +61,42 @@ class NotificationService {
     } catch (error) {
       console.error('Error connecting to notification service:', error);
       this.emit('error', { error });
+    }
+  }
+
+  // Trigger auto-refresh based on notification type
+  triggerAutoRefresh(notificationType) {
+    switch (notificationType) {
+      case 'taskCreated':
+      case 'taskUpdated':
+        autoRefreshService.triggerRefresh('tasks');
+        autoRefreshService.triggerRefresh('dashboard');
+        break;
+      case 'leaveRequested':
+      case 'leaveApproved':
+      case 'leaveRejected':
+        autoRefreshService.triggerRefresh('leaves');
+        autoRefreshService.triggerRefresh('dashboard');
+        break;
+      case 'userCreated':
+      case 'userUpdated':
+      case 'userDeleted':
+        autoRefreshService.triggerRefresh('users');
+        break;
+      case 'dropdownCreated':
+      case 'dropdownUpdated':
+      case 'dropdownDeleted':
+        autoRefreshService.triggerRefresh('dropdowns');
+        break;
+      case 'permissionTemplateCreated':
+      case 'permissionTemplateUpdated':
+      case 'permissionTemplateDeleted':
+        autoRefreshService.triggerRefresh('permissionTemplates');
+        break;
+      default:
+        // For unknown notification types, trigger a general refresh
+        autoRefreshService.triggerRefresh('dashboard');
+        break;
     }
   }
 
