@@ -111,14 +111,24 @@ const TaskManagement = () => {
   const fetchTasks = useCallback(async () => {
     setDataLoading(true);
     try {
+      console.log('Fetching tasks...');
       const response = await taskAPI.getAllTasks();
-      setTasks(response.data);
+      console.log('Tasks response:', response);
+      
+      // Ensure we're setting an array - API might return an object with data property
+      const tasksData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      
+      setTasks(tasksData);
       
       // Log audit entry
-      auditLog.taskFetched(response.data.length, user?.username || 'unknown');
+      auditLog.taskFetched(tasksData.length, user?.username || 'unknown');
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      setError('Failed to fetch tasks');
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to fetch tasks';
+      setError(`Failed to fetch tasks: ${errorMessage}`);
+      showSnackbar(`Failed to fetch tasks: ${errorMessage}`, 'error');
     } finally {
       setDataLoading(false);
     }
@@ -220,6 +230,13 @@ const TaskManagement = () => {
     setError('');
     setSuccess('');
     
+    // Validation
+    if (!date || !description) {
+      setError('Date and description are required');
+      showSnackbar('Date and description are required', 'error');
+      return;
+    }
+    
     try {
       const taskData = {
         date,
@@ -234,7 +251,11 @@ const TaskManagement = () => {
         userName: user?.fullName || user?.username // Automatically add user name
       };
       
+      console.log('Creating task with data:', taskData);
+      
       const response = await taskAPI.createTask(taskData);
+      
+      console.log('Task creation response:', response);
       
       // Add new task to list
       const newTask = {
@@ -262,7 +283,8 @@ const TaskManagement = () => {
       showSnackbar('Task created successfully!', 'success');
     } catch (error) {
       console.error('Error creating task:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to create task';
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to create task';
       setError(`Failed to create task: ${errorMessage}`);
       showSnackbar(`Failed to create task: ${errorMessage}`, 'error');
     }
@@ -343,6 +365,38 @@ const TaskManagement = () => {
 
   const taskStats = getTaskStats();
 
+  // Handle View Details for task statistics
+  const handleViewDetails = (filterType) => {
+    // Set the active tab to "All Tasks" (tab 0)
+    setActiveTab(0);
+    
+    // Apply the appropriate filter
+    switch (filterType) {
+      case 'pending':
+        setStatusFilter('Pending');
+        break;
+      case 'inProgress':
+        setStatusFilter('In Progress');
+        break;
+      case 'completed':
+        setStatusFilter('Completed');
+        break;
+      default:
+        // For total tasks, clear filters to show all
+        setStatusFilter('');
+        setSearchTerm('');
+        break;
+    }
+    
+    // Scroll to the task list
+    setTimeout(() => {
+      const taskListElement = document.getElementById('task-list');
+      if (taskListElement) {
+        taskListElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -365,7 +419,7 @@ const TaskManagement = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('total')}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -384,7 +438,7 @@ const TaskManagement = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('pending')}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -403,7 +457,7 @@ const TaskManagement = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('inProgress')}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -422,7 +476,7 @@ const TaskManagement = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small">View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('completed')}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -500,7 +554,7 @@ const TaskManagement = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} id="task-list">
               <Table>
                 <TableHead>
                   <TableRow>
