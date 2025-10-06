@@ -1,10 +1,9 @@
 import React from 'react';
-import ModernUserManagement from './ModernUserManagement';
+import RealUserManagement from './RealUserManagement';
 
 const UserManagement = () => {
-  // For now, we'll use the modern user management
-  // You can switch back to the original component if needed
-  return <ModernUserManagement />;
+  // Use the real user management component with API integration
+  return <RealUserManagement />;
 };
 
 export default UserManagement;

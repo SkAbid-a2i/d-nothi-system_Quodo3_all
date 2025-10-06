@@ -1,10 +1,9 @@
 import React from 'react';
-import ModernLeaveManagement from './ModernLeaveManagement';
+import LeaveManagementNew from './LeaveManagementNew';
 
 const LeaveManagement = () => {
-  // For now, we'll use the modern leave management
-  // You can switch back to the original component if needed
-  return <ModernLeaveManagement />;
+  // Use the real leave management component with API integration
+  return <LeaveManagementNew />;
 };
 
 export default LeaveManagement;

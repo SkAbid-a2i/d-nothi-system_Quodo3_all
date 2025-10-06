@@ -1,10 +1,9 @@
 import React from 'react';
-import ModernTaskLogger from './ModernTaskLogger';
+import TaskManagement from './TaskManagement';
 
 const TaskLogger = () => {
-  // For now, we'll use the modern task logger
-  // You can switch back to the original component if needed
-  return <ModernTaskLogger />;
+  // Use the real task management component with API integration
+  return <TaskManagement />;
 };
 
 export default TaskLogger;

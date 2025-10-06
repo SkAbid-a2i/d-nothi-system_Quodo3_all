@@ -24,7 +24,9 @@ import {
   Menu,
   MenuItem,
   Fade,
-  CircularProgress
+  CircularProgress,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -43,20 +45,23 @@ import {
   Language as LanguageIcon,
   Security as SecurityIcon,
   ListAlt as ListAltIcon,
-  Business as BusinessIcon
+  Business as BusinessIcon,
+  Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
 import { auditAPI } from '../services/api';
 
 const drawerWidth = 260;
+const collapsedDrawerWidth = 70;
 
 // Styled components for modern look
-const StyledDrawer = styled(Drawer)(({ theme }) => ({
-  width: drawerWidth,
+const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
+  width: open ? drawerWidth : collapsedDrawerWidth,
   flexShrink: 0,
   '& .MuiDrawer-paper': {
-    width: drawerWidth,
+    width: open ? drawerWidth : collapsedDrawerWidth,
     boxSizing: 'border-box',
     background: theme.palette.mode === 'dark' 
       ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
@@ -65,7 +70,11 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     color: 'white',
     boxShadow: theme.palette.mode === 'dark' 
       ? '0 0 20px rgba(0, 0, 0, 0.5)' 
-      : '0 0 20px rgba(0, 0, 0, 0.1)'
+      : '0 0 20px rgba(0, 0, 0, 0.1)',
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
   },
 }));
 
@@ -79,7 +88,8 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
     : '0 2px 20px rgba(0, 0, 0, 0.1)',
   borderBottom: theme.palette.mode === 'dark' 
     ? '1px solid rgba(255, 255, 255, 0.1)' 
-    : '1px solid rgba(0, 0, 0, 0.1)'
+    : '1px solid rgba(0, 0, 0, 0.1)',
+  zIndex: theme.zIndex.drawer + 1,
 }));
 
 const StyledListItem = styled(ListItem)(({ theme, selected }) => ({
@@ -118,6 +128,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
@@ -140,6 +154,14 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     menuItems.push({ text: 'Log Monitoring', icon: <LogIcon />, path: '/logs' });
   }
 
+  const handleDrawerToggle = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setDrawerOpen(!drawerOpen);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -147,6 +169,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   const handleNavigation = (path) => {
     navigate(path);
+    if (isMobile) {
+      setMobileOpen(false);
+    }
   };
 
   const handleProfileMenuOpen = (event) => {
@@ -238,6 +263,16 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       <CssBaseline />
       <StyledAppBar position="fixed">
         <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+          
           <Typography 
             variant="h6" 
             noWrap 
@@ -325,7 +360,14 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         </Toolbar>
       </StyledAppBar>
       
-      <StyledDrawer variant="permanent">
+      <StyledDrawer
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={isMobile ? mobileOpen : drawerOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
+      >
         <Toolbar />
         <Box sx={{ overflow: 'auto', p: 2 }}>
           <Box sx={{ 
@@ -378,12 +420,13 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             })}
             
             {/* Admin Console Submenu for SystemAdmin */}
-            {user && user.role === 'SystemAdmin' && location.pathname.startsWith('/admin') && (
+            {user && user.role === 'SystemAdmin' && (
               <>
                 <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
                 <StyledListItem 
                   button
-                  selected={location.pathname === '/admin/permission-templates'}
+                  selected={location.pathname === '/admin/permission-templates' || 
+                           (location.pathname === '/admin' && window.location.hash === '#permission-templates')}
                   onClick={() => handleNavigation('/admin/permission-templates')}
                 >
                   <ListItemIcon>
@@ -393,7 +436,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 </StyledListItem>
                 <StyledListItem 
                   button
-                  selected={location.pathname === '/admin/dropdowns'}
+                  selected={location.pathname === '/admin/dropdowns' || 
+                           (location.pathname === '/admin' && window.location.hash === '#dropdowns')}
                   onClick={() => handleNavigation('/admin/dropdowns')}
                 >
                   <ListItemIcon>
