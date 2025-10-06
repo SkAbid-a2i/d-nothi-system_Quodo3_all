@@ -30,7 +30,8 @@ import {
   Edit as EditIcon, 
   Delete as DeleteIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { permissionAPI } from '../services/api';
 import notificationService from '../services/notificationService';
@@ -41,6 +42,7 @@ const PermissionTemplateManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
   
   const [searchTerm, setSearchTerm] = useState('');
   
