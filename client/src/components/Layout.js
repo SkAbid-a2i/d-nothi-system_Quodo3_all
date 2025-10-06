@@ -150,6 +150,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(true);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   // State for collapsible admin menu
@@ -237,6 +238,22 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     }
   };
 
+  // Handle screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 960);
+      // Auto-collapse drawer on small screens
+      if (window.innerWidth < 960) {
+        setDrawerOpen(false);
+      }
+    };
+    
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Listen for real-time notifications
   useEffect(() => {
     const handleTaskCreated = (data) => {
@@ -280,7 +297,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const notificationId = 'primary-notification-menu';
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ 
+      display: 'flex',
+      flexDirection: { xs: 'column', md: 'row' }
+    }}>
       <CssBaseline />
       <StyledAppBar position="fixed">
         <Toolbar>
@@ -389,7 +409,27 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           keepMounted: true, // Better open performance on mobile.
         }}
       >
-        <Toolbar />
+        <Toolbar>
+          <IconButton
+            onClick={handleDrawerToggle}
+            sx={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+              color: 'white',
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                transform: 'scale(1.1)',
+              },
+              transition: 'all 0.2s ease-in-out',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+              zIndex: 1200
+            }}
+          >
+            {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+          </IconButton>
+        </Toolbar>
         <Box sx={{ overflow: 'auto', p: 2, height: 'calc(100% - 64px)' }}>
           <Box sx={{ 
             display: 'flex', 
@@ -475,7 +515,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         </Box>
       </StyledDrawer>
       
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ 
+        flexGrow: 1, 
+        p: { xs: 1, sm: 2, md: 3 },
+        width: { xs: '100%', md: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)` }
+      }}>
         <Toolbar />
         <Fade in={true} timeout={500}>
           <Box sx={{ 
@@ -483,8 +527,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             background: darkMode 
               ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
               : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)',
-            borderRadius: 3,
-            p: 3,
+            borderRadius: { xs: 0, sm: 2, md: 3 },
+            p: { xs: 1, sm: 2, md: 3 },
             boxShadow: darkMode 
               ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
               : '0 8px 32px rgba(0, 0, 0, 0.1)',

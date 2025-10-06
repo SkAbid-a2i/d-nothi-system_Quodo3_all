@@ -10,7 +10,7 @@ import UserManagement from './UserManagement';
 import PermissionTemplateManagement from './PermissionTemplateManagement';
 import DropdownManagement from './DropdownManagement';
 
-const AdminConsole = () => {
+const AdminConsole_Original = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   const handleTabChange = (event, newValue) => {
@@ -72,4 +72,4 @@ const AdminConsole = () => {
   );
 };
 
-export default AdminConsole;
+export default AdminConsole_Original;
