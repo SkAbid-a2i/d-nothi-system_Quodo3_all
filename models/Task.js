@@ -64,4 +64,8 @@ const Task = sequelize.define('Task', {
   collate: 'utf8mb4_unicode_ci'
 });
 
+// For compatibility with both ES6 import and CommonJS require
 export default Task;
+
+// Also export for CommonJS require
+module.exports = Task;
