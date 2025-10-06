@@ -15,6 +15,7 @@ import LeaveManagement from './components/LeaveManagement';
 import UserManagement from './components/UserManagement';
 import PermissionTemplateManagement from './components/PermissionTemplateManagement';
 import DropdownManagement from './components/DropdownManagement';
+import AdminConsole from './components/AdminConsole';
 import ReportManagement from './components/ReportManagement';
 import Settings from './components/Settings';
 import Help from './components/Help';
@@ -236,9 +237,7 @@ function App() {
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
                 </ProtectedRoute>
               }>
-                <Route index element={<UserManagement />} />
-                <Route path="permission-templates" element={<PermissionTemplateManagement />} />
-                <Route path="dropdowns" element={<DropdownManagement />} />
+                <Route index element={<AdminConsole />} />
               </Route>
               <Route path="/reports" element={
                 <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>

@@ -1,8 +1,8 @@
 import React from 'react';
-import ModernHelp from './ModernHelp';
+import Help_Original from './Help_Original';
 
 const Help = () => {
-  return <ModernHelp />;
+  return <Help_Original />;
 };
 
 export default Help;

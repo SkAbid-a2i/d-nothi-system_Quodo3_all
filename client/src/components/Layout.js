@@ -427,7 +427,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 return null;
               }
               
-              // Special handling for Admin Console to make it collapsible
+              // Special handling for Admin Console
               if (item.path === '/admin' && user && user.role === 'SystemAdmin') {
                 return (
                   <Box key={item.text}>
@@ -440,39 +440,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                         {item.icon}
                       </ListItemIcon>
                       {drawerOpen && <ListItemText primary={item.text} />}
-                      {drawerOpen && (adminMenuOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
                     </StyledListItem>
-                    
-                    <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
-                      <List component="div" disablePadding>
-                        <StyledListItem 
-                          button
-                          sx={{ pl: 4 }}
-                          selected={location.hash === '#permission-templates'}
-                          onClick={() => {
-                            handleNavigation('/admin#permission-templates');
-                          }}
-                        >
-                          <ListItemIcon>
-                            <SecurityIcon />
-                          </ListItemIcon>
-                          {drawerOpen && <ListItemText primary="Permission Templates" />}
-                        </StyledListItem>
-                        <StyledListItem 
-                          button
-                          sx={{ pl: 4 }}
-                          selected={location.hash === '#dropdowns'}
-                          onClick={() => {
-                            handleNavigation('/admin#dropdowns');
-                          }}
-                        >
-                          <ListItemIcon>
-                            <ListAltIcon />
-                          </ListItemIcon>
-                          {drawerOpen && <ListItemText primary="Dropdown Management" />}
-                        </StyledListItem>
-                      </List>
-                    </Collapse>
                   </Box>
                 );
               }
