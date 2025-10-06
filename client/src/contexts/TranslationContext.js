@@ -35,6 +35,11 @@ export const TranslationProvider = ({ children }) => {
     return false;
   };
 
+  const toggleLanguage = () => {
+    const newLanguage = language === 'en' ? 'bn' : 'en';
+    return changeLanguage(newLanguage);
+  };
+
   const t = (key) => {
     return translationService.t(key);
   };
@@ -43,6 +48,7 @@ export const TranslationProvider = ({ children }) => {
     language,
     translations,
     changeLanguage,
+    toggleLanguage,
     t
   };
 

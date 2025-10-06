@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -23,7 +23,8 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Fade
+  Fade,
+  CircularProgress
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -39,9 +40,14 @@ import {
   BugReport as LogIcon,
   Notifications as NotificationsIcon,
   AccountCircle,
-  Language as LanguageIcon
+  Language as LanguageIcon,
+  Security as SecurityIcon,
+  ListAlt as ListAltIcon,
+  Business as BusinessIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
+import notificationService from '../services/notificationService';
+import { auditAPI } from '../services/api';
 
 const drawerWidth = 260;
 
@@ -109,6 +115,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const { t, toggleLanguage } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
@@ -146,12 +155,80 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   const handleNotificationMenuOpen = (event) => {
     setNotificationAnchor(event.currentTarget);
+    fetchNotifications();
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
     setNotificationAnchor(null);
   };
+
+  // Fetch real notifications
+  const fetchNotifications = async () => {
+    if (loadingNotifications) return;
+    
+    setLoadingNotifications(true);
+    try {
+      const response = await auditAPI.getRecentLogs();
+      const recentLogs = response.data || [];
+      
+      // Transform logs into notifications
+      const transformedNotifications = recentLogs.map(log => ({
+        id: log.id,
+        message: `${log.action} - ${log.description || 'No description'}`,
+        time: new Date(log.createdAt).toLocaleString(),
+        type: log.action.toLowerCase().includes('error') ? 'error' : 
+              log.action.toLowerCase().includes('warning') ? 'warning' : 'info',
+        read: false // In a real app, you'd track read status
+      }));
+      
+      setNotifications(transformedNotifications);
+      setUnreadCount(transformedNotifications.length);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleTaskCreated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `New task created: ${data.task.description}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]); // Keep only last 10
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleLeaveRequested = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `New leave request from ${data.leave.userName}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    // Subscribe to notifications
+    notificationService.onTaskCreated(handleTaskCreated);
+    notificationService.onLeaveRequested(handleLeaveRequested);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('taskCreated', handleTaskCreated);
+      notificationService.off('leaveRequested', handleLeaveRequested);
+    };
+  }, []);
 
   const menuId = 'primary-search-account-menu';
   const notificationId = 'primary-notification-menu';
@@ -185,7 +262,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               color="inherit"
               onClick={handleNotificationMenuOpen}
             >
-              <Badge badgeContent={3} color="error">
+              <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
               </Badge>
             </IconButton>
@@ -299,6 +376,33 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 </StyledListItem>
               );
             })}
+            
+            {/* Admin Console Submenu for SystemAdmin */}
+            {user && user.role === 'SystemAdmin' && location.pathname.startsWith('/admin') && (
+              <>
+                <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
+                <StyledListItem 
+                  button
+                  selected={location.pathname === '/admin/permission-templates'}
+                  onClick={() => handleNavigation('/admin/permission-templates')}
+                >
+                  <ListItemIcon>
+                    <SecurityIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Permission Templates" />
+                </StyledListItem>
+                <StyledListItem 
+                  button
+                  selected={location.pathname === '/admin/dropdowns'}
+                  onClick={() => handleNavigation('/admin/dropdowns')}
+                >
+                  <ListItemIcon>
+                    <ListAltIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Dropdown Management" />
+                </StyledListItem>
+              </>
+            )}
           </List>
           <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
           <StyledListItem 
@@ -383,15 +487,38 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         open={Boolean(notificationAnchor)}
         onClose={handleMenuClose}
       >
-        <MenuItem>
-          <Typography variant="subtitle2">New task assigned</Typography>
+        <MenuItem disabled>
+          <Typography variant="subtitle2">Notifications</Typography>
         </MenuItem>
-        <MenuItem>
-          <Typography variant="subtitle2">Leave approved</Typography>
-        </MenuItem>
-        <MenuItem>
-          <Typography variant="subtitle2">System update available</Typography>
-        </MenuItem>
+        <Divider />
+        {loadingNotifications ? (
+          <MenuItem>
+            <CircularProgress size={20} sx={{ mr: 1 }} />
+            Loading notifications...
+          </MenuItem>
+        ) : notifications.length === 0 ? (
+          <MenuItem>
+            <Typography variant="body2" color="text.secondary">
+              No notifications
+            </Typography>
+          </MenuItem>
+        ) : (
+          notifications.map((notification) => (
+            <MenuItem key={notification.id} sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'flex-start',
+              maxWidth: 300
+            }}>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {notification.message}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {notification.time}
+              </Typography>
+            </MenuItem>
+          ))
+        )}
       </Menu>
     </Box>
   );

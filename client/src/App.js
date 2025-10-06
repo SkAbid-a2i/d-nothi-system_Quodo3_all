@@ -13,6 +13,8 @@ import AgentDashboard from './components/AgentDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import LeaveManagement from './components/LeaveManagement';
 import UserManagement from './components/UserManagement';
+import PermissionTemplateManagement from './components/PermissionTemplateManagement';
+import DropdownManagement from './components/DropdownManagement';
 import ReportManagement from './components/ReportManagement';
 import Settings from './components/Settings';
 import Help from './components/Help';
@@ -238,6 +240,8 @@ function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<UserManagement />} />
+                <Route path="permission-templates" element={<PermissionTemplateManagement />} />
+                <Route path="dropdowns" element={<DropdownManagement />} />
               </Route>
               <Route path="/reports" element={
                 <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>

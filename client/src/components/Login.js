@@ -43,6 +43,12 @@ const pulse = keyframes`
   100% { transform: scale(1); }
 `;
 
+// Custom animation for logo spin
+const spin = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -167,18 +173,32 @@ const Login = () => {
                 <Box
                   sx={{
                     m: 2,
-                    p: 2,
+                    p: 1,
                     borderRadius: '50%',
-                    bgcolor: 'primary.main',
-                    animation: `${float} 3s ease-in-out infinite`,
+                    bgcolor: 'transparent',
+                    animation: `${float} 3s ease-in-out infinite, ${spin} 8s linear infinite`,
                     boxShadow: darkMode 
                       ? '0 0 30px rgba(150, 123, 182, 0.5)' 
                       : '0 0 30px rgba(150, 123, 182, 0.3)',
                     position: 'relative',
-                    zIndex: 2
+                    zIndex: 2,
+                    width: 80,
+                    height: 80,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                 >
-                  <LockOutlined sx={{ fontSize: 40, color: 'white' }} />
+                  <img 
+                    src="/D-nothi logo-01.png" 
+                    alt="D-nothi Logo" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'contain',
+                      borderRadius: '50%'
+                    }} 
+                  />
                 </Box>
                 
                 <Typography 
