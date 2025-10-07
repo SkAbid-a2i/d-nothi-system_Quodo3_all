@@ -6,14 +6,18 @@ class ComprehensiveTester {
     this.testResults = [];
   }
   
-  runCommand(command, args, testName) {
+  runCommand(command, args, testName, env = {}) {
     return new Promise((resolve) => {
       console.log(`\n🔍 Running ${testName}...`);
       console.log(`   Command: ${command} ${args.join(' ')}\n`);
       
+      // Set NODE_ENV to development for local testing
+      const childEnv = { ...process.env, NODE_ENV: 'development', ...env };
+      
       const child = spawn(command, args, { 
         stdio: 'inherit',
-        shell: true
+        shell: true,
+        env: childEnv
       });
       
       child.on('close', (code) => {
@@ -50,16 +54,16 @@ class ComprehensiveTester {
     console.log('This will test database connection, API endpoints, and end-to-end functionality.\n');
     
     // Test 1: Database connection
-    const dbTest = await this.runCommand('node', ['scripts/test-db-connection.js'], 'Database Connection Test');
+    const dbTest = await this.runCommand('node', ['scripts/test-db-connection.js'], 'Database Connection Test', { NODE_ENV: 'development' });
     
     if (!dbTest) {
       console.log('⚠️  Skipping further tests due to database connection failure\n');
     } else {
       // Test 2: Database tables
-      await this.runCommand('node', ['scripts/check-db-tables.js'], 'Database Tables Check');
+      await this.runCommand('node', ['scripts/check-db-tables.js'], 'Database Tables Check', { NODE_ENV: 'development' });
       
       // Test 3: Admin user verification
-      await this.runCommand('node', ['scripts/verify-admin-user.js'], 'Admin User Verification');
+      await this.runCommand('node', ['scripts/verify-admin-user.js'], 'Admin User Verification', { NODE_ENV: 'development' });
       
       // Test 4: API endpoints (requires server to be running)
       console.log('ℹ️  Please ensure the backend server is running (npm run dev) before proceeding with API tests');
@@ -76,10 +80,10 @@ class ComprehensiveTester {
         });
       });
       
-      await this.runCommand('node', ['scripts/test-api-endpoints.js'], 'API Endpoints Test');
+      await this.runCommand('node', ['scripts/test-api-endpoints.js'], 'API Endpoints Test', { NODE_ENV: 'development' });
       
       // Test 5: End-to-end test
-      await this.runCommand('node', ['scripts/e2e-test.js'], 'End-to-End Test');
+      await this.runCommand('node', ['scripts/e2e-test.js'], 'End-to-End Test', { NODE_ENV: 'development' });
     }
     
     // Summary

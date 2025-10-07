@@ -5,7 +5,8 @@ require('dotenv').config();
 let sequelize;
 
 // Use TiDB configuration for production, SQLite for development
-if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
+// Only use TiDB when explicitly in production environment
+if (process.env.NODE_ENV === 'production') {
   sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -33,7 +34,7 @@ if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
     }
   );
 } else {
-  // Use SQLite for development when no DB_HOST is provided
+  // Use SQLite for development when not in production
   console.log('Using SQLite for development');
   sequelize = new Sequelize({
     dialect: 'sqlite',
