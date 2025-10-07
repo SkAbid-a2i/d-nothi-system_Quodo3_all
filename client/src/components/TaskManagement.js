@@ -510,11 +510,98 @@ const TaskManagement = () => {
     }, 100);
   };
 
-  const handleExport = (format) => {
-    // Implement export functionality
-    console.log(`Exporting tasks as ${format}`);
-    // In a real implementation, you would generate and download the export file
-    showSnackbar(`Exporting tasks as ${format}...`, 'info');
+  const handleExport = async (format) => {
+    try {
+      // Show loading state
+      showSnackbar(`Exporting as ${format.toUpperCase()}...`, 'info');
+      
+      // Prepare data for export
+      const exportData = {
+        tasks: filteredTasks,
+        generatedAt: new Date().toISOString(),
+        user: user?.username || 'Unknown'
+      };
+      
+      // Create export content based on format
+      let content, mimeType, filename;
+      
+      if (format === 'CSV') {
+        // Convert to CSV format
+        const csvContent = convertTasksToCSV(exportData);
+        content = csvContent;
+        mimeType = 'text/csv';
+        filename = `tasks_export_${new Date().toISOString().split('T')[0]}.csv`;
+      } else if (format === 'PDF') {
+        // For PDF, we'll create a simple text representation
+        const pdfContent = convertTasksToPDF(exportData);
+        content = pdfContent;
+        mimeType = 'application/pdf';
+        filename = `tasks_export_${new Date().toISOString().split('T')[0]}.pdf`;
+      } else {
+        // Default to JSON
+        content = JSON.stringify(exportData, null, 2);
+        mimeType = 'application/json';
+        filename = `tasks_export_${new Date().toISOString().split('T')[0]}.json`;
+      }
+      
+      // Create and download file
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showSnackbar(`Exported as ${format.toUpperCase()} successfully!`, 'success');
+    } catch (error) {
+      console.error('Export error:', error);
+      showSnackbar(`Failed to export as ${format.toUpperCase()}`, 'error');
+    }
+  };
+
+  // Helper function to convert tasks to CSV
+  const convertTasksToCSV = (data) => {
+    let csv = 'Tasks Export\n';
+    csv += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
+    csv += `User: ${data.user}\n\n`;
+    
+    // Tasks section
+    csv += 'Date,Source,Category,Service,Description,User,Status,Files\n';
+    
+    data.tasks.forEach(task => {
+      const filesCount = task.files ? task.files.length : 0;
+      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.service || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}","${filesCount}"\n`;
+    });
+    
+    return csv;
+  };
+
+  // Helper function to convert tasks to PDF-like text
+  const convertTasksToPDF = (data) => {
+    let pdf = 'Tasks Export Report\n';
+    pdf += '='.repeat(50) + '\n';
+    pdf += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
+    pdf += `User: ${data.user}\n\n`;
+    
+    // Tasks section
+    if (data.tasks.length === 0) {
+      pdf += 'No tasks found.\n\n';
+    } else {
+      data.tasks.forEach((task, index) => {
+        pdf += `${index + 1}. ${task.description || 'No description'}\n`;
+        pdf += `   Date: ${task.date || 'N/A'}\n`;
+        pdf += `   Category: ${task.category || 'N/A'}\n`;
+        pdf += `   Service: ${task.service || 'N/A'}\n`;
+        pdf += `   Status: ${task.status || 'N/A'}\n`;
+        pdf += `   User: ${task.userName || 'N/A'}\n`;
+        pdf += `   Files: ${task.files ? task.files.length : 0}\n\n`;
+      });
+    }
+    
+    return pdf;
   };
 
   return (
@@ -660,23 +747,7 @@ const TaskManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
-                <Grid item xs={12} sm={3}>
-                  {loading ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    <Autocomplete
-                      options={users}
-                      getOptionLabel={(option) => option.label || option}
-                      value={users.find(u => u.value === userFilter) || null}
-                      onChange={(event, newValue) => setUserFilter(newValue ? newValue.value : '')}
-                      renderInput={(params) => (
-                        <TextField {...params} label="Filter by User" fullWidth />
-                      )}
-                    />
-                  )}
-                </Grid>
-              )}
+
               <Grid item xs={12} sm={3}>
                 <Button 
                   variant="outlined" 

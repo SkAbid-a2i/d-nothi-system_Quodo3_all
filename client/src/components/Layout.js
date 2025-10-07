@@ -43,7 +43,8 @@ import {
   Language as LanguageIcon,
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
-  VideoCall as VideoCallIcon
+  VideoCall as VideoCallIcon,
+  Error as ErrorIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
@@ -137,6 +138,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: 'Meetings', icon: <VideoCallIcon />, path: '/meetings' },
+    { text: 'Error Monitoring', icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },

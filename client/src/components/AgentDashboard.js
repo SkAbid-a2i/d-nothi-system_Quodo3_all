@@ -274,11 +274,122 @@ const AgentDashboard = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleExport = (format) => {
-    // Implement export functionality
-    console.log(`Exporting data as ${format}`);
-    // In a real implementation, you would generate and download the export file
-    showSnackbar(`Exporting as ${format}...`, 'info');
+  const handleExport = async (format) => {
+    try {
+      // Show loading state
+      showSnackbar(`Exporting as ${format.toUpperCase()}...`, 'info');
+      
+      // Prepare data for export
+      const exportData = {
+        tasks: filteredTasks,
+        leaves: filteredLeaves,
+        generatedAt: new Date().toISOString(),
+        user: user?.username || 'Unknown'
+      };
+      
+      // Create export content based on format
+      let content, mimeType, filename;
+      
+      if (format === 'CSV') {
+        // Convert to CSV format
+        const csvContent = convertToCSV(exportData);
+        content = csvContent;
+        mimeType = 'text/csv';
+        filename = `dashboard_export_${new Date().toISOString().split('T')[0]}.csv`;
+      } else if (format === 'PDF') {
+        // For PDF, we'll create a simple text representation
+        const pdfContent = convertToPDF(exportData);
+        content = pdfContent;
+        mimeType = 'application/pdf';
+        filename = `dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`;
+      } else {
+        // Default to JSON
+        content = JSON.stringify(exportData, null, 2);
+        mimeType = 'application/json';
+        filename = `dashboard_export_${new Date().toISOString().split('T')[0]}.json`;
+      }
+      
+      // Create and download file
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showSnackbar(`Exported as ${format.toUpperCase()} successfully!`, 'success');
+    } catch (error) {
+      console.error('Export error:', error);
+      showSnackbar(`Failed to export as ${format.toUpperCase()}`, 'error');
+    }
+  };
+
+  // Helper function to convert data to CSV
+  const convertToCSV = (data) => {
+    let csv = 'Dashboard Export\n';
+    csv += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
+    csv += `User: ${data.user}\n\n`;
+    
+    // Tasks section
+    csv += 'Tasks:\n';
+    csv += 'Date,Source,Category,Service,Description,User,Status\n';
+    
+    data.tasks.forEach(task => {
+      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.service || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}"\n`;
+    });
+    
+    csv += '\nLeaves:\n';
+    csv += 'Start Date,End Date,Reason,User,Status\n';
+    
+    data.leaves.forEach(leave => {
+      csv += `"${leave.startDate || ''}","${leave.endDate || ''}","${leave.reason || ''}","${leave.userName || ''}","${leave.status || ''}"\n`;
+    });
+    
+    return csv;
+  };
+
+  // Helper function to convert data to PDF-like text
+  const convertToPDF = (data) => {
+    let pdf = 'Dashboard Export Report\n';
+    pdf += '='.repeat(50) + '\n';
+    pdf += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
+    pdf += `User: ${data.user}\n\n`;
+    
+    // Tasks section
+    pdf += 'TASKS\n';
+    pdf += '-'.repeat(20) + '\n';
+    
+    if (data.tasks.length === 0) {
+      pdf += 'No tasks found.\n\n';
+    } else {
+      data.tasks.forEach((task, index) => {
+        pdf += `${index + 1}. ${task.description || 'No description'}\n`;
+        pdf += `   Date: ${task.date || 'N/A'}\n`;
+        pdf += `   Category: ${task.category || 'N/A'}\n`;
+        pdf += `   Status: ${task.status || 'N/A'}\n`;
+        pdf += `   User: ${task.userName || 'N/A'}\n\n`;
+      });
+    }
+    
+    // Leaves section
+    pdf += 'LEAVES\n';
+    pdf += '-'.repeat(20) + '\n';
+    
+    if (data.leaves.length === 0) {
+      pdf += 'No leaves found.\n\n';
+    } else {
+      data.leaves.forEach((leave, index) => {
+        pdf += `${index + 1}. ${leave.reason || 'No reason'}\n`;
+        pdf += `   Dates: ${leave.startDate || 'N/A'} to ${leave.endDate || 'N/A'}\n`;
+        pdf += `   Status: ${leave.status || 'N/A'}\n`;
+        pdf += `   User: ${leave.userName || 'N/A'}\n\n`;
+      });
+    }
+    
+    return pdf;
   };
 
   const handleTabChange = (event, newValue) => {
@@ -575,7 +686,7 @@ const AgentDashboard = () => {
                 />
               </Grid>
               
-              {(user.role === 'Admin' || user.role === 'Supervisor') && (
+              {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
                 <Grid item xs={12} sm={3}>
                   <Autocomplete
                     options={users}

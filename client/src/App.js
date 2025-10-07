@@ -26,6 +26,7 @@ import TestComponent from './components/TestComponent';
 import ApiTest from './components/ApiTest';
 import TaskDebug from './components/TaskDebug';
 import MeetingEngagement from './components/MeetingEngagement';
+import ErrorMonitoring from './components/ErrorMonitoring';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -267,6 +268,13 @@ function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<LogMonitoring />} />
+              </Route>
+              <Route path="/error-monitoring" element={
+                <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                </ProtectedRoute>
+              }>
+                <Route index element={<ErrorMonitoring />} />
               </Route>
               <Route path="/meetings" element={
                 <ProtectedRoute>

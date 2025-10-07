@@ -149,15 +149,16 @@ const MeetingEngagement = () => {
       const response = await meetingAPI.createMeeting(meetingData);
       
       // Add to meetings list
-      const newMeeting = {
-        ...response.data,
-        users: users.filter(u => formData.selectedUsers.includes(u.id))
-      };
+      const newMeeting = response.data;
 
       setMeetings([newMeeting, ...meetings]);
       
       // Send notifications to selected users
-      sendMeetingNotifications(newMeeting);
+      // Get user details from the response or from the users state
+      const selectedUsersDetails = users.filter(u => formData.selectedUsers.includes(u.id));
+      if (selectedUsersDetails.length > 0) {
+        sendMeetingNotifications({...newMeeting, users: selectedUsersDetails});
+      }
       
       // Reset form
       setFormData({
