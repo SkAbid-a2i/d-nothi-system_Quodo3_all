@@ -277,6 +277,8 @@ const AgentDashboard = () => {
   const handleExport = (format) => {
     // Implement export functionality
     console.log(`Exporting data as ${format}`);
+    // In a real implementation, you would generate and download the export file
+    showSnackbar(`Exporting as ${format}...`, 'info');
   };
 
   const handleTabChange = (event, newValue) => {

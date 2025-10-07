@@ -8,11 +8,15 @@ const notificationService = require('../services/notification.service');
 const router = express.Router();
 
 // @route   GET /api/users
-// @desc    Get all users (SystemAdmin only)
-// @access  Private (SystemAdmin)
-router.get('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
+// @desc    Get all users (SystemAdmin, Admin, Supervisor, Agent)
+// @access  Private
+router.get('/', authenticate, async (req, res) => {
   try {
+    // Agents can only see active users
+    const where = req.user.role === 'Agent' ? { isActive: true } : {};
+    
     const users = await User.findAll({
+      where,
       attributes: { exclude: ['password'] }
     });
     res.json(users);

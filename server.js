@@ -18,6 +18,7 @@ const notificationService = require('./services/notification.service');
 
 // Database connection
 const sequelize = require('./config/database');
+const MeetingUsers = require('./models/MeetingUsers');
 
 // Middleware
 app.use(helmet());

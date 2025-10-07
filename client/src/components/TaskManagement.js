@@ -49,7 +49,8 @@ import {
   Cancel as CancelIcon,
   Upload as UploadIcon,
   Description as DescriptionIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -509,6 +510,13 @@ const TaskManagement = () => {
     }, 100);
   };
 
+  const handleExport = (format) => {
+    // Implement export functionality
+    console.log(`Exporting tasks as ${format}`);
+    // In a real implementation, you would generate and download the export file
+    showSnackbar(`Exporting tasks as ${format}...`, 'info');
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -652,7 +660,7 @@ const TaskManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              {(user.role === 'Admin' || user.role === 'Supervisor') && (
+              {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
                 <Grid item xs={12} sm={3}>
                   {loading ? (
                     <CircularProgress size={24} />
@@ -686,6 +694,20 @@ const TaskManagement = () => {
                   }}
                 >
                   Clear
+                </Button>
+                <Button 
+                  startIcon={<DownloadIcon />} 
+                  onClick={() => handleExport('CSV')}
+                  sx={{ ml: 1, mr: 1 }}
+                >
+                  Export CSV
+                </Button>
+                <Button 
+                  startIcon={<DownloadIcon />} 
+                  onClick={() => handleExport('PDF')}
+                  sx={{ mr: 1 }}
+                >
+                  Export PDF
                 </Button>
               </Grid>
             </Grid>

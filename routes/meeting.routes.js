@@ -48,14 +48,7 @@ router.get('/', authenticate, async (req, res) => {
         model: User,
         as: 'creator',
         attributes: ['id', 'username', 'fullName']
-      }]
-    });
-    
-    // Add user details for selected users
-    const meetingIds = meetings.map(meeting => meeting.id);
-    const meetingUsers = await Meeting.findAll({
-      where: { id: meetingIds },
-      include: [{
+      }, {
         model: User,
         as: 'selectedUsers',
         attributes: ['id', 'username', 'fullName'],
@@ -94,6 +87,11 @@ router.post('/', authenticate, async (req, res) => {
       selectedUserIds: selectedUserIds || []
     });
 
+    // Associate selected users with the meeting
+    if (selectedUserIds && selectedUserIds.length > 0) {
+      await meeting.addSelectedUsers(selectedUserIds);
+    }
+
     // Send notifications to selected users
     if (selectedUserIds && selectedUserIds.length > 0) {
       const selectedUsers = await User.findAll({
@@ -107,7 +105,21 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
 
-    res.status(201).json(meeting);
+    // Reload meeting with associations
+    const fullMeeting = await Meeting.findByPk(meeting.id, {
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'username', 'fullName']
+      }, {
+        model: User,
+        as: 'selectedUsers',
+        attributes: ['id', 'username', 'fullName'],
+        through: { attributes: [] }
+      }]
+    });
+
+    res.status(201).json(fullMeeting);
   } catch (err) {
     console.error('Error creating meeting:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -144,7 +156,26 @@ router.put('/:id', authenticate, async (req, res) => {
 
     await meeting.save();
 
-    res.json(meeting);
+    // Update user associations
+    if (selectedUserIds) {
+      await meeting.setSelectedUsers(selectedUserIds);
+    }
+
+    // Reload meeting with associations
+    const fullMeeting = await Meeting.findByPk(meeting.id, {
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'username', 'fullName']
+      }, {
+        model: User,
+        as: 'selectedUsers',
+        attributes: ['id', 'username', 'fullName'],
+        through: { attributes: [] }
+      }]
+    });
+
+    res.json(fullMeeting);
   } catch (err) {
     console.error('Error updating meeting:', err);
     res.status(500).json({ message: 'Server error', error: err.message });

@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const User = require('./User');
 
 const Meeting = sequelize.define('Meeting', {
   id: {
@@ -44,6 +45,20 @@ const Meeting = sequelize.define('Meeting', {
   tableName: 'meetings',
   charset: 'utf8mb4',
   collate: 'utf8mb4_unicode_ci'
+});
+
+// Define associations
+Meeting.belongsTo(User, {
+  foreignKey: 'createdBy',
+  as: 'creator'
+});
+
+// Association for selected users
+Meeting.belongsToMany(User, {
+  through: 'MeetingUsers',
+  foreignKey: 'meetingId',
+  otherKey: 'userId',
+  as: 'selectedUsers'
 });
 
 module.exports = Meeting;

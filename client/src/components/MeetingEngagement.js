@@ -29,7 +29,9 @@ import {
   Notifications as NotificationsIcon,
   AccessTime as AccessTimeIcon,
   LocationOn as LocationOnIcon,
-  VideoCall as VideoCallIcon
+  VideoCall as VideoCallIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { userAPI, meetingAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -229,6 +231,56 @@ const MeetingEngagement = () => {
     });
   };
 
+  const handleEditMeeting = (meeting) => {
+    // Set form data with meeting details
+    setFormData({
+      subject: meeting.subject,
+      platform: meeting.platform,
+      location: meeting.location,
+      date: meeting.date,
+      time: meeting.time,
+      duration: meeting.duration.toString(),
+      selectedUsers: meeting.selectedUserIds || []
+    });
+    
+    // Open dialog in edit mode
+    setOpenDialog(true);
+  };
+
+  const handleDeleteMeeting = async (meetingId) => {
+    try {
+      await meetingAPI.deleteMeeting(meetingId);
+      showSnackbar('Meeting deleted successfully!', 'success');
+      fetchMeetings(); // Refresh meetings list
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      showSnackbar('Failed to delete meeting', 'error');
+    }
+  };
+
+  const getMeetingStatus = (meeting) => {
+    const now = new Date();
+    const meetingDate = new Date(`${meeting.date}T${meeting.time}`);
+    const meetingEnd = new Date(meetingDate.getTime() + meeting.duration * 60000);
+    
+    if (meetingDate > now) {
+      return 'Upcoming';
+    } else if (meetingEnd > now) {
+      return 'Ongoing';
+    } else {
+      return 'Ended';
+    }
+  };
+
+  const getMeetingStatusColor = (status) => {
+    switch (status) {
+      case 'Upcoming': return 'primary';
+      case 'Ongoing': return 'success';
+      case 'Ended': return 'default';
+      default: return 'default';
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Box sx={{ mb: 4 }}>
@@ -314,9 +366,16 @@ const MeetingEngagement = () => {
                         background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)'
                       }}
                     >
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                        {meeting.subject}
-                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          {meeting.subject}
+                        </Typography>
+                        <Chip 
+                          label={getMeetingStatus(meeting)} 
+                          size="small"
+                          color={getMeetingStatusColor(getMeetingStatus(meeting))}
+                        />
+                      </Box>
                       
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <VideoCallIcon sx={{ fontSize: 16, mr: 1, color: 'primary.main' }} />
@@ -359,6 +418,23 @@ const MeetingEngagement = () => {
                             />
                           ))}
                         </Box>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={() => handleEditMeeting(meeting)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleDeleteMeeting(meeting.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
                       </Box>
                     </Paper>
                   </Grid>
