@@ -21,6 +21,7 @@ async function removeOfficeFromUsers() {
       console.log('🔧 Office column found, removing it...');
       
       // For SQLite, we need to recreate the table without the office column
+      // Note: SQLite doesn't support ENUM directly, so we use TEXT with a check constraint
       await sequelize.query(
         `CREATE TABLE users_new (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +29,7 @@ async function removeOfficeFromUsers() {
           email VARCHAR(255) NOT NULL UNIQUE,
           password VARCHAR(255) NOT NULL,
           fullName VARCHAR(255) NOT NULL,
-          role ENUM('SystemAdmin', 'Admin', 'Supervisor', 'Agent') DEFAULT 'Agent',
+          role TEXT DEFAULT 'Agent' CHECK(role IN ('SystemAdmin', 'Admin', 'Supervisor', 'Agent')),
           isActive BOOLEAN DEFAULT 1,
           storageQuota INTEGER DEFAULT 100,
           usedStorage INTEGER DEFAULT 0,

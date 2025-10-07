@@ -43,7 +43,9 @@ import {
   People as PeopleIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  DonutLarge as DonutIcon,
+  Radar as RadarIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -65,7 +67,9 @@ import {
   Radar,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis
+  PolarRadiusAxis,
+  RadialBarChart,
+  RadialBar
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -84,6 +88,12 @@ const EnhancedDashboard = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [viewMode, setViewMode] = useState('individual'); // 'individual' or 'team'
   const [selectedUser, setSelectedUser] = useState(null);
+  
+  // Chart type states for each section
+  const [taskPerformanceChartType, setTaskPerformanceChartType] = useState('radar');
+  const [officeChartType, setOfficeChartType] = useState('pie');
+  const [categoryChartType, setCategoryChartType] = useState('bar');
+  const [serviceChartType, setServiceChartType] = useState('pie');
   
   // Chart data states
   const [officeData, setOfficeData] = useState([]);
@@ -446,7 +456,7 @@ const EnhancedDashboard = () => {
   const stats = getDashboardStats();
   const COLORS = ['#667eea', '#764ba2', '#f093fb', '#f59e0b', '#10b981', '#ef4444'];
 
-  // Render different chart types
+  // Render different chart types for task trends
   const renderTaskTrendChart = () => {
     switch (chartType) {
       case 'bar':
@@ -587,6 +597,526 @@ const EnhancedDashboard = () => {
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
+  // Render different chart types for task performance
+  const renderTaskPerformanceChart = () => {
+    switch (taskPerformanceChartType) {
+      case 'radar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
+              <PolarGrid />
+              <PolarAngleAxis dataKey="name" />
+              <PolarRadiusAxis />
+              <Radar 
+                name="Performance" 
+                dataKey="value" 
+                stroke="#667eea" 
+                fill="#667eea" 
+                fillOpacity={0.6} 
+              />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </RadarChart>
+          </ResponsiveContainer>
+        );
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={performanceData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="value" 
+                fill="#667eea" 
+                name="Performance"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={performanceData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {performanceData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
+              <PolarGrid />
+              <PolarAngleAxis dataKey="name" />
+              <PolarRadiusAxis />
+              <Radar 
+                name="Performance" 
+                dataKey="value" 
+                stroke="#667eea" 
+                fill="#667eea" 
+                fillOpacity={0.6} 
+              />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </RadarChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
+  // Render different chart types for office classification
+  const renderOfficeChart = () => {
+    switch (officeChartType) {
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={officeData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {officeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'donut':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={officeData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                fill="#8884d8"
+                paddingAngle={2}
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {officeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'radial':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart 
+              innerRadius="10%" 
+              outerRadius="80%" 
+              barSize={10} 
+              data={officeData.map((entry, index) => ({
+                ...entry,
+                fill: COLORS[index % COLORS.length]
+              }))}
+            >
+              <RadialBar
+                minAngle={15}
+                label={{ position: 'insideStart', fill: '#fff' }}
+                background
+                dataKey="value"
+              />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend iconSize={10} width={120} height={140} layout='vertical' verticalAlign='middle' align="right" />
+            </RadialBarChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={officeData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {officeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
+  // Render different chart types for category classification
+  const renderCategoryChart = () => {
+    switch (categoryChartType) {
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={categoryData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="value" 
+                fill="#764ba2" 
+                name="Categories"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={categoryData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {categoryData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'donut':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={categoryData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                fill="#8884d8"
+                paddingAngle={2}
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {categoryData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={categoryData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="value" 
+                fill="#764ba2" 
+                name="Categories"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
+  // Render different chart types for service classification
+  const renderServiceChart = () => {
+    switch (serviceChartType) {
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={serviceData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {serviceData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'donut':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={serviceData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                fill="#8884d8"
+                paddingAngle={2}
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {serviceData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'radial':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart 
+              innerRadius="10%" 
+              outerRadius="80%" 
+              barSize={10} 
+              data={serviceData.map((entry, index) => ({
+                ...entry,
+                fill: COLORS[index % COLORS.length]
+              }))}
+            >
+              <RadialBar
+                minAngle={15}
+                label={{ position: 'insideStart', fill: '#fff' }}
+                background
+                dataKey="value"
+              />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend iconSize={10} width={120} height={140} layout='vertical' verticalAlign='middle' align="right" />
+            </RadialBarChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={serviceData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {serviceData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
           </ResponsiveContainer>
         );
     }
@@ -1058,209 +1588,284 @@ const EnhancedDashboard = () => {
               </Box>
             </Box>
             
-            <Box sx={{ height: { xs: 300, sm: 350, md: 400 } }}>
+            <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
               {renderTaskTrendChart()}
             </Box>
           </Paper>
         </Grid>
         
-        {/* Performance Chart */}
-        <Grid item xs={12} md={6} lg={4}>
+        {/* Task Performance Chart */}
+        <Grid item xs={12} lg={6}>
           <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Task Performance
-            </Typography>
-            <Box sx={{ height: { xs: 250, sm: 300 } }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="name" />
-                  <PolarRadiusAxis />
-                  <Radar 
-                    name="Performance" 
-                    dataKey="value" 
-                    stroke="#667eea" 
-                    fill="#667eea" 
-                    fillOpacity={0.6} 
-                  />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid #ccc',
-                      borderRadius: 8,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Task Performance
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Tooltip title="Radar Chart">
+                  <IconButton 
+                    color={taskPerformanceChartType === 'radar' ? 'primary' : 'default'}
+                    onClick={() => setTaskPerformanceChartType('radar')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: taskPerformanceChartType === 'radar' ? '2px solid' : '1px solid',
+                      borderColor: taskPerformanceChartType === 'radar' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
                     }}
-                  />
-                  <Legend />
-                </RadarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        {/* Office Distribution Chart */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <GroupIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Office Distribution
-            </Typography>
-            <Box sx={{ height: { xs: 250, sm: 300 } }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={officeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {officeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid #ccc',
-                      borderRadius: 8,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    <RadarIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Bar Chart">
+                  <IconButton 
+                    color={taskPerformanceChartType === 'bar' ? 'primary' : 'default'}
+                    onClick={() => setTaskPerformanceChartType('bar')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: taskPerformanceChartType === 'bar' ? '2px solid' : '1px solid',
+                      borderColor: taskPerformanceChartType === 'bar' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
                     }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        {/* Category Distribution Chart */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <CategoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Category Distribution
-            </Typography>
-            <Box sx={{ height: { xs: 250, sm: 300 } }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={categoryData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={60}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid #ccc',
-                      borderRadius: 8,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Legend />
-                  <Bar 
-                    dataKey="value" 
-                    fill="#764ba2" 
-                    name="Categories"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        {/* Service Distribution Chart */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <BuildIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Service Distribution
-            </Typography>
-            <Box sx={{ height: { xs: 250, sm: 300 } }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={serviceData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {serviceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid #ccc',
-                      borderRadius: 8,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    <BarChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Pie Chart">
+                  <IconButton 
+                    color={taskPerformanceChartType === 'pie' ? 'primary' : 'default'}
+                    onClick={() => setTaskPerformanceChartType('pie')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: taskPerformanceChartType === 'pie' ? '2px solid' : '1px solid',
+                      borderColor: taskPerformanceChartType === 'pie' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
                     }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+                  >
+                    <PieChartIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+            
+            <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
+              {renderTaskPerformanceChart()}
             </Box>
           </Paper>
         </Grid>
         
-        {/* Source Distribution Chart */}
-        <Grid item xs={12} md={6} lg={8}>
+        {/* Office Classification Chart */}
+        <Grid item xs={12} lg={6}>
           <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              <SourceIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Source Distribution
-            </Typography>
-            <Box sx={{ height: { xs: 250, sm: 300 } }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sourceData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={60}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid #ccc',
-                      borderRadius: 8,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <GroupIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Office Classification
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Tooltip title="Pie Chart">
+                  <IconButton 
+                    color={officeChartType === 'pie' ? 'primary' : 'default'}
+                    onClick={() => setOfficeChartType('pie')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: officeChartType === 'pie' ? '2px solid' : '1px solid',
+                      borderColor: officeChartType === 'pie' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
                     }}
-                  />
-                  <Legend />
-                  <Bar 
-                    dataKey="value" 
-                    fill="#f093fb" 
-                    name="Sources"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+                  >
+                    <PieChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Donut Chart">
+                  <IconButton 
+                    color={officeChartType === 'donut' ? 'primary' : 'default'}
+                    onClick={() => setOfficeChartType('donut')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: officeChartType === 'donut' ? '2px solid' : '1px solid',
+                      borderColor: officeChartType === 'donut' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <DonutIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Radial Chart">
+                  <IconButton 
+                    color={officeChartType === 'radial' ? 'primary' : 'default'}
+                    onClick={() => setOfficeChartType('radial')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: officeChartType === 'radial' ? '2px solid' : '1px solid',
+                      borderColor: officeChartType === 'radial' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <RadarIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+            
+            <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
+              {renderOfficeChart()}
+            </Box>
+          </Paper>
+        </Grid>
+        
+        {/* Category Classification Chart */}
+        <Grid item xs={12} lg={6}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <CategoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Category Classification
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Tooltip title="Bar Chart">
+                  <IconButton 
+                    color={categoryChartType === 'bar' ? 'primary' : 'default'}
+                    onClick={() => setCategoryChartType('bar')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: categoryChartType === 'bar' ? '2px solid' : '1px solid',
+                      borderColor: categoryChartType === 'bar' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <BarChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Pie Chart">
+                  <IconButton 
+                    color={categoryChartType === 'pie' ? 'primary' : 'default'}
+                    onClick={() => setCategoryChartType('pie')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: categoryChartType === 'pie' ? '2px solid' : '1px solid',
+                      borderColor: categoryChartType === 'pie' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <PieChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Donut Chart">
+                  <IconButton 
+                    color={categoryChartType === 'donut' ? 'primary' : 'default'}
+                    onClick={() => setCategoryChartType('donut')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: categoryChartType === 'donut' ? '2px solid' : '1px solid',
+                      borderColor: categoryChartType === 'donut' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <DonutIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+            
+            <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
+              {renderCategoryChart()}
+            </Box>
+          </Paper>
+        </Grid>
+        
+        {/* Service Classification Chart */}
+        <Grid item xs={12} lg={6}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <BuildIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Service Classification
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Tooltip title="Pie Chart">
+                  <IconButton 
+                    color={serviceChartType === 'pie' ? 'primary' : 'default'}
+                    onClick={() => setServiceChartType('pie')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: serviceChartType === 'pie' ? '2px solid' : '1px solid',
+                      borderColor: serviceChartType === 'pie' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <PieChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Donut Chart">
+                  <IconButton 
+                    color={serviceChartType === 'donut' ? 'primary' : 'default'}
+                    onClick={() => setServiceChartType('donut')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: serviceChartType === 'donut' ? '2px solid' : '1px solid',
+                      borderColor: serviceChartType === 'donut' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <DonutIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Radial Chart">
+                  <IconButton 
+                    color={serviceChartType === 'radial' ? 'primary' : 'default'}
+                    onClick={() => setServiceChartType('radial')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: serviceChartType === 'radial' ? '2px solid' : '1px solid',
+                      borderColor: serviceChartType === 'radial' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <RadarIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+            
+            <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
+              {renderServiceChart()}
             </Box>
           </Paper>
         </Grid>

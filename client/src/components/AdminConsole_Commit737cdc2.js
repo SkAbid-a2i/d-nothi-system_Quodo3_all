@@ -122,19 +122,9 @@ const AdminConsole = () => {
 
   useEffect(() => {
     fetchUsers();
-    fetchOffices();
     fetchDropdowns();
     fetchPermissionTemplates();
   }, [fetchUsers, fetchPermissionTemplates]);
-
-  const fetchOffices = async () => {
-    try {
-      const response = await dropdownAPI.getDropdownValues('Office');
-      setOffices(response.data);
-    } catch (error) {
-      console.error('Error fetching offices:', error);
-    }
-  };
 
   const fetchDropdowns = async () => {
     try {
@@ -189,14 +179,6 @@ const AdminConsole = () => {
     });
   };
 
-  const handleOfficeChange = (event, newValue) => {
-    setSelectedOffice(newValue);
-    setFormData({
-      ...formData,
-      office: newValue ? newValue.value : ''
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -226,7 +208,6 @@ const AdminConsole = () => {
         password: '',
         role: 'Agent'
       });
-      setSelectedOffice(null);
       setIsEditing(false);
       setEditingUserId(null);
       
@@ -619,7 +600,6 @@ const AdminConsole = () => {
                                     password: '',
                                     role: 'Agent'
                                   });
-                                  setSelectedOffice(null);
                                 }}
                                 disabled={loading}
                               >
