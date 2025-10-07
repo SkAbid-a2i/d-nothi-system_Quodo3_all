@@ -61,9 +61,6 @@ const EnhancedDashboard = () => {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [userFilter, setUserFilter] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]);
