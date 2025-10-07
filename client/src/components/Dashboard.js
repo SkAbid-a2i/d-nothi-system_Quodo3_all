@@ -1,12 +1,12 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import TestDashboard from './TestDashboard';
+import EnhancedDashboard from './EnhancedDashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
 
-  // Use the test dashboard for now
-  return <TestDashboard />;
+  // Use the enhanced dashboard for all users
+  return <EnhancedDashboard />;
 };
 
 export default Dashboard;

@@ -748,38 +748,37 @@ const TaskManagement = () => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} sm={3}>
-                <Button 
-                  variant="outlined" 
-                  startIcon={<FilterIcon />}
-                  sx={{ mr: 1 }}
-                >
-                  Apply Filters
-                </Button>
-                <Button 
-                  variant="outlined"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setStatusFilter('');
-                    setUserFilter('');
-                  }}
-                >
-                  Clear
-                </Button>
-                <Button 
-                  startIcon={<DownloadIcon />} 
-                  onClick={() => handleExport('CSV')}
-                  sx={{ ml: 1, mr: 1 }}
-                >
-                  Export CSV
-                </Button>
-                <Button 
-                  startIcon={<DownloadIcon />} 
-                  onClick={() => handleExport('PDF')}
-                  sx={{ mr: 1 }}
-                >
-                  Export PDF
-                </Button>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<FilterIcon />}
+                  >
+                    Apply Filters
+                  </Button>
+                  <Button 
+                    variant="outlined"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('');
+                      setUserFilter('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                  <Button 
+                    startIcon={<DownloadIcon />} 
+                    onClick={() => handleExport('CSV')}
+                  >
+                    Export CSV
+                  </Button>
+                  <Button 
+                    startIcon={<DownloadIcon />} 
+                    onClick={() => handleExport('PDF')}
+                  >
+                    Export PDF
+                  </Button>
+                </Box>
               </Grid>
             </Grid>
           </Paper>
