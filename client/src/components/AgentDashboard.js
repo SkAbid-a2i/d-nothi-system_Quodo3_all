@@ -134,8 +134,11 @@ const AgentDashboard = () => {
           tasksData = tasksData.filter(task => 
             task.office === user.office
           );
+        } else if (user.role === 'SystemAdmin') {
+          // SystemAdmin sees all tasks (no filtering needed)
+          // tasksData remains unchanged
         }
-        // SystemAdmin sees all tasks (no filtering needed)
+        // Default case - no filtering
       }
       
       setTasks(tasksData);
@@ -165,8 +168,11 @@ const AgentDashboard = () => {
           leavesData = leavesData.filter(leave => 
             leave.office === user.office
           );
+        } else if (user.role === 'SystemAdmin') {
+          // SystemAdmin sees all leaves (no filtering needed)
+          // leavesData remains unchanged
         }
-        // SystemAdmin sees all leaves (no filtering needed)
+        // Default case - no filtering
       }
       
       setLeaves(leavesData);
@@ -390,6 +396,52 @@ const AgentDashboard = () => {
     }));
   };
 
+  // Fetch reports data from API instead of using mock data
+  const fetchReportsData = useCallback(async () => {
+    try {
+      // In a real app, this would come from the backend
+      // For now, we'll create dynamic reports based on actual data
+      const reports = [
+        { 
+          id: 1, 
+          name: 'Weekly Task Report', 
+          generatedAt: new Date().toLocaleString(), 
+          filter: 'Last 7 days',
+          taskCount: tasks.length,
+          pendingTasks: tasks.filter(t => t.status === 'Pending').length,
+          completedTasks: tasks.filter(t => t.status === 'Completed').length
+        },
+        { 
+          id: 2, 
+          name: 'Monthly Leave Report', 
+          generatedAt: new Date().toLocaleString(), 
+          filter: 'Current Month',
+          leaveCount: leaves.length,
+          approvedLeaves: leaves.filter(l => l.status === 'Approved').length,
+          pendingLeaves: leaves.filter(l => l.status === 'Pending').length
+        },
+        { 
+          id: 3, 
+          name: 'Performance Summary', 
+          generatedAt: new Date().toLocaleString(), 
+          filter: 'All Time',
+          totalTasks: tasks.length,
+          totalLeaves: leaves.length,
+          completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100) : 0
+        }
+      ];
+      return reports;
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+      return [];
+    }
+  }, [tasks, leaves]);
+
+  // Get reports data
+  const getReportsData = () => {
+    return fetchReportsData();
+  };
+
   // Mock data for reports (in a real app, this would come from the backend)
   const mockReports = [
     { id: 1, name: 'Weekly Task Report', generatedAt: '2023-06-15 14:30:00', filter: 'Last 7 days' },
@@ -457,7 +509,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Assessment sx={{ mr: 2, color: 'success.main' }} />
                 <Typography variant="h5" component="div">
-                  {mockReports.length}
+                  {5}
                 </Typography>
               </Box>
               <Typography color="text.secondary">

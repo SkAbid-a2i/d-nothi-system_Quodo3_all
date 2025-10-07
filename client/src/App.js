@@ -25,6 +25,7 @@ import DebugComponent from './components/DebugComponent';
 import TestComponent from './components/TestComponent';
 import ApiTest from './components/ApiTest';
 import TaskDebug from './components/TaskDebug';
+import MeetingEngagement from './components/MeetingEngagement';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -266,6 +267,13 @@ function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<LogMonitoring />} />
+              </Route>
+              <Route path="/meetings" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                </ProtectedRoute>
+              }>
+                <Route index element={<MeetingEngagement />} />
               </Route>
               {/* Fallback route for debugging */}
               <Route path="*" element={

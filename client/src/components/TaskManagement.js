@@ -152,8 +152,11 @@ const TaskManagement = () => {
           tasksData = tasksData.filter(task => 
             task.office === user.office
           );
+        } else if (user.role === 'SystemAdmin') {
+          // SystemAdmin sees all tasks (no filtering needed)
+          // tasksData remains unchanged
         }
-        // SystemAdmin sees all tasks (no filtering needed)
+        // Default case - no filtering
       }
       
       setTasks(tasksData);
@@ -592,12 +595,25 @@ const TaskManagement = () => {
       </Grid>
       
       {/* Task Tabs */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ width: '100%', borderRadius: 3, overflow: 'hidden', mb: 3 }}>
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
           indicatorColor="primary"
           textColor="primary"
+          variant="fullWidth"
+          sx={{
+            '& .MuiTab-root': {
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              textTransform: 'none',
+              minHeight: 48
+            },
+            '& .MuiTabs-indicator': {
+              height: 3,
+              background: 'linear-gradient(45deg, #667eea, #764ba2)'
+            }
+          }}
         >
           <Tab label="All Tasks" icon={<AssignmentIcon />} />
           <Tab label="Create Task" icon={<AddIcon />} />

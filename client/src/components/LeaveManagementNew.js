@@ -137,6 +137,9 @@ const LeaveManagement = () => {
         leavesData = leavesData.filter(leave => 
           leave.office === user.office
         );
+      } else if (user && user.role === 'SystemAdmin') {
+        // SystemAdmin sees all leaves (no filtering needed)
+        // leavesData remains unchanged
       }
       
       setLeaves(leavesData);
