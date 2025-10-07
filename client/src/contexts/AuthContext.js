@@ -3,6 +3,7 @@ import { authAPI } from '../services/api';
 import { auditLog } from '../services/auditLogger';
 import frontendLogger from '../services/frontendLogger';
 import notificationService from '../services/notificationService';
+import { Box, CircularProgress } from '@mui/material';
 
 // Create context
 const AuthContext = createContext();
@@ -39,16 +40,22 @@ export const AuthProvider = ({ children }) => {
     frontendLogger.info('Getting current user');
     try {
       const response = await authAPI.getCurrentUser();
-      setUser(response.data);
-      setIsAuthenticated(true);
-      frontendLogger.setUserId(response.data.id);
-      frontendLogger.info('User authenticated successfully', { userId: response.data.id, role: response.data.role });
+      const userData = response.data?.data || response.data;
       
-      // Initialize notification service
-      notificationService.connect(response.data.id);
-      
-      // Log audit entry
-      auditLog.userLogin(response.data.id, response.data.username);
+      if (userData) {
+        setUser(userData);
+        setIsAuthenticated(true);
+        frontendLogger.setUserId(userData.id);
+        frontendLogger.info('User authenticated successfully', { userId: userData.id, role: userData.role });
+        
+        // Initialize notification service
+        notificationService.connect(userData.id);
+        
+        // Log audit entry
+        auditLog.userLogin(userData.id, userData.username);
+      } else {
+        throw new Error('Invalid user data received');
+      }
     } catch (error) {
       frontendLogger.error('Failed to get current user', { 
         error: error.message,
@@ -69,23 +76,23 @@ export const AuthProvider = ({ children }) => {
     frontendLogger.logAuthEvent('login_attempt', { username: credentials.username });
     try {
       const response = await authAPI.login(credentials);
-      const { token, user } = response.data;
+      const { token, user: userData } = response.data;
       
       // Store token and user data
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(userData));
       
-      setUser(user);
+      setUser(userData);
       setIsAuthenticated(true);
-      frontendLogger.setUserId(user.id);
+      frontendLogger.setUserId(userData.id);
       
       // Initialize notification service
-      notificationService.connect(user.id);
+      notificationService.connect(userData.id);
       
       // Log audit entry
-      auditLog.userLogin(user.id, user.username);
+      auditLog.userLogin(userData.id, userData.username);
       
-      frontendLogger.logAuthEvent('login_success', { userId: user.id, role: user.role });
+      frontendLogger.logAuthEvent('login_success', { userId: userData.id, role: userData.role });
       return { success: true };
     } catch (error) {
       frontendLogger.logAuthEvent('login_failed', { 
@@ -130,6 +137,15 @@ export const AuthProvider = ({ children }) => {
     logout,
     getCurrentUser
   };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>

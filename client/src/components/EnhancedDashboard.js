@@ -20,7 +20,9 @@ import {
   Tabs,
   Tab,
   Divider,
-  Button
+  Button,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import { 
   Assignment, 
@@ -35,7 +37,10 @@ import {
   Build as BuildIcon,
   Source as SourceIcon,
   CalendarToday as CalendarIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  People as PeopleIcon,
+  FilterList as FilterIcon,
+  Clear as ClearIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -44,13 +49,22 @@ import {
   Pie, 
   LineChart, 
   Line, 
+  AreaChart,
+  Area,
+  ScatterChart,
+  Scatter,
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -64,9 +78,11 @@ const EnhancedDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [viewMode, setViewMode] = useState('individual'); // 'individual' or 'team'
+  const [selectedUser, setSelectedUser] = useState(null);
   
   // Chart data states
   const [officeData, setOfficeData] = useState([]);
@@ -74,13 +90,17 @@ const EnhancedDashboard = () => {
   const [serviceData, setServiceData] = useState([]);
   const [sourceData, setSourceData] = useState([]);
   const [taskTrendData, setTaskTrendData] = useState([]);
+  const [performanceData, setPerformanceData] = useState([]);
   
   // Date range states for custom filtering
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [applyFilters, setApplyFilters] = useState(false);
 
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
       // Fetch all data
@@ -102,68 +122,61 @@ const EnhancedDashboard = () => {
       let usersData = Array.isArray(usersResponse.data) ? usersResponse.data : 
                       usersResponse.data?.data || usersResponse.data || [];
       
+      setTasks(tasksData);
+      setLeaves(leavesData);
+      setAllUsers(usersData);
+      setFilteredUsers(usersData);
+      
       // Filter data based on user role and view mode
+      let filteredTasks = [...tasksData];
+      
       if (user.role === 'Agent') {
         // Agents only see their own data
-        tasksData = tasksData.filter(task => 
+        filteredTasks = tasksData.filter(task => 
           task.userId === user.id || task.userName === user.username
-        );
-        leavesData = leavesData.filter(leave => 
-          leave.userId === user.id || leave.userName === user.username
         );
       } else if (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') {
         // Admin roles can switch between individual and team view
         if (viewMode === 'individual') {
           // Show only their own data
-          tasksData = tasksData.filter(task => 
+          filteredTasks = tasksData.filter(task => 
             task.userId === user.id || task.userName === user.username
           );
-          leavesData = leavesData.filter(leave => 
-            leave.userId === user.id || leave.userName === user.username
+        } else if (viewMode === 'team' && selectedUser) {
+          // Show selected user's data
+          filteredTasks = tasksData.filter(task => 
+            task.userId === selectedUser.id || task.userName === selectedUser.username
           );
         }
-        // For Admin/Supervisor, show office data
-        else if (viewMode === 'team' && (user.role === 'Admin' || user.role === 'Supervisor')) {
-          tasksData = tasksData.filter(task => task.office === user.office);
-          leavesData = leavesData.filter(leave => leave.office === user.office);
-        }
+        // For team view without selected user, show all data
       }
       
-      setTasks(tasksData);
-      setLeaves(leavesData);
-      setUsers(usersData.map(u => ({
-        id: u.id,
-        label: `${u.fullName || u.username} (${u.username})`,
-        value: u.username
-      })));
+      // Apply date filters if applied
+      if (applyFilters && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        filteredTasks = filteredTasks.filter(task => {
+          const taskDate = new Date(task.date);
+          return taskDate >= start && taskDate <= end;
+        });
+      }
       
       // Process chart data
-      processChartData(tasksData, timeRange, startDate, endDate);
+      processChartData(filteredTasks, timeRange);
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      showSnackbar('Error fetching dashboard data: ' + error.message, 'error');
+      showSnackbar('Error fetching dashboard data: ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setLoading(false);
     }
-  }, [user.id, user.role, user.username, user.office, viewMode, timeRange, startDate, endDate]);
+  }, [user, viewMode, timeRange, startDate, endDate, applyFilters, selectedUser]);
 
   // Process chart data based on filters
-  const processChartData = (tasksData, timeRange, startDate, endDate) => {
-    // Filter by date range if custom dates are provided
-    let filteredTasks = [...tasksData];
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      filteredTasks = filteredTasks.filter(task => {
-        const taskDate = new Date(task.date);
-        return taskDate >= start && taskDate <= end;
-      });
-    }
-    
+  const processChartData = (tasksData, timeRange) => {
     // Office distribution data
     const officeCount = {};
-    filteredTasks.forEach(task => {
+    tasksData.forEach(task => {
       const office = task.office || 'Unknown';
       officeCount[office] = (officeCount[office] || 0) + 1;
     });
@@ -174,7 +187,7 @@ const EnhancedDashboard = () => {
     
     // Category distribution data
     const categoryCount = {};
-    filteredTasks.forEach(task => {
+    tasksData.forEach(task => {
       const category = task.category || 'Unknown';
       categoryCount[category] = (categoryCount[category] || 0) + 1;
     });
@@ -185,7 +198,7 @@ const EnhancedDashboard = () => {
     
     // Service distribution data
     const serviceCount = {};
-    filteredTasks.forEach(task => {
+    tasksData.forEach(task => {
       const service = task.service || 'Unknown';
       serviceCount[service] = (serviceCount[service] || 0) + 1;
     });
@@ -196,13 +209,24 @@ const EnhancedDashboard = () => {
     
     // Source distribution data
     const sourceCount = {};
-    filteredTasks.forEach(task => {
+    tasksData.forEach(task => {
       const source = task.source || 'Unknown';
       sourceCount[source] = (sourceCount[source] || 0) + 1;
     });
     setSourceData(Object.keys(sourceCount).map(source => ({
       name: source,
       value: sourceCount[source]
+    })));
+    
+    // Performance data (tasks by status)
+    const statusCount = {};
+    tasksData.forEach(task => {
+      const status = task.status || 'Unknown';
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    });
+    setPerformanceData(Object.keys(statusCount).map(status => ({
+      name: status,
+      value: statusCount[status]
     })));
     
     // Task trend data (based on time range)
@@ -215,7 +239,7 @@ const EnhancedDashboard = () => {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        const count = filteredTasks.filter(task => task.date === dateStr).length;
+        const count = tasksData.filter(task => task.date === dateStr).length;
         trendData.push({
           name: date.toLocaleDateString('en-US', { weekday: 'short' }),
           date: dateStr,
@@ -230,7 +254,7 @@ const EnhancedDashboard = () => {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
         
-        const count = filteredTasks.filter(task => {
+        const count = tasksData.filter(task => {
           const taskDate = new Date(task.date);
           return taskDate >= weekStart && taskDate <= weekEnd;
         }).length;
@@ -248,7 +272,7 @@ const EnhancedDashboard = () => {
         const month = date.toLocaleDateString('en-US', { month: 'short' });
         const year = date.getFullYear();
         
-        const count = filteredTasks.filter(task => {
+        const count = tasksData.filter(task => {
           const taskDate = new Date(task.date);
           return taskDate.getMonth() === date.getMonth() && taskDate.getFullYear() === year;
         }).length;
@@ -262,7 +286,7 @@ const EnhancedDashboard = () => {
       // Last 3 years
       for (let i = 2; i >= 0; i--) {
         const year = new Date(now).getFullYear() - i;
-        const count = filteredTasks.filter(task => {
+        const count = tasksData.filter(task => {
           const taskDate = new Date(task.date);
           return taskDate.getFullYear() === year;
         }).length;
@@ -350,19 +374,227 @@ const EnhancedDashboard = () => {
     showSnackbar(`Exporting data as ${format.toUpperCase()}...`, 'info');
     // In a real implementation, you would generate and download the export file
   };
+
+  const handleApplyFilters = () => {
+    setApplyFilters(true);
+    fetchDashboardData();
+  };
+
+  const handleClearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setApplyFilters(false);
+    setSelectedUser(null);
+    fetchDashboardData();
+  };
+
   const getDashboardStats = () => {
+    // Filter tasks based on current view
+    let filteredTasks = tasks;
+    let filteredLeaves = leaves;
+    
+    if (user.role === 'Agent') {
+      filteredTasks = tasks.filter(task => 
+        task.userId === user.id || task.userName === user.username
+      );
+      filteredLeaves = leaves.filter(leave => 
+        leave.userId === user.id || leave.userName === user.username
+      );
+    } else if (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') {
+      if (viewMode === 'individual') {
+        filteredTasks = tasks.filter(task => 
+          task.userId === user.id || task.userName === user.username
+        );
+        filteredLeaves = leaves.filter(leave => 
+          leave.userId === user.id || leave.userName === user.username
+        );
+      } else if (viewMode === 'team' && selectedUser) {
+        filteredTasks = tasks.filter(task => 
+          task.userId === selectedUser.id || task.userName === selectedUser.username
+        );
+        filteredLeaves = leaves.filter(leave => 
+          leave.userId === selectedUser.id || leave.userName === selectedUser.username
+        );
+      }
+    }
+    
+    // Apply date filters if applied
+    if (applyFilters && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      filteredTasks = filteredTasks.filter(task => {
+        const taskDate = new Date(task.date);
+        return taskDate >= start && taskDate <= end;
+      });
+      filteredLeaves = filteredLeaves.filter(leave => {
+        const leaveDate = new Date(leave.startDate || leave.date);
+        return leaveDate >= start && leaveDate <= end;
+      });
+    }
+    
     return {
-      totalTasks: tasks.length,
-      pendingTasks: tasks.filter(task => task.status === 'Pending').length,
-      completedTasks: tasks.filter(task => task.status === 'Completed').length,
-      inProgressTasks: tasks.filter(task => task.status === 'In Progress').length,
-      pendingLeaves: leaves.filter(leave => leave.status === 'Pending').length,
-      approvedLeaves: leaves.filter(leave => leave.status === 'Approved').length
+      totalTasks: filteredTasks.length,
+      pendingTasks: filteredTasks.filter(task => task.status === 'Pending').length,
+      completedTasks: filteredTasks.filter(task => task.status === 'Completed').length,
+      inProgressTasks: filteredTasks.filter(task => task.status === 'In Progress').length,
+      pendingLeaves: filteredLeaves.filter(leave => leave.status === 'Pending').length,
+      approvedLeaves: filteredLeaves.filter(leave => leave.status === 'Approved').length
     };
   };
 
   const stats = getDashboardStats();
   const COLORS = ['#667eea', '#764ba2', '#f093fb', '#f59e0b', '#10b981', '#ef4444'];
+
+  // Render different chart types
+  const renderTaskTrendChart = () => {
+    switch (chartType) {
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={taskTrendData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 4
+                }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="tasks" 
+                fill="#667eea" 
+                name="Tasks"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={taskTrendData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 4
+                }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="tasks" 
+                stroke="#667eea" 
+                activeDot={{ r: 8 }} 
+                name="Tasks"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case 'area':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={taskTrendData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 4
+                }}
+              />
+              <Legend />
+              <Area 
+                type="monotone" 
+                dataKey="tasks" 
+                stroke="#667eea" 
+                fill="#667eea" 
+                fillOpacity={0.3}
+                name="Tasks"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={taskTrendData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 4
+                }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="tasks" 
+                fill="#667eea" 
+                name="Tasks"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
+  // Ensure we have a user before rendering
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
@@ -388,6 +620,43 @@ const EnhancedDashboard = () => {
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <CircularProgress />
         </Box>
+      )}
+
+      {/* View Mode Toggle for Admin Roles */}
+      {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') && (
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newViewMode) => newViewMode && setViewMode(newViewMode)}
+              aria-label="view mode"
+              size="small"
+            >
+              <ToggleButton value="individual" aria-label="individual view">
+                <PersonIcon sx={{ mr: 1 }} />
+                Individual
+              </ToggleButton>
+              <ToggleButton value="team" aria-label="team view">
+                <PeopleIcon sx={{ mr: 1 }} />
+                Team
+              </ToggleButton>
+            </ToggleButtonGroup>
+            
+            {viewMode === 'team' && (
+              <Autocomplete
+                sx={{ minWidth: 200 }}
+                options={allUsers}
+                getOptionLabel={(option) => option.fullName || option.username || 'Unknown User'}
+                value={selectedUser}
+                onChange={(event, newValue) => setSelectedUser(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Select User" size="small" />
+                )}
+              />
+            )}
+          </Box>
+        </Paper>
       )}
 
       {/* Key Metrics Cards */}
@@ -505,8 +774,15 @@ const EnhancedDashboard = () => {
 
       {/* Filters and Controls */}
       <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+          <FilterIcon sx={{ color: 'primary.main' }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Filters
+          </Typography>
+        </Box>
+        
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Time Range</InputLabel>
               <Select 
@@ -522,7 +798,7 @@ const EnhancedDashboard = () => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
               size="small"
@@ -534,7 +810,7 @@ const EnhancedDashboard = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
               size="small"
@@ -546,8 +822,35 @@ const EnhancedDashboard = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                startIcon={<FilterIcon />} 
+                onClick={handleApplyFilters}
+                variant="contained"
+                size="small"
+                sx={{ 
+                  background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #764ba2, #667eea)'
+                  }
+                }}
+              >
+                Apply
+              </Button>
+              <Button 
+                startIcon={<ClearIcon />} 
+                onClick={handleClearFilters}
+                variant="outlined"
+                size="small"
+              >
+                Clear
+              </Button>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
               <Button 
                 startIcon={<DownloadIcon />} 
                 onClick={() => handleExport('CSV')}
@@ -594,75 +897,52 @@ const EnhancedDashboard = () => {
                 >
                   <LineChartIcon />
                 </IconButton>
+                <IconButton 
+                  color={chartType === 'area' ? 'primary' : 'default'}
+                  onClick={() => setChartType('area')}
+                  size="small"
+                >
+                  <ShowChartIcon />
+                </IconButton>
               </Box>
             </Box>
             
             <Box sx={{ height: 350 }}>
-              {chartType === 'bar' ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={taskTrendData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={60}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid #ccc',
-                        borderRadius: 4
-                      }}
-                    />
-                    <Legend />
-                    <Bar 
-                      dataKey="tasks" 
-                      fill="#667eea" 
-                      name="Tasks"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={taskTrendData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={60}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid #ccc',
-                        borderRadius: 4
-                      }}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="tasks" 
-                      stroke="#667eea" 
-                      activeDot={{ r: 8 }} 
-                      name="Tasks"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
+              {renderTaskTrendChart()}
+            </Box>
+          </Paper>
+        </Grid>
+        
+        {/* Performance Chart */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+              <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
+              Task Performance
+            </Typography>
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="name" />
+                  <PolarRadiusAxis />
+                  <Radar 
+                    name="Performance" 
+                    dataKey="value" 
+                    stroke="#667eea" 
+                    fill="#667eea" 
+                    fillOpacity={0.6} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid #ccc',
+                      borderRadius: 4
+                    }}
+                  />
+                  <Legend />
+                </RadarChart>
+              </ResponsiveContainer>
             </Box>
           </Paper>
         </Grid>
@@ -715,22 +995,19 @@ const EnhancedDashboard = () => {
             </Typography>
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+                <BarChart
+                  data={categoryData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={60}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -739,7 +1016,13 @@ const EnhancedDashboard = () => {
                     }}
                   />
                   <Legend />
-                </PieChart>
+                  <Bar 
+                    dataKey="value" 
+                    fill="#764ba2" 
+                    name="Categories"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
               </ResponsiveContainer>
             </Box>
           </Paper>
@@ -793,22 +1076,19 @@ const EnhancedDashboard = () => {
             </Typography>
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sourceData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {sourceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+                <BarChart
+                  data={sourceData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={60}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -817,7 +1097,13 @@ const EnhancedDashboard = () => {
                     }}
                   />
                   <Legend />
-                </PieChart>
+                  <Bar 
+                    dataKey="value" 
+                    fill="#f093fb" 
+                    name="Sources"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
               </ResponsiveContainer>
             </Box>
           </Paper>

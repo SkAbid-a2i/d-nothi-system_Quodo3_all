@@ -56,23 +56,40 @@ const ErrorMonitoring = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await logAPI.getLogs({
-        level: filterLevel !== 'all' ? filterLevel : undefined,
-        user: filterUser || undefined,
-        date: filterDate || undefined
-      });
+      // Ensure we have a valid user before making the API call
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const params = {};
       
-      setLogs(response.data || []);
+      if (filterLevel !== 'all') {
+        params.level = filterLevel;
+      }
+      
+      if (filterUser) {
+        params.user = filterUser;
+      }
+      
+      if (filterDate) {
+        params.date = filterDate;
+      }
+
+      const response = await logAPI.getLogs(params);
+      
+      // Handle different response structures
+      const logsData = response.data?.data || response.data || [];
+      
+      setLogs(Array.isArray(logsData) ? logsData : []);
       
       // Calculate statistics
-      const logsData = response.data || [];
-      const errors = logsData.filter(log => log.level === 'error').length;
-      const warnings = logsData.filter(log => log.level === 'warn').length;
-      const info = logsData.filter(log => log.level === 'info').length;
-      const success = logsData.filter(log => log.level === 'success').length;
+      const errors = Array.isArray(logsData) ? logsData.filter(log => log.level === 'error').length : 0;
+      const warnings = Array.isArray(logsData) ? logsData.filter(log => log.level === 'warn').length : 0;
+      const info = Array.isArray(logsData) ? logsData.filter(log => log.level === 'info').length : 0;
+      const success = Array.isArray(logsData) ? logsData.filter(log => log.level === 'success').length : 0;
       
       setStats({
-        total: logsData.length,
+        total: Array.isArray(logsData) ? logsData.length : 0,
         errors,
         warnings,
         info,
@@ -80,8 +97,18 @@ const ErrorMonitoring = () => {
       });
     } catch (err) {
       console.error('Error fetching logs:', err);
-      setError('Failed to fetch logs: ' + (err.response?.data?.message || err.message));
-      showSnackbar('Failed to fetch logs', 'error');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch logs';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+      // Set empty data on error to prevent blank page
+      setLogs([]);
+      setStats({
+        total: 0,
+        errors: 0,
+        warnings: 0,
+        info: 0,
+        success: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -133,9 +160,12 @@ const ErrorMonitoring = () => {
     }
   };
 
+  // Fetch logs when filters change or component mounts
   useEffect(() => {
-    fetchLogs();
-  }, [filterLevel, filterUser, filterDate]);
+    if (user) {
+      fetchLogs();
+    }
+  }, [filterLevel, filterUser, filterDate, user]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -342,28 +372,38 @@ const ErrorMonitoring = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {logs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            icon={getLevelIcon(log.level)}
-                            label={log.level}
-                            color={getLevelColor(log.level)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{log.user || 'System'}</TableCell>
-                        <TableCell>{log.message}</TableCell>
-                        <TableCell>
-                          {log.details && (
-                            <Typography variant="body2" color="text.secondary">
-                              {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
-                            </Typography>
-                          )}
+                    {logs && logs.length > 0 ? (
+                      logs.map((log) => (
+                        <TableRow key={log.id || log.timestamp || log._id}>
+                          <TableCell>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              icon={getLevelIcon(log.level)}
+                              label={log.level || 'Unknown'}
+                              color={getLevelColor(log.level)}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{log.user || log.username || 'System'}</TableCell>
+                          <TableCell>{log.message || 'No message'}</TableCell>
+                          <TableCell>
+                            {log.details && (
+                              <Typography variant="body2" color="text.secondary">
+                                {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
+                              </Typography>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">
+                          <Typography variant="body1" color="text.secondary">
+                            No logs found
+                          </Typography>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>

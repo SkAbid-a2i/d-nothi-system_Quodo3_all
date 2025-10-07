@@ -63,19 +63,26 @@ const MeetingEngagement = () => {
 
   // Fetch users and meetings on component mount
   useEffect(() => {
-    fetchUsers();
-    fetchMeetings();
-  }, []);
+    if (user) {
+      fetchUsers();
+      fetchMeetings();
+    }
+  }, [user]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await userAPI.getAllUsers();
-      setUsers(response.data || []);
+      // Handle different response structures
+      const usersData = response.data?.data || response.data || [];
+      setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (error) {
       console.error('Error fetching users:', error);
-      setError('Failed to fetch users');
-      showSnackbar('Failed to fetch users', 'error');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch users';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+      // Set empty array on error to prevent blank page
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -84,10 +91,13 @@ const MeetingEngagement = () => {
   const fetchMeetings = async () => {
     try {
       const response = await meetingAPI.getAllMeetings();
-      setMeetings(response.data || []);
+      // Handle different response structures
+      const meetingsData = response.data?.data || response.data || [];
+      setMeetings(Array.isArray(meetingsData) ? meetingsData : []);
     } catch (error) {
       console.error('Error fetching meetings:', error);
-      // Don't show error for meetings as it's not critical
+      // Don't show error for meetings as it's not critical, but set empty array
+      setMeetings([]);
     }
   };
 
@@ -148,13 +158,13 @@ const MeetingEngagement = () => {
       // Create meeting through API
       const response = await meetingAPI.createMeeting(meetingData);
       
-      // Add to meetings list
-      const newMeeting = response.data;
-
-      setMeetings([newMeeting, ...meetings]);
+      // Handle response
+      const newMeeting = response.data?.data || response.data || {};
+      
+      // Add to meetings list at the beginning
+      setMeetings(prev => [newMeeting, ...prev]);
       
       // Send notifications to selected users
-      // Get user details from the response or from the users state
       const selectedUsersDetails = users.filter(u => formData.selectedUsers.includes(u.id));
       if (selectedUsersDetails.length > 0) {
         sendMeetingNotifications({...newMeeting, users: selectedUsersDetails});
@@ -181,8 +191,9 @@ const MeetingEngagement = () => {
       setOpenDialog(false);
     } catch (error) {
       console.error('Error creating meeting:', error);
-      setError('Failed to create meeting: ' + (error.response?.data?.message || error.message));
-      showSnackbar('Failed to create meeting', 'error');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create meeting';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setSaving(false);
     }
@@ -190,27 +201,33 @@ const MeetingEngagement = () => {
 
   const sendMeetingNotifications = (meeting) => {
     // Send notification to each selected user
-    meeting.users.forEach(selectedUser => {
-      // In a real implementation, this would be sent via the notification service
-      console.log(`Notification sent to ${selectedUser.username} for meeting: ${meeting.subject}`);
-      
-      // Simulate notification
-      showSnackbar(`Meeting notification sent to ${selectedUser.username}`, 'info');
-    });
+    if (meeting.users && Array.isArray(meeting.users)) {
+      meeting.users.forEach(selectedUser => {
+        // In a real implementation, this would be sent via the notification service
+        console.log(`Notification sent to ${selectedUser.username || selectedUser.fullName} for meeting: ${meeting.subject}`);
+        
+        // Simulate notification
+        showSnackbar(`Meeting notification sent to ${selectedUser.username || selectedUser.fullName}`, 'info');
+      });
+    }
     
     // Set up reminder notification 15 minutes before meeting
-    const meetingDateTime = new Date(`${meeting.date}T${meeting.time}`);
-    const reminderTime = new Date(meetingDateTime.getTime() - 15 * 60000); // 15 minutes before
-    
-    // In a real implementation, you would use a scheduling service
-    const now = new Date();
-    if (reminderTime > now) {
-      const delay = reminderTime.getTime() - now.getTime();
-      setTimeout(() => {
-        meeting.users.forEach(selectedUser => {
-          showSnackbar(`Reminder: Meeting "${meeting.subject}" starts in 15 minutes`, 'info');
-        });
-      }, delay);
+    if (meeting.date && meeting.time) {
+      const meetingDateTime = new Date(`${meeting.date}T${meeting.time}`);
+      const reminderTime = new Date(meetingDateTime.getTime() - 15 * 60000); // 15 minutes before
+      
+      // In a real implementation, you would use a scheduling service
+      const now = new Date();
+      if (reminderTime > now) {
+        const delay = reminderTime.getTime() - now.getTime();
+        setTimeout(() => {
+          if (meeting.users && Array.isArray(meeting.users)) {
+            meeting.users.forEach(selectedUser => {
+              showSnackbar(`Reminder: Meeting "${meeting.subject}" starts in 15 minutes`, 'info');
+            });
+          }
+        }, delay);
+      }
     }
   };
 
@@ -235,13 +252,13 @@ const MeetingEngagement = () => {
   const handleEditMeeting = (meeting) => {
     // Set form data with meeting details
     setFormData({
-      subject: meeting.subject,
-      platform: meeting.platform,
-      location: meeting.location,
-      date: meeting.date,
-      time: meeting.time,
-      duration: meeting.duration.toString(),
-      selectedUsers: meeting.selectedUserIds || []
+      subject: meeting.subject || '',
+      platform: meeting.platform || 'zoom',
+      location: meeting.location || '',
+      date: meeting.date || '',
+      time: meeting.time || '',
+      duration: meeting.duration ? meeting.duration.toString() : '30',
+      selectedUsers: meeting.selectedUserIds || meeting.selectedUsers || []
     });
     
     // Open dialog in edit mode
@@ -252,17 +269,26 @@ const MeetingEngagement = () => {
     try {
       await meetingAPI.deleteMeeting(meetingId);
       showSnackbar('Meeting deleted successfully!', 'success');
-      fetchMeetings(); // Refresh meetings list
+      // Remove from meetings list
+      setMeetings(prev => prev.filter(meeting => meeting.id !== meetingId));
+      // Refresh meetings list
+      fetchMeetings();
     } catch (error) {
       console.error('Error deleting meeting:', error);
-      showSnackbar('Failed to delete meeting', 'error');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete meeting';
+      showSnackbar(errorMessage, 'error');
     }
   };
 
   const getMeetingStatus = (meeting) => {
+    if (!meeting.date || !meeting.time) return 'Unknown';
+    
     const now = new Date();
     const meetingDate = new Date(`${meeting.date}T${meeting.time}`);
-    const meetingEnd = new Date(meetingDate.getTime() + meeting.duration * 60000);
+    
+    if (isNaN(meetingDate.getTime())) return 'Unknown';
+    
+    const meetingEnd = new Date(meetingDate.getTime() + (meeting.duration || 30) * 60000);
     
     if (meetingDate > now) {
       return 'Upcoming';
@@ -281,6 +307,15 @@ const MeetingEngagement = () => {
       default: return 'default';
     }
   };
+
+  // Ensure we have a user before rendering
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -344,20 +379,14 @@ const MeetingEngagement = () => {
               Upcoming Meetings
             </Typography>
             
-            {meetings.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" sx={{ color: 'text.secondary' }}>
-                  No upcoming meetings
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                  Schedule your first meeting using the "Create Meeting" button
-                </Typography>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
               </Box>
-            ) : (
+            ) : meetings && meetings.length > 0 ? (
               <Grid container spacing={2}>
                 {meetings.map((meeting) => (
-                  <Grid item xs={12} md={6} lg={4} key={meeting.id}>
+                  <Grid item xs={12} md={6} lg={4} key={meeting.id || meeting._id || Math.random()}>
                     <Paper 
                       sx={{ 
                         p: 2, 
@@ -369,7 +398,7 @@ const MeetingEngagement = () => {
                     >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {meeting.subject}
+                          {meeting.subject || 'No Subject'}
                         </Typography>
                         <Chip 
                           label={getMeetingStatus(meeting)} 
@@ -381,16 +410,18 @@ const MeetingEngagement = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <VideoCallIcon sx={{ fontSize: 16, mr: 1, color: 'primary.main' }} />
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          {meeting.platform}
+                          {meeting.platform || 'zoom'}
                         </Typography>
                       </Box>
                       
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <AccessTimeIcon sx={{ fontSize: 16, mr: 1, color: 'primary.main' }} />
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          {meeting.date} at {meeting.time} ({meeting.duration} min)
-                        </Typography>
-                      </Box>
+                      {meeting.date && meeting.time && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <AccessTimeIcon sx={{ fontSize: 16, mr: 1, color: 'primary.main' }} />
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {meeting.date} at {meeting.time} ({meeting.duration || 30} min)
+                          </Typography>
+                        </Box>
+                      )}
                       
                       {meeting.location && (
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -401,25 +432,27 @@ const MeetingEngagement = () => {
                         </Box>
                       )}
                       
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                          Attendees:
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                          {meeting.users.map((attendee) => (
-                            <Chip
-                              key={attendee.id}
-                              label={attendee.username}
-                              size="small"
-                              sx={{ 
-                                bgcolor: '#667eea20',
-                                color: '#667eea',
-                                fontWeight: 600
-                              }}
-                            />
-                          ))}
+                      {meeting.users && meeting.users.length > 0 && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                            Attendees:
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                            {meeting.users.map((attendee) => (
+                              <Chip
+                                key={attendee.id || attendee._id || attendee.username}
+                                label={attendee.fullName || attendee.username || 'Unknown User'}
+                                size="small"
+                                sx={{ 
+                                  bgcolor: '#667eea20',
+                                  color: '#667eea',
+                                  fontWeight: 600
+                                }}
+                              />
+                            ))}
+                          </Box>
                         </Box>
-                      </Box>
+                      )}
                       
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                         <IconButton 
@@ -432,7 +465,7 @@ const MeetingEngagement = () => {
                         <IconButton 
                           size="small" 
                           color="error"
-                          onClick={() => handleDeleteMeeting(meeting.id)}
+                          onClick={() => handleDeleteMeeting(meeting.id || meeting._id)}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -441,6 +474,16 @@ const MeetingEngagement = () => {
                   </Grid>
                 ))}
               </Grid>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                  No upcoming meetings
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                  Schedule your first meeting using the "Create Meeting" button
+                </Typography>
+              </Box>
             )}
           </Paper>
         </Grid>
@@ -581,11 +624,11 @@ const MeetingEngagement = () => {
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
                     <CircularProgress size={24} />
                   </Box>
-                ) : (
+                ) : users && users.length > 0 ? (
                   <Paper sx={{ p: 2, maxHeight: 300, overflowY: 'auto' }}>
                     <Grid container spacing={1}>
                       {users.map((usr) => (
-                        <Grid item xs={12} sm={6} md={4} key={usr.id}>
+                        <Grid item xs={12} sm={6} md={4} key={usr.id || usr._id}>
                           <Paper 
                             elevation={formData.selectedUsers.includes(usr.id) ? 4 : 1}
                             sx={{
@@ -617,10 +660,10 @@ const MeetingEngagement = () => {
                               />
                               <Box sx={{ ml: 1 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {usr.fullName || usr.username}
+                                  {usr.fullName || usr.username || 'Unknown User'}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  {usr.username}
+                                  {usr.username || 'No username'}
                                 </Typography>
                               </Box>
                             </Box>
@@ -629,6 +672,12 @@ const MeetingEngagement = () => {
                       ))}
                     </Grid>
                   </Paper>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No users available
+                    </Typography>
+                  </Box>
                 )}
               </Grid>
             </Grid>
