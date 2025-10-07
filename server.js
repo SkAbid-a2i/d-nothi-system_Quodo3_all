@@ -114,6 +114,7 @@ const auditRoutes = require('./routes/audit.routes');
 const logRoutes = require('./routes/log.routes');
 const permissionRoutes = require('./routes/permission.routes');
 const fileRoutes = require('./routes/file.routes');
+const meetingRoutes = require('./routes/meeting.routes');
 
 // Use routes
 app.use('/api/auth', (req, res, next) => {
@@ -165,6 +166,11 @@ app.use('/api/files', (req, res, next) => {
   logger.info('File routes accessed', { endpoint: '/api/files' + req.url });
   next();
 }, fileRoutes);
+
+app.use('/api/meetings', (req, res, next) => {
+  logger.info('Meeting routes accessed', { endpoint: '/api/meetings' + req.url });
+  next();
+}, meetingRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

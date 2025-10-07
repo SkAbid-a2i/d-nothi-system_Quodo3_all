@@ -611,13 +611,14 @@ const AgentDashboard = () => {
                   <Button 
                     startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('CSV')}
-                    sx={{ ml: 2 }}
+                    sx={{ ml: 2, mr: 1 }}
                   >
                     Export CSV
                   </Button>
                   <Button 
                     startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('PDF')}
+                    sx={{ mr: 1 }}
                   >
                     Export PDF
                   </Button>

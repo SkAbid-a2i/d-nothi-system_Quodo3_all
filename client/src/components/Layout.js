@@ -239,6 +239,20 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       setUnreadCount(prev => prev + 1);
     };
 
+    const handleTaskUpdated = (data) => {
+      const action = data.deleted ? 'deleted' : 'updated';
+      const newNotification = {
+        id: Date.now(),
+        message: `Task ${action}: ${data.task.description}`,
+        time: new Date().toLocaleString(),
+        type: data.deleted ? 'warning' : 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
     const handleLeaveRequested = (data) => {
       const newNotification = {
         id: Date.now(),
@@ -252,14 +266,181 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       setUnreadCount(prev => prev + 1);
     };
 
-    // Subscribe to notifications
+    const handleLeaveApproved = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Leave request approved for ${data.leave.userName}`,
+        time: new Date().toLocaleString(),
+        type: 'success',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleLeaveRejected = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Leave request rejected for ${data.leave.userName}`,
+        time: new Date().toLocaleString(),
+        type: 'warning',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleUserCreated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `New user created: ${data.user.username}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleUserUpdated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `User updated: ${data.user.username}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleUserDeleted = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `User deleted: ${data.username}`,
+        time: new Date().toLocaleString(),
+        type: 'warning',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleDropdownCreated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `New dropdown value created: ${data.dropdown.value}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleDropdownUpdated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Dropdown value updated: ${data.dropdown.value}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleDropdownDeleted = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Dropdown value deleted: ${data.dropdownValue}`,
+        time: new Date().toLocaleString(),
+        type: 'warning',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handlePermissionTemplateCreated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `New permission template created: ${data.template.name}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handlePermissionTemplateUpdated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Permission template updated: ${data.template.name}`,
+        time: new Date().toLocaleString(),
+        type: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handlePermissionTemplateDeleted = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Permission template deleted: ${data.templateName}`,
+        time: new Date().toLocaleString(),
+        type: 'warning',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    // Subscribe to all notifications
     notificationService.onTaskCreated(handleTaskCreated);
+    notificationService.onTaskUpdated(handleTaskUpdated);
     notificationService.onLeaveRequested(handleLeaveRequested);
+    notificationService.onLeaveApproved(handleLeaveApproved);
+    notificationService.onLeaveRejected(handleLeaveRejected);
+    notificationService.onUserCreated(handleUserCreated);
+    notificationService.onUserUpdated(handleUserUpdated);
+    notificationService.onUserDeleted(handleUserDeleted);
+    notificationService.onDropdownCreated(handleDropdownCreated);
+    notificationService.onDropdownUpdated(handleDropdownUpdated);
+    notificationService.onDropdownDeleted(handleDropdownDeleted);
+    notificationService.onPermissionTemplateCreated(handlePermissionTemplateCreated);
+    notificationService.onPermissionTemplateUpdated(handlePermissionTemplateUpdated);
+    notificationService.onPermissionTemplateDeleted(handlePermissionTemplateDeleted);
 
     // Cleanup on unmount
     return () => {
       notificationService.off('taskCreated', handleTaskCreated);
+      notificationService.off('taskUpdated', handleTaskUpdated);
       notificationService.off('leaveRequested', handleLeaveRequested);
+      notificationService.off('leaveApproved', handleLeaveApproved);
+      notificationService.off('leaveRejected', handleLeaveRejected);
+      notificationService.off('userCreated', handleUserCreated);
+      notificationService.off('userUpdated', handleUserUpdated);
+      notificationService.off('userDeleted', handleUserDeleted);
+      notificationService.off('dropdownCreated', handleDropdownCreated);
+      notificationService.off('dropdownUpdated', handleDropdownUpdated);
+      notificationService.off('dropdownDeleted', handleDropdownDeleted);
+      notificationService.off('permissionTemplateCreated', handlePermissionTemplateCreated);
+      notificationService.off('permissionTemplateUpdated', handlePermissionTemplateUpdated);
+      notificationService.off('permissionTemplateDeleted', handlePermissionTemplateDeleted);
     };
   }, []);
 

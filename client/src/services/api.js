@@ -142,4 +142,12 @@ export const permissionAPI = {
   deleteTemplate: (id) => api.delete(`/permissions/templates/${id}`),
 };
 
+// Meeting endpoints
+export const meetingAPI = {
+  getAllMeetings: () => api.get('/meetings'),
+  createMeeting: (meetingData) => api.post('/meetings', meetingData),
+  updateMeeting: (id, meetingData) => api.put(`/meetings/${id}`, meetingData),
+  deleteMeeting: (id) => api.delete(`/meetings/${id}`),
+};
+
 export default api;

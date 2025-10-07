@@ -31,7 +31,7 @@ import {
   LocationOn as LocationOnIcon,
   VideoCall as VideoCallIcon
 } from '@mui/icons-material';
-import { userAPI } from '../services/api';
+import { userAPI, meetingAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 
@@ -59,11 +59,10 @@ const MeetingEngagement = () => {
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
 
-  // Fetch users on component mount
+  // Fetch users and meetings on component mount
   useEffect(() => {
     fetchUsers();
-    // In a real implementation, you would also fetch existing meetings
-    // fetchMeetings();
+    fetchMeetings();
   }, []);
 
   const fetchUsers = async () => {
@@ -77,6 +76,16 @@ const MeetingEngagement = () => {
       showSnackbar('Failed to fetch users', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMeetings = async () => {
+    try {
+      const response = await meetingAPI.getAllMeetings();
+      setMeetings(response.data || []);
+    } catch (error) {
+      console.error('Error fetching meetings:', error);
+      // Don't show error for meetings as it's not critical
     }
   };
 
@@ -131,15 +140,15 @@ const MeetingEngagement = () => {
       // Create meeting object
       const meetingData = {
         ...formData,
-        createdBy: user.id,
-        createdAt: new Date().toISOString(),
-        // In a real implementation, you would send this to the backend
+        selectedUserIds: formData.selectedUsers
       };
 
-      // Add to meetings list (simulating API call)
+      // Create meeting through API
+      const response = await meetingAPI.createMeeting(meetingData);
+      
+      // Add to meetings list
       const newMeeting = {
-        id: meetings.length + 1,
-        ...meetingData,
+        ...response.data,
         users: users.filter(u => formData.selectedUsers.includes(u.id))
       };
 
@@ -161,6 +170,9 @@ const MeetingEngagement = () => {
       
       setSuccess('Meeting created successfully!');
       showSnackbar('Meeting created successfully!', 'success');
+      
+      // Refresh meetings list
+      fetchMeetings();
       
       // Close dialog if it's open
       setOpenDialog(false);
@@ -376,6 +388,11 @@ const MeetingEngagement = () => {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
               </Grid>
               
@@ -387,6 +404,11 @@ const MeetingEngagement = () => {
                     value={formData.platform}
                     onChange={handleInputChange}
                     label="Platform"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px'
+                      }
+                    }}
                   >
                     <MenuItem value="zoom">Zoom</MenuItem>
                     <MenuItem value="meet">Google Meet</MenuItem>
@@ -405,6 +427,11 @@ const MeetingEngagement = () => {
                   multiline
                   rows={3}
                   placeholder={formData.platform === 'physical' ? "Enter meeting location" : "Enter invitation link"}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
               </Grid>
               
@@ -418,6 +445,11 @@ const MeetingEngagement = () => {
                   onChange={handleInputChange}
                   InputLabelProps={{ shrink: true }}
                   required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
               </Grid>
               
@@ -431,6 +463,11 @@ const MeetingEngagement = () => {
                   onChange={handleInputChange}
                   InputLabelProps={{ shrink: true }}
                   required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
               </Grid>
               
@@ -442,6 +479,11 @@ const MeetingEngagement = () => {
                     value={formData.duration}
                     onChange={handleInputChange}
                     label="Duration (minutes)"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px'
+                      }
+                    }}
                   >
                     <MenuItem value="15">15 minutes</MenuItem>
                     <MenuItem value="30">30 minutes</MenuItem>
@@ -463,22 +505,53 @@ const MeetingEngagement = () => {
                     <CircularProgress size={24} />
                   </Box>
                 ) : (
-                  <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {users.map((usr) => (
-                      <FormControlLabel
-                        key={usr.id}
-                        control={
-                          <Checkbox
-                            checked={formData.selectedUsers.includes(usr.id)}
-                            onChange={() => handleUserSelect(usr.id)}
-                            color="primary"
-                          />
-                        }
-                        label={usr.fullName || usr.username}
-                        sx={{ width: '50%', minWidth: 200, mb: 1 }}
-                      />
-                    ))}
-                  </FormGroup>
+                  <Paper sx={{ p: 2, maxHeight: 300, overflowY: 'auto' }}>
+                    <Grid container spacing={1}>
+                      {users.map((usr) => (
+                        <Grid item xs={12} sm={6} md={4} key={usr.id}>
+                          <Paper 
+                            elevation={formData.selectedUsers.includes(usr.id) ? 4 : 1}
+                            sx={{
+                              p: 1,
+                              cursor: 'pointer',
+                              backgroundColor: formData.selectedUsers.includes(usr.id) 
+                                ? 'primary.light' 
+                                : 'background.paper',
+                              border: formData.selectedUsers.includes(usr.id) 
+                                ? '2px solid' 
+                                : '1px solid',
+                              borderColor: formData.selectedUsers.includes(usr.id) 
+                                ? 'primary.main' 
+                                : 'divider',
+                              '&:hover': {
+                                backgroundColor: 'action.hover',
+                                transform: 'scale(1.02)',
+                                transition: 'all 0.2s ease'
+                              }
+                            }}
+                            onClick={() => handleUserSelect(usr.id)}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Checkbox
+                                checked={formData.selectedUsers.includes(usr.id)}
+                                onChange={() => handleUserSelect(usr.id)}
+                                color="primary"
+                                size="small"
+                              />
+                              <Box sx={{ ml: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {usr.fullName || usr.username}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {usr.username}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Paper>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Paper>
                 )}
               </Grid>
             </Grid>
