@@ -19,7 +19,8 @@ import {
   Autocomplete,
   Tabs,
   Tab,
-  Divider
+  Divider,
+  Button
 } from '@mui/material';
 import { 
   Assignment, 
@@ -123,16 +124,7 @@ const EnhancedDashboard = () => {
           leavesData = leavesData.filter(leave => 
             leave.userId === user.id || leave.userName === user.username
           );
-        } else if (viewMode === 'team' && selectedUser) {
-          // Show selected user's data
-          tasksData = tasksData.filter(task => 
-            task.userId === selectedUser.id || task.userName === selectedUser.value
-          );
-          leavesData = leavesData.filter(leave => 
-            leave.userId === selectedUser.id || leave.userName === selectedUser.value
-          );
         }
-        // If team view and no user selected, show all data (for SystemAdmin)
         // For Admin/Supervisor, show office data
         else if (viewMode === 'team' && (user.role === 'Admin' || user.role === 'Supervisor')) {
           tasksData = tasksData.filter(task => task.office === user.office);
@@ -157,7 +149,7 @@ const EnhancedDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, viewMode, selectedUser, timeRange, startDate, endDate]);
+  }, [user.id, user.role, user.username, user.office, viewMode, timeRange, startDate, endDate]);
 
   // Process chart data based on filters
   const processChartData = (tasksData, timeRange, startDate, endDate) => {
@@ -361,23 +353,14 @@ const EnhancedDashboard = () => {
     showSnackbar(`Exporting data as ${format.toUpperCase()}...`, 'info');
     // In a real implementation, you would generate and download the export file
   };
-
-  const handleViewModeChange = (event, newValue) => {
-    setViewMode(newValue);
-    if (newValue === 'individual') {
-      setSelectedUser(null);
-    }
-  };
-
-  // Get dashboard statistics
   const getDashboardStats = () => {
     return {
       totalTasks: tasks.length,
-      pendingTasks: tasks.filter(t => t.status === 'Pending').length,
-      completedTasks: tasks.filter(t => t.status === 'Completed').length,
-      inProgressTasks: tasks.filter(t => t.status === 'In Progress').length,
-      pendingLeaves: leaves.filter(l => l.status === 'Pending').length,
-      approvedLeaves: leaves.filter(l => l.status === 'Approved').length
+      pendingTasks: tasks.filter(task => task.status === 'Pending').length,
+      completedTasks: tasks.filter(task => task.status === 'Completed').length,
+      inProgressTasks: tasks.filter(task => task.status === 'In Progress').length,
+      pendingLeaves: leaves.filter(leave => leave.status === 'Pending').length,
+      approvedLeaves: leaves.filter(leave => leave.status === 'Approved').length
     };
   };
 
@@ -408,21 +391,6 @@ const EnhancedDashboard = () => {
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <CircularProgress />
         </Box>
-      )}
-
-      {/* View Mode Selector for Admin Roles */}
-      {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Tabs
-            value={viewMode}
-            onChange={handleViewModeChange}
-            indicatorColor="primary"
-            textColor="primary"
-          >
-            <Tab label="My Data" value="individual" />
-            <Tab label="Team Data" value="team" />
-          </Tabs>
-        </Paper>
       )}
 
       {/* Key Metrics Cards */}
@@ -541,7 +509,7 @@ const EnhancedDashboard = () => {
       {/* Filters and Controls */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={2}>
+          <Grid item xs={12} sm={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Time Range</InputLabel>
               <Select 
@@ -557,21 +525,7 @@ const EnhancedDashboard = () => {
             </FormControl>
           </Grid>
           
-          {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') && viewMode === 'team' && (
-            <Grid item xs={12} sm={3}>
-              <Autocomplete
-                options={users}
-                getOptionLabel={(option) => option.label || option}
-                value={selectedUser}
-                onChange={(event, newValue) => setSelectedUser(newValue)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Filter by User" fullWidth size="small" />
-                )}
-              />
-            </Grid>
-          )}
-          
-          <Grid item xs={12} sm={2}>
+          <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
               size="small"
@@ -583,7 +537,7 @@ const EnhancedDashboard = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={2}>
+          <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
               size="small"
@@ -595,7 +549,7 @@ const EnhancedDashboard = () => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
               <Button 
                 startIcon={<DownloadIcon />} 
