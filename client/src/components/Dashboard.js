@@ -1,15 +1,14 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import ModernDashboard from './ModernDashboard';
+import EnhancedDashboard from './EnhancedDashboard';
 import AgentDashboard from './AgentDashboard';
 import AdminDashboard from './AdminDashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
 
-  // For now, we'll use the modern dashboard for all users
-  // You can customize this based on user roles if needed
-  return <ModernDashboard />;
+  // Use the enhanced dashboard for all users
+  return <EnhancedDashboard />;
   
   // Original role-based logic (commented out for now)
   /*
