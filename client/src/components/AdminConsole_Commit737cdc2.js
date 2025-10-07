@@ -60,7 +60,7 @@ const AdminConsole = () => {
 
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);
-  const [dropdownTypes] = useState(['Source', 'Category', 'Service', 'Office']);
+  const [dropdownTypes] = useState(['Source', 'Category', 'Service']);
   const [selectedDropdownType, setSelectedDropdownType] = useState('Source');
   const [dropdownValue, setDropdownValue] = useState('');
   const [parentCategory, setParentCategory] = useState('');
@@ -88,8 +88,7 @@ const AdminConsole = () => {
     username: '',
     email: '',
     password: '',
-    role: 'Agent',
-    office: ''
+    role: 'Agent'
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -225,8 +224,7 @@ const AdminConsole = () => {
         username: '',
         email: '',
         password: '',
-        role: 'Agent',
-        office: ''
+        role: 'Agent'
       });
       setSelectedOffice(null);
       setIsEditing(false);
@@ -251,13 +249,8 @@ const AdminConsole = () => {
       username: user.username,
       email: user.email,
       password: '',
-      role: user.role,
-      office: user.office
+      role: user.role
     });
-    
-    // Find office in offices array
-    const office = offices.find(o => o.value === user.office);
-    setSelectedOffice(office || null);
     
     setIsEditing(true);
     setEditingUserId(user.id);
@@ -595,17 +588,6 @@ const AdminConsole = () => {
                             </Select>
                           </FormControl>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Autocomplete
-                            options={offices}
-                            getOptionLabel={(option) => option.value}
-                            value={selectedOffice}
-                            onChange={handleOfficeChange}
-                            renderInput={(params) => (
-                              <TextField {...params} label="Office" fullWidth />
-                            )}
-                          />
-                        </Grid>
                         <Grid item xs={12}>
                           <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button
@@ -635,8 +617,7 @@ const AdminConsole = () => {
                                     username: '',
                                     email: '',
                                     password: '',
-                                    role: 'Agent',
-                                    office: ''
+                                    role: 'Agent'
                                   });
                                   setSelectedOffice(null);
                                 }}
@@ -648,6 +629,7 @@ const AdminConsole = () => {
                           </Box>
                         </Grid>
                       </Grid>
+
                     </form>
                   </Paper>
                 </Grid>
@@ -713,7 +695,6 @@ const AdminConsole = () => {
                               <TableCell>Username</TableCell>
                               <TableCell>Email</TableCell>
                               <TableCell>Role</TableCell>
-                              <TableCell>Office</TableCell>
                               <TableCell>Status</TableCell>
                               <TableCell>Actions</TableCell>
                             </TableRow>
@@ -752,7 +733,6 @@ const AdminConsole = () => {
                                     }} 
                                   />
                                 </TableCell>
-                                <TableCell>{user.office || '-'}</TableCell>
                                 <TableCell>
                                   <Chip 
                                     label={user.isActive ? 'Active' : 'Inactive'} 
