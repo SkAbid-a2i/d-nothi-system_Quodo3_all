@@ -22,7 +22,8 @@ import {
   Divider,
   Button,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Tooltip
 } from '@mui/material';
 import { 
   Assignment, 
@@ -41,7 +42,8 @@ import {
   Person as PersonIcon,
   People as PeopleIcon,
   FilterList as FilterIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -52,12 +54,10 @@ import {
   Line, 
   AreaChart,
   Area,
-  ScatterChart,
-  Scatter,
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   Legend, 
   ResponsiveContainer,
   Cell,
@@ -465,11 +465,12 @@ const EnhancedDashboard = () => {
                 tick={{ fontSize: 12 }}
               />
               <YAxis />
-              <Tooltip 
+              <RechartsTooltip 
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: '1px solid #ccc',
-                  borderRadius: 4
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
               />
               <Legend />
@@ -498,11 +499,12 @@ const EnhancedDashboard = () => {
                 tick={{ fontSize: 12 }}
               />
               <YAxis />
-              <Tooltip 
+              <RechartsTooltip 
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: '1px solid #ccc',
-                  borderRadius: 4
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
               />
               <Legend />
@@ -512,7 +514,7 @@ const EnhancedDashboard = () => {
                 stroke="#667eea" 
                 activeDot={{ r: 8 }} 
                 name="Tasks"
-                strokeWidth={2}
+                strokeWidth={3}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -533,11 +535,12 @@ const EnhancedDashboard = () => {
                 tick={{ fontSize: 12 }}
               />
               <YAxis />
-              <Tooltip 
+              <RechartsTooltip 
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: '1px solid #ccc',
-                  borderRadius: 4
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
               />
               <Legend />
@@ -568,11 +571,12 @@ const EnhancedDashboard = () => {
                 tick={{ fontSize: 12 }}
               />
               <YAxis />
-              <Tooltip 
+              <RechartsTooltip 
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: '1px solid #ccc',
-                  borderRadius: 4
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
               />
               <Legend />
@@ -598,8 +602,8 @@ const EnhancedDashboard = () => {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Box sx={{ mb: 4 }}>
+    <Box sx={{ flexGrow: 1, p: { xs: 1, sm: 2, md: 3 } }}>
+      <Box sx={{ mb: { xs: 2, md: 4 } }}>
         <Typography 
           variant="h3" 
           sx={{ 
@@ -625,7 +629,7 @@ const EnhancedDashboard = () => {
 
       {/* View Mode Toggle for Admin Roles */}
       {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') && (
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <ToggleButtonGroup
               value={viewMode}
@@ -633,6 +637,22 @@ const EnhancedDashboard = () => {
               onChange={(e, newViewMode) => newViewMode && setViewMode(newViewMode)}
               aria-label="view mode"
               size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  border: '1px solid',
+                  borderColor: 'primary.main',
+                  '&.Mui-selected': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    }
+                  }
+                }
+              }}
             >
               <ToggleButton value="individual" aria-label="individual view">
                 <PersonIcon sx={{ mr: 1 }} />
@@ -652,7 +672,7 @@ const EnhancedDashboard = () => {
                 value={selectedUser}
                 onChange={(event, newValue) => setSelectedUser(newValue)}
                 renderInput={(params) => (
-                  <TextField {...params} label="Select User" size="small" />
+                  <TextField {...params} label="Select User" size="small" variant="outlined" />
                 )}
               />
             )}
@@ -661,20 +681,27 @@ const EnhancedDashboard = () => {
       )}
 
       {/* Key Metrics Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: { xs: 2, md: 4 } }}>
         <Grid item xs={12} sm={6} md={2.4}>
           <Card sx={{ 
             height: '100%',
             background: 'linear-gradient(135deg, #667eea20 0%, #667eea10 100%)',
-            border: '1px solid rgba(102, 126, 234, 0.2)'
+            border: '1px solid rgba(102, 126, 234, 0.2)',
+            borderRadius: 2,
+            boxShadow: 3,
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: 6
+            }
           }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     Total Tasks
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {stats.totalTasks}
                   </Typography>
                 </Box>
@@ -688,15 +715,22 @@ const EnhancedDashboard = () => {
           <Card sx={{ 
             height: '100%',
             background: 'linear-gradient(135deg, #f59e0b20 0%, #f59e0b10 100%)',
-            border: '1px solid rgba(245, 158, 11, 0.2)'
+            border: '1px solid rgba(245, 158, 11, 0.2)',
+            borderRadius: 2,
+            boxShadow: 3,
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: 6
+            }
           }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     Pending Tasks
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {stats.pendingTasks}
                   </Typography>
                 </Box>
@@ -710,15 +744,22 @@ const EnhancedDashboard = () => {
           <Card sx={{ 
             height: '100%',
             background: 'linear-gradient(135deg, #10b98120 0%, #10b98110 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.2)'
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            borderRadius: 2,
+            boxShadow: 3,
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: 6
+            }
           }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     Completed Tasks
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {stats.completedTasks}
                   </Typography>
                 </Box>
@@ -732,15 +773,22 @@ const EnhancedDashboard = () => {
           <Card sx={{ 
             height: '100%',
             background: 'linear-gradient(135deg, #f093fb20 0%, #f093fb10 100%)',
-            border: '1px solid rgba(240, 147, 251, 0.2)'
+            border: '1px solid rgba(240, 147, 251, 0.2)',
+            borderRadius: 2,
+            boxShadow: 3,
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: 6
+            }
           }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     Pending Leaves
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {stats.pendingLeaves}
                   </Typography>
                 </Box>
@@ -754,15 +802,22 @@ const EnhancedDashboard = () => {
           <Card sx={{ 
             height: '100%',
             background: 'linear-gradient(135deg, #764ba220 0%, #764ba210 100%)',
-            border: '1px solid rgba(118, 75, 162, 0.2)'
+            border: '1px solid rgba(118, 75, 162, 0.2)',
+            borderRadius: 2,
+            boxShadow: 3,
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: 6
+            }
           }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     Approved Leaves
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {stats.approvedLeaves}
                   </Typography>
                 </Box>
@@ -774,15 +829,15 @@ const EnhancedDashboard = () => {
       </Grid>
 
       {/* Filters and Controls */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+      <Paper sx={{ p: { xs: 1.5, md: 2 }, mb: { xs: 2, md: 3 }, borderRadius: 2, boxShadow: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
           <FilterIcon sx={{ color: 'primary.main' }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Filters
           </Typography>
         </Box>
         
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={{ xs: 1.5, md: 2 }} alignItems="center">
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Time Range</InputLabel>
@@ -790,6 +845,7 @@ const EnhancedDashboard = () => {
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
                 label="Time Range"
+                variant="outlined"
               >
                 <MenuItem value="daily">Daily</MenuItem>
                 <MenuItem value="weekly">Weekly</MenuItem>
@@ -808,6 +864,7 @@ const EnhancedDashboard = () => {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
+              variant="outlined"
             />
           </Grid>
           
@@ -820,6 +877,7 @@ const EnhancedDashboard = () => {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
+              variant="outlined"
             />
           </Grid>
           
@@ -831,10 +889,15 @@ const EnhancedDashboard = () => {
                 variant="contained"
                 size="small"
                 sx={{ 
+                  flex: 1,
                   background: 'linear-gradient(45deg, #667eea, #764ba2)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #764ba2, #667eea)'
-                  }
+                    background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                  },
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600
                 }}
               >
                 Apply
@@ -844,6 +907,19 @@ const EnhancedDashboard = () => {
                 onClick={handleClearFilters}
                 variant="outlined"
                 size="small"
+                sx={{ 
+                  flex: 1,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  '&:hover': {
+                    borderColor: 'primary.dark',
+                    backgroundColor: 'primary.light',
+                    color: 'primary.dark'
+                  }
+                }}
               >
                 Clear
               </Button>
@@ -851,12 +927,24 @@ const EnhancedDashboard = () => {
           </Grid>
           
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1, flexWrap: 'wrap' }}>
               <Button 
                 startIcon={<DownloadIcon />} 
                 onClick={() => handleExport('CSV')}
                 variant="outlined"
                 size="small"
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderColor: 'success.main',
+                  color: 'success.main',
+                  '&:hover': {
+                    borderColor: 'success.dark',
+                    backgroundColor: 'success.light',
+                    color: 'success.dark'
+                  }
+                }}
               >
                 Export CSV
               </Button>
@@ -865,50 +953,112 @@ const EnhancedDashboard = () => {
                 onClick={() => handleExport('PDF')}
                 variant="outlined"
                 size="small"
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderColor: 'error.main',
+                  color: 'error.main',
+                  '&:hover': {
+                    borderColor: 'error.dark',
+                    backgroundColor: 'error.light',
+                    color: 'error.dark'
+                  }
+                }}
               >
                 Export PDF
+              </Button>
+              <Button 
+                startIcon={<RefreshIcon />} 
+                onClick={fetchDashboardData}
+                variant="outlined"
+                size="small"
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderColor: 'info.main',
+                  color: 'info.main',
+                  '&:hover': {
+                    borderColor: 'info.dark',
+                    backgroundColor: 'info.light',
+                    color: 'info.dark'
+                  }
+                }}
+              >
+                Refresh
               </Button>
             </Box>
           </Grid>
         </Grid>
       </Paper>
 
-      {/* Charts Section */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Task Trend Chart */}
-        <Grid item xs={12} lg={8}>
-          <Paper sx={{ p: 2, height: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      {/* Charts Section - Improved Layout and Sizes */}
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: { xs: 2, md: 4 } }}>
+        {/* Task Trend Chart - Full Width */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
                 Task Trends
               </Typography>
-              <Box>
-                <IconButton 
-                  color={chartType === 'bar' ? 'primary' : 'default'}
-                  onClick={() => setChartType('bar')}
-                  size="small"
-                >
-                  <BarChartIcon />
-                </IconButton>
-                <IconButton 
-                  color={chartType === 'line' ? 'primary' : 'default'}
-                  onClick={() => setChartType('line')}
-                  size="small"
-                >
-                  <LineChartIcon />
-                </IconButton>
-                <IconButton 
-                  color={chartType === 'area' ? 'primary' : 'default'}
-                  onClick={() => setChartType('area')}
-                  size="small"
-                >
-                  <ShowChartIcon />
-                </IconButton>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Tooltip title="Bar Chart">
+                  <IconButton 
+                    color={chartType === 'bar' ? 'primary' : 'default'}
+                    onClick={() => setChartType('bar')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: chartType === 'bar' ? '2px solid' : '1px solid',
+                      borderColor: chartType === 'bar' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <BarChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Line Chart">
+                  <IconButton 
+                    color={chartType === 'line' ? 'primary' : 'default'}
+                    onClick={() => setChartType('line')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: chartType === 'line' ? '2px solid' : '1px solid',
+                      borderColor: chartType === 'line' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <LineChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Area Chart">
+                  <IconButton 
+                    color={chartType === 'area' ? 'primary' : 'default'}
+                    onClick={() => setChartType('area')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: chartType === 'area' ? '2px solid' : '1px solid',
+                      borderColor: chartType === 'area' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <ShowChartIcon />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </Box>
             
-            <Box sx={{ height: 350 }}>
+            <Box sx={{ height: { xs: 300, sm: 350, md: 400 } }}>
               {renderTaskTrendChart()}
             </Box>
           </Paper>
@@ -916,12 +1066,12 @@ const EnhancedDashboard = () => {
         
         {/* Performance Chart */}
         <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
               <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
               Task Performance
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: { xs: 250, sm: 300 } }}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
                   <PolarGrid />
@@ -934,11 +1084,12 @@ const EnhancedDashboard = () => {
                     fill="#667eea" 
                     fillOpacity={0.6} 
                   />
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
                       border: '1px solid #ccc',
-                      borderRadius: 4
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                     }}
                   />
                   <Legend />
@@ -950,12 +1101,12 @@ const EnhancedDashboard = () => {
         
         {/* Office Distribution Chart */}
         <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
               <GroupIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Office Distribution
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: { xs: 250, sm: 300 } }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -973,11 +1124,12 @@ const EnhancedDashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
                       border: '1px solid #ccc',
-                      borderRadius: 4
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                     }}
                   />
                   <Legend />
@@ -989,12 +1141,12 @@ const EnhancedDashboard = () => {
         
         {/* Category Distribution Chart */}
         <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
               <CategoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Category Distribution
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: { xs: 250, sm: 300 } }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={categoryData}
@@ -1009,11 +1161,12 @@ const EnhancedDashboard = () => {
                     tick={{ fontSize: 12 }}
                   />
                   <YAxis />
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
                       border: '1px solid #ccc',
-                      borderRadius: 4
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                     }}
                   />
                   <Legend />
@@ -1031,12 +1184,12 @@ const EnhancedDashboard = () => {
         
         {/* Service Distribution Chart */}
         <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
               <BuildIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Service Distribution
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: { xs: 250, sm: 300 } }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -1054,11 +1207,12 @@ const EnhancedDashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
                       border: '1px solid #ccc',
-                      borderRadius: 4
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                     }}
                   />
                   <Legend />
@@ -1069,13 +1223,13 @@ const EnhancedDashboard = () => {
         </Grid>
         
         {/* Source Distribution Chart */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+        <Grid item xs={12} md={6} lg={8}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
               <SourceIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Source Distribution
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: { xs: 250, sm: 300 } }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={sourceData}
@@ -1090,11 +1244,12 @@ const EnhancedDashboard = () => {
                     tick={{ fontSize: 12 }}
                   />
                   <YAxis />
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
                       border: '1px solid #ccc',
-                      borderRadius: 4
+                      borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                     }}
                   />
                   <Legend />
