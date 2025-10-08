@@ -45,7 +45,7 @@ const translations = {
   navigation: {
     dashboard: 'ড্যাশবোর্ড',
     taskLogger: 'টাস্ক লগার',
-    myTasks: 'আমার টাস্কগুলি',
+    myTasks: 'টাস্ক মডিফিকেশন এবং অ্যাক্টিভিটি',
     teamTasks: 'দলের টাস্কগুলি',
     leaves: 'ছুটি ম্যানেজমেন্ট',
     files: 'ফাইল ম্যানেজমেন্ট',
@@ -75,7 +75,7 @@ const translations = {
       pendingLeaves: 'মুলতুবি ছুটি',
       reportsGenerated: 'প্রতিবেদন তৈরি হয়েছে',
       notifications: 'বিজ্ঞপ্তি',
-      taskDistribution: 'টাস্ক বিতরণ',
+      taskDistribution: 'টাস্ক শ্রেণিবিভাগ',
       taskHistory: 'টাস্ক ইতিহাস',
       leaveSummary: 'ছুটি সারসংক্ষেপ',
       recentActivity: 'সাম্প্রতিক কার্যকলাপ'

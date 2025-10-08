@@ -745,7 +745,7 @@ const AgentDashboard = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+              Task Classification - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
             </Typography>
             <Box sx={{ height: 300 }}>
               {chartType === 'bar' && (

@@ -37,9 +37,11 @@ import {
   Search as SearchIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Assignment
+  Assignment,
+  Flag as FlagIcon
 } from '@mui/icons-material';
 import { useTranslation } from '../contexts/TranslationContext';
+import { dropdownAPI, taskAPI } from '../services/api';
 
 const ModernTaskLogger = () => {
   const { t } = useTranslation();
@@ -69,60 +71,74 @@ const ModernTaskLogger = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Mock data for dropdowns
-  const sources = ['Email', 'Phone', 'Walk-in', 'Online Form', 'Other'];
-  const categories = ['IT Support', 'HR', 'Finance', 'Administration', 'Other'];
-  const services = ['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other'];
-  const statuses = ['Pending', 'In Progress', 'Completed', 'Cancelled'];
+  // Dropdown values state
+  const [sources, setSources] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [statuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
+  const [dropdownLoading, setDropdownLoading] = useState(false);
 
-  // Mock tasks data
-  const mockTasks = [
-    {
-      id: 1,
-      date: '2023-06-15',
-      source: 'Email',
-      category: 'IT Support',
-      service: 'Software',
-      description: 'User unable to access email system',
-      status: 'Completed',
-      userName: 'John Doe',
-      createdAt: '2023-06-15T09:30:00Z'
-    },
-    {
-      id: 2,
-      date: '2023-06-16',
-      source: 'Phone',
-      category: 'HR',
-      service: 'Leave',
-      description: 'Leave request for annual vacation',
-      status: 'In Progress',
-      userName: 'Jane Smith',
-      createdAt: '2023-06-16T14:15:00Z'
-    },
-    {
-      id: 3,
-      date: '2023-06-17',
-      source: 'Walk-in',
-      category: 'Finance',
-      service: 'Billing',
-      description: 'Invoice processing assistance needed',
-      status: 'Pending',
-      userName: 'Mike Johnson',
-      createdAt: '2023-06-17T11:45:00Z'
-    }
-  ];
-
+  // Fetch dropdown values on component mount
   useEffect(() => {
-    // Simulate loading tasks
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setTasks(mockTasks);
-      setFilteredTasks(mockTasks);
-      setLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
+    fetchDropdownValues();
+    fetchTasks();
   }, []);
+
+  const fetchDropdownValues = async () => {
+    setDropdownLoading(true);
+    try {
+      // Fetch all dropdown types
+      console.log('Fetching dropdown values...');
+      const [sourcesRes, categoriesRes, servicesRes] = await Promise.all([
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Service')
+      ]);
+
+      console.log('Sources response:', sourcesRes);
+      console.log('Categories response:', categoriesRes);
+      console.log('Services response:', servicesRes);
+
+      const sourcesData = Array.isArray(sourcesRes.data) ? sourcesRes.data : 
+                         sourcesRes.data?.data || sourcesRes.data || [];
+      const categoriesData = Array.isArray(categoriesRes.data) ? categoriesRes.data : 
+                            categoriesRes.data?.data || categoriesRes.data || [];
+      const servicesData = Array.isArray(servicesRes.data) ? servicesRes.data : 
+                          servicesRes.data?.data || servicesRes.data || [];
+
+      console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData });
+
+      setSources(sourcesData);
+      setCategories(categoriesData);
+      setServices(servicesData);
+    } catch (error) {
+      console.error('Error fetching dropdown values:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error fetching dropdown values: ' + error.message, 'error');
+    } finally {
+      setDropdownLoading(false);
+    }
+  };
+
+  const fetchTasks = async () => {
+    setLoading(true);
+    try {
+      const response = await taskAPI.getAllTasks();
+      console.log('Tasks response:', response);
+      const tasksData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      setTasks(tasksData);
+      setFilteredTasks(tasksData);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error fetching tasks: ' + error.message, 'error');
+      setTasks([]);
+      setFilteredTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Filter tasks based on search and status
@@ -162,16 +178,12 @@ const ModernTaskLogger = () => {
     }
     
     try {
-      // Simulate API call
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const newTask = {
-        id: tasks.length + 1,
-        ...formData,
-        userName: 'Current User',
-        createdAt: new Date().toISOString()
-      };
+      const response = await taskAPI.createTask(formData);
+      console.log('Create task response:', response);
+      const newTask = Array.isArray(response.data) ? response.data[0] : 
+                     response.data?.data || response.data || {};
       
       setTasks([newTask, ...tasks]);
       setFormData({
@@ -185,7 +197,9 @@ const ModernTaskLogger = () => {
       
       showSnackbar('Task created successfully!', 'success');
     } catch (error) {
-      showSnackbar('Error creating task: ' + error.message, 'error');
+      console.error('Error creating task:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error creating task: ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setLoading(false);
     }
@@ -206,12 +220,15 @@ const ModernTaskLogger = () => {
 
   const handleUpdateTask = async () => {
     try {
-      // Simulate API call
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const response = await taskAPI.updateTask(editingTask.id, formData);
+      console.log('Update task response:', response);
+      const updatedTask = Array.isArray(response.data) ? response.data[0] : 
+                         response.data?.data || response.data || {};
       
       const updatedTasks = tasks.map(task => 
-        task.id === editingTask.id ? { ...task, ...formData } : task
+        task.id === editingTask.id ? updatedTask : task
       );
       
       setTasks(updatedTasks);
@@ -219,7 +236,9 @@ const ModernTaskLogger = () => {
       setEditingTask(null);
       showSnackbar('Task updated successfully!', 'success');
     } catch (error) {
-      showSnackbar('Error updating task: ' + error.message, 'error');
+      console.error('Error updating task:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error updating task: ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setLoading(false);
     }
@@ -227,15 +246,41 @@ const ModernTaskLogger = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      // Simulate API call
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await taskAPI.deleteTask(taskId);
       
       const updatedTasks = tasks.filter(task => task.id !== taskId);
       setTasks(updatedTasks);
       showSnackbar('Task deleted successfully!', 'success');
     } catch (error) {
-      showSnackbar('Error deleting task: ' + error.message, 'error');
+      console.error('Error deleting task:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error deleting task: ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle status change directly from the table
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      setLoading(true);
+      
+      const response = await taskAPI.updateTask(taskId, { status: newStatus });
+      console.log('Update status response:', response);
+      const updatedTask = Array.isArray(response.data) ? response.data[0] : 
+                         response.data?.data || response.data || {};
+      
+      const updatedTasks = tasks.map(task => 
+        task.id === taskId ? { ...task, status: newStatus } : task
+      );
+      
+      setTasks(updatedTasks);
+      showSnackbar('Task status updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error updating task status: ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setLoading(false);
     }
@@ -316,9 +361,10 @@ const ModernTaskLogger = () => {
                           value={formData.source}
                           onChange={handleInputChange}
                           label="Source"
+                          disabled={dropdownLoading}
                         >
                           {sources.map(source => (
-                            <MenuItem key={source} value={source}>{source}</MenuItem>
+                            <MenuItem key={source.id || source.value} value={source.value}>{source.value}</MenuItem>
                           ))}
                         </Select>
                       </FormControl>
@@ -332,9 +378,10 @@ const ModernTaskLogger = () => {
                           value={formData.category}
                           onChange={handleInputChange}
                           label="Category"
+                          disabled={dropdownLoading}
                         >
                           {categories.map(category => (
-                            <MenuItem key={category} value={category}>{category}</MenuItem>
+                            <MenuItem key={category.id || category.value} value={category.value}>{category.value}</MenuItem>
                           ))}
                         </Select>
                       </FormControl>
@@ -348,9 +395,10 @@ const ModernTaskLogger = () => {
                           value={formData.service}
                           onChange={handleInputChange}
                           label="Service"
+                          disabled={dropdownLoading}
                         >
                           {services.map(service => (
-                            <MenuItem key={service} value={service}>{service}</MenuItem>
+                            <MenuItem key={service.id || service.value} value={service.value}>{service.value}</MenuItem>
                           ))}
                         </Select>
                       </FormControl>
@@ -391,7 +439,7 @@ const ModernTaskLogger = () => {
                         fullWidth
                         variant="contained"
                         size="large"
-                        disabled={loading}
+                        disabled={loading || dropdownLoading}
                         startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
                         sx={{ 
                           py: 1.5,
@@ -457,7 +505,7 @@ const ModernTaskLogger = () => {
                     TabIndicatorProps={{ style: { background: 'linear-gradient(45deg, #667eea, #764ba2)' } }}
                   >
                     <Tab label="All Tasks" />
-                    <Tab label="My Tasks" />
+                    <Tab label="Task Modification & Activity" />
                   </Tabs>
                   
                   {loading ? (
@@ -473,8 +521,11 @@ const ModernTaskLogger = () => {
                               <TableCell>Date</TableCell>
                               <TableCell>Source</TableCell>
                               <TableCell>Category</TableCell>
+                              <TableCell>Service</TableCell>
                               <TableCell>Description</TableCell>
+                              <TableCell>User</TableCell>
                               <TableCell>Status</TableCell>
+                              <TableCell>Flag</TableCell>
                               <TableCell>Actions</TableCell>
                             </TableRow>
                           </TableHead>
@@ -493,7 +544,9 @@ const ModernTaskLogger = () => {
                                 <TableCell>{task.date}</TableCell>
                                 <TableCell>{task.source}</TableCell>
                                 <TableCell>{task.category}</TableCell>
+                                <TableCell>{task.service}</TableCell>
                                 <TableCell>{task.description}</TableCell>
+                                <TableCell>{task.userName}</TableCell>
                                 <TableCell>
                                   <Chip 
                                     label={task.status} 
@@ -508,6 +561,39 @@ const ModernTaskLogger = () => {
                                       fontWeight: 600
                                     }} 
                                   />
+                                </TableCell>
+                                <TableCell>
+                                  <FormControl fullWidth size="small">
+                                    <Select
+                                      value={task.status}
+                                      onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                                      displayEmpty
+                                      sx={{ 
+                                        minWidth: 120,
+                                        '& .MuiSelect-select': {
+                                          py: 0.5,
+                                          px: 1
+                                        }
+                                      }}
+                                    >
+                                      {statuses.map(status => (
+                                        <MenuItem key={status} value={status}>
+                                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <FlagIcon 
+                                              sx={{ 
+                                                fontSize: 16, 
+                                                mr: 1,
+                                                color: status === 'Completed' ? '#10b981' : 
+                                                       status === 'In Progress' ? '#3b82f6' : 
+                                                       status === 'Cancelled' ? '#ef4444' : '#f59e0b'
+                                              }} 
+                                            />
+                                            {status}
+                                          </Box>
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
                                 </TableCell>
                                 <TableCell>
                                   <IconButton 
@@ -544,7 +630,7 @@ const ModernTaskLogger = () => {
                   </Typography>
                   
                   <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                    {mockTasks.slice(0, 5).map((task, index) => (
+                    {tasks.slice(0, 5).map((task, index) => (
                       <Box 
                         key={task.id} 
                         sx={{ 
@@ -623,9 +709,10 @@ const ModernTaskLogger = () => {
                     value={formData.source}
                     onChange={handleInputChange}
                     label="Source"
+                    disabled={dropdownLoading}
                   >
                     {sources.map(source => (
-                      <MenuItem key={source} value={source}>{source}</MenuItem>
+                      <MenuItem key={source.id || source.value} value={source.value}>{source.value}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -639,9 +726,10 @@ const ModernTaskLogger = () => {
                     value={formData.category}
                     onChange={handleInputChange}
                     label="Category"
+                    disabled={dropdownLoading}
                   >
                     {categories.map(category => (
-                      <MenuItem key={category} value={category}>{category}</MenuItem>
+                      <MenuItem key={category.id || category.value} value={category.value}>{category.value}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -655,9 +743,10 @@ const ModernTaskLogger = () => {
                     value={formData.service}
                     onChange={handleInputChange}
                     label="Service"
+                    disabled={dropdownLoading}
                   >
                     {services.map(service => (
-                      <MenuItem key={service} value={service}>{service}</MenuItem>
+                      <MenuItem key={service.id || service.value} value={service.value}>{service.value}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -705,7 +794,7 @@ const ModernTaskLogger = () => {
               variant="contained" 
               color="primary"
               startIcon={<SaveIcon />}
-              disabled={loading}
+              disabled={loading || dropdownLoading}
             >
               {loading ? 'Updating...' : 'Update Task'}
             </Button>
