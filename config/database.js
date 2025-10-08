@@ -42,7 +42,9 @@ if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
           /ESOCKETTIMEDOUT/,
           /EPIPE/,
           /SequelizeConnectionError/,
-          /SequelizeConnectionRefusedError/
+          /SequelizeConnectionRefusedError/,
+          /AccessDenied/,
+          /ER_ACCESS_DENIED_ERROR/
         ]
       },
       timezone: '+00:00', // Set timezone to UTC
