@@ -1,42 +1,40 @@
-const axios = require('axios');
+// Test script to verify language change functionality
+const fs = require('fs');
+const path = require('path');
 
-async function testLanguageChange() {
-  let authToken = null;
-  
-  try {
-    console.log('🧪 Testing language change functionality...\n');
-    
-    // 1. Test login
-    console.log('1. Testing login...');
-    const loginResponse = await axios.post('http://localhost:5001/api/auth/login', {
-      username: 'admin',
-      password: 'admin123'
-    });
-    authToken = loginResponse.data.token;
-    console.log('✅ Login successful\n');
-    
-    const config = { 
-      headers: { 
-        'Authorization': `Bearer ${authToken}` 
-      } 
-    };
-    
-    // 2. Test fetching current user
-    console.log('2. Testing fetch current user...');
-    const currentUserResponse = await axios.get('http://localhost:5001/api/auth/me', config);
-    console.log('✅ Current user fetched successfully');
-    console.log('User language preference:', currentUserResponse.data.language || 'default (en)');
-    console.log('');
-    
-    console.log('🎉 Language change functionality test completed!');
-    
-  } catch (error) {
-    console.error('❌ Error during testing:', error.message);
-    if (error.response) {
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-    }
-  }
+// Check if translation files exist and have the required keys
+const enTranslations = require('./client/src/services/translations/en.js').default;
+const bnTranslations = require('./client/src/services/translations/bn.js').default;
+
+console.log('Testing language change functionality...\n');
+
+// Check English translations
+console.log('1. Checking English translations...');
+const enNav = enTranslations.navigation;
+if (enNav.meetings && enNav.errorMonitoring) {
+  console.log('✅ English: Meetings and Error Monitoring translations found');
+} else {
+  console.log('❌ English: Missing Meetings or Error Monitoring translations');
 }
 
-testLanguageChange();
+// Check Bangla translations
+console.log('\n2. Checking Bangla translations...');
+const bnNav = bnTranslations.navigation;
+if (bnNav.meetings && bnNav.errorMonitoring) {
+  console.log('✅ Bangla: Meetings and Error Monitoring translations found');
+} else {
+  console.log('❌ Bangla: Missing Meetings or Error Monitoring translations');
+}
+
+console.log('\n3. Checking Layout component...');
+// Read the Layout component to verify it uses translations
+const layoutPath = path.join(__dirname, 'client/src/components/Layout.js');
+const layoutContent = fs.readFileSync(layoutPath, 'utf8');
+
+if (layoutContent.includes("t('navigation.meetings')") && layoutContent.includes("t('navigation.errorMonitoring')")) {
+  console.log('✅ Layout component uses translation keys for Meetings and Error Monitoring');
+} else {
+  console.log('❌ Layout component may not be using translation keys properly');
+}
+
+console.log('\n🎉 Language change functionality test completed!');

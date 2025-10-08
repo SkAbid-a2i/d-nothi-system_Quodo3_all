@@ -130,8 +130,11 @@ export const fileAPI = {
 // Log endpoints
 export const logAPI = {
   getLogs: (params) => api.get('/logs', { params }),
+  getFrontendLogs: (params) => api.get('/logs/frontend', { params }),
+  getAllLogs: (params) => api.get('/logs/all', { params }),
   getRecentLogs: () => api.get('/logs/recent'),
   analyzeLogs: (params) => api.get('/logs/analyze', { params }),
+  sendFrontendLog: (logData) => api.post('/logs/frontend', logData),
 };
 
 // Permission template endpoints

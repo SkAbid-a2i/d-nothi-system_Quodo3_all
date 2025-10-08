@@ -4,6 +4,8 @@ class FrontendLogger {
     this.apiEndpoint = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
     this.sessionId = this.generateSessionId();
     this.userId = null;
+    this.isSending = false;
+    this.pendingLogs = [];
   }
 
   generateSessionId() {
@@ -16,8 +18,7 @@ class FrontendLogger {
 
   async sendLog(level, message, metadata = {}) {
     try {
-      // In production, we might want to send logs to the backend
-      // For now, we'll just log to console but with structured data
+      // Create log entry
       const logEntry = {
         timestamp: new Date().toISOString(),
         level,
@@ -35,17 +36,54 @@ class FrontendLogger {
 
       console.log(`[Frontend Log] ${level.toUpperCase()}:`, message, metadata);
 
-      // In a real production environment, you might send this to your backend
-      // For now, we'll just store in localStorage for debugging
+      // Store in localStorage for debugging
       this.storeLog(logEntry);
 
-      // If we're in production and have a logging endpoint, send to backend
+      // Send to backend in production
       if (process.env.NODE_ENV === 'production' && this.apiEndpoint) {
-        // This would be implemented in a real application
-        // await this.sendToBackend(logEntry);
+        await this.sendToBackend(logEntry);
+      } else if (this.apiEndpoint) {
+        // Also send in development for testing
+        await this.sendToBackend(logEntry);
       }
     } catch (error) {
       console.error('Failed to log:', error);
+    }
+  }
+
+  async sendToBackend(logEntry) {
+    try {
+      // Add to pending logs
+      this.pendingLogs.push(logEntry);
+      
+      // If already sending, return
+      if (this.isSending) return;
+      
+      this.isSending = true;
+      
+      // Send all pending logs
+      while (this.pendingLogs.length > 0) {
+        const logToSend = this.pendingLogs[0];
+        const response = await fetch(`${this.apiEndpoint}/logs/frontend`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(logToSend)
+        });
+        
+        if (response.ok) {
+          // Remove successfully sent log
+          this.pendingLogs.shift();
+        } else {
+          // If failed, wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send log to backend:', error);
+    } finally {
+      this.isSending = false;
     }
   }
 
@@ -120,6 +158,25 @@ class FrontendLogger {
     });
   }
 
+  // Log field visibility issues
+  logFieldIssue(field, issue, details = {}) {
+    this.warn('Field Issue', {
+      field,
+      issue,
+      ...details
+    });
+  }
+
+  // Log API errors
+  logApiError(url, error, details = {}) {
+    this.error('API Error', {
+      url,
+      error: error.message,
+      stack: error.stack,
+      ...details
+    });
+  }
+
   // Get stored logs
   getStoredLogs() {
     try {
@@ -176,6 +233,35 @@ window.addEventListener('unhandledrejection', (event) => {
     message: event.reason?.message || 'Unknown reason',
     stack: event.reason?.stack || 'No stack trace'
   });
+});
+
+// Monitor DOM changes for field visibility tracking
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.type === 'childList') {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // Check for elements that might be fields
+          const fields = node.querySelectorAll('input, select, textarea');
+          fields.forEach((field) => {
+            if (!field.offsetParent && field.style.display !== 'none') {
+              // Field is not visible but should be
+              frontendLogger.warn('Field Visibility Issue', {
+                field: field.name || field.id || field.className,
+                message: 'Field is not visible in UI'
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+});
+
+// Start observing
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
 });
 
 export default frontendLogger;

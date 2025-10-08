@@ -113,6 +113,7 @@ const dropdownRoutes = require('./routes/dropdown.routes');
 const reportRoutes = require('./routes/report.routes');
 const auditRoutes = require('./routes/audit.routes');
 const logRoutes = require('./routes/log.routes');
+const frontendLogRoutes = require('./routes/frontendLog.routes');
 const permissionRoutes = require('./routes/permission.routes');
 const fileRoutes = require('./routes/file.routes');
 const meetingRoutes = require('./routes/meeting.routes');
@@ -157,6 +158,11 @@ app.use('/api/logs', (req, res, next) => {
   logger.info('Log routes accessed', { endpoint: '/api/logs' + req.url });
   next();
 }, logRoutes);
+
+app.use('/api/frontend-logs', (req, res, next) => {
+  logger.info('Frontend log routes accessed', { endpoint: '/api/frontend-logs' + req.url });
+  next();
+}, frontendLogRoutes);
 
 app.use('/api/permissions', (req, res, next) => {
   logger.info('Permission routes accessed', { endpoint: '/api/permissions' + req.url });
