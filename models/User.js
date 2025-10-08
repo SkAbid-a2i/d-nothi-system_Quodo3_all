@@ -50,6 +50,10 @@ const User = sequelize.define('User', {
   usedStorage: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  office: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   }
 }, {
   timestamps: true,

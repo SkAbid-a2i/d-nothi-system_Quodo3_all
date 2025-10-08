@@ -129,13 +129,25 @@ export const AuthProvider = ({ children }) => {
     frontendLogger.info('User logged out');
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+    // Also update localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      const updatedUser = { ...parsedUser, ...userData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
     loading,
     login,
     logout,
-    getCurrentUser
+    getCurrentUser,
+    updateUser
   };
 
   // Show loading state while checking authentication

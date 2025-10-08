@@ -37,6 +37,13 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
   try {
     const { date, source, category, service, description, status = 'Pending', files = [] } = req.body;
 
+    // Debug user info
+    console.log('User info:', {
+      id: req.user.id,
+      fullName: req.user.fullName,
+      office: req.user.office
+    });
+    
     // Create new task
     const task = await Task.create({
       date,
@@ -48,7 +55,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       files,
       userId: req.user.id,
       userName: req.user.fullName,
-      office: req.user.office
+      office: req.user.office || null
     });
 
     // Notify about task creation

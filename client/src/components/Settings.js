@@ -47,8 +47,7 @@ const Settings = ({ darkMode, setDarkMode }) => {
   const [profileData, setProfileData] = useState({
     fullName: '',
     email: '',
-    username: '',
-    office: ''
+    username: ''
   });
   
   // Password state
@@ -64,8 +63,7 @@ const Settings = ({ darkMode, setDarkMode }) => {
       setProfileData({
         fullName: user.fullName || '',
         email: user.email || '',
-        username: user.username || '',
-        office: user.office || ''
+        username: user.username || ''
       });
     }
   }, [user]);
@@ -88,7 +86,14 @@ const Settings = ({ darkMode, setDarkMode }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await authAPI.updateProfile(profileData);
+      // Only send fields that exist in the database
+      const profileUpdateData = {
+        fullName: profileData.fullName,
+        email: profileData.email
+        // Exclude office field if it doesn't exist in the database
+      };
+      
+      const response = await authAPI.updateProfile(profileUpdateData);
       // Update user in context
       updateUser(response.data);
       setSuccess('Profile updated successfully!');
@@ -222,28 +227,6 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       value={profileData.username}
                       onChange={(e) => handleProfileChange('username', e.target.value)}
                       disabled
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': {
-                            borderColor: 'divider',
-                          },
-                          '&:hover fieldset': {
-                            borderColor: 'primary.main',
-                          },
-                          '&.Mui-focused fieldset': {
-                            borderColor: 'primary.main',
-                          }
-                        }
-                      }}
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Office"
-                      value={profileData.office}
-                      onChange={(e) => handleProfileChange('office', e.target.value)}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
