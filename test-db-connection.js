@@ -1,37 +1,57 @@
-// Simple database connection test
-require('dotenv').config();
+// Simple script to test database connection
+const { Sequelize } = require('sequelize');
 
-console.log('Database Connection Parameters:');
-console.log('============================');
-console.log('Host:', process.env.DB_HOST);
-console.log('Port:', process.env.DB_PORT);
-console.log('User:', process.env.DB_USER);
-console.log('Database:', process.env.DB_NAME);
-console.log('SSL Enabled:', process.env.DB_SSL);
-console.log('NODE_ENV:', process.env.NODE_ENV);
-
-// Test if we can connect using mysql2 directly
-const mysql = require('mysql2');
-
-console.log('\nTesting direct MySQL connection...');
-
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('Direct MySQL connection failed:', err.message);
-    console.error('Error code:', err.code);
-    console.error('Error number:', err.errno);
-    process.exit(1);
+// Use the provided credentials
+const sequelize = new Sequelize(
+  'd_nothi_db',  // DB_NAME
+  '4VmPGSU3EFyEhLJ.root',  // DB_USER
+  'gWe9gfuhBBE50H1u',  // DB_PASSWORD
+  {
+    host: 'gateway01.eu-central-1.prod.aws.tidbcloud.com',  // DB_HOST
+    port: 4000,  // DB_PORT
+    dialect: 'mysql',
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false
+      }
+    },
+    logging: console.log,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    timezone: '+00:00'
   }
-  console.log('✅ Direct MySQL connection successful!');
-  connection.end();
-  process.exit(0);
-});
+);
+
+async function testConnection() {
+  try {
+    console.log('Testing database connection...');
+    await sequelize.authenticate();
+    console.log('✅ Connection has been established successfully.');
+    
+    // Test a simple query
+    const [results] = await sequelize.query('SELECT 1 as test');
+    console.log('✅ Simple query test passed:', results);
+    
+    await sequelize.close();
+    console.log('🔒 Connection closed.');
+  } catch (error) {
+    console.error('❌ Unable to connect to the database:', error.message);
+    if (error.parent) {
+      console.error('Details:', error.parent.message);
+    }
+    
+    try {
+      await sequelize.close();
+      console.log('🔒 Connection closed.');
+    } catch (closeError) {
+      console.error('❌ Error closing connection:', closeError.message);
+    }
+  }
+}
+
+// Run the test
+testConnection();

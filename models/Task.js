@@ -8,7 +8,7 @@ const Task = sequelize.define('Task', {
     autoIncrement: true
   },
   date: {
-    type: DataTypes.DATEONLY, // Changed to DATEONLY for better handling
+    type: DataTypes.DATE, // Changed back to DATE to match database
     allowNull: false,
     validate: {
       notEmpty: {

@@ -53,6 +53,21 @@ const PermissionTemplateManagement = () => {
     delete: { open: false, template: null }
   });
   
+  // Define all possible permissions
+  const allPermissions = [
+    'canCreateTasks',
+    'canAssignTasks',
+    'canViewAllTasks',
+    'canCreateLeaves',
+    'canApproveLeaves',
+    'canViewAllLeaves',
+    'canManageUsers',
+    'canManageDropdowns',
+    'canViewReports',
+    'canManageFiles',
+    'canViewLogs'
+  ];
+
   // Form state
   const [formState, setFormState] = useState({
     name: '',
@@ -161,21 +176,17 @@ const PermissionTemplateManagement = () => {
     
     // Pre-populate form for edit
     if (dialogType === 'edit' && template) {
+      // Ensure all permissions are present in the template
+      const templatePermissions = { ...formState.permissions }; // Start with default structure
+      Object.keys(template.permissions || {}).forEach(key => {
+        if (allPermissions.includes(key)) {
+          templatePermissions[key] = template.permissions[key];
+        }
+      });
+      
       setFormState({
         name: template.name,
-        permissions: template.permissions || {
-          canCreateTasks: false,
-          canAssignTasks: false,
-          canViewAllTasks: false,
-          canCreateLeaves: false,
-          canApproveLeaves: false,
-          canViewAllLeaves: false,
-          canManageUsers: false,
-          canManageDropdowns: false,
-          canViewReports: false,
-          canManageFiles: false,
-          canViewLogs: false
-        }
+        permissions: templatePermissions
       });
     } else if (dialogType === 'create') {
       // Reset form for create
@@ -474,17 +485,17 @@ const PermissionTemplateManagement = () => {
                 </Typography>
                 
                 <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-                  {Object.entries(formState.permissions).map(([key, value]) => (
+                  {allPermissions.map((permission) => (
                     <FormControlLabel
-                      key={key}
+                      key={permission}
                       control={
                         <Checkbox
-                          checked={value}
-                          onChange={() => handlePermissionChange(key)}
+                          checked={formState.permissions[permission] || false}
+                          onChange={() => handlePermissionChange(permission)}
                           color="primary"
                         />
                       }
-                      label={key.replace(/([A-Z])/g, ' $1').trim()}
+                      label={permission.replace(/([A-Z])/g, ' $1').trim()}
                       sx={{ width: '50%', minWidth: 200, mb: 1 }}
                     />
                   ))}

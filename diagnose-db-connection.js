@@ -1,89 +1,111 @@
-require('dotenv').config();
-const mysql = require('mysql2');
+// Detailed database connection diagnostic script
+const { Sequelize } = require('sequelize');
 
-console.log('Database Connection Diagnosis');
-console.log('============================');
+console.log('=== Database Connection Diagnostic ===');
 
-// Check environment variables
-console.log('Environment Variables:');
-console.log('- DB_HOST:', process.env.DB_HOST || 'NOT SET');
-console.log('- DB_PORT:', process.env.DB_PORT || 'NOT SET');
-console.log('- DB_NAME:', process.env.DB_NAME || 'NOT SET');
-console.log('- DB_USER:', process.env.DB_USER || 'NOT SET');
-console.log('- DB_PASSWORD:', process.env.DB_PASSWORD ? '[SET - LENGTH: ' + process.env.DB_PASSWORD.length + ']' : 'NOT SET');
+// Environment variables
+const config = {
+  host: 'gateway01.eu-central-1.prod.aws.tidbcloud.com',
+  port: 4000,
+  username: '4VmPGSU3EFyEhLJ.root',
+  password: 'gWe9gfuhBBE50H1u',
+  database: 'd_nothi_db'
+};
 
-console.log('\nAttempting connection with SSL...');
+console.log('Connection Configuration:');
+console.log('- Host:', config.host);
+console.log('- Port:', config.port);
+console.log('- Username:', config.username);
+console.log('- Database:', config.database);
+console.log('- Password length:', config.password.length);
 
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: false
+// Create sequelize instance with detailed logging
+const sequelize = new Sequelize(config.database, config.username, config.password, {
+  host: config.host,
+  port: config.port,
+  dialect: 'mysql',
+  dialectOptions: {
+    ssl: {
+      rejectUnauthorized: false
+    }
   },
-  connectTimeout: 10000 // 10 second timeout
+  logging: (msg) => console.log('SQL Log:', msg),
+  pool: {
+    max: 1,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  timezone: '+00:00',
+  benchmark: true
 });
 
-connection.connect((err) => {
-  if (err) {
-    console.error('❌ Connection failed:');
-    console.error('  Error message:', err.message);
-    console.error('  Error code:', err.code);
-    console.error('  Error number:', err.errno);
+async function diagnoseConnection() {
+  try {
+    console.log('\n1. Testing basic connection...');
+    await sequelize.authenticate();
+    console.log('✅ Basic connection successful');
     
-    // Common error explanations
-    if (err.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.log('\n💡 Possible causes:');
-      console.log('  1. Incorrect username or password');
-      console.log('  2. User does not have permission to connect from this IP');
-      console.log('  3. User does not have permissions on this database');
-      console.log('  4. Account is locked or expired');
-    } else if (err.code === 'ECONNREFUSED') {
-      console.log('\n💡 Possible causes:');
-      console.log('  1. Database server is not running');
-      console.log('  2. Incorrect host or port');
-      console.log('  3. Network/firewall issues');
-    } else if (err.code === 'ETIMEDOUT') {
-      console.log('\n💡 Possible causes:');
-      console.log('  1. Network connectivity issues');
-      console.log('  2. Firewall blocking connection');
-      console.log('  3. Database server overload');
+    console.log('\n2. Testing query execution...');
+    const [results] = await sequelize.query('SELECT 1 as connection_test');
+    console.log('✅ Query execution successful:', results);
+    
+    console.log('\n3. Testing database access...');
+    const [dbResults] = await sequelize.query('SHOW DATABASES');
+    const databases = dbResults.map(row => row.Database);
+    console.log('✅ Database access successful');
+    console.log('Available databases:', databases.filter(db => db.includes('nothi')));
+    
+    if (databases.includes(config.database)) {
+      console.log(`\n4. Testing access to ${config.database}...`);
+      await sequelize.query(`USE \`${config.database}\``);
+      console.log(`✅ Access to ${config.database} successful`);
+      
+      console.log('\n5. Testing table listing...');
+      const [tableResults] = await sequelize.query('SHOW TABLES');
+      console.log('✅ Table listing successful');
+      console.log('Tables found:', tableResults);
+    } else {
+      console.log(`\n⚠️  Database ${config.database} not found in available databases`);
     }
     
-    return;
-  }
-  
-  console.log('✅ Connected successfully!');
-  
-  // Test basic query
-  connection.query('SELECT USER(), DATABASE()', (error, results) => {
-    if (error) {
-      console.error('❌ Query failed:', error.message);
-      connection.end();
-      return;
-    }
+    await sequelize.close();
+    console.log('\n✅ All diagnostics passed successfully!');
     
-    console.log('✅ Query successful:');
-    console.log('  Current user:', results[0]['USER()']);
-    console.log('  Current database:', results[0]['DATABASE()']);
+  } catch (error) {
+    console.error('\n❌ Diagnostic failed:', error.message);
     
-    // Test table access
-    connection.query('SHOW TABLES', (error, results) => {
-      if (error) {
-        console.error('❌ SHOW TABLES failed:', error.message);
-        connection.end();
-        return;
+    if (error.parent) {
+      console.error('Parent error:', error.parent.message);
+      
+      // Check for specific error types
+      if (error.parent.code === 'ER_ACCESS_DENIED_ERROR') {
+        console.error('\n🔐 ACCESS DENIED - Possible causes:');
+        console.error('1. Incorrect username or password');
+        console.error('2. User does not have access from this IP address');
+        console.error('3. User does not have required privileges');
+        console.error('4. Account may be locked or expired');
+      } else if (error.parent.code === 'ECONNREFUSED') {
+        console.error('\n🔌 CONNECTION REFUSED - Possible causes:');
+        console.error('1. Database server is not running');
+        console.error('2. Incorrect host or port');
+        console.error('3. Firewall blocking connection');
+      } else if (error.parent.code === 'ENOTFOUND') {
+        console.error('\n🔍 HOST NOT FOUND - Possible causes:');
+        console.error('1. Incorrect hostname');
+        console.error('2. DNS resolution issues');
+        console.error('3. Network connectivity problems');
       }
-      
-      console.log('✅ Database tables:');
-      results.forEach(row => {
-        console.log('  -', Object.values(row)[0]);
-      });
-      
-      connection.end();
-      console.log('\n🔒 Connection closed.');
-    });
-  });
-});
+    }
+    
+    try {
+      await sequelize.close();
+      console.log('🔒 Connection closed.');
+    } catch (closeError) {
+      console.error('❌ Error closing connection:', closeError.message);
+    }
+  }
+}
+
+// Run diagnostics
+diagnoseConnection();
