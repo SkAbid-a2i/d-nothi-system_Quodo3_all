@@ -541,16 +541,16 @@ const ModernTaskLogger = () => {
                         <Table>
                           <TableHead>
                             <TableRow>
-                              <TableCell>Date</TableCell>
-                              <TableCell>Source</TableCell>
-                              <TableCell>Category</TableCell>
-                              <TableCell>Service</TableCell>
-                              <TableCell>Description</TableCell>
-                              <TableCell>User</TableCell>
-                              <TableCell>User Info</TableCell>
-                              <TableCell>Status</TableCell>
-                              <TableCell>Flag</TableCell>
-                              <TableCell>Actions</TableCell>
+                              <TableCell align="center">Date</TableCell>
+                              <TableCell align="center">Source</TableCell>
+                              <TableCell align="center">Category</TableCell>
+                              <TableCell align="center">Service</TableCell>
+                              <TableCell align="center">Description</TableCell>
+                              <TableCell align="center">User</TableCell>
+                              <TableCell align="center">User Info</TableCell>
+                              <TableCell align="center">Status</TableCell>
+                              <TableCell align="center">Flag</TableCell>
+                              <TableCell align="center">Actions</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -565,14 +565,14 @@ const ModernTaskLogger = () => {
                                   }
                                 }}
                               >
-                                <TableCell>{task.date}</TableCell>
-                                <TableCell>{task.source}</TableCell>
-                                <TableCell>{task.category}</TableCell>
-                                <TableCell>{task.service}</TableCell>
-                                <TableCell>{task.description}</TableCell>
-                                <TableCell>{task.userName}</TableCell>
-                                <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                                <TableCell>
+                                <TableCell align="center">{task.date}</TableCell>
+                                <TableCell align="center">{task.source}</TableCell>
+                                <TableCell align="center">{task.category}</TableCell>
+                                <TableCell align="center">{task.service}</TableCell>
+                                <TableCell align="center">{task.description}</TableCell>
+                                <TableCell align="center">{task.userName}</TableCell>
+                                <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
+                                <TableCell align="center">
                                   <Chip 
                                     label={task.status} 
                                     size="small"
@@ -587,7 +587,7 @@ const ModernTaskLogger = () => {
                                     }} 
                                   />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="center">
                                   <FormControl fullWidth size="small">
                                     <Select
                                       value={task.status}
@@ -620,7 +620,7 @@ const ModernTaskLogger = () => {
                                     </Select>
                                   </FormControl>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="center">
                                   <IconButton 
                                     size="small" 
                                     color="primary" 

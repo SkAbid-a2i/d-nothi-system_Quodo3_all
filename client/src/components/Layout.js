@@ -178,6 +178,13 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     fetchNotifications();
   };
 
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    setUnreadCount(0);
+    // Also clear notification history in service
+    notificationService.clearNotificationHistory();
+  };
+
   const handleMenuClose = () => {
     setAnchorEl(null);
     setNotificationAnchor(null);
@@ -228,306 +235,179 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Listen for real-time notifications
   useEffect(() => {
-    const handleTaskCreated = (data) => {
+    // Handle all notifications through a unified handler
+    const handleAllNotifications = (data) => {
+      const notificationType = data.type;
+      let message = '';
+      let displayType = 'info';
+      
+      // Generate appropriate message based on notification type
+      switch(notificationType) {
+        case 'taskCreated':
+          message = `New task created: ${data.task?.description || 'No description'}`;
+          displayType = 'info';
+          break;
+        case 'taskUpdated':
+          message = `Task updated: ${data.task?.description || 'No description'}`;
+          displayType = 'info';
+          break;
+        case 'taskDeleted':
+          message = `Task deleted: ${data.task?.description || 'No description'}`;
+          displayType = 'warning';
+          break;
+        case 'leaveRequested':
+          message = `New leave request from ${data.leave?.userName || data.leave?.userId || 'Unknown user'}`;
+          displayType = 'info';
+          break;
+        case 'leaveApproved':
+          message = `Leave request approved for ${data.leave?.userName || data.leave?.userId || 'Unknown user'}`;
+          displayType = 'success';
+          break;
+        case 'leaveRejected':
+          message = `Leave request rejected for ${data.leave?.userName || data.leave?.userId || 'Unknown user'}`;
+          displayType = 'warning';
+          break;
+        case 'userCreated':
+          message = `New user created: ${data.user?.username || data.user?.fullName || 'Unknown user'}`;
+          displayType = 'info';
+          break;
+        case 'userUpdated':
+          message = `User updated: ${data.user?.username || data.user?.fullName || 'Unknown user'}`;
+          displayType = 'info';
+          break;
+        case 'userDeleted':
+          message = `User deleted: ${data.username || data.userId || 'Unknown user'}`;
+          displayType = 'warning';
+          break;
+        case 'dropdownCreated':
+          message = `New dropdown value created: ${data.dropdown?.value || 'Unknown value'}`;
+          displayType = 'info';
+          break;
+        case 'dropdownUpdated':
+          message = `Dropdown value updated: ${data.dropdown?.value || 'Unknown value'}`;
+          displayType = 'info';
+          break;
+        case 'dropdownDeleted':
+          message = `Dropdown value deleted: ${data.dropdownValue || 'Unknown value'}`;
+          displayType = 'warning';
+          break;
+        case 'permissionTemplateCreated':
+          message = `New permission template created: ${data.template?.name || 'Unknown template'}`;
+          displayType = 'info';
+          break;
+        case 'permissionTemplateUpdated':
+          message = `Permission template updated: ${data.template?.name || 'Unknown template'}`;
+          displayType = 'info';
+          break;
+        case 'permissionTemplateDeleted':
+          message = `Permission template deleted: ${data.templateName || 'Unknown template'}`;
+          displayType = 'warning';
+          break;
+        case 'meetingCreated':
+          message = `New meeting scheduled: ${data.meeting?.subject || 'No subject'}`;
+          displayType = 'info';
+          break;
+        case 'meetingUpdated':
+          message = `Meeting updated: ${data.meeting?.subject || 'No subject'}`;
+          displayType = 'info';
+          break;
+        case 'meetingDeleted':
+          message = `Meeting cancelled: ${data.meeting?.subject || 'No subject'}`;
+          displayType = 'warning';
+          break;
+        default:
+          message = data.message || `New notification: ${notificationType}`;
+          displayType = 'info';
+      }
+      
       const newNotification = {
-        id: Date.now(),
-        message: `New task created: ${data.task.description}`,
+        id: Date.now() + Math.random(),
+        message: message,
         time: new Date().toLocaleString(),
-        type: 'taskCreated',
-        displayType: 'info',
-        read: false
+        type: notificationType,
+        displayType: displayType,
+        read: false,
+        data: data // Store original data for potential future use
       };
       
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]); // Keep only last 10
+      setNotifications(prev => [newNotification, ...prev.slice(0, 19)]); // Keep only last 20
       setUnreadCount(prev => prev + 1);
     };
 
-    const handleTaskUpdated = (data) => {
-      const action = data.deleted ? 'deleted' : 'updated';
-      const newNotification = {
-        id: Date.now(),
-        message: `Task ${action}: ${data.task.description}`,
-        time: new Date().toLocaleString(),
-        type: 'taskUpdated',
-        displayType: data.deleted ? 'warning' : 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleLeaveRequested = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `New leave request from ${data.leave.userName}`,
-        time: new Date().toLocaleString(),
-        type: 'leaveRequested',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleLeaveApproved = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Leave request approved for ${data.leave.userName}`,
-        time: new Date().toLocaleString(),
-        type: 'leaveApproved',
-        displayType: 'success',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleLeaveRejected = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Leave request rejected for ${data.leave.userName}`,
-        time: new Date().toLocaleString(),
-        type: 'leaveRejected',
-        displayType: 'warning',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleUserCreated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `New user created: ${data.user.username}`,
-        time: new Date().toLocaleString(),
-        type: 'userCreated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleUserUpdated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `User updated: ${data.user.username}`,
-        time: new Date().toLocaleString(),
-        type: 'userUpdated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleUserDeleted = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `User deleted: ${data.username}`,
-        time: new Date().toLocaleString(),
-        type: 'userDeleted',
-        displayType: 'warning',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleDropdownCreated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `New dropdown value created: ${data.dropdown.value}`,
-        time: new Date().toLocaleString(),
-        type: 'dropdownCreated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleDropdownUpdated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Dropdown value updated: ${data.dropdown.value}`,
-        time: new Date().toLocaleString(),
-        type: 'dropdownUpdated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleDropdownDeleted = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Dropdown value deleted: ${data.dropdownValue}`,
-        time: new Date().toLocaleString(),
-        type: 'dropdownDeleted',
-        displayType: 'warning',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handlePermissionTemplateCreated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `New permission template created: ${data.template.name}`,
-        time: new Date().toLocaleString(),
-        type: 'permissionTemplateCreated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handlePermissionTemplateUpdated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Permission template updated: ${data.template.name}`,
-        time: new Date().toLocaleString(),
-        type: 'permissionTemplateUpdated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handlePermissionTemplateDeleted = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Permission template deleted: ${data.templateName}`,
-        time: new Date().toLocaleString(),
-        type: 'permissionTemplateDeleted',
-        displayType: 'warning',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleMeetingCreated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `New meeting scheduled: ${data.meeting.subject}`,
-        time: new Date().toLocaleString(),
-        type: 'meetingCreated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleMeetingUpdated = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Meeting updated: ${data.meeting.subject}`,
-        time: new Date().toLocaleString(),
-        type: 'meetingUpdated',
-        displayType: 'info',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    const handleMeetingDeleted = (data) => {
-      const newNotification = {
-        id: Date.now(),
-        message: `Meeting cancelled: ${data.meeting.subject}`,
-        time: new Date().toLocaleString(),
-        type: 'meetingDeleted',
-        displayType: 'warning',
-        read: false
-      };
-      
-      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    // Subscribe to all notifications
-    notificationService.onTaskCreated(handleTaskCreated);
-    notificationService.onTaskUpdated(handleTaskUpdated);
-    notificationService.onLeaveRequested(handleLeaveRequested);
-    notificationService.onLeaveApproved(handleLeaveApproved);
-    notificationService.onLeaveRejected(handleLeaveRejected);
-    notificationService.onUserCreated(handleUserCreated);
-    notificationService.onUserUpdated(handleUserUpdated);
-    notificationService.onUserDeleted(handleUserDeleted);
-    notificationService.onDropdownCreated(handleDropdownCreated);
-    notificationService.onDropdownUpdated(handleDropdownUpdated);
-    notificationService.onDropdownDeleted(handleDropdownDeleted);
-    notificationService.onPermissionTemplateCreated(handlePermissionTemplateCreated);
-    notificationService.onPermissionTemplateUpdated(handlePermissionTemplateUpdated);
-    notificationService.onPermissionTemplateDeleted(handlePermissionTemplateDeleted);
-    notificationService.onMeetingCreated(handleMeetingCreated);
-    notificationService.onMeetingUpdated(handleMeetingUpdated);
-    notificationService.onMeetingDeleted(handleMeetingDeleted);
+    // Subscribe to all notifications through the unified handler
+    notificationService.onAllNotifications(handleAllNotifications);
 
     // Cleanup on unmount
     return () => {
-      notificationService.off('taskCreated', handleTaskCreated);
-      notificationService.off('taskUpdated', handleTaskUpdated);
-      notificationService.off('leaveRequested', handleLeaveRequested);
-      notificationService.off('leaveApproved', handleLeaveApproved);
-      notificationService.off('leaveRejected', handleLeaveRejected);
-      notificationService.off('userCreated', handleUserCreated);
-      notificationService.off('userUpdated', handleUserUpdated);
-      notificationService.off('userDeleted', handleUserDeleted);
-      notificationService.off('dropdownCreated', handleDropdownCreated);
-      notificationService.off('dropdownUpdated', handleDropdownUpdated);
-      notificationService.off('dropdownDeleted', handleDropdownDeleted);
-      notificationService.off('permissionTemplateCreated', handlePermissionTemplateCreated);
-      notificationService.off('permissionTemplateUpdated', handlePermissionTemplateUpdated);
-      notificationService.off('permissionTemplateDeleted', handlePermissionTemplateDeleted);
-      notificationService.off('meetingCreated', handleMeetingCreated);
-      notificationService.off('meetingUpdated', handleMeetingUpdated);
-      notificationService.off('meetingDeleted', handleMeetingDeleted);
+      // Remove all listeners
+      notificationService.listeners.clear();
     };
   }, []);
 
   // Filter notifications based on current page
   const getFilteredNotifications = () => {
-    // If we're on the leave page, only show leave-related notifications
-    if (location.pathname === '/leaves') {
-      return notifications.filter(notification => 
-        notification.type === 'leaveRequested' ||
-        notification.type === 'leaveApproved' ||
-        notification.type === 'leaveRejected'
-      );
-    }
-    // If we're on the meetings page, only show meeting-related notifications
-    else if (location.pathname === '/meetings') {
-      return notifications.filter(notification => 
-        notification.type === 'meetingCreated' ||
-        notification.type === 'meetingUpdated' ||
-        notification.type === 'meetingDeleted'
-      );
-    }
-    // For other pages, show all notifications
+    // Show all notifications in the unified notification system
     return notifications;
+  };
+
+  // Group notifications by type for better organization
+  const groupNotificationsByType = () => {
+    const grouped = {
+      meetings: [],
+      leaves: [],
+      tasks: [],
+      users: [],
+      dropdowns: [],
+      permissions: [],
+      system: [],
+      other: []
+    };
+
+    notifications.forEach(notification => {
+      if (notification.type.includes('meeting')) {
+        grouped.meetings.push(notification);
+      } else if (notification.type.includes('leave')) {
+        grouped.leaves.push(notification);
+      } else if (notification.type.includes('task')) {
+        grouped.tasks.push(notification);
+      } else if (notification.type.includes('user')) {
+        grouped.users.push(notification);
+      } else if (notification.type.includes('dropdown')) {
+        grouped.dropdowns.push(notification);
+      } else if (notification.type.includes('permission')) {
+        grouped.permissions.push(notification);
+      } else if (notification.type.includes('system') || notification.type.includes('error')) {
+        grouped.system.push(notification);
+      } else {
+        grouped.other.push(notification);
+      }
+    });
+
+    return grouped;
+  };
+
+  // Get notification type label
+  const getNotificationTypeLabel = (type) => {
+    if (type.includes('meeting')) return 'Meeting';
+    if (type.includes('leave')) return 'Leave';
+    if (type.includes('task')) return 'Task';
+    if (type.includes('user')) return 'User';
+    if (type.includes('dropdown')) return 'Dropdown';
+    if (type.includes('permission')) return 'Permission';
+    if (type.includes('system') || type.includes('error')) return 'System';
+    return 'Other';
+  };
+
+  // Get notification type color
+  const getNotificationTypeColor = (type) => {
+    if (type.includes('meeting')) return '#667eea';
+    if (type.includes('leave')) return '#967bb6';
+    if (type.includes('task')) return '#764ba2';
+    if (type.includes('user')) return '#f4a261';
+    if (type.includes('dropdown')) return '#2a9d8f';
+    if (type.includes('permission')) return '#e76f51';
+    if (type.includes('system') || type.includes('error')) return '#e63946';
+    return '#8ac926';
   };
 
   const menuId = 'primary-search-account-menu';
@@ -586,9 +466,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               color="inherit"
               onClick={handleNotificationMenuOpen}
             >
-              <Badge badgeContent={location.pathname === '/leaves' || location.pathname === '/meetings' ? 
-                getFilteredNotifications().length : 
-                notifications.length} color="error">
+              <Badge badgeContent={notifications.length} color="error">
                 <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
               </Badge>
             </IconButton>
@@ -830,9 +708,15 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         }}
         open={Boolean(notificationAnchor)}
         onClose={handleMenuClose}
+        PaperProps={{
+          style: {
+            maxHeight: 500,
+            width: 350,
+          },
+        }}
       >
         <MenuItem disabled>
-          <Typography variant="subtitle2">Notifications</Typography>
+          <Typography variant="subtitle2">All Notifications</Typography>
         </MenuItem>
         <Divider />
         {loadingNotifications ? (
@@ -847,21 +731,69 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             </Typography>
           </MenuItem>
         ) : (
-          getFilteredNotifications().map((notification) => (
-            <MenuItem key={notification.id} sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'flex-start',
-              maxWidth: 300
-            }}>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {notification.message}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {notification.time}
-              </Typography>
-            </MenuItem>
-          ))
+          <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+            {Object.entries(groupNotificationsByType()).map(([category, categoryNotifications]) => 
+              categoryNotifications.length > 0 && (
+                <React.Fragment key={category}>
+                  <MenuItem disabled>
+                    <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
+                      {category}
+                    </Typography>
+                  </MenuItem>
+                  {categoryNotifications.map((notification) => (
+                    <MenuItem 
+                      key={notification.id} 
+                      sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'flex-start',
+                        maxWidth: 300,
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                        '&:last-child': {
+                          borderBottom: 'none'
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 0.5 }}>
+                        <Box 
+                          sx={{ 
+                            width: 8, 
+                            height: 8, 
+                            borderRadius: '50%', 
+                            bgcolor: getNotificationTypeColor(notification.type),
+                            mr: 1 
+                          }} 
+                        />
+                        <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>
+                          {notification.message}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {getNotificationTypeLabel(notification.type)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {notification.time}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </React.Fragment>
+              )
+            )}
+          </Box>
+        )}
+        {getFilteredNotifications().length > 0 && (
+          <MenuItem>
+            <Button 
+              fullWidth 
+              variant="text" 
+              onClick={handleClearNotifications}
+              sx={{ textTransform: 'none' }}
+            >
+              Clear All Notifications
+            </Button>
+          </MenuItem>
         )}
       </Menu>
     </Box>

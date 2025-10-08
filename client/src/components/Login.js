@@ -420,21 +420,6 @@ const Login = () => {
                         {t('login.forgotPassword')}
                       </Link>
                     </Grid>
-                    <Grid item xs={6} sx={{ textAlign: 'right' }}>
-                      <Link 
-                        href="#" 
-                        variant="body2"
-                        sx={{ 
-                          color: darkMode ? 'primary.light' : 'primary.main',
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline'
-                          }
-                        }}
-                      >
-                        {t('login.noAccount')}
-                      </Link>
-                    </Grid>
                   </Grid>
                 </Box>
               </Box>

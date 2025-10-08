@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -41,8 +41,14 @@ import {
   EventAvailable
 } from '@mui/icons-material';
 import { useTranslation } from '../contexts/TranslationContext';
+import { leaveAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import notificationService from '../services/notificationService';
+import autoRefreshService from '../services/autoRefreshService';
+import frontendLogger from '../services/frontendLogger';
 
 const ModernLeaveManagement = () => {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -75,62 +81,9 @@ const ModernLeaveManagement = () => {
     reason: ''
   });
 
-  // Mock data for leaves
-  const mockLeaves = [
-    {
-      id: 1,
-      userId: 101,
-      userName: 'John Doe',
-      office: 'Head Office',
-      startDate: '2023-06-20',
-      endDate: '2023-06-25',
-      reason: 'Annual vacation',
-      status: 'Approved',
-      approvedBy: 'Admin User',
-      approvedAt: '2023-06-15T10:30:00Z',
-      createdAt: '2023-06-10T09:15:00Z'
-    },
-    {
-      id: 2,
-      userId: 102,
-      userName: 'Jane Smith',
-      office: 'Branch Office',
-      startDate: '2023-06-22',
-      endDate: '2023-06-23',
-      reason: 'Medical appointment',
-      status: 'Pending',
-      createdAt: '2023-06-18T14:20:00Z'
-    },
-    {
-      id: 3,
-      userId: 103,
-      userName: 'Mike Johnson',
-      office: 'Head Office',
-      startDate: '2023-06-25',
-      endDate: '2023-06-30',
-      reason: 'Family emergency',
-      status: 'Rejected',
-      approvedBy: 'Admin User',
-      approvedAt: '2023-06-19T16:45:00Z',
-      rejectionReason: 'Insufficient notice',
-      createdAt: '2023-06-19T09:30:00Z'
-    }
-  ];
-
-  useEffect(() => {
-    // Simulate loading leaves
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setLeaves(mockLeaves);
-      setLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -150,6 +103,89 @@ const ModernLeaveManagement = () => {
     }));
   };
 
+  const fetchLeaves = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await leaveAPI.getAllLeaves();
+      let leavesData = response.data || [];
+      
+      // Filter leaves based on user role
+      if (user && user.role === 'Agent') {
+        // Agents only see their own leaves
+        leavesData = leavesData.filter(leave => 
+          leave.userId === user.id || leave.userName === user.username
+        );
+      } else if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
+        // Admins and Supervisors see leaves from their office
+        leavesData = leavesData.filter(leave => 
+          leave.office === user.office
+        );
+      } else if (user && user.role === 'SystemAdmin') {
+        // SystemAdmin sees all leaves (no filtering needed)
+        // leavesData remains unchanged
+      }
+      
+      setLeaves(leavesData);
+    } catch (error) {
+      console.error('Error fetching leaves:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch leave requests. Please try again.';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [user, showSnackbar]);
+
+  // Fetch leaves on component mount
+  useEffect(() => {
+    fetchLeaves();
+    
+    // Subscribe to auto-refresh service
+    autoRefreshService.subscribe('ModernLeaveManagement', 'leaves', fetchLeaves, 30000);
+    
+    // Clean up subscription on component unmount
+    return () => {
+      autoRefreshService.unsubscribe('ModernLeaveManagement');
+    };
+  }, [fetchLeaves]);
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleLeaveRequested = (data) => {
+      frontendLogger.info('Real-time leave requested notification received', data);
+      showSnackbar(`New leave request from ${data.leave.userName}`, 'info');
+      // Refresh leave list
+      fetchLeaves();
+    };
+
+    const handleLeaveApproved = (data) => {
+      frontendLogger.info('Real-time leave approved notification received', data);
+      showSnackbar(`Leave Request approved!`, 'success');
+      // Refresh leave list
+      fetchLeaves();
+    };
+
+    const handleLeaveRejected = (data) => {
+      frontendLogger.info('Real-time leave rejected notification received', data);
+      showSnackbar(`Leave Request rejected!`, 'warning');
+      // Refresh leave list
+      fetchLeaves();
+    };
+
+    // Subscribe to notifications
+    notificationService.onLeaveRequested(handleLeaveRequested);
+    notificationService.onLeaveApproved(handleLeaveApproved);
+    notificationService.onLeaveRejected(handleLeaveRejected);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('leaveRequested', handleLeaveRequested);
+      notificationService.off('leaveApproved', handleLeaveApproved);
+      notificationService.off('leaveRejected', handleLeaveRejected);
+    };
+  }, [fetchLeaves, showSnackbar]);
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -164,23 +200,27 @@ const ModernLeaveManagement = () => {
     }
     
     try {
-      // Simulate API call
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newLeave = {
-        id: leaves.length + 1,
-        userId: 999, // Current user ID
-        userName: 'Current User',
-        office: 'Head Office',
+      const leaveData = {
         startDate: mainFormState.startDate,
         endDate: mainFormState.endDate,
         reason: mainFormState.reason,
-        status: 'Pending',
-        createdAt: new Date().toISOString()
+        appliedDate: new Date().toISOString().split('T')[0],
+        userId: user.id,
+        userName: user.username || user.fullName,
+        office: user.office
       };
       
+      const response = await leaveAPI.createLeave(leaveData);
+      
+      // Add new leave to list
+      const newLeave = {
+        id: response.data.id,
+        employee: user?.fullName || user?.username || 'Current User',
+        ...leaveData,
+        status: 'Pending'
+      };
       setLeaves([newLeave, ...leaves]);
+      
       setMainFormState({
         startDate: '',
         endDate: '',
@@ -189,437 +229,568 @@ const ModernLeaveManagement = () => {
       
       showSnackbar('Leave request submitted successfully!', 'success');
     } catch (error) {
-      showSnackbar('Error submitting leave request: ' + error.message, 'error');
-    } finally {
-      setLoading(false);
+      const errorMessage = 'Error submitting leave request: ' + (error.response?.data?.message || error.message);
+      showSnackbar(errorMessage, 'error');
     }
   };
 
   const handleApproveLeave = async (leaveId) => {
     try {
-      // Simulate API call
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await leaveAPI.approveLeave(leaveId);
       
-      const updatedLeaves = leaves.map(leave => 
+      // Update leave status to approved
+      setLeaves(leaves.map(leave => 
         leave.id === leaveId 
-          ? { 
-              ...leave, 
-              status: 'Approved',
-              approvedBy: 'Current Admin',
-              approvedAt: new Date().toISOString()
-            } 
+          ? { ...leave, status: 'Approved' } 
           : leave
-      );
+      ));
       
-      setLeaves(updatedLeaves);
+      showSnackbar('Leave request approved successfully!', 'success');
       closeDialog('approve');
-      showSnackbar('Leave request approved!', 'success');
+      
+      // Refresh leave list
+      fetchLeaves();
     } catch (error) {
-      showSnackbar('Error approving leave: ' + error.message, 'error');
-    } finally {
-      setLoading(false);
+      const errorMessage = 'Error approving leave request: ' + (error.response?.data?.message || error.message);
+      showSnackbar(errorMessage, 'error');
     }
   };
 
   const handleRejectLeave = async (leaveId) => {
     try {
-      // Simulate API call
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await leaveAPI.rejectLeave(leaveId, { rejectionReason: 'Rejected by admin' });
       
-      const updatedLeaves = leaves.map(leave => 
+      // Update leave status to rejected
+      setLeaves(leaves.map(leave => 
         leave.id === leaveId 
-          ? { 
-              ...leave, 
-              status: 'Rejected',
-              approvedBy: 'Current Admin',
-              approvedAt: new Date().toISOString(),
-              rejectionReason: 'Rejected by admin'
-            } 
+          ? { ...leave, status: 'Rejected' } 
           : leave
-      );
+      ));
       
-      setLeaves(updatedLeaves);
+      showSnackbar('Leave request rejected successfully!', 'warning');
       closeDialog('reject');
-      showSnackbar('Leave request rejected!', 'success');
+      
+      // Refresh leave list
+      fetchLeaves();
     } catch (error) {
-      showSnackbar('Error rejecting leave: ' + error.message, 'error');
-    } finally {
-      setLoading(false);
+      const errorMessage = 'Error rejecting leave request: ' + (error.response?.data?.message || error.message);
+      showSnackbar(errorMessage, 'error');
     }
   };
 
-  // Filter leaves based on search and status
+  // Filter leaves based on search term and status
   const filteredLeaves = leaves.filter(leave => {
     const matchesSearch = !searchTerm || 
-      leave.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      leave.userName.toLowerCase().includes(searchTerm.toLowerCase());
+      (leave.employee && leave.employee.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (leave.userName && leave.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = !statusFilter || leave.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  return (
-    <Fade in={true} timeout={600}>
-      <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              fontWeight: 700,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1
-            }}
-          >
-            Leave Management
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
-            Request, approve, and manage leave applications
-          </Typography>
-        </Box>
+  // Generate calendar data for the current month
+  const getCalendarData = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    
+    // Get first day of month and last day of month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Get day of week for first day (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfWeek = firstDay.getDay();
+    
+    // Create array to hold all days
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add all days of the month
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      days.push(day);
+    }
+    
+    // Group into weeks (7 days per week)
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
+    }
+    
+    return weeks;
+  };
+  
+  // Get leave data for calendar display
+  const getLeaveCalendarData = () => {
+    const calendarData = getCalendarData();
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // Create a map of leave dates
+    const leaveMap = {};
+    leaves.forEach(leave => {
+      if (leave.startDate && leave.endDate) {
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        
+        // Only include leaves for current month
+        if (start.getFullYear() === currentYear && start.getMonth() === currentMonth) {
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            if (d.getMonth() === currentMonth) {
+              const dateKey = d.getDate();
+              if (!leaveMap[dateKey]) {
+                leaveMap[dateKey] = [];
+              }
+              leaveMap[dateKey].push({
+                userName: leave.userName || leave.employee,
+                status: leave.status
+              });
+            }
+          }
+        }
+      }
+    });
+    
+    return { calendarData, leaveMap };
+  };
+  
+  const { calendarData, leaveMap } = getLeaveCalendarData();
 
-        <Grid container spacing={3}>
+  return (
+    <Box sx={{ flexGrow: 1 }}>
+      <Typography variant="h4" gutterBottom>
+        {t('leaves.title')}
+      </Typography>
+      
+      <Paper sx={{ mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab label={t('leaves.leaveRequests')} icon={<SearchIcon />} iconPosition="start" />
+          <Tab label={t('leaves.calendar')} icon={<CalendarIcon />} iconPosition="start" />
+        </Tabs>
+      </Paper>
+      
+      {activeTab === 0 && (
+        <>
           {/* Leave Request Form */}
-          <Grid item xs={12} lg={4}>
-            <Zoom in={true} timeout={800}>
-              <Paper 
-                sx={{ 
-                  p: 3, 
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
-                  border: '1px solid rgba(102, 126, 234, 0.2)'
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <EventAvailable sx={{ fontSize: 32, color: 'primary.main', mr: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Request Leave
-                  </Typography>
-                </Box>
-                
-                <Box component="form" onSubmit={handleSubmit}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Start Date"
-                        type="date"
-                        value={mainFormState.startDate}
-                        onChange={(e) => setMainFormState({...mainFormState, startDate: e.target.value})}
-                        InputLabelProps={{ shrink: true }}
-                        required
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="End Date"
-                        type="date"
-                        value={mainFormState.endDate}
-                        onChange={(e) => setMainFormState({...mainFormState, endDate: e.target.value})}
-                        InputLabelProps={{ shrink: true }}
-                        required
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Reason"
-                        multiline
-                        rows={4}
-                        value={mainFormState.reason}
-                        onChange={(e) => setMainFormState({...mainFormState, reason: e.target.value})}
-                        required
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        disabled={loading}
-                        startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
-                        sx={{ 
-                          py: 1.5,
-                          background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                          '&:hover': {
-                            background: 'linear-gradient(45deg, #764ba2, #667eea)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
-                          }
-                        }}
-                      >
-                        {loading ? 'Submitting...' : 'Submit Request'}
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Paper>
-            </Zoom>
-          </Grid>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          )}
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
+          
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('leaves.requestNewLeave')}
+            </Typography>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('leaves.startDate')}
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={mainFormState.startDate}
+                    onChange={(e) => setMainFormState({ ...mainFormState, startDate: e.target.value })}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('leaves.endDate')}
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={mainFormState.endDate}
+                    onChange={(e) => setMainFormState({ ...mainFormState, endDate: e.target.value })}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t('leaves.reason')}
+                    multiline
+                    rows={3}
+                    value={mainFormState.reason}
+                    onChange={(e) => setMainFormState({ ...mainFormState, reason: e.target.value })}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="contained" startIcon={<AddIcon />} type="submit">
+                    Submit Leave Request
+                  </Button>
+                </Grid>
+              </Grid>
+            </form>
+          </Paper>
+          
+          {/* Leave Filters */}
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={5}>
+                <TextField
+                  fullWidth
+                  label={t('common.search')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    endAdornment: <SearchIcon />
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('tasks.status')}</InputLabel>
+                  <Select 
+                    label="Status" 
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="Pending">Pending</MenuItem>
+                    <MenuItem value="Approved">Approved</MenuItem>
+                    <MenuItem value="Rejected">Rejected</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Button variant="outlined" sx={{ mr: 1 }}>
+                  Filter
+                </Button>
+                <Button variant="outlined" onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('');
+                }}>
+                  Clear
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
           
           {/* Leave List */}
-          <Grid item xs={12} lg={8}>
-            <Paper sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Leave Requests
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    size="small"
-                    placeholder="Search leaves..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
-                    }}
-                  />
-                  
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      label="Status"
-                    >
-                      <MenuItem value="">All</MenuItem>
-                      <MenuItem value="Pending">Pending</MenuItem>
-                      <MenuItem value="Approved">Approved</MenuItem>
-                      <MenuItem value="Rejected">Rejected</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Employee</TableCell>
+                  <TableCell>Start Date</TableCell>
+                  <TableCell>End Date</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell>Applied Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredLeaves.map((leave) => (
+                  <TableRow key={leave.id}>
+                    <TableCell>{leave.employee || leave.userName || 'N/A'}</TableCell>
+                    <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>{leave.reason || 'N/A'}</TableCell>
+                    <TableCell>{leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={leave.status || 'Pending'} 
+                        color={
+                          leave.status === 'Approved' ? 'success' : 
+                          leave.status === 'Rejected' ? 'error' : 'warning'
+                        } 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {leave.status === 'Pending' && (
+                        <>
+                          <IconButton 
+                            size="small" 
+                            color="success"
+                            onClick={() => openDialog('approve', leave)}
+                          >
+                            <CheckIcon />
+                          </IconButton>
+                          <IconButton 
+                            size="small" 
+                            color="error"
+                            onClick={() => openDialog('reject', leave)}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </>
+                      )}
+                      <IconButton 
+                        size="small" 
+                        onClick={() => {
+                          setFormState({
+                            startDate: leave.startDate ? new Date(leave.startDate).toISOString().split('T')[0] : '',
+                            endDate: leave.endDate ? new Date(leave.endDate).toISOString().split('T')[0] : '',
+                            reason: leave.reason || ''
+                          });
+                          openDialog('edit', leave);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => openDialog('delete', leave)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
+      
+      {activeTab === 1 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Leave Calendar
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ width: '100%', maxWidth: 800 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Button variant="outlined">Previous</Button>
+                <Typography variant="h6">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Typography>
+                <Button variant="outlined">Next</Button>
               </Box>
-              
-              <Tabs 
-                value={activeTab} 
-                onChange={handleTabChange} 
-                sx={{ mb: 2 }}
-                TabIndicatorProps={{ style: { background: 'linear-gradient(45deg, #667eea, #764ba2)' } }}
-              >
-                <Tab label="All Requests" />
-                <Tab label="My Requests" />
-              </Tabs>
-              
-              {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>User</TableCell>
-                        <TableCell>Start Date</TableCell>
-                        <TableCell>End Date</TableCell>
-                        <TableCell>Reason</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredLeaves.map((leave) => (
-                        <TableRow 
-                          key={leave.id} 
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align="center">Sun</TableCell>
+                    <TableCell align="center">Mon</TableCell>
+                    <TableCell align="center">Tue</TableCell>
+                    <TableCell align="center">Wed</TableCell>
+                    <TableCell align="center">Thu</TableCell>
+                    <TableCell align="center">Fri</TableCell>
+                    <TableCell align="center">Sat</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {calendarData.map((week, weekIndex) => (
+                    <TableRow key={weekIndex}>
+                      {week.map((day, dayIndex) => (
+                        <TableCell 
+                          key={dayIndex} 
+                          align="center" 
                           sx={{ 
-                            '&:hover': { 
-                              backgroundColor: 'action.hover',
-                              transform: 'scale(1.01)',
-                              transition: 'all 0.2s ease'
-                            }
+                            height: 100, 
+                            verticalAlign: 'top',
+                            position: 'relative',
+                            bgcolor: day ? 'transparent' : 'transparent'
                           }}
                         >
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Box sx={{ 
-                                width: 32, 
-                                height: 32, 
-                                borderRadius: '50%', 
-                                bgcolor: 'primary.main',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontSize: 12,
-                                fontWeight: 600,
-                                mr: 1
-                              }}>
-                                {leave.userName.charAt(0)}
-                              </Box>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {leave.userName}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  {leave.office}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </TableCell>
-                          <TableCell>{leave.startDate}</TableCell>
-                          <TableCell>{leave.endDate}</TableCell>
-                          <TableCell>{leave.reason}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={leave.status} 
-                              size="small"
-                              sx={{ 
-                                bgcolor: leave.status === 'Approved' ? '#10b98120' : 
-                                        leave.status === 'Pending' ? '#f59e0b20' : 
-                                        '#ef444420',
-                                color: leave.status === 'Approved' ? '#10b981' : 
-                                      leave.status === 'Pending' ? '#f59e0b' : 
-                                      '#ef4444',
-                                fontWeight: 600
-                              }} 
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {leave.status === 'Pending' && (
-                              <>
-                                <IconButton 
-                                  size="small" 
-                                  color="success" 
-                                  onClick={() => openDialog('approve', leave)}
-                                  sx={{ mr: 1 }}
+                          {day && (
+                            <>
+                              <Typography variant="body2">{day}</Typography>
+                              {leaveMap[day] && leaveMap[day].map((leave, index) => (
+                                <Box 
+                                  key={index}
+                                  sx={{ 
+                                    position: 'absolute', 
+                                    bottom: 2 + (index * 20), 
+                                    left: 2, 
+                                    right: 2, 
+                                    bgcolor: leave.status === 'Approved' ? 'success.main' : 
+                                            leave.status === 'Rejected' ? 'error.main' : 'warning.main', 
+                                    color: 'white', 
+                                    fontSize: '0.7rem', 
+                                    p: 0.5, 
+                                    borderRadius: 1,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
                                 >
-                                  <CheckIcon />
-                                </IconButton>
-                                <IconButton 
-                                  size="small" 
-                                  color="error" 
-                                  onClick={() => openDialog('reject', leave)}
-                                >
-                                  <CloseIcon />
-                                </IconButton>
-                              </>
-                            )}
-                            <IconButton 
-                              size="small" 
-                              color="primary" 
-                              onClick={() => openDialog('edit', leave)}
-                              sx={{ mr: 1 }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton 
-                              size="small" 
-                              color="error" 
-                              onClick={() => openDialog('delete', leave)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
+                                  {leave.userName}: {leave.status}
+                                </Box>
+                              ))}
+                            </>
+                          )}
+                        </TableCell>
                       ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
-        
-        {/* Approve Dialog */}
-        <Dialog open={dialogs.approve.open} onClose={() => closeDialog('approve')}>
-          <DialogTitle>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <CheckIcon sx={{ mr: 1, color: 'success.main' }} />
-              Approve Leave Request
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Box>
-          </DialogTitle>
-          <DialogContent>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              Are you sure you want to approve this leave request?
-            </Typography>
-            {dialogs.approve.leave && (
-              <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="subtitle2">
-                  {dialogs.approve.leave.userName} - {dialogs.approve.leave.reason}
-                </Typography>
-                <Typography variant="caption">
-                  {dialogs.approve.leave.startDate} to {dialogs.approve.leave.endDate}
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => closeDialog('approve')}>Cancel</Button>
-            <Button 
-              onClick={() => handleApproveLeave(dialogs.approve.leave?.id)} 
-              variant="contained" 
-              color="success"
-              startIcon={<CheckIcon />}
-            >
-              Approve
-            </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Reject Dialog */}
-        <Dialog open={dialogs.reject.open} onClose={() => closeDialog('reject')}>
-          <DialogTitle>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <CloseIcon sx={{ mr: 1, color: 'error.main' }} />
-              Reject Leave Request
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              Are you sure you want to reject this leave request?
-            </Typography>
-            {dialogs.reject.leave && (
-              <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="subtitle2">
-                  {dialogs.reject.leave.userName} - {dialogs.reject.leave.reason}
-                </Typography>
-                <Typography variant="caption">
-                  {dialogs.reject.leave.startDate} to {dialogs.reject.leave.endDate}
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => closeDialog('reject')}>Cancel</Button>
-            <Button 
-              onClick={() => handleRejectLeave(dialogs.reject.leave?.id)} 
-              variant="contained" 
-              color="error"
-              startIcon={<CloseIcon />}
-            >
-              Reject
-            </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Snackbar for notifications */}
-        <Snackbar 
-          open={snackbar.open} 
-          autoHideDuration={6000} 
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        >
-          <Alert 
-            onClose={handleCloseSnackbar} 
-            severity={snackbar.severity} 
-            sx={{ width: '100%' }}
+          </Box>
+        </Paper>
+      )}
+      
+      {/* Approve Dialog */}
+      <Dialog 
+        open={dialogs.approve.open} 
+        onClose={() => closeDialog('approve')}
+        aria-labelledby="approve-dialog-title"
+      >
+        <DialogTitle id="approve-dialog-title">{t('common.approve')} {t('leaves.leaveRequests')}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {dialogs.approve.leave && `Are you sure you want to approve the leave request for ${dialogs.approve.leave.userName || dialogs.approve.leave.employee}?`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => closeDialog('approve')}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            onClick={() => handleApproveLeave(dialogs.approve.leave.id)} 
+            variant="contained" 
+            color="success"
           >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </Fade>
+            {t('common.approve')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Reject Dialog */}
+      <Dialog 
+        open={dialogs.reject.open} 
+        onClose={() => closeDialog('reject')}
+        aria-labelledby="reject-dialog-title"
+      >
+        <DialogTitle id="reject-dialog-title">{t('common.reject')} {t('leaves.leaveRequests')}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {dialogs.reject.leave && `Are you sure you want to reject the leave request for ${dialogs.reject.leave.userName || dialogs.reject.leave.employee}?`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => closeDialog('reject')}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            onClick={() => handleRejectLeave(dialogs.reject.leave.id)} 
+            variant="contained" 
+            color="error"
+          >
+            {t('common.reject')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Edit Dialog */}
+      <Dialog 
+        open={dialogs.edit.open} 
+        onClose={() => {
+          closeDialog('edit');
+          setFormState({
+            startDate: '',
+            endDate: '',
+            reason: ''
+          });
+        }}
+        aria-labelledby="edit-dialog-title"
+      >
+        <DialogTitle id="edit-dialog-title">{t('common.edit')} {t('leaves.leaveRequests')}</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={t('leaves.startDate')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={formState.startDate}
+                onChange={(e) => setFormState({ ...formState, startDate: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={t('leaves.endDate')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={formState.endDate}
+                onChange={(e) => setFormState({ ...formState, endDate: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={t('leaves.reason')}
+                multiline
+                rows={3}
+                value={formState.reason}
+                onChange={(e) => setFormState({ ...formState, reason: e.target.value })}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              closeDialog('edit');
+              setFormState({
+                startDate: '',
+                endDate: '',
+                reason: ''
+              });
+            }}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button variant="contained" color="primary">
+            {t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Delete Dialog */}
+      <Dialog 
+        open={dialogs.delete.open} 
+        onClose={() => closeDialog('delete')}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">{t('common.delete')} {t('leaves.leaveRequests')}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {dialogs.delete.leave && `Are you sure you want to delete the leave request for ${dialogs.delete.leave.userName || dialogs.delete.leave.employee}?`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => closeDialog('delete')}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="contained" color="error">
+            {t('common.delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={snackbar.message}
+      />
+    </Box>
   );
 };
 

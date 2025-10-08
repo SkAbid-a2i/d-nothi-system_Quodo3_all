@@ -9,6 +9,9 @@ class NotificationService {
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // 1 second
     this.userId = null;
+    // Add notification history to keep track of all notifications
+    this.notificationHistory = [];
+    this.maxHistory = 100; // Keep last 100 notifications
   }
 
   // Connect to the notification service
@@ -42,6 +45,10 @@ class NotificationService {
         try {
           const data = JSON.parse(event.data);
           console.log('Received notification:', data);
+          
+          // Add to notification history
+          this.addToHistory(data);
+          
           this.emit(data.type, data);
           
           // Trigger immediate refresh for relevant data types
@@ -62,6 +69,30 @@ class NotificationService {
       console.error('Error connecting to notification service:', error);
       this.emit('error', { error });
     }
+  }
+
+  // Add notification to history
+  addToHistory(notification) {
+    this.notificationHistory.unshift({
+      ...notification,
+      id: Date.now() + Math.random(), // Unique ID for frontend
+      receivedAt: new Date().toISOString()
+    });
+    
+    // Keep only the last N notifications
+    if (this.notificationHistory.length > this.maxHistory) {
+      this.notificationHistory = this.notificationHistory.slice(0, this.maxHistory);
+    }
+  }
+
+  // Get notification history
+  getNotificationHistory() {
+    return this.notificationHistory;
+  }
+
+  // Clear notification history
+  clearNotificationHistory() {
+    this.notificationHistory = [];
   }
 
   // Trigger auto-refresh based on notification type
@@ -252,6 +283,23 @@ class NotificationService {
   // Listen for meeting deletions
   onMeetingDeleted(callback) {
     this.on('meetingDeleted', callback);
+  }
+
+  // Listen for all notifications (new unified listener)
+  onAllNotifications(callback) {
+    // Listen for all known notification types
+    const allTypes = [
+      'taskCreated', 'taskUpdated',
+      'leaveRequested', 'leaveApproved', 'leaveRejected',
+      'userCreated', 'userUpdated', 'userDeleted',
+      'dropdownCreated', 'dropdownUpdated', 'dropdownDeleted',
+      'permissionTemplateCreated', 'permissionTemplateUpdated', 'permissionTemplateDeleted',
+      'meetingCreated', 'meetingUpdated', 'meetingDeleted'
+    ];
+    
+    allTypes.forEach(type => {
+      this.on(type, callback);
+    });
   }
 }
 

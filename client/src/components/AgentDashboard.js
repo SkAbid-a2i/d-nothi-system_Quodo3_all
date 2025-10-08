@@ -553,10 +553,104 @@ const AgentDashboard = () => {
     }
   }, [tasks, leaves]);
 
-  // Get reports data
-  const getReportsData = () => {
-    return fetchReportsData();
-  };
+  // Get reports data based on actual data
+  const getReportsData = useCallback(() => {
+    try {
+      // Generate dynamic reports based on actual data
+      const reports = [
+        { 
+          id: 1, 
+          name: 'Weekly Task Report', 
+          generatedAt: new Date().toLocaleString(), 
+          filter: 'Last 7 days',
+          taskCount: tasks.length,
+          pendingTasks: tasks.filter(t => t.status === 'Pending').length,
+          completedTasks: tasks.filter(t => t.status === 'Completed').length
+        },
+        { 
+          id: 2, 
+          name: 'Monthly Leave Report', 
+          generatedAt: new Date().toLocaleString(), 
+          filter: 'Current Month',
+          leaveCount: leaves.length,
+          approvedLeaves: leaves.filter(l => l.status === 'Approved').length,
+          pendingLeaves: leaves.filter(l => l.status === 'Pending').length
+        },
+        { 
+          id: 3, 
+          name: 'Performance Summary', 
+          generatedAt: new Date().toLocaleString(), 
+          filter: 'All Time',
+          totalTasks: tasks.length,
+          totalLeaves: leaves.length,
+          completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100) : 0
+        }
+      ];
+      return reports;
+    } catch (error) {
+      console.error('Error generating reports data:', error);
+      return [];
+    }
+  }, [tasks, leaves]);
+
+  // Get notifications data based on actual data
+  const getNotificationsData = useCallback(() => {
+    try {
+      const notifications = [];
+      
+      // Add task-related notifications
+      tasks.slice(0, 3).forEach(task => {
+        notifications.push({
+          id: `task-${task.id}`,
+          message: `Task "${task.description}" is ${task.status}`,
+          time: task.updatedAt ? new Date(task.updatedAt).toLocaleString() : 'Recently',
+          type: 'task'
+        });
+      });
+      
+      // Add leave-related notifications
+      leaves.slice(0, 3).forEach(leave => {
+        if (leave.status === 'Pending') {
+          notifications.push({
+            id: `leave-${leave.id}`,
+            message: `Leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} is pending approval`,
+            time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
+            type: 'leave'
+          });
+        } else if (leave.status === 'Approved') {
+          notifications.push({
+            id: `leave-${leave.id}`,
+            message: `Leave request approved`,
+            time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+            type: 'approval'
+          });
+        } else if (leave.status === 'Rejected') {
+          notifications.push({
+            id: `leave-${leave.id}`,
+            message: `Leave request rejected`,
+            time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+            type: 'rejection'
+          });
+        }
+      });
+      
+      // Sort notifications by time (newest first)
+      notifications.sort((a, b) => {
+        const timeA = new Date(a.time);
+        const timeB = new Date(b.time);
+        return timeB - timeA;
+      });
+      
+      return notifications.slice(0, 7); // Limit to 7 notifications
+    } catch (error) {
+      console.error('Error generating notifications data:', error);
+      return [];
+    }
+  }, [tasks, leaves]);
+
+  // Get actual reports and notifications data
+  const reportsData = getReportsData();
+  const notificationsData = getNotificationsData();
 
   // Mock data for reports (in a real app, this would come from the backend)
   const mockReports = [
@@ -625,7 +719,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Assessment sx={{ mr: 2, color: 'success.main' }} />
                 <Typography variant="h5" component="div">
-                  {5}
+                  {reportsData.length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -633,7 +727,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('reports', mockReports)}>View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('reports', reportsData)}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -644,7 +738,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Notifications sx={{ mr: 2, color: 'warning.main' }} />
                 <Typography variant="h5" component="div">
-                  7
+                  {notificationsData.length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -652,7 +746,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('notifications')}>View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('notifications', notificationsData)}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -1192,21 +1286,19 @@ const AgentDashboard = () => {
                 Showing recent notifications and alerts.
               </DialogContentText>
               <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <strong>Task Created:</strong> New task "Fix login issue" created by John Doe (2023-06-15 14:30)
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <strong>Leave Approved:</strong> Annual leave request approved for Jane Smith (2023-06-15 10:15)
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <strong>Task Completed:</strong> Task "Update documentation" marked as completed by Mike Johnson (2023-06-14 16:45)
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <strong>Leave Rejected:</strong> Sick leave request rejected for Sarah Wilson (2023-06-14 09:20)
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Task Updated:</strong> Task "Implement new feature" status changed to In Progress (2023-06-13 11:30)
-                </Typography>
+                {viewDetailsDialog.data && viewDetailsDialog.data.length > 0 ? (
+                  viewDetailsDialog.data.map((notification, index) => (
+                    <Typography key={notification.id || index} variant="body2" sx={{ mb: 1 }}>
+                      <strong>{notification.type === 'task' ? 'Task Update:' : 
+                               notification.type === 'leave' ? 'Leave Request:' : 
+                               notification.type === 'approval' ? 'Leave Approved:' : 
+                               notification.type === 'rejection' ? 'Leave Rejected:' : 
+                               'Notification:'}</strong> {notification.message} ({notification.time})
+                    </Typography>
+                  ))
+                ) : (
+                  <Typography variant="body2">No notifications available</Typography>
+                )}
               </Box>
             </Box>
           )}

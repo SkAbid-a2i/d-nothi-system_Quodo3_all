@@ -73,12 +73,17 @@ const AdminConsole = () => {
   const [permissionTemplates, setPermissionTemplates] = useState([]);
   const [templateName, setTemplateName] = useState('');
   const [templatePermissions, setTemplatePermissions] = useState({
-    manageTasks: true,
-    editTasks: true,
-    deleteTasks: true,
-    manageLeaves: true,
-    manageUsers: true,
-    manageDropdowns: true
+    canApproveLeaves: false,
+    canAssignTasks: false,
+    canCreateLeaves: true,
+    canCreateTasks: true,
+    canManageDropdowns: false,
+    canManageFiles: false,
+    canManageUsers: false,
+    canViewAllLeaves: false,
+    canViewAllTasks: false,
+    canViewLogs: false,
+    canViewReports: false
   });
   const [editingTemplate, setEditingTemplate] = useState(null);
 
@@ -378,12 +383,17 @@ const AdminConsole = () => {
       // Reset form
       setTemplateName('');
       setTemplatePermissions({
-        manageTasks: true,
-        editTasks: true,
-        deleteTasks: true,
-        manageLeaves: true,
-        manageUsers: true,
-        manageDropdowns: true
+        canApproveLeaves: false,
+        canAssignTasks: false,
+        canCreateLeaves: true,
+        canCreateTasks: true,
+        canManageDropdowns: false,
+        canManageFiles: false,
+        canManageUsers: false,
+        canViewAllLeaves: false,
+        canViewAllTasks: false,
+        canViewLogs: false,
+        canViewReports: false
       });
       setEditingTemplate(null);
 
@@ -795,7 +805,11 @@ const AdminConsole = () => {
                                       color="primary"
                                     />
                                   }
-                                  label={key.replace(/([A-Z])/g, ' $1').trim()}
+                                  label={
+                                    key
+                                      .replace(/([A-Z])/g, ' $1')
+                                      .replace(/^./, (str) => str.toUpperCase())
+                                  }
                                 />
                               </Grid>
                             ))}
@@ -826,12 +840,17 @@ const AdminConsole = () => {
                                   setEditingTemplate(null);
                                   setTemplateName('');
                                   setTemplatePermissions({
-                                    manageTasks: true,
-                                    editTasks: true,
-                                    deleteTasks: true,
-                                    manageLeaves: true,
-                                    manageUsers: true,
-                                    manageDropdowns: true
+                                    canApproveLeaves: false,
+                                    canAssignTasks: false,
+                                    canCreateLeaves: true,
+                                    canCreateTasks: true,
+                                    canManageDropdowns: false,
+                                    canManageFiles: false,
+                                    canManageUsers: false,
+                                    canViewAllLeaves: false,
+                                    canViewAllTasks: false,
+                                    canViewLogs: false,
+                                    canViewReports: false
                                   });
                                 }}
                                 disabled={loading}
@@ -883,12 +902,16 @@ const AdminConsole = () => {
                                   </Typography>
                                 </TableCell>
                                 <TableCell>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
                                     {Object.entries(template.permissions || {}).map(([key, value]) => (
                                       value && (
                                         <Chip 
                                           key={key}
-                                          label={key.replace(/([A-Z])/g, ' $1').trim()}
+                                          label={
+                                            key
+                                              .replace(/([A-Z])/g, ' $1')
+                                              .replace(/^./, (str) => str.toUpperCase())
+                                          }
                                           size="small"
                                           sx={{ 
                                             bgcolor: '#667eea20',

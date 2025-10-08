@@ -23,7 +23,8 @@ import {
   CircularProgress
 } from '@mui/material';
 import { 
-  Search as SearchIcon
+  Search as SearchIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { reportAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -98,40 +99,65 @@ const ReportManagement = () => {
   };
 
   const handleExport = async (format) => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    
     try {
-      // Create a hidden link and trigger download
-      const params = new URLSearchParams({
-        startDate: startDate || '',
-        endDate: endDate || '',
-        userId: userId || '',
-        status: status || '',
-        format: format
-      });
+      // Show loading state
+      setLoading(true);
+      setError('');
       
-      let endpoint;
+      // Prepare data for export based on active tab
+      let exportData = {
+        generatedAt: new Date().toISOString(),
+        user: user?.username || 'Unknown',
+        reportType: activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : 'Summary'
+      };
+      
+      // Get the appropriate data based on the active tab
       if (activeTab === 0) {
-        endpoint = `/api/reports/tasks?${params}`;
+        exportData.tasks = taskReports;
       } else if (activeTab === 1) {
-        endpoint = `/api/reports/leaves?${params}`;
+        exportData.leaves = leaveReports;
       } else {
-        endpoint = `/api/reports/summary?${params}`;
+        exportData.summary = activityReports;
       }
       
-      // Create download link
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const downloadUrl = `${apiUrl}${endpoint}`;
+      // Create export content based on format
+      let content, mimeType, filename;
       
-      // Create a temporary link and trigger download
+      if (format === 'csv') {
+        // Convert to CSV format
+        const csvContent = convertToCSV(exportData);
+        content = csvContent;
+        mimeType = 'text/csv;charset=utf-8;';
+        filename = `report_export_${new Date().toISOString().split('T')[0]}.${format}`;
+      } else if (format === 'xlsx') {
+        // For Excel, we'll create CSV content (simpler approach)
+        const csvContent = convertToCSV(exportData);
+        content = csvContent;
+        mimeType = 'application/vnd.ms-excel;charset=utf-8;';
+        filename = `report_export_${new Date().toISOString().split('T')[0]}.${format}`;
+      } else if (format === 'pdf') {
+        // For PDF, we'll create a simple text representation
+        const pdfContent = convertToPDF(exportData);
+        content = pdfContent;
+        mimeType = 'application/pdf;charset=utf-8;';
+        filename = `report_export_${new Date().toISOString().split('T')[0]}.${format}`;
+      } else {
+        // Default to JSON
+        content = JSON.stringify(exportData, null, 2);
+        mimeType = 'application/json;charset=utf-8;';
+        filename = `report_export_${new Date().toISOString().split('T')[0]}.json`;
+      }
+      
+      // Create and download file
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.target = '_blank';
+      link.href = url;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
       // Log audit entry
       const reportTypeName = activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : 'Summary';
@@ -146,6 +172,141 @@ const ReportManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to convert report data to CSV
+  const convertToCSV = (data) => {
+    let csv = 'Report Export\n';
+    csv += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
+    csv += `User: ${data.user}\n`;
+    csv += `Report Type: ${data.reportType}\n\n`;
+    
+    if (data.reportType === 'Task' && data.tasks) {
+      // Task report section
+      csv += 'Task Report\n';
+      csv += 'Date,Source,Category,Service,User,Office,Status\n';
+      
+      data.tasks.forEach(task => {
+        // Handle both raw objects and Sequelize instances
+        const taskData = task.toJSON ? task.toJSON() : task;
+        csv += `"${taskData.date || ''}","${taskData.source || ''}","${taskData.category || ''}","${taskData.service || ''}","${taskData.userName || ''}","${taskData.office || ''}","${taskData.status || ''}"\n`;
+      });
+    } else if (data.reportType === 'Leave' && data.leaves) {
+      // Leave report section
+      csv += 'Leave Report\n';
+      csv += 'Employee,Start Date,End Date,Reason,User,Status,Approved By\n';
+      
+      data.leaves.forEach(leave => {
+        // Handle both raw objects and Sequelize instances
+        const leaveData = leave.toJSON ? leave.toJSON() : leave;
+        csv += `"${leaveData.userName || ''}","${leaveData.startDate || ''}","${leaveData.endDate || ''}","${leaveData.reason || ''}","${leaveData.userName || ''}","${leaveData.status || ''}","${leaveData.approvedByName || ''}"\n`;
+      });
+    } else if (data.reportType === 'Summary' && data.summary) {
+      // Summary report section
+      csv += 'Summary Report\n\n';
+      
+      if (data.summary.tasks) {
+        csv += 'Task Statistics\n';
+        csv += 'Status,Count\n';
+        data.summary.tasks.forEach(stat => {
+          // Handle both raw objects and Sequelize instances
+          const statData = stat.toJSON ? stat.toJSON() : stat;
+          csv += `"${statData.status || statData.status}","${statData.count || statData.count}"\n`;
+        });
+        csv += '\n';
+      }
+      
+      if (data.summary.leaves) {
+        csv += 'Leave Statistics\n';
+        csv += 'Status,Count\n';
+        data.summary.leaves.forEach(stat => {
+          // Handle both raw objects and Sequelize instances
+          const statData = stat.toJSON ? stat.toJSON() : stat;
+          csv += `"${statData.status || statData.status}","${statData.count || statData.count}"\n`;
+        });
+        csv += '\n';
+      }
+    }
+    
+    return csv;
+  };
+
+  // Helper function to convert report data to PDF-like text
+  const convertToPDF = (data) => {
+    let pdf = 'Report Export\n';
+    pdf += '='.repeat(50) + '\n';
+    pdf += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
+    pdf += `User: ${data.user}\n`;
+    pdf += `Report Type: ${data.reportType}\n\n`;
+    
+    if (data.reportType === 'Task' && data.tasks) {
+      // Task report section
+      pdf += 'TASK REPORT\n';
+      pdf += '-'.repeat(20) + '\n';
+      
+      if (data.tasks.length === 0) {
+        pdf += 'No tasks found.\n\n';
+      } else {
+        data.tasks.forEach((task, index) => {
+          // Handle both raw objects and Sequelize instances
+          const taskData = task.toJSON ? task.toJSON() : task;
+          pdf += `${index + 1}. ${taskData.description || 'No description'}\n`;
+          pdf += `   Date: ${taskData.date || 'N/A'}\n`;
+          pdf += `   Source: ${taskData.source || 'N/A'}\n`;
+          pdf += `   Category: ${taskData.category || 'N/A'}\n`;
+          pdf += `   Service: ${taskData.service || 'N/A'}\n`;
+          pdf += `   User: ${taskData.userName || 'N/A'}\n`;
+          pdf += `   Office: ${taskData.office || 'N/A'}\n`;
+          pdf += `   Status: ${taskData.status || 'N/A'}\n\n`;
+        });
+      }
+    } else if (data.reportType === 'Leave' && data.leaves) {
+      // Leave report section
+      pdf += 'LEAVE REPORT\n';
+      pdf += '-'.repeat(20) + '\n';
+      
+      if (data.leaves.length === 0) {
+        pdf += 'No leaves found.\n\n';
+      } else {
+        data.leaves.forEach((leave, index) => {
+          // Handle both raw objects and Sequelize instances
+          const leaveData = leave.toJSON ? leave.toJSON() : leave;
+          pdf += `${index + 1}. ${leaveData.reason || 'No reason'}\n`;
+          pdf += `   Employee: ${leaveData.userName || 'N/A'}\n`;
+          pdf += `   Dates: ${leaveData.startDate || 'N/A'} to ${leaveData.endDate || 'N/A'}\n`;
+          pdf += `   Status: ${leaveData.status || 'N/A'}\n`;
+          pdf += `   Approved By: ${leaveData.approvedByName || 'N/A'}\n\n`;
+        });
+      }
+    } else if (data.reportType === 'Summary' && data.summary) {
+      // Summary report section
+      pdf += 'SUMMARY REPORT\n';
+      pdf += '-'.repeat(20) + '\n';
+      
+      if (data.summary.tasks) {
+        pdf += 'Task Statistics\n';
+        pdf += '-'.repeat(15) + '\n';
+        data.summary.tasks.forEach(stat => {
+          // Handle both raw objects and Sequelize instances
+          const statData = stat.toJSON ? stat.toJSON() : stat;
+          pdf += `${statData.status || statData.status}: ${statData.count || statData.count}\n`;
+        });
+        pdf += '\n';
+      }
+      
+      if (data.summary.leaves) {
+        pdf += 'Leave Statistics\n';
+        pdf += '-'.repeat(16) + '\n';
+        data.summary.leaves.forEach(stat => {
+          // Handle both raw objects and Sequelize instances
+          const statData = stat.toJSON ? stat.toJSON() : stat;
+          pdf += `${statData.status || statData.status}: ${statData.count || statData.count}\n`;
+        });
+        pdf += '\n';
+      }
+    }
+    
+    return pdf;
   };
 
   const getStatusColor = (status) => {
@@ -331,25 +492,25 @@ const ReportManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Source</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Service</TableCell>
-                  <TableCell>User</TableCell>
-                  <TableCell>Office</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell align="center">Date</TableCell>
+                  <TableCell align="center">Source</TableCell>
+                  <TableCell align="center">Category</TableCell>
+                  <TableCell align="center">Service</TableCell>
+                  <TableCell align="center">User</TableCell>
+                  <TableCell align="center">Office</TableCell>
+                  <TableCell align="center">Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {taskReports.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell>{new Date(task.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{task.source}</TableCell>
-                    <TableCell>{task.category}</TableCell>
-                    <TableCell>{task.service}</TableCell>
-                    <TableCell>{task.userName}</TableCell>
-                    <TableCell>{task.office}</TableCell>
-                    <TableCell>
+                    <TableCell align="center">{new Date(task.date).toLocaleDateString()}</TableCell>
+                    <TableCell align="center">{task.source}</TableCell>
+                    <TableCell align="center">{task.category}</TableCell>
+                    <TableCell align="center">{task.service}</TableCell>
+                    <TableCell align="center">{task.userName}</TableCell>
+                    <TableCell align="center">{task.office}</TableCell>
+                    <TableCell align="center">
                       <Chip 
                         label={task.status} 
                         color={getStatusColor(task.status)} 
@@ -373,31 +534,31 @@ const ReportManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>User</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Approved By</TableCell>
+                  <TableCell align="center">Employee</TableCell>
+                  <TableCell align="center">Start Date</TableCell>
+                  <TableCell align="center">End Date</TableCell>
+                  <TableCell align="center">Reason</TableCell>
+                  <TableCell align="center">User</TableCell>
+                  <TableCell align="center">Status</TableCell>
+                  <TableCell align="center">Approved By</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {leaveReports.map((leave) => (
                   <TableRow key={leave.id}>
-                    <TableCell>{leave.userName}</TableCell>
-                    <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{leave.reason}</TableCell>
-                    <TableCell>{leave.userName}</TableCell>
-                    <TableCell>
+                    <TableCell align="center">{leave.userName}</TableCell>
+                    <TableCell align="center">{new Date(leave.startDate).toLocaleDateString()}</TableCell>
+                    <TableCell align="center">{new Date(leave.endDate).toLocaleDateString()}</TableCell>
+                    <TableCell align="center">{leave.reason}</TableCell>
+                    <TableCell align="center">{leave.userName}</TableCell>
+                    <TableCell align="center">
                       <Chip 
                         label={leave.status} 
                         color={getStatusColor(leave.status)} 
                         size="small" 
                       />
                     </TableCell>
-                    <TableCell>{leave.approvedByName || '-'}</TableCell>
+                    <TableCell align="center">{leave.approvedByName || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -420,15 +581,15 @@ const ReportManagement = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Count</TableCell>
+                      <TableCell align="center">Status</TableCell>
+                      <TableCell align="center">Count</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {activityReports.tasks && activityReports.tasks.map((stat) => (
                       <TableRow key={stat.status}>
-                        <TableCell>{stat.status}</TableCell>
-                        <TableCell>{stat.count}</TableCell>
+                        <TableCell align="center">{stat.status}</TableCell>
+                        <TableCell align="center">{stat.count}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -444,15 +605,15 @@ const ReportManagement = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Count</TableCell>
+                      <TableCell align="center">Status</TableCell>
+                      <TableCell align="center">Count</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {activityReports.leaves && activityReports.leaves.map((stat) => (
                       <TableRow key={stat.status}>
-                        <TableCell>{stat.status}</TableCell>
-                        <TableCell>{stat.count}</TableCell>
+                        <TableCell align="center">{stat.status}</TableCell>
+                        <TableCell align="center">{stat.count}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

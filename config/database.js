@@ -1,6 +1,14 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+// Debug environment variables
+console.log('Database Configuration:');
+console.log('- Host:', process.env.DB_HOST || 'Not set');
+console.log('- Port:', process.env.DB_PORT || '4000 (default)');
+console.log('- User:', process.env.DB_USER || 'root (default)');
+console.log('- Database:', process.env.DB_NAME || 'quodo3 (default)');
+console.log('- SSL Enabled:', process.env.DB_SSL === 'true' ? 'Yes' : 'No');
+
 // Create Sequelize instance
 let sequelize;
 
@@ -18,10 +26,12 @@ if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
       port: process.env.DB_PORT || 4000, // TiDB default port
       dialect: 'mysql',
       dialectOptions: {
-        // SSL configuration for TiDB - enforce SSL connection
+        // Enhanced SSL configuration specifically for TiDB Cloud
         ssl: {
-          rejectUnauthorized: false
-        }
+          rejectUnauthorized: process.env.DB_SSL === 'true' ? true : false,
+        },
+        // Add connection timeout
+        connectTimeout: 60000
       },
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       pool: {
@@ -77,6 +87,9 @@ async function testConnection(maxRetries = 5, retryDelay = 5000) {
       return true;
     } catch (err) {
       console.error(`Unable to connect to database (attempt ${i + 1}/${maxRetries}):`, err.message);
+      if (err.parent) {
+        console.error('  Parent error:', err.parent.message);
+      }
       if (i < maxRetries - 1) {
         console.log(`Retrying in ${retryDelay / 1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
@@ -84,6 +97,7 @@ async function testConnection(maxRetries = 5, retryDelay = 5000) {
     }
   }
   console.error('Failed to connect to database after all retries');
+  console.error('Please check your database credentials and network connectivity');
   return false;
 }
 

@@ -166,27 +166,137 @@ const LeaveManagement = () => {
     };
   }, [fetchLeaves]);
   
+  // Get notifications for the current user based on their role
+  const [userNotifications, setUserNotifications] = useState([]);
+
+  // Fetch real notifications from backend or generate from current leaves
+  const fetchUserNotifications = useCallback(() => {
+    // Generate notifications from current leaves data
+    const notifications = [];
+    
+    if (user) {
+      if (user.role === 'Agent') {
+        // Agents see their own leave notifications
+        leaves.filter(l => l.userId === user.id || l.userName === user.username)
+          .forEach(leave => {
+            if (leave.status === 'Approved') {
+              notifications.push({
+                id: `approved-${leave.id}`,
+                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been approved`,
+                time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+                type: 'approval'
+              });
+            } else if (leave.status === 'Rejected') {
+              notifications.push({
+                id: `rejected-${leave.id}`,
+                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been rejected`,
+                time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+                type: 'rejection'
+              });
+            } else if (leave.status === 'Pending') {
+              notifications.push({
+                id: `requested-${leave.id}`,
+                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} is pending approval`,
+                time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
+                type: 'leave'
+              });
+            }
+          });
+      } else if (user.role === 'Admin' || user.role === 'Supervisor') {
+        // Admins/Supervisors see notifications for their team
+        leaves.filter(l => l.office === user.office)
+          .forEach(leave => {
+            if (leave.status === 'Pending') {
+              notifications.push({
+                id: `requested-${leave.id}`,
+                message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
+                time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
+                type: 'leave'
+              });
+            } else if (leave.status === 'Approved') {
+              notifications.push({
+                id: `approved-${leave.id}`,
+                message: `${leave.userName || leave.employee}'s leave request has been approved`,
+                time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+                type: 'approval'
+              });
+            } else if (leave.status === 'Rejected') {
+              notifications.push({
+                id: `rejected-${leave.id}`,
+                message: `${leave.userName || leave.employee}'s leave request has been rejected`,
+                time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+                type: 'rejection'
+              });
+            }
+          });
+      } else if (user.role === 'SystemAdmin') {
+        // SystemAdmin sees all notifications
+        leaves.forEach(leave => {
+          if (leave.status === 'Pending') {
+            notifications.push({
+              id: `requested-${leave.id}`,
+              message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
+              time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
+              type: 'leave'
+            });
+          } else if (leave.status === 'Approved') {
+            notifications.push({
+              id: `approved-${leave.id}`,
+              message: `${leave.userName || leave.employee}'s leave request has been approved`,
+              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+              type: 'approval'
+            });
+          } else if (leave.status === 'Rejected') {
+            notifications.push({
+              id: `rejected-${leave.id}`,
+              message: `${leave.userName || leave.employee}'s leave request has been rejected`,
+              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+              type: 'rejection'
+            });
+          }
+        });
+      }
+    }
+    
+    // Sort notifications by time (newest first)
+    notifications.sort((a, b) => {
+      const timeA = new Date(a.time);
+      const timeB = new Date(b.time);
+      return timeB - timeA;
+    });
+    
+    setUserNotifications(notifications);
+  }, [leaves, user]);
+
+  // Fetch notifications when leaves or user changes
+  useEffect(() => {
+    fetchUserNotifications();
+  }, [fetchUserNotifications]);
+
   // Listen for real-time notifications
   useEffect(() => {
     const handleLeaveRequested = (data) => {
       frontendLogger.info('Real-time leave requested notification received', data);
       showSnackbar(`New leave request from ${data.leave.userName}`, 'info');
-      // Refresh leave list
+      // Refresh leave list and notifications
       fetchLeaves();
+      fetchUserNotifications();
     };
 
     const handleLeaveApproved = (data) => {
       frontendLogger.info('Real-time leave approved notification received', data);
       showSnackbar(`Leave Request approved!`, 'success');
-      // Refresh leave list
+      // Refresh leave list and notifications
       fetchLeaves();
+      fetchUserNotifications();
     };
 
     const handleLeaveRejected = (data) => {
       frontendLogger.info('Real-time leave rejected notification received', data);
       showSnackbar(`Leave Request rejected!`, 'warning');
-      // Refresh leave list
+      // Refresh leave list and notifications
       fetchLeaves();
+      fetchUserNotifications();
     };
 
     // Subscribe to notifications
@@ -200,7 +310,7 @@ const LeaveManagement = () => {
       notificationService.off('leaveApproved', handleLeaveApproved);
       notificationService.off('leaveRejected', handleLeaveRejected);
     };
-  }, [fetchLeaves, showSnackbar]);
+  }, [fetchLeaves, fetchUserNotifications, showSnackbar]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -277,76 +387,8 @@ const LeaveManagement = () => {
   };
   
   const { calendarData, leaveMap } = getLeaveCalendarData();
-  
-  // Get notifications for the current user based on their role
-  const getUserNotifications = () => {
-    // In a real implementation, this would fetch from the backend
-    // For now, we'll create mock notifications based on user role
-    const notifications = [];
-    
-    if (user) {
-      if (user.role === 'Agent') {
-        // Agents see their own leave notifications
-        leaves.filter(l => l.userId === user.id || l.userName === user.username)
-          .forEach(leave => {
-            if (leave.status === 'Approved') {
-              notifications.push({
-                id: `approved-${leave.id}`,
-                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been approved`,
-                time: '2 hours ago',
-                type: 'approval'
-              });
-            } else if (leave.status === 'Rejected') {
-              notifications.push({
-                id: `rejected-${leave.id}`,
-                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been rejected`,
-                time: '1 day ago',
-                type: 'rejection'
-              });
-            }
-          });
-      } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-        // Admins/Supervisors see notifications for their team
-        leaves.filter(l => l.office === user.office)
-          .forEach(leave => {
-            notifications.push({
-              id: `requested-${leave.id}`,
-              message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
-              time: '2 hours ago',
-              type: 'leave'
-            });
-            
-            if (leave.status === 'Approved') {
-              notifications.push({
-                id: `approved-${leave.id}`,
-                message: `${leave.userName || leave.employee}'s leave request has been approved`,
-                time: '1 day ago',
-                type: 'approval'
-              });
-            } else if (leave.status === 'Rejected') {
-              notifications.push({
-                id: `rejected-${leave.id}`,
-                message: `${leave.userName || leave.employee}'s leave request has been rejected`,
-                time: '1 day ago',
-                type: 'rejection'
-              });
-            }
-          });
-      }
-    }
-    
-    // Add some general notifications
-    notifications.push({
-      id: 'reminder-1',
-      message: 'Reminder: Team meeting tomorrow at 10:00 AM',
-      time: '1 day ago',
-      type: 'reminder'
-    });
-    
-    return notifications;
-  };
 
-  const notifications = getUserNotifications();
+  const notifications = userNotifications;
 
   // Filter leaves based on search term and status
   const filteredLeaves = leaves.filter(leave => {
@@ -768,24 +810,24 @@ const LeaveManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Employee</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Applied Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell align="center">Employee</TableCell>
+                  <TableCell align="center">Start Date</TableCell>
+                  <TableCell align="center">End Date</TableCell>
+                  <TableCell align="center">Reason</TableCell>
+                  <TableCell align="center">Applied Date</TableCell>
+                  <TableCell align="center">Status</TableCell>
+                  <TableCell align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredLeaves.map((leave) => (
                   <TableRow key={leave.id}>
-                    <TableCell>{leave.employee || leave.userName || 'N/A'}</TableCell>
-                    <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
-                    <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
-                    <TableCell>{leave.reason || 'N/A'}</TableCell>
-                    <TableCell>{leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A'}</TableCell>
-                    <TableCell>
+                    <TableCell align="center">{leave.employee || leave.userName || 'N/A'}</TableCell>
+                    <TableCell align="center">{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell align="center">{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell align="center">{leave.reason || 'N/A'}</TableCell>
+                    <TableCell align="center">{leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell align="center">
                       <Chip 
                         label={leave.status || 'Pending'} 
                         color={
@@ -794,7 +836,7 @@ const LeaveManagement = () => {
                         } 
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell align="center">
                       {leave.status === 'Pending' && (
                         <>
                           <IconButton 
@@ -915,36 +957,40 @@ const LeaveManagement = () => {
           <Typography variant="h6" gutterBottom>
             Notifications
           </Typography>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Notification</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Type</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {notifications.map((notification) => (
-                  <TableRow key={notification.id}>
-                    <TableCell>{notification.message}</TableCell>
-                    <TableCell>{notification.time}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={notification.type} 
-                        size="small" 
-                        color={
-                          notification.type === 'leave' ? 'primary' : 
-                          notification.type === 'approval' ? 'success' : 
-                          notification.type === 'rejection' ? 'error' : 'default'
-                        } 
-                      />
-                    </TableCell>
+          {userNotifications.length === 0 ? (
+            <Typography>No notifications available</Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align="center">Notification</TableCell>
+                    <TableCell align="center">Time</TableCell>
+                    <TableCell align="center">Type</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {userNotifications.map((notification) => (
+                    <TableRow key={notification.id}>
+                      <TableCell align="center">{notification.message}</TableCell>
+                      <TableCell align="center">{notification.time}</TableCell>
+                      <TableCell align="center">
+                        <Chip 
+                          label={notification.type} 
+                          size="small" 
+                          color={
+                            notification.type === 'leave' ? 'primary' : 
+                            notification.type === 'approval' ? 'success' : 
+                            notification.type === 'rejection' ? 'error' : 'default'
+                          } 
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Paper>
       )}
       
