@@ -48,6 +48,8 @@ const translations = {
     myTasks: 'Task Modification & Activity',
     teamTasks: 'Team Tasks',
     leaves: 'Leave Management',
+    meetings: 'Meetings',
+    errorMonitoring: 'Error Monitoring',
     files: 'File Management',
     adminConsole: 'Admin Console',
     reports: 'Reports',

@@ -48,6 +48,8 @@ const translations = {
     myTasks: 'টাস্ক মডিফিকেশন এবং অ্যাক্টিভিটি',
     teamTasks: 'দলের টাস্কগুলি',
     leaves: 'ছুটি ম্যানেজমেন্ট',
+    meetings: 'সভা',
+    errorMonitoring: 'ত্রুটি পর্যবেক্ষণ',
     files: 'ফাইল ম্যানেজমেন্ট',
     adminConsole: 'অ্যাডমিন কনসোল',
     reports: 'প্রতিবেদন',

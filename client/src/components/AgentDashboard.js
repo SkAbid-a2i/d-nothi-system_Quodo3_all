@@ -41,6 +41,7 @@ import {
   Search as SearchIcon,
   Download as DownloadIcon,
   PieChart as PieChartIcon,
+  DonutLarge as DonutLargeIcon,
   BarChart as BarChartIcon,
   ShowChart as LineChartIcon,
   Edit as EditIcon,
@@ -54,6 +55,8 @@ import {
   Pie, 
   LineChart, 
   Line, 
+  RadialBarChart,
+  RadialBar,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -703,16 +706,28 @@ const AgentDashboard = () => {
               <Grid item xs={12} sm={3}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <IconButton 
+                    color={chartType === 'bar' ? 'primary' : 'default'}
+                    onClick={() => setChartType('bar')}
+                  >
+                    <BarChartIcon />
+                  </IconButton>
+                  <IconButton 
                     color={chartType === 'pie' ? 'primary' : 'default'}
                     onClick={() => setChartType('pie')}
                   >
                     <PieChartIcon />
                   </IconButton>
                   <IconButton 
-                    color={chartType === 'bar' ? 'primary' : 'default'}
-                    onClick={() => setChartType('bar')}
+                    color={chartType === 'donut' ? 'primary' : 'default'}
+                    onClick={() => setChartType('donut')}
                   >
-                    <BarChartIcon />
+                    <DonutLargeIcon />
+                  </IconButton>
+                  <IconButton 
+                    color={chartType === 'radial' ? 'primary' : 'default'}
+                    onClick={() => setChartType('radial')}
+                  >
+                    <DonutLargeIcon />
                   </IconButton>
                   <IconButton 
                     color={chartType === 'line' ? 'primary' : 'default'}
@@ -811,6 +826,55 @@ const AgentDashboard = () => {
                     <Legend />
                     <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} name="Task Count" />
                   </LineChart>
+                </ResponsiveContainer>
+              )}
+              
+              {chartType === 'donut' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getTaskDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="count"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getTaskDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              
+              {chartType === 'radial' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart 
+                    innerRadius="10%" 
+                    outerRadius="80%" 
+                    barSize={10}
+                    data={getTaskDistributionData().map((entry, index) => ({
+                      ...entry,
+                      fill: ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]
+                    }))}
+                  >
+                    <RadialBar
+                      minAngle={15}
+                      label={{ fill: '#666', position: 'insideStart' }}
+                      background
+                      clockWise={true}
+                      dataKey="count"
+                    />
+                    <Tooltip />
+                    <Legend />
+                  </RadialBarChart>
                 </ResponsiveContainer>
               )}
             </Box>
