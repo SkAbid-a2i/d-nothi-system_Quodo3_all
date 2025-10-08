@@ -18,10 +18,10 @@ if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
       port: process.env.DB_PORT || 4000, // TiDB default port
       dialect: 'mysql',
       dialectOptions: {
-        // SSL configuration for TiDB
-        ssl: process.env.DB_SSL === 'true' ? {
+        // SSL configuration for TiDB - enforce SSL connection
+        ssl: {
           rejectUnauthorized: false
-        } : undefined
+        }
       },
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       pool: {
