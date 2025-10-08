@@ -1,41 +1,37 @@
-// This script tries to check the database schema
-require('dotenv').config();
-const mysql = require('mysql2');
+const sequelize = require('./config/database');
+const { QueryTypes } = require('sequelize');
 
-console.log('Checking database schema...');
-
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('Connection failed:', err.message);
-    return;
-  }
-  
-  console.log('Connected successfully!');
-  
-  // Check tasks table structure
-  connection.query('DESCRIBE tasks', (error, results) => {
-    if (error) {
-      console.error('Failed to describe tasks table:', error.message);
-      connection.end();
-      return;
-    }
+async function checkSchema() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection successful');
     
-    console.log('Tasks table structure:');
-    results.forEach(row => {
-      console.log(`  ${row.Field}: ${row.Type} ${row.Null === 'YES' ? 'NULL' : 'NOT NULL'} ${row.Key} ${row.Default ? 'DEFAULT ' + row.Default : ''}`);
+    // Check tasks table schema
+    const tasksColumns = await sequelize.query(
+      "PRAGMA table_info(tasks)",
+      { type: QueryTypes.SELECT }
+    );
+    
+    console.log('Tasks table columns:');
+    tasksColumns.forEach(column => {
+      console.log(`  ${column.name}: ${column.type} ${column.notnull ? 'NOT NULL' : 'NULL'} ${column.dflt_value ? `DEFAULT ${column.dflt_value}` : ''}`);
     });
     
-    connection.end();
-  });
-});
+    // Check users table schema
+    const usersColumns = await sequelize.query(
+      "PRAGMA table_info(users)",
+      { type: QueryTypes.SELECT }
+    );
+    
+    console.log('\nUsers table columns:');
+    usersColumns.forEach(column => {
+      console.log(`  ${column.name}: ${column.type} ${column.notnull ? 'NOT NULL' : 'NULL'} ${column.dflt_value ? `DEFAULT ${column.dflt_value}` : ''}`);
+    });
+    
+    await sequelize.close();
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+checkSchema();

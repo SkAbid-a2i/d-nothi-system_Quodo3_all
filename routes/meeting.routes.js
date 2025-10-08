@@ -105,6 +105,9 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
 
+    // Send notification about meeting creation
+    notificationService.notifyMeetingCreated(meeting);
+
     // Reload meeting with associations
     const fullMeeting = await Meeting.findByPk(meeting.id, {
       include: [{
@@ -161,6 +164,9 @@ router.put('/:id', authenticate, async (req, res) => {
       await meeting.setSelectedUsers(selectedUserIds);
     }
 
+    // Send notification about meeting update
+    notificationService.notifyMeetingUpdated(meeting);
+
     // Reload meeting with associations
     const fullMeeting = await Meeting.findByPk(meeting.id, {
       include: [{
@@ -202,6 +208,9 @@ router.delete('/:id', authenticate, async (req, res) => {
 
     // Delete meeting
     await meeting.destroy();
+
+    // Send notification about meeting deletion
+    notificationService.notifyMeetingDeleted(meeting);
 
     res.json({ message: 'Meeting removed' });
   } catch (err) {

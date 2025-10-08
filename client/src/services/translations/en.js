@@ -45,7 +45,7 @@ const translations = {
   navigation: {
     dashboard: 'Dashboard',
     taskLogger: 'Task Logger',
-    myTasks: 'My Tasks',
+    myTasks: 'Task Modification & Activity',
     teamTasks: 'Team Tasks',
     leaves: 'Leave Management',
     files: 'File Management',
@@ -266,5 +266,7 @@ const translations = {
 };
 
 export default translations;
+
+
 
 

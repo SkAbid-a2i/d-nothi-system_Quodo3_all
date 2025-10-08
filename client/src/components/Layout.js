@@ -233,7 +233,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `New task created: ${data.task.description}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'taskCreated',
+        displayType: 'info',
         read: false
       };
       
@@ -247,7 +248,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Task ${action}: ${data.task.description}`,
         time: new Date().toLocaleString(),
-        type: data.deleted ? 'warning' : 'info',
+        type: 'taskUpdated',
+        displayType: data.deleted ? 'warning' : 'info',
         read: false
       };
       
@@ -260,7 +262,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `New leave request from ${data.leave.userName}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'leaveRequested',
+        displayType: 'info',
         read: false
       };
       
@@ -273,7 +276,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Leave request approved for ${data.leave.userName}`,
         time: new Date().toLocaleString(),
-        type: 'success',
+        type: 'leaveApproved',
+        displayType: 'success',
         read: false
       };
       
@@ -286,7 +290,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Leave request rejected for ${data.leave.userName}`,
         time: new Date().toLocaleString(),
-        type: 'warning',
+        type: 'leaveRejected',
+        displayType: 'warning',
         read: false
       };
       
@@ -299,7 +304,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `New user created: ${data.user.username}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'userCreated',
+        displayType: 'info',
         read: false
       };
       
@@ -312,7 +318,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `User updated: ${data.user.username}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'userUpdated',
+        displayType: 'info',
         read: false
       };
       
@@ -325,7 +332,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `User deleted: ${data.username}`,
         time: new Date().toLocaleString(),
-        type: 'warning',
+        type: 'userDeleted',
+        displayType: 'warning',
         read: false
       };
       
@@ -338,7 +346,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `New dropdown value created: ${data.dropdown.value}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'dropdownCreated',
+        displayType: 'info',
         read: false
       };
       
@@ -351,7 +360,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Dropdown value updated: ${data.dropdown.value}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'dropdownUpdated',
+        displayType: 'info',
         read: false
       };
       
@@ -364,7 +374,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Dropdown value deleted: ${data.dropdownValue}`,
         time: new Date().toLocaleString(),
-        type: 'warning',
+        type: 'dropdownDeleted',
+        displayType: 'warning',
         read: false
       };
       
@@ -377,7 +388,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `New permission template created: ${data.template.name}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'permissionTemplateCreated',
+        displayType: 'info',
         read: false
       };
       
@@ -390,7 +402,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Permission template updated: ${data.template.name}`,
         time: new Date().toLocaleString(),
-        type: 'info',
+        type: 'permissionTemplateUpdated',
+        displayType: 'info',
         read: false
       };
       
@@ -403,7 +416,50 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         id: Date.now(),
         message: `Permission template deleted: ${data.templateName}`,
         time: new Date().toLocaleString(),
-        type: 'warning',
+        type: 'permissionTemplateDeleted',
+        displayType: 'warning',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleMeetingCreated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `New meeting scheduled: ${data.meeting.subject}`,
+        time: new Date().toLocaleString(),
+        type: 'meetingCreated',
+        displayType: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleMeetingUpdated = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Meeting updated: ${data.meeting.subject}`,
+        time: new Date().toLocaleString(),
+        type: 'meetingUpdated',
+        displayType: 'info',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+      setUnreadCount(prev => prev + 1);
+    };
+
+    const handleMeetingDeleted = (data) => {
+      const newNotification = {
+        id: Date.now(),
+        message: `Meeting cancelled: ${data.meeting.subject}`,
+        time: new Date().toLocaleString(),
+        type: 'meetingDeleted',
+        displayType: 'warning',
         read: false
       };
       
@@ -426,6 +482,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     notificationService.onPermissionTemplateCreated(handlePermissionTemplateCreated);
     notificationService.onPermissionTemplateUpdated(handlePermissionTemplateUpdated);
     notificationService.onPermissionTemplateDeleted(handlePermissionTemplateDeleted);
+    notificationService.onMeetingCreated(handleMeetingCreated);
+    notificationService.onMeetingUpdated(handleMeetingUpdated);
+    notificationService.onMeetingDeleted(handleMeetingDeleted);
 
     // Cleanup on unmount
     return () => {
@@ -443,8 +502,33 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       notificationService.off('permissionTemplateCreated', handlePermissionTemplateCreated);
       notificationService.off('permissionTemplateUpdated', handlePermissionTemplateUpdated);
       notificationService.off('permissionTemplateDeleted', handlePermissionTemplateDeleted);
+      notificationService.off('meetingCreated', handleMeetingCreated);
+      notificationService.off('meetingUpdated', handleMeetingUpdated);
+      notificationService.off('meetingDeleted', handleMeetingDeleted);
     };
   }, []);
+
+  // Filter notifications based on current page
+  const getFilteredNotifications = () => {
+    // If we're on the leave page, only show leave-related notifications
+    if (location.pathname === '/leaves') {
+      return notifications.filter(notification => 
+        notification.type === 'leaveRequested' ||
+        notification.type === 'leaveApproved' ||
+        notification.type === 'leaveRejected'
+      );
+    }
+    // If we're on the meetings page, only show meeting-related notifications
+    else if (location.pathname === '/meetings') {
+      return notifications.filter(notification => 
+        notification.type === 'meetingCreated' ||
+        notification.type === 'meetingUpdated' ||
+        notification.type === 'meetingDeleted'
+      );
+    }
+    // For other pages, show all notifications
+    return notifications;
+  };
 
   const menuId = 'primary-search-account-menu';
   const notificationId = 'primary-notification-menu';
@@ -502,7 +586,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               color="inherit"
               onClick={handleNotificationMenuOpen}
             >
-              <Badge badgeContent={unreadCount} color="error">
+              <Badge badgeContent={location.pathname === '/leaves' || location.pathname === '/meetings' ? 
+                getFilteredNotifications().length : 
+                notifications.length} color="error">
                 <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
               </Badge>
             </IconButton>
@@ -754,14 +840,14 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             <CircularProgress size={20} sx={{ mr: 1 }} />
             Loading notifications...
           </MenuItem>
-        ) : notifications.length === 0 ? (
+        ) : getFilteredNotifications().length === 0 ? (
           <MenuItem>
             <Typography variant="body2" color="text.secondary">
               No notifications
             </Typography>
           </MenuItem>
         ) : (
-          notifications.map((notification) => (
+          getFilteredNotifications().map((notification) => (
             <MenuItem key={notification.id} sx={{ 
               display: 'flex', 
               flexDirection: 'column', 

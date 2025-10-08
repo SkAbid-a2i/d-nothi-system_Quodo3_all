@@ -1,6 +1,35 @@
 // Test script to verify API functionality
 const axios = require('axios');
 
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJTeXN0ZW1BZG1pbiIsImlhdCI6MTc1OTkyNjc5NiwiZXhwIjoxNzU5OTMwMzk2fQ.BeezsdaVeeizeHw6KBAVS9s0oOE_j5ybMaVYgxki1Kc';
+
+async function testDropdownAPI() {
+  try {
+    // Test Sources
+    const sourcesRes = await axios.get('http://localhost:5001/api/dropdowns/Source', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    console.log('Sources response:', sourcesRes.data);
+    
+    // Test Categories
+    const categoriesRes = await axios.get('http://localhost:5001/api/dropdowns/Category', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    console.log('Categories response:', categoriesRes.data);
+    
+    // Test Services
+    const servicesRes = await axios.get('http://localhost:5001/api/dropdowns/Service', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    console.log('Services response:', servicesRes.data);
+    
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message);
+  }
+}
+
+testDropdownAPI();
+
 async function testAPI() {
   try {
     console.log('Testing API endpoints...');

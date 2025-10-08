@@ -1,41 +1,39 @@
-require('dotenv').config();
-const mysql = require('mysql2');
+const Task = require('./models/Task');
+const sequelize = require('./config/database');
 
-console.log('Testing direct MySQL connection...');
-console.log('Host:', process.env.DB_HOST);
-console.log('Port:', process.env.DB_PORT);
-console.log('Database:', process.env.DB_NAME);
-console.log('User:', process.env.DB_USER);
-
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('❌ Error connecting to database:', err.message);
-    if (err.code) {
-      console.error('Error code:', err.code);
+async function directDbTest() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection successful');
+    
+    // Try to create a task directly
+    console.log('Creating task directly...');
+    const task = await Task.create({
+      date: new Date(),
+      source: 'Email',
+      category: 'IT Support',
+      service: 'Software',
+      userId: 1,
+      userName: 'Test User',
+      office: null,
+      description: 'Direct DB test task'
+    });
+    
+    console.log('Task created successfully:', task.id);
+    
+    // Clean up
+    await task.destroy();
+    console.log('Task deleted successfully');
+    
+    await sequelize.close();
+  } catch (error) {
+    console.error('Error:', error.message);
+    if (error.errors) {
+      error.errors.forEach(err => {
+        console.error('Validation error:', err.message);
+      });
     }
-    return;
   }
-  console.log('✅ Connected to database successfully!');
-  
-  connection.query('SELECT 1 + 1 AS solution', (error, results) => {
-    if (error) {
-      console.error('❌ Error executing query:', error.message);
-      connection.end();
-      return;
-    }
-    console.log('✅ Query result:', results[0].solution);
-    connection.end();
-    console.log('🔒 Database connection closed.');
-  });
-});
+}
+
+directDbTest();

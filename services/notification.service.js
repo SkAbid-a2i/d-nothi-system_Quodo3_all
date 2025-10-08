@@ -247,6 +247,45 @@ class NotificationService {
     this.broadcast(notification);
   }
 
+  // Notify about meeting creation
+  notifyMeetingCreated(meeting) {
+    const notification = {
+      type: 'meetingCreated',
+      meetingId: meeting.id,
+      meeting: meeting,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users (in a real app, you'd send only to relevant users)
+    this.broadcast(notification);
+  }
+
+  // Notify about meeting update
+  notifyMeetingUpdated(meeting) {
+    const notification = {
+      type: 'meetingUpdated',
+      meetingId: meeting.id,
+      meeting: meeting,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users (in a real app, you'd send only to relevant users)
+    this.broadcast(notification);
+  }
+
+  // Notify about meeting deletion
+  notifyMeetingDeleted(meeting) {
+    const notification = {
+      type: 'meetingDeleted',
+      meetingId: meeting.id,
+      meeting: meeting,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users (in a real app, you'd send only to relevant users)
+    this.broadcast(notification);
+  }
+
   // Get number of connected clients
   getConnectedClients() {
     return this.clients.size;

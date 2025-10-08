@@ -33,7 +33,7 @@ const Task = sequelize.define('Task', {
   },
   office: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   description: {
     type: DataTypes.TEXT,

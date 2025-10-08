@@ -20,8 +20,7 @@ async function testAllFunctionality() {
       email: `test_${timestamp}@example.com`,
       password: 'password123',
       fullName: 'Test User',
-      role: 'Agent',
-      office: 'Test Office'
+      role: 'Agent'
     });
     console.log('✅ User creation successful:', user.id);
     
@@ -33,7 +32,6 @@ async function testAllFunctionality() {
       service: 'Software',
       userId: user.id,
       userName: user.fullName,
-      office: user.office,
       description: 'Test task for functionality verification'
     });
     console.log('✅ Task creation successful:', task.id);

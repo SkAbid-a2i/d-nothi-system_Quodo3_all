@@ -93,6 +93,11 @@ class NotificationService {
       case 'permissionTemplateDeleted':
         autoRefreshService.triggerRefresh('permissionTemplates');
         break;
+      case 'meetingCreated':
+      case 'meetingUpdated':
+      case 'meetingDeleted':
+        autoRefreshService.triggerRefresh('meetings');
+        break;
       default:
         // For unknown notification types, trigger a general refresh
         autoRefreshService.triggerRefresh('dashboard');
@@ -232,6 +237,21 @@ class NotificationService {
   // Listen for permission template deletions
   onPermissionTemplateDeleted(callback) {
     this.on('permissionTemplateDeleted', callback);
+  }
+
+  // Listen for meeting creation
+  onMeetingCreated(callback) {
+    this.on('meetingCreated', callback);
+  }
+
+  // Listen for meeting updates
+  onMeetingUpdated(callback) {
+    this.on('meetingUpdated', callback);
+  }
+
+  // Listen for meeting deletions
+  onMeetingDeleted(callback) {
+    this.on('meetingDeleted', callback);
   }
 }
 

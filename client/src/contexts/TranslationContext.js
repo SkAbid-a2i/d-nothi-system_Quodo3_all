@@ -24,7 +24,7 @@ export const TranslationProvider = ({ children }) => {
     if (savedLanguage !== language) {
       changeLanguage(savedLanguage);
     }
-  }, [language]);
+  }, []);
 
   const changeLanguage = (newLanguage) => {
     if (translationService.setLanguage(newLanguage)) {
@@ -41,7 +41,21 @@ export const TranslationProvider = ({ children }) => {
   };
 
   const t = (key) => {
-    return translationService.t(key);
+    // Split the key by dots to navigate through the object
+    const keys = key.split('.');
+    let translation = translations;
+    
+    // Navigate through the object using the keys
+    for (const k of keys) {
+      if (translation && translation[k] !== undefined) {
+        translation = translation[k];
+      } else {
+        // If translation not found, return the key itself
+        return key;
+      }
+    }
+    
+    return translation;
   };
 
   const value = {
