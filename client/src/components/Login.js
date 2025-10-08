@@ -266,10 +266,25 @@ const Login = () => {
                       mb: 2,
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        '& fieldset': {
+                          borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                        },
                         '&.Mui-focused fieldset': {
-                          borderColor: 'primary.main',
+                          borderColor: darkMode ? '#667eea' : '#667eea',
                           borderWidth: '2px'
                         }
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: darkMode ? '#667eea' : '#667eea',
+                      },
+                      '& .MuiInputBase-input': {
+                        color: darkMode ? '#f1f5f9' : '#1e293b',
                       }
                     }}
                   />
@@ -306,10 +321,25 @@ const Login = () => {
                       mb: 2,
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
+                        '& fieldset': {
+                          borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                        },
                         '&.Mui-focused fieldset': {
-                          borderColor: 'primary.main',
+                          borderColor: darkMode ? '#667eea' : '#667eea',
                           borderWidth: '2px'
                         }
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: darkMode ? '#667eea' : '#667eea',
+                      },
+                      '& .MuiInputBase-input': {
+                        color: darkMode ? '#f1f5f9' : '#1e293b',
                       }
                     }}
                   />

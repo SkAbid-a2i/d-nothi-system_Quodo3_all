@@ -59,26 +59,36 @@ function App() {
         default: darkMode ? '#0f172a' : '#f8fafc',
         paper: darkMode ? '#1e293b' : '#ffffff',
       },
+      text: {
+        primary: darkMode ? '#f1f5f9' : '#1e293b',
+        secondary: darkMode ? '#cbd5e1' : '#64748b',
+        disabled: darkMode ? '#94a3b8' : '#94a3b8'
+      },
       success: {
         main: '#10b981', // Modern green
         light: '#34d399',
-        dark: '#059669'
+        dark: '#059669',
+        contrastText: '#ffffff'
       },
       warning: {
         main: '#f59e0b', // Modern amber
         light: '#fbbf24',
-        dark: '#d97706'
+        dark: '#d97706',
+        contrastText: '#ffffff'
       },
       error: {
         main: '#ef4444', // Modern red
         light: '#f87171',
-        dark: '#dc2626'
+        dark: '#dc2626',
+        contrastText: '#ffffff'
       },
       info: {
         main: '#3b82f6', // Modern blue
         light: '#60a5fa',
-        dark: '#2563eb'
-      }
+        dark: '#2563eb',
+        contrastText: '#ffffff'
+      },
+      divider: darkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'
     },
     typography: {
       fontFamily: [
@@ -160,11 +170,47 @@ function App() {
         styleOverrides: {
           root: {
             '& .MuiOutlinedInput-root': {
-              borderRadius: 8
+              borderRadius: 8,
+              '& fieldset': {
+                borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+              },
+              '&:hover fieldset': {
+                borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: darkMode ? '#667eea' : '#667eea',
+              }
+            },
+            '& .MuiInputLabel-root': {
+              color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: darkMode ? '#667eea' : '#667eea',
+            },
+            '& .MuiInputBase-input': {
+              color: darkMode ? '#f1f5f9' : '#1e293b',
             }
           }
         }
-      }
+      },
+      MuiSelect: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: darkMode ? '#667eea' : '#667eea',
+            },
+            '& .MuiSelect-select': {
+              color: darkMode ? '#f1f5f9' : '#1e293b',
+            }
+          }
+        }
+      },
     },
     shape: {
       borderRadius: 8
@@ -177,7 +223,72 @@ function App() {
       darkMode 
         ? '0 2px 6px rgba(0, 0, 0, 0.2)' 
         : '0 2px 6px rgba(0, 0, 0, 0.1)',
-      // ... rest of shadows array would be defined
+      darkMode 
+        ? '0 4px 8px rgba(0, 0, 0, 0.2)' 
+        : '0 4px 8px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 6px 12px rgba(0, 0, 0, 0.2)' 
+        : '0 6px 12px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 8px 16px rgba(0, 0, 0, 0.2)' 
+        : '0 8px 16px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 10px 20px rgba(0, 0, 0, 0.2)' 
+        : '0 10px 20px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 12px 24px rgba(0, 0, 0, 0.2)' 
+        : '0 12px 24px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 14px 28px rgba(0, 0, 0, 0.2)' 
+        : '0 14px 28px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 16px 32px rgba(0, 0, 0, 0.2)' 
+        : '0 16px 32px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 18px 36px rgba(0, 0, 0, 0.2)' 
+        : '0 18px 36px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 20px 40px rgba(0, 0, 0, 0.2)' 
+        : '0 20px 40px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 22px 44px rgba(0, 0, 0, 0.2)' 
+        : '0 22px 44px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 24px 48px rgba(0, 0, 0, 0.2)' 
+        : '0 24px 48px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 26px 52px rgba(0, 0, 0, 0.2)' 
+        : '0 26px 52px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 28px 56px rgba(0, 0, 0, 0.2)' 
+        : '0 28px 56px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 30px 60px rgba(0, 0, 0, 0.2)' 
+        : '0 30px 60px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 32px 64px rgba(0, 0, 0, 0.2)' 
+        : '0 32px 64px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 34px 68px rgba(0, 0, 0, 0.2)' 
+        : '0 34px 68px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 36px 72px rgba(0, 0, 0, 0.2)' 
+        : '0 36px 72px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 38px 76px rgba(0, 0, 0, 0.2)' 
+        : '0 38px 76px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 40px 80px rgba(0, 0, 0, 0.2)' 
+        : '0 40px 80px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 42px 84px rgba(0, 0, 0, 0.2)' 
+        : '0 42px 84px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 44px 88px rgba(0, 0, 0, 0.2)' 
+        : '0 44px 88px rgba(0, 0, 0, 0.1)',
+      darkMode 
+        ? '0 46px 92px rgba(0, 0, 0, 0.2)' 
+        : '0 46px 92px rgba(0, 0, 0, 0.1)'
     ]
   });
 

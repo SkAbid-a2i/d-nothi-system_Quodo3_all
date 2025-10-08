@@ -60,7 +60,7 @@ const AdminConsole = () => {
 
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);
-  const [dropdownTypes] = useState(['Source', 'Category', 'Service']);
+  const [dropdownTypes] = useState(['Source', 'Category', 'Service', 'Office']);
   const [selectedDropdownType, setSelectedDropdownType] = useState('Source');
   const [dropdownValue, setDropdownValue] = useState('');
   const [parentCategory, setParentCategory] = useState('');
@@ -1071,10 +1071,12 @@ const AdminConsole = () => {
                                     sx={{ 
                                       bgcolor: dropdown.type === 'Category' ? '#10b98120' : 
                                                dropdown.type === 'Service' ? '#8b5cf620' : 
-                                               dropdown.type === 'Source' ? '#f59e0b20' : '#667eea20',
+                                               dropdown.type === 'Source' ? '#f59e0b20' : 
+                                               dropdown.type === 'Office' ? '#ef444420' : '#667eea20',
                                       color: dropdown.type === 'Category' ? '#10b981' : 
                                              dropdown.type === 'Service' ? '#8b5cf6' : 
-                                             dropdown.type === 'Source' ? '#f59e0b' : '#667eea',
+                                             dropdown.type === 'Source' ? '#f59e0b' : 
+                                             dropdown.type === 'Office' ? '#ef4444' : '#667eea',
                                       fontWeight: 600
                                     }} 
                                   />

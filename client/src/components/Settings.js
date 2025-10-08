@@ -176,6 +176,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       label="Full Name"
                       value={profileData.fullName}
                       onChange={(e) => handleProfileChange('fullName', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -186,6 +199,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       value={profileData.email}
                       onChange={(e) => handleProfileChange('email', e.target.value)}
                       type="email"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -196,6 +222,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       value={profileData.username}
                       onChange={(e) => handleProfileChange('username', e.target.value)}
                       disabled
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -205,6 +244,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       label="Office"
                       value={profileData.office}
                       onChange={(e) => handleProfileChange('office', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -243,6 +295,17 @@ const Settings = ({ darkMode, setDarkMode }) => {
                         value={t.language}
                         onChange={(e) => t.toggleLanguage(e.target.value)}
                         label="Language"
+                        sx={{
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          }
+                        }}
                       >
                         <MenuItem value="en">English</MenuItem>
                         <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
@@ -334,6 +397,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       type="password"
                       value={passwordData.currentPassword}
                       onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -344,6 +420,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       type="password"
                       value={passwordData.newPassword}
                       onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -354,6 +443,19 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       type="password"
                       value={passwordData.confirmPassword}
                       onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                   
