@@ -84,13 +84,14 @@ const TaskManagement = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [offices, setOffices] = useState([]); // Add offices state
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
+  const [userInformation, setUserInformation] = useState(''); // Add user information state
   const [users, setUsers] = useState([]); // Add users state for filtering
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
-  const [flag, setFlag] = useState('None'); // Add flag state
   const [files, setFiles] = useState([]); // File upload state
   // Removed assignedTo state as requested
+  // Removed flag state as requested
   
   // Edit task state
   const [editingTask, setEditingTask] = useState(null);
@@ -99,11 +100,12 @@ const TaskManagement = () => {
   const [editSelectedCategory, setEditSelectedCategory] = useState(null);
   const [editSelectedService, setEditSelectedService] = useState(null);
   const [editSelectedOffice, setEditSelectedOffice] = useState(null); // Add edit selected office state
+  const [editUserInformation, setEditUserInformation] = useState(''); // Add edit user information state
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('');
-  const [editFlag, setEditFlag] = useState(''); // Add edit flag state
   const [editFiles, setEditFiles] = useState([]); // Edit file upload state
   // Removed editAssignedTo state as requested
+  // Removed editFlag state as requested
   const [openEditDialog, setOpenEditDialog] = useState(false);
   
   // Search and filter state
@@ -177,31 +179,31 @@ const TaskManagement = () => {
     }
   }, [user]); // Add user to dependencies
 
-  // Add function to directly update flag in database
-  const updateTaskFlag = async (taskId, newFlag) => {
+  // Add function to directly update status in database
+  const updateTaskStatus = async (taskId, newStatus) => {
     try {
-      // Update flag directly in database
-      const response = await taskAPI.updateTask(taskId, { flag: newFlag });
+      // Update status directly in database
+      const response = await taskAPI.updateTask(taskId, { status: newStatus });
       
       // Update local state
       setTasks(prevTasks => 
         prevTasks.map(task => 
-          task.id === taskId ? { ...task, flag: newFlag } : task
+          task.id === taskId ? { ...task, status: newStatus } : task
         )
       );
       
       setAllTasks(prevTasks => 
         prevTasks.map(task => 
-          task.id === taskId ? { ...task, flag: newFlag } : task
+          task.id === taskId ? { ...task, status: newStatus } : task
         )
       );
       
-      showSnackbar('Task flag updated successfully!', 'success');
+      showSnackbar('Task status updated successfully!', 'success');
       return response.data;
     } catch (error) {
-      console.error('Error updating task flag:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task flag';
-      showSnackbar(`Failed to update task flag: ${errorMessage}`, 'error');
+      console.error('Error updating task status:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task status';
+      showSnackbar(`Failed to update task status: ${errorMessage}`, 'error');
       throw error;
     }
   };
@@ -371,9 +373,9 @@ const TaskManagement = () => {
         category: selectedCategory?.value || '',
         service: selectedService?.value || '',
         office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
+        userInformation, // Add user information
         description,
         status,
-        flag, // Add flag to task data
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
@@ -410,6 +412,7 @@ const TaskManagement = () => {
       setSelectedCategory(null);
       setSelectedService(null);
       setSelectedOffice(null); // Reset selected office
+      setUserInformation(''); // Reset user information
       setDescription('');
       setStatus('Pending');
       setFiles([]); // Reset files
@@ -434,11 +437,12 @@ const TaskManagement = () => {
     setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
     setEditSelectedService(services.find(s => s.value === task.service) || null);
     setEditSelectedOffice(offices.find(o => o.value === task.office) || null); // Set edit selected office
+    setEditUserInformation(task.userInformation || ''); // Set edit user information
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
-    setEditFlag(task.flag || 'None'); // Set edit flag
     setEditFiles(task.files || []); // Set existing files
     // Removed editAssignedTo assignment
+    // Removed editFlag assignment
     setOpenEditDialog(true);
   };
 
@@ -450,9 +454,9 @@ const TaskManagement = () => {
         category: editSelectedCategory?.value || '',
         service: editSelectedService?.value || '',
         office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
+        userInformation: editUserInformation, // Add user information
         description: editDescription,
         status: editStatus,
-        flag: editFlag, // Add flag to task data
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
@@ -844,7 +848,7 @@ const TaskManagement = () => {
                     <TableCell>User Info</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Files</TableCell>
-                    <TableCell>Flag</TableCell> {/* Added Flag column */}
+                    {/* Removed Flag column */}
                     {/* Removed Assigned To column */}
                     <TableCell>Actions</TableCell>
                   </TableRow>
@@ -859,15 +863,18 @@ const TaskManagement = () => {
                       <TableCell>{task.description || 'N/A'}</TableCell>
                       <TableCell>{task.userName || 'N/A'}</TableCell>
                       <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={task.status || 'Pending'} 
-                          color={
-                            task.status === 'Completed' ? 'success' : 
-                            task.status === 'In Progress' ? 'primary' : 
-                            task.status === 'Pending' ? 'warning' : 'default'
-                          } 
-                        />
+                      <TableCell> {/* Make status editable */}
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={task.status || 'Pending'}
+                            onChange={(e) => updateTaskStatus(task.id, e.target.value)}
+                          >
+                            <MenuItem value="Pending">Pending</MenuItem>
+                            <MenuItem value="In Progress">In Progress</MenuItem>
+                            <MenuItem value="Completed">Completed</MenuItem>
+                            <MenuItem value="Cancelled">Cancelled</MenuItem>
+                          </Select>
+                        </FormControl>
                       </TableCell>
                       <TableCell>
                         {task.files && task.files.length > 0 ? (
@@ -884,21 +891,7 @@ const TaskManagement = () => {
                           'N/A'
                         )}
                       </TableCell>
-                      <TableCell> {/* Added Flag cell with dropdown */}
-                        <FormControl fullWidth size="small">
-                          <Select
-                            value={task.flag || 'None'}
-                            onChange={(e) => updateTaskFlag(task.id, e.target.value)}
-                            displayEmpty
-                          >
-                            <MenuItem value="None">None</MenuItem>
-                            <MenuItem value="Low">Low</MenuItem>
-                            <MenuItem value="Medium">Medium</MenuItem>
-                            <MenuItem value="High">High</MenuItem>
-                            <MenuItem value="Urgent">Urgent</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </TableCell>
+                      {/* Removed Flag cell with dropdown */}
                       {/* Removed Assigned To cell */}
                       <TableCell>
                         <IconButton 
@@ -1014,6 +1007,16 @@ const TaskManagement = () => {
               )}
             </Grid>
             
+            {/* User Information Text Field */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="User Information"
+                value={userInformation}
+                onChange={(e) => setUserInformation(e.target.value)}
+              />
+            </Grid>
+            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -1041,7 +1044,8 @@ const TaskManagement = () => {
               </FormControl>
             </Grid>
             
-            {/* Flag Dropdown */}
+            {/* Remove Flag Dropdown */}
+            {/* 
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Flag</InputLabel>
@@ -1058,6 +1062,7 @@ const TaskManagement = () => {
                 </Select>
               </FormControl>
             </Grid>
+            */}
             
             {/* File Upload Field */}
             <Grid item xs={12}>
@@ -1223,6 +1228,16 @@ const TaskManagement = () => {
               )}
             </Grid>
             
+            {/* Add User Information field in Edit form */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="User Information"
+                value={editUserInformation}
+                onChange={(e) => setEditUserInformation(e.target.value)}
+              />
+            </Grid>
+            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -1247,24 +1262,6 @@ const TaskManagement = () => {
                   <MenuItem value="In Progress">In Progress</MenuItem>
                   <MenuItem value="Completed">Completed</MenuItem>
                   <MenuItem value="Cancelled">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Flag Dropdown for Edit */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Flag</InputLabel>
-                <Select 
-                  label="Flag" 
-                  value={editFlag}
-                  onChange={(e) => setEditFlag(e.target.value)}
-                >
-                  <MenuItem value="None">None</MenuItem>
-                  <MenuItem value="Low">Low</MenuItem>
-                  <MenuItem value="Medium">Medium</MenuItem>
-                  <MenuItem value="High">High</MenuItem>
-                  <MenuItem value="Urgent">Urgent</MenuItem>
                 </Select>
               </FormControl>
             </Grid>

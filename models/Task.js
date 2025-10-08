@@ -73,10 +73,7 @@ const Task = sequelize.define('Task', {
     type: DataTypes.ENUM('Pending', 'In Progress', 'Completed', 'Cancelled'),
     defaultValue: 'Pending'
   },
-  flag: {
-    type: DataTypes.ENUM('None', 'Low', 'Medium', 'High', 'Urgent'),
-    defaultValue: 'None'
-  },
+  // Removed flag field as requested
   comments: {
     type: DataTypes.JSON, // Store comments as JSON array
     defaultValue: [],

@@ -1,27 +1,37 @@
-const sequelize = require('./config/database');
-const PermissionTemplate = require('./models/PermissionTemplate');
-const Dropdown = require('./models/Dropdown');
+// Simple database connection test
+require('dotenv').config();
 
-async function testConnection() {
-  try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
-    
-    // Test PermissionTemplate table
-    const permissionTemplates = await PermissionTemplate.findAll();
-    console.log(`Found ${permissionTemplates.length} permission templates`);
-    
-    // Test Dropdown table
-    const dropdowns = await Dropdown.findAll();
-    console.log(`Found ${dropdowns.length} dropdown values`);
-    
-    // Close connection
-    await sequelize.close();
-    console.log('Connection closed.');
-  } catch (error) {
-    console.error('Unable to connect to the database:', error);
+console.log('Database Connection Parameters:');
+console.log('============================');
+console.log('Host:', process.env.DB_HOST);
+console.log('Port:', process.env.DB_PORT);
+console.log('User:', process.env.DB_USER);
+console.log('Database:', process.env.DB_NAME);
+console.log('SSL Enabled:', process.env.DB_SSL);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
+// Test if we can connect using mysql2 directly
+const mysql = require('mysql2');
+
+console.log('\nTesting direct MySQL connection...');
+
+const connection = mysql.createConnection({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+});
+
+connection.connect((err) => {
+  if (err) {
+    console.error('Direct MySQL connection failed:', err.message);
+    console.error('Error code:', err.code);
+    console.error('Error number:', err.errno);
+    process.exit(1);
   }
-}
-
-testConnection();
+  console.log('✅ Direct MySQL connection successful!');
+  connection.end();
+  process.exit(0);
+});
