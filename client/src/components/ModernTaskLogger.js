@@ -86,25 +86,68 @@ const ModernTaskLogger = () => {
 
   // Fetch dropdown values on component mount
   useEffect(() => {
-    fetchDropdownValues();
-    fetchTasks();
-    // Only fetch users for admin roles who need the user filter
-    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
-      fetchUsers();
-    }
+    fetchInitialData();
   }, [user]);
 
-  const fetchUsers = async () => {
+  const fetchInitialData = async () => {
+    setLoading(true);
+    setDropdownLoading(true);
     try {
-      const response = await userAPI.getAllUsers();
-      console.log('Users API response:', response);
-      const usersData = Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || [];
-      console.log('Processed users data:', usersData);
-      setUsers(usersData);
+      // Fetch all data together for better performance
+      const fetchPromises = [
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Service'),
+        taskAPI.getAllTasks()
+      ];
+      
+      // Only fetch users for admin roles who need the user filter
+      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+        fetchPromises.push(userAPI.getAllUsers());
+      }
+      
+      const responses = await Promise.all(fetchPromises);
+      
+      // Process dropdown responses
+      const [sourcesRes, categoriesRes, servicesRes, tasksRes, usersRes] = responses;
+      
+      console.log('Sources response:', sourcesRes);
+      console.log('Categories response:', categoriesRes);
+      console.log('Services response:', servicesRes);
+      console.log('Tasks response:', tasksRes);
+      if (usersRes) console.log('Users response:', usersRes);
+      
+      const sourcesData = Array.isArray(sourcesRes.data) ? sourcesRes.data : 
+                         sourcesRes.data?.data || sourcesRes.data || [];
+      const categoriesData = Array.isArray(categoriesRes.data) ? categoriesRes.data : 
+                            categoriesRes.data?.data || categoriesRes.data || [];
+      const servicesData = Array.isArray(servicesRes.data) ? servicesRes.data : 
+                          servicesRes.data?.data || servicesRes.data || [];
+      const tasksData = Array.isArray(tasksRes.data) ? tasksRes.data : 
+                       tasksRes.data?.data || tasksRes.data || [];
+      const usersData = usersRes ? (Array.isArray(usersRes.data) ? usersRes.data : 
+                                   usersRes.data?.data || usersRes.data || []) : [];
+      
+      console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData });
+      if (usersRes) console.log('Processed users data:', usersData);
+      
+      setSources(sourcesData);
+      setCategories(categoriesData);
+      setServices(servicesData);
+      setTasks(tasksData);
+      setFilteredTasks(tasksData);
+      if (usersRes) setUsers(usersData);
+      
     } catch (error) {
-      console.error('Error fetching users:', error);
-      showSnackbar('Error fetching users: ' + error.message, 'error');
+      console.error('Error fetching initial data:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Error fetching data: ' + error.message, 'error');
+      setTasks([]);
+      setFilteredTasks([]);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+      setDropdownLoading(false);
     }
   };
 
@@ -161,6 +204,20 @@ const ModernTaskLogger = () => {
       setFilteredTasks([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await userAPI.getAllUsers();
+      console.log('Users API response:', response);
+      const usersData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      console.log('Processed users data:', usersData);
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      showSnackbar('Error fetching users: ' + error.message, 'error');
     }
   };
 
