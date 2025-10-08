@@ -92,8 +92,10 @@ const ModernTaskLogger = () => {
   const fetchUsers = async () => {
     try {
       const response = await userAPI.getAllUsers();
+      console.log('Users API response:', response);
       const usersData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
+      console.log('Processed users data:', usersData);
       setUsers(usersData);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -545,7 +547,10 @@ const ModernTaskLogger = () => {
                       <Autocomplete
                         sx={{ minWidth: 200 }}
                         options={users}
-                        getOptionLabel={(option) => option.fullName || option.username || 'Unknown User'}
+                        getOptionLabel={(option) => {
+                          if (!option) return '';
+                          return option.fullName || option.username || option.email || 'Unknown User';
+                        }}
                         value={selectedUser}
                         onChange={(event, newValue) => setSelectedUser(newValue)}
                         renderInput={(params) => (
@@ -556,6 +561,7 @@ const ModernTaskLogger = () => {
                             variant="outlined"
                           />
                         )}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
                       />
                     </Box>
                   </Box>
