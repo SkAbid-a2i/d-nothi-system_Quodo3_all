@@ -66,6 +66,72 @@ const ErrorMonitoring = () => {
     backend: logs.filter(log => !log.metadata?.source || log.metadata?.source !== 'frontend').length
   };
 
+  // Add error analysis function
+  const analyzeErrors = () => {
+    const errorAnalysis = {
+      missingFields: [],
+      uiIssues: [],
+      apiErrors: [],
+      databaseErrors: [],
+      validationErrors: []
+    };
+
+    logs.forEach(log => {
+      if (log.level === 'error' || log.level === 'warn') {
+        const message = log.message?.toLowerCase() || '';
+        const metadata = log.metadata || {};
+
+        // Check for missing field issues
+        if (message.includes('field') && (message.includes('missing') || message.includes('not found') || message.includes('undefined'))) {
+          errorAnalysis.missingFields.push(log);
+        }
+
+        // Check for UI/visibility issues
+        if (message.includes('ui') || message.includes('view') || message.includes('display') || message.includes('visible') || message.includes('popup')) {
+          errorAnalysis.uiIssues.push(log);
+        }
+
+        // Check for API errors
+        if (message.includes('api') || message.includes('request') || message.includes('response') || message.includes('fetch') || message.includes('network')) {
+          errorAnalysis.apiErrors.push(log);
+        }
+
+        // Check for database errors
+        if (message.includes('database') || message.includes('db') || message.includes('sequelize') || message.includes('connection')) {
+          errorAnalysis.databaseErrors.push(log);
+        }
+
+        // Check for validation errors
+        if (message.includes('validation') || message.includes('invalid') || message.includes('required')) {
+          errorAnalysis.validationErrors.push(log);
+        }
+
+        // Specific issue tracking
+        if (message.includes('flag dropdown') && message.includes('task logger')) {
+          errorAnalysis.uiIssues.push({
+            ...log,
+            issueType: 'Flag Dropdown Missing',
+            component: 'TaskLogger',
+            description: 'Flag dropdown field not visible in Task Logger page All tasks section'
+          });
+        }
+
+        if (message.includes('popup') && (message.includes('leave') && (message.includes('approve') || message.includes('reject')))) {
+          errorAnalysis.uiIssues.push({
+            ...log,
+            issueType: 'Popup Not Closing',
+            component: 'LeaveManagement',
+            description: 'Popup view of approved and rejected leaves not closing without cancel button'
+          });
+        }
+      }
+    });
+
+    return errorAnalysis;
+  };
+
+  const errorAnalysis = analyzeErrors();
+
   const fetchLogs = async () => {
     setLoading(true);
     setError('');
@@ -518,6 +584,121 @@ const ErrorMonitoring = () => {
                 </Card>
               </Grid>
             </Grid>
+          </Grid>
+          
+          {/* Error Analysis Section */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                <ErrorIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Error Analysis
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" color="error" sx={{ mb: 1 }}>
+                        Missing Fields
+                      </Typography>
+                      <Typography variant="h4" component="div">
+                        {errorAnalysis.missingFields.length}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Fields not visible or missing in UI
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" color="warning" sx={{ mb: 1 }}>
+                        UI Issues
+                      </Typography>
+                      <Typography variant="h4" component="div">
+                        {errorAnalysis.uiIssues.length}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        User interface problems
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" color="info" sx={{ mb: 1 }}>
+                        API Errors
+                      </Typography>
+                      <Typography variant="h4" component="div">
+                        {errorAnalysis.apiErrors.length}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        API request/response issues
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+              
+              {/* Specific Issue Tracking */}
+              {(errorAnalysis.uiIssues.length > 0 || errorAnalysis.apiErrors.length > 0) && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                    Specific Issues Identified
+                  </Typography>
+                  
+                  {errorAnalysis.uiIssues.filter(issue => issue.issueType).map((issue, index) => (
+                    <Alert 
+                      key={index} 
+                      severity="warning" 
+                      sx={{ mb: 2 }}
+                      action={
+                        <Button 
+                          color="inherit" 
+                          size="small"
+                          onClick={() => {
+                            // In a real implementation, this would navigate to the specific component
+                            showSnackbar(`Issue identified in ${issue.component}: ${issue.description}`, 'info');
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      }
+                    >
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {issue.issueType}
+                      </Typography>
+                      <Typography variant="body2">
+                        Component: {issue.component}
+                      </Typography>
+                      <Typography variant="body2">
+                        Description: {issue.description}
+                      </Typography>
+                    </Alert>
+                  ))}
+                  
+                  {errorAnalysis.uiIssues.filter(issue => !issue.issueType).slice(0, 3).map((issue, index) => (
+                    <Alert key={index} severity="warning" sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        UI Issue
+                      </Typography>
+                      <Typography variant="body2">
+                        {issue.message}
+                      </Typography>
+                      {issue.metadata && (
+                        <Typography variant="body2" color="text.secondary">
+                          Details: {typeof issue.metadata === 'string' ? issue.metadata : JSON.stringify(issue.metadata)}
+                        </Typography>
+                      )}
+                    </Alert>
+                  ))}
+                </Box>
+              )}
+            </Paper>
           </Grid>
           
           {/* API Activity */}

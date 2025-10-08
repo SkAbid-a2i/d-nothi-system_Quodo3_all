@@ -85,6 +85,7 @@ const TaskManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
+  const [flag, setFlag] = useState('None'); // Add flag state
   const [files, setFiles] = useState([]); // File upload state
   // Removed assignedTo state as requested
   
@@ -97,6 +98,7 @@ const TaskManagement = () => {
   const [editSelectedOffice, setEditSelectedOffice] = useState(null); // Add edit selected office state
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('');
+  const [editFlag, setEditFlag] = useState(''); // Add edit flag state
   const [editFiles, setEditFiles] = useState([]); // Edit file upload state
   // Removed editAssignedTo state as requested
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -339,6 +341,7 @@ const TaskManagement = () => {
         office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
         description,
         status,
+        flag, // Add flag to task data
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
@@ -401,6 +404,7 @@ const TaskManagement = () => {
     setEditSelectedOffice(offices.find(o => o.value === task.office) || null); // Set edit selected office
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
+    setEditFlag(task.flag || 'None'); // Set edit flag
     setEditFiles(task.files || []); // Set existing files
     // Removed editAssignedTo assignment
     setOpenEditDialog(true);
@@ -416,6 +420,7 @@ const TaskManagement = () => {
         office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
         description: editDescription,
         status: editStatus,
+        flag: editFlag, // Add flag to task data
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
@@ -807,6 +812,7 @@ const TaskManagement = () => {
                     <TableCell>User Info</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Files</TableCell>
+                    <TableCell>Flag</TableCell> {/* Added Flag column */}
                     {/* Removed Assigned To column */}
                     <TableCell>Actions</TableCell>
                   </TableRow>
@@ -845,6 +851,17 @@ const TaskManagement = () => {
                         ) : (
                           'N/A'
                         )}
+                      </TableCell>
+                      <TableCell> {/* Added Flag cell */}
+                        <Chip 
+                          label={task.flag || 'None'} 
+                          color={
+                            task.flag === 'Urgent' ? 'error' : 
+                            task.flag === 'High' ? 'warning' : 
+                            task.flag === 'Medium' ? 'info' : 
+                            task.flag === 'Low' ? 'success' : 'default'
+                          } 
+                        />
                       </TableCell>
                       {/* Removed Assigned To cell */}
                       <TableCell>
@@ -984,6 +1001,24 @@ const TaskManagement = () => {
                   <MenuItem value="Pending">Pending</MenuItem>
                   <MenuItem value="In Progress">In Progress</MenuItem>
                   <MenuItem value="Completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {/* Flag Dropdown */}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Flag</InputLabel>
+                <Select 
+                  label="Flag" 
+                  value={flag}
+                  onChange={(e) => setFlag(e.target.value)}
+                >
+                  <MenuItem value="None">None</MenuItem>
+                  <MenuItem value="Low">Low</MenuItem>
+                  <MenuItem value="Medium">Medium</MenuItem>
+                  <MenuItem value="High">High</MenuItem>
+                  <MenuItem value="Urgent">Urgent</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -1176,6 +1211,24 @@ const TaskManagement = () => {
                   <MenuItem value="In Progress">In Progress</MenuItem>
                   <MenuItem value="Completed">Completed</MenuItem>
                   <MenuItem value="Cancelled">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {/* Flag Dropdown for Edit */}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Flag</InputLabel>
+                <Select 
+                  label="Flag" 
+                  value={editFlag}
+                  onChange={(e) => setEditFlag(e.target.value)}
+                >
+                  <MenuItem value="None">None</MenuItem>
+                  <MenuItem value="Low">Low</MenuItem>
+                  <MenuItem value="Medium">Medium</MenuItem>
+                  <MenuItem value="High">High</MenuItem>
+                  <MenuItem value="Urgent">Urgent</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
