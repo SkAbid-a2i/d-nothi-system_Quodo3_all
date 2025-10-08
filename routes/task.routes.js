@@ -66,7 +66,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       userInformation: userInformation || '',
       description: description || '',
       status: status || 'Pending',
-      files: files || [],
+      files: Array.isArray(files) ? files : [],
       userId: req.user.id,
       userName: req.user.fullName || req.user.username,
       office: req.user.office || null
@@ -139,9 +139,9 @@ router.put('/:id', authenticate, async (req, res) => {
       userInformation: userInformation !== undefined ? userInformation : task.userInformation,
       description: description || task.description,
       status: status || task.status,
-      comments: comments,
-      attachments: attachments,
-      files: files,
+      comments: Array.isArray(comments) ? comments : task.comments,
+      attachments: Array.isArray(attachments) ? attachments : task.attachments,
+      files: Array.isArray(files) ? files : task.files,
       userId: req.user.id, // Ensure userId is maintained
       userName: req.user.fullName || req.user.username, // Ensure userName is maintained
       office: req.user.office || task.office // Ensure office is maintained

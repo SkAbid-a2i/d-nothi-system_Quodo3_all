@@ -11,7 +11,12 @@ const Task = sequelize.define('Task', {
     type: DataTypes.DATEONLY, // Changed to DATEONLY for better handling
     allowNull: false,
     validate: {
-      notEmpty: true
+      notEmpty: {
+        msg: 'Date is required'
+      },
+      isDate: {
+        msg: 'Date must be a valid date'
+      }
     }
   },
   source: {
@@ -33,14 +38,18 @@ const Task = sequelize.define('Task', {
     type: DataTypes.INTEGER,
     allowNull: false,
     validate: {
-      notEmpty: true
+      notEmpty: {
+        msg: 'User ID is required'
+      }
     }
   },
   userName: {
     type: DataTypes.STRING(255),
     allowNull: false,
     validate: {
-      notEmpty: true
+      notEmpty: {
+        msg: 'User name is required'
+      }
     }
   },
   office: {
@@ -55,7 +64,9 @@ const Task = sequelize.define('Task', {
     type: DataTypes.TEXT,
     allowNull: false,
     validate: {
-      notEmpty: true
+      notEmpty: {
+        msg: 'Description is required'
+      }
     }
   },
   status: {
@@ -64,16 +75,37 @@ const Task = sequelize.define('Task', {
   },
   comments: {
     type: DataTypes.JSON, // Store comments as JSON array
-    defaultValue: []
+    defaultValue: [],
+    validate: {
+      isValidJSON(value) {
+        if (value && !Array.isArray(value)) {
+          throw new Error('Comments must be an array');
+        }
+      }
+    }
   },
   attachments: {
     type: DataTypes.JSON, // Store attachments as JSON array
-    defaultValue: []
+    defaultValue: [],
+    validate: {
+      isValidJSON(value) {
+        if (value && !Array.isArray(value)) {
+          throw new Error('Attachments must be an array');
+        }
+      }
+    }
   },
   // File upload field
   files: {
     type: DataTypes.JSON, // Store file information as JSON array
-    defaultValue: []
+    defaultValue: [],
+    validate: {
+      isValidJSON(value) {
+        if (value && !Array.isArray(value)) {
+          throw new Error('Files must be an array');
+        }
+      }
+    }
   }
   // Removed assignedTo field as requested
 }, {

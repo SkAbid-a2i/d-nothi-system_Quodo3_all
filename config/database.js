@@ -21,9 +21,7 @@ if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
         // SSL configuration for TiDB
         ssl: process.env.DB_SSL === 'true' ? {
           rejectUnauthorized: false
-        } : {
-          rejectUnauthorized: false
-        }
+        } : undefined
       },
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       pool: {
