@@ -42,10 +42,12 @@ import {
   Flag as FlagIcon
 } from '@mui/icons-material';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { dropdownAPI, taskAPI, userAPI } from '../services/api';
 
 const ModernTaskLogger = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [activeTab, setActiveTab] = useState(0);
@@ -86,8 +88,11 @@ const ModernTaskLogger = () => {
   useEffect(() => {
     fetchDropdownValues();
     fetchTasks();
-    fetchUsers();
-  }, []);
+    // Only fetch users for admin roles who need the user filter
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      fetchUsers();
+    }
+  }, [user]);
 
   const fetchUsers = async () => {
     try {
@@ -176,15 +181,23 @@ const ModernTaskLogger = () => {
       filtered = filtered.filter(task => task.status === statusFilter);
     }
     
-    // Apply user filter
-    if (selectedUser) {
+    // Role-based filtering
+    if (user && user.role === 'Agent') {
+      // Agents only see their own tasks
       filtered = filtered.filter(task => 
-        task.userId === selectedUser.id || task.userName === selectedUser.username
+        task.userId === user.id || task.userName === user.username
       );
+    } else if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      // Admin roles can filter by user selection
+      if (selectedUser) {
+        filtered = filtered.filter(task => 
+          task.userId === selectedUser.id || task.userName === selectedUser.username
+        );
+      }
     }
     
     setFilteredTasks(filtered);
-  }, [searchTerm, statusFilter, selectedUser, tasks]);
+  }, [searchTerm, statusFilter, selectedUser, tasks, user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -544,25 +557,27 @@ const ModernTaskLogger = () => {
                         </Select>
                       </FormControl>
                       
-                      <Autocomplete
-                        sx={{ minWidth: 200 }}
-                        options={users}
-                        getOptionLabel={(option) => {
-                          if (!option) return '';
-                          return option.fullName || option.username || option.email || 'Unknown User';
-                        }}
-                        value={selectedUser}
-                        onChange={(event, newValue) => setSelectedUser(newValue)}
-                        renderInput={(params) => (
-                          <TextField 
-                            {...params} 
-                            label="Filter by User" 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        )}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                      />
+                      {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
+                        <Autocomplete
+                          sx={{ minWidth: 200 }}
+                          options={users}
+                          getOptionLabel={(option) => {
+                            if (!option) return '';
+                            return option.fullName || option.username || option.email || 'Unknown User';
+                          }}
+                          value={selectedUser}
+                          onChange={(event, newValue) => setSelectedUser(newValue)}
+                          renderInput={(params) => (
+                            <TextField 
+                              {...params} 
+                              label="Filter by User" 
+                              size="small" 
+                              variant="outlined"
+                            />
+                          )}
+                          isOptionEqualToValue={(option, value) => option.id === value.id}
+                        />
+                      )}
                     </Box>
                   </Box>
                   
