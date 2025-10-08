@@ -584,12 +584,27 @@ const ModernTaskLogger = () => {
               {/* Task History */}
               <Grid item xs={12} md={7}>
                 <Paper sx={{ p: 3, height: '100%' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: { xs: 'flex-start', sm: 'center' }, 
+                    mb: 3, 
+                    flexWrap: 'wrap', 
+                    gap: 2,
+                    flexDirection: { xs: 'column', sm: 'row' }
+                  }}>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       Task History
                     </Typography>
                     
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      gap: { xs: 1, sm: 2 }, 
+                      flexWrap: 'wrap', 
+                      alignItems: 'center',
+                      width: { xs: '100%', sm: 'auto' },
+                      justifyContent: { xs: 'stretch', sm: 'flex-end' }
+                    }}>
                       <TextField
                         size="small"
                         placeholder="Search tasks..."
@@ -598,6 +613,7 @@ const ModernTaskLogger = () => {
                         InputProps={{
                           startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
                         }}
+                        sx={{ minWidth: 150 }}
                       />
                       
                       <FormControl size="small" sx={{ minWidth: 120 }}>
