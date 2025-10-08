@@ -57,6 +57,9 @@ import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 
+// Add this new import for the flag update function
+import axios from 'axios';
+
 const TaskManagement = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
@@ -173,6 +176,35 @@ const TaskManagement = () => {
       setDataLoading(false);
     }
   }, [user]); // Add user to dependencies
+
+  // Add function to directly update flag in database
+  const updateTaskFlag = async (taskId, newFlag) => {
+    try {
+      // Update flag directly in database
+      const response = await taskAPI.updateTask(taskId, { flag: newFlag });
+      
+      // Update local state
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, flag: newFlag } : task
+        )
+      );
+      
+      setAllTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, flag: newFlag } : task
+        )
+      );
+      
+      showSnackbar('Task flag updated successfully!', 'success');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating task flag:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task flag';
+      showSnackbar(`Failed to update task flag: ${errorMessage}`, 'error');
+      throw error;
+    }
+  };
 
   // Fetch tasks on component mount
   useEffect(() => {
@@ -852,16 +884,20 @@ const TaskManagement = () => {
                           'N/A'
                         )}
                       </TableCell>
-                      <TableCell> {/* Added Flag cell */}
-                        <Chip 
-                          label={task.flag || 'None'} 
-                          color={
-                            task.flag === 'Urgent' ? 'error' : 
-                            task.flag === 'High' ? 'warning' : 
-                            task.flag === 'Medium' ? 'info' : 
-                            task.flag === 'Low' ? 'success' : 'default'
-                          } 
-                        />
+                      <TableCell> {/* Added Flag cell with dropdown */}
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={task.flag || 'None'}
+                            onChange={(e) => updateTaskFlag(task.id, e.target.value)}
+                            displayEmpty
+                          >
+                            <MenuItem value="None">None</MenuItem>
+                            <MenuItem value="Low">Low</MenuItem>
+                            <MenuItem value="Medium">Medium</MenuItem>
+                            <MenuItem value="High">High</MenuItem>
+                            <MenuItem value="Urgent">Urgent</MenuItem>
+                          </Select>
+                        </FormControl>
                       </TableCell>
                       {/* Removed Assigned To cell */}
                       <TableCell>

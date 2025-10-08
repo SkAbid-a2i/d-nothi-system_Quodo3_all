@@ -705,37 +705,6 @@ const AgentDashboard = () => {
               
               <Grid item xs={12} sm={3}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <IconButton 
-                    color={chartType === 'bar' ? 'primary' : 'default'}
-                    onClick={() => setChartType('bar')}
-                  >
-                    <BarChartIcon />
-                  </IconButton>
-                  <IconButton 
-                    color={chartType === 'pie' ? 'primary' : 'default'}
-                    onClick={() => setChartType('pie')}
-                  >
-                    <PieChartIcon />
-                  </IconButton>
-                  <IconButton 
-                    color={chartType === 'donut' ? 'primary' : 'default'}
-                    onClick={() => setChartType('donut')}
-                  >
-                    <DonutLargeIcon />
-                  </IconButton>
-                  <IconButton 
-                    color={chartType === 'radial' ? 'primary' : 'default'}
-                    onClick={() => setChartType('radial')}
-                  >
-                    <DonutLargeIcon />
-                  </IconButton>
-                  <IconButton 
-                    color={chartType === 'line' ? 'primary' : 'default'}
-                    onClick={() => setChartType('line')}
-                  >
-                    <LineChartIcon />
-                  </IconButton>
-                  
                   <Button 
                     startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('CSV')}
@@ -759,9 +728,53 @@ const AgentDashboard = () => {
         {/* Charts and Task Table */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Task Classification - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: { xs: 1, sm: 0 } }}>
+                Task Classification - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+              </Typography>
+              <Box>
+                <IconButton 
+                  color={chartType === 'bar' ? 'primary' : 'default'}
+                  onClick={() => setChartType('bar')}
+                  size="small"
+                  sx={{ mx: 0.5, border: chartType === 'bar' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <BarChartIcon />
+                </IconButton>
+                <IconButton 
+                  color={chartType === 'pie' ? 'primary' : 'default'}
+                  onClick={() => setChartType('pie')}
+                  size="small"
+                  sx={{ mx: 0.5, border: chartType === 'pie' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <PieChartIcon />
+                </IconButton>
+                <IconButton 
+                  color={chartType === 'donut' ? 'primary' : 'default'}
+                  onClick={() => setChartType('donut')}
+                  size="small"
+                  sx={{ mx: 0.5, border: chartType === 'donut' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <DonutLargeIcon />
+                </IconButton>
+                <IconButton 
+                  color={chartType === 'radial' ? 'primary' : 'default'}
+                  onClick={() => setChartType('radial')}
+                  size="small"
+                  sx={{ mx: 0.5, border: chartType === 'radial' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <DonutLargeIcon />
+                </IconButton>
+                <IconButton 
+                  color={chartType === 'line' ? 'primary' : 'default'}
+                  onClick={() => setChartType('line')}
+                  size="small"
+                  sx={{ mx: 0.5, border: chartType === 'line' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <LineChartIcon />
+                </IconButton>
+              </Box>
+            </Box>
             <Box sx={{ height: 300 }}>
               {chartType === 'bar' && (
                 <ResponsiveContainer width="100%" height="100%">
