@@ -28,7 +28,8 @@ import {
   Tabs,
   Tab,
   Fade,
-  Zoom
+  Zoom,
+  Autocomplete
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -41,7 +42,7 @@ import {
   Flag as FlagIcon
 } from '@mui/icons-material';
 import { useTranslation } from '../contexts/TranslationContext';
-import { dropdownAPI, taskAPI } from '../services/api';
+import { dropdownAPI, taskAPI, userAPI } from '../services/api';
 
 const ModernTaskLogger = () => {
   const { t } = useTranslation();
@@ -63,10 +64,12 @@ const ModernTaskLogger = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [userFilter, setUserFilter] = useState(null); // Add user filter state
   
   // All tasks state
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // Add all users state
   
   // Edit task dialog state
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -83,7 +86,19 @@ const ModernTaskLogger = () => {
   useEffect(() => {
     fetchDropdownValues();
     fetchTasks();
+    fetchAllUsers(); // Fetch all users for the filter
   }, []);
+
+  const fetchAllUsers = async () => {
+    try {
+      const response = await userAPI.getAllUsers();
+      const usersData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      setAllUsers(usersData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   const fetchDropdownValues = async () => {
     setDropdownLoading(true);
@@ -142,7 +157,7 @@ const ModernTaskLogger = () => {
   };
 
   useEffect(() => {
-    // Filter tasks based on search and status
+    // Filter tasks based on search, status, and user
     let filtered = tasks;
     
     if (searchTerm) {
@@ -158,8 +173,15 @@ const ModernTaskLogger = () => {
       filtered = filtered.filter(task => task.status === statusFilter);
     }
     
+    // Apply user filter
+    if (userFilter) {
+      filtered = filtered.filter(task => 
+        task.userId === userFilter.id || task.userName === userFilter.username
+      );
+    }
+    
     setFilteredTasks(filtered);
-  }, [searchTerm, statusFilter, tasks]);
+  }, [searchTerm, statusFilter, userFilter, tasks]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -495,6 +517,22 @@ const ModernTaskLogger = () => {
                     </Typography>
                     
                     <Box sx={{ display: 'flex', gap: 2 }}>
+                      <Autocomplete
+                        sx={{ minWidth: 200 }}
+                        options={allUsers}
+                        getOptionLabel={(option) => option.fullName || option.username || 'Unknown User'}
+                        value={userFilter}
+                        onChange={(event, newValue) => setUserFilter(newValue)}
+                        renderInput={(params) => (
+                          <TextField 
+                            {...params} 
+                            label="Filter by User" 
+                            size="small" 
+                            variant="outlined"
+                          />
+                        )}
+                      />
+                      
                       <TextField
                         size="small"
                         placeholder="Search tasks..."
