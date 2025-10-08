@@ -225,28 +225,39 @@ const TaskManagement = () => {
   const fetchDropdownValues = async () => {
     setLoading(true);
     try {
-      const [sourcesRes, categoriesRes, officesRes, usersRes] = await Promise.all([
+      // Fetch all dropdown values in parallel
+      const [sourcesRes, categoriesRes, officesRes] = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office'), // Add office dropdown values
-        taskAPI.getAllUsers() // Fetch users for filtering
+        dropdownAPI.getDropdownValues('Office')
       ]);
     
-      setSources(sourcesRes.data);
-      setCategories(categoriesRes.data);
-      setOffices(officesRes.data); // Set offices data
+      setSources(sourcesRes.data || []);
+      setCategories(categoriesRes.data || []);
+      setOffices(officesRes.data || []);
       
-      // Process users data for Autocomplete
-      if (usersRes.data) {
-        const userData = usersRes.data.map(user => ({
-          id: user.id,
-          label: `${user.fullName || user.username} (${user.username})`,
-          value: user.username
-        }));
-        setUsers(userData);
+      // Fetch users separately to avoid blocking dropdown loading
+      try {
+        const usersRes = await taskAPI.getAllUsers();
+        if (usersRes.data) {
+          const userData = Array.isArray(usersRes.data) 
+            ? usersRes.data 
+            : usersRes.data.data || usersRes.data.users || [];
+            
+          const processedUsers = userData.map(user => ({
+            id: user.id,
+            label: `${user.fullName || user.username} (${user.username})`,
+            value: user.username
+          }));
+          setUsers(processedUsers);
+        }
+      } catch (userError) {
+        console.error('Error fetching users:', userError);
+        // Don't block the UI if user fetching fails
       }
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
+      showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
     } finally {
       setLoading(false);
     }
@@ -328,7 +339,6 @@ const TaskManagement = () => {
         office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
         description,
         status,
-        // Removed assignedTo from taskData
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
@@ -359,9 +369,6 @@ const TaskManagement = () => {
       };
       setTasks([...tasks, newTask]);
     
-      // Log audit entry
-      // Removed auditLog call that was causing issues
-    
       // Reset form
       setDate(new Date().toISOString().split('T')[0]);
       setSelectedSource(null);
@@ -371,15 +378,15 @@ const TaskManagement = () => {
       setDescription('');
       setStatus('Pending');
       setFiles([]); // Reset files
-      // Removed assignedTo reset
       
       setOpenCreateDialog(false);
       setSuccess('Task created successfully!');
       showSnackbar('Task created successfully!', 'success');
+      fetchTasks(); // Refresh task list
     } catch (error) {
       console.error('Error creating task:', error);
       console.error('Error response:', error.response);
-      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to create task';
+      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to create task';
       setError(`Failed to create task: ${errorMessage}`);
       showSnackbar(`Failed to create task: ${errorMessage}`, 'error');
     }
@@ -409,7 +416,6 @@ const TaskManagement = () => {
         office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
         description: editDescription,
         status: editStatus,
-        // Removed assignedTo from taskData
         userId: user?.id, // Automatically add user ID
         userName: user?.fullName || user?.username // Automatically add user name
       };
@@ -427,23 +433,21 @@ const TaskManagement = () => {
     
       taskData.files = fileData;
     
-      await taskAPI.updateTask(editingTask.id, taskData);
+      const response = await taskAPI.updateTask(editingTask.id, taskData);
     
       // Update task in list
       setTasks(tasks.map(task => 
-        task.id === editingTask.id ? { ...task, ...taskData } : task
+        task.id === editingTask.id ? { ...task, ...response.data } : task
       ));
-    
-      // Log audit entry
-      // Removed auditLog call that was causing issues
     
       setOpenEditDialog(false);
       setEditingTask(null);
       setSuccess('Task updated successfully!');
       showSnackbar('Task updated successfully!', 'success');
+      fetchTasks(); // Refresh task list
     } catch (error) {
       console.error('Error updating task:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task';
+      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to update task';
       setError(`Failed to update task: ${errorMessage}`);
       showSnackbar(`Failed to update task: ${errorMessage}`, 'error');
     }

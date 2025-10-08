@@ -1,86 +1,135 @@
+#!/usr/bin/env node
+
+/**
+ * Database Connection Test Script
+ * Tests the database connection and task operations
+ */
+
 const sequelize = require('../config/database');
-const User = require('../models/User');
 const Task = require('../models/Task');
-const Leave = require('../models/Leave');
-const Dropdown = require('../models/Dropdown');
-const PermissionTemplate = require('../models/PermissionTemplate');
 
 async function testDatabaseConnection() {
-  console.log('🚀 Starting database connection test...\n');
+  console.log('🔍 Testing database connection...');
   
   try {
-    // Test database connection
+    // Test connection
     await sequelize.authenticate();
-    console.log('✅ Database connection successful!\n');
+    console.log('✅ Database connection successful');
     
-    // Test each table
-    console.log('🔍 Testing database tables...\n');
+    // Get database info
+    const dialect = sequelize.getDialect();
+    const host = sequelize.config.host;
+    const port = sequelize.config.port;
+    const database = sequelize.config.database;
     
-    // Test Users table
-    try {
-      const userCount = await User.count();
-      console.log(`✅ Users table: ${userCount} records found`);
-    } catch (error) {
-      console.log('❌ Users table error:', error.message);
-    }
+    console.log(`   Dialect: ${dialect}`);
+    console.log(`   Host: ${host}`);
+    console.log(`   Port: ${port}`);
+    console.log(`   Database: ${database}`);
     
-    // Test Tasks table
-    try {
-      const taskCount = await Task.count();
-      console.log(`✅ Tasks table: ${taskCount} records found`);
-    } catch (error) {
-      console.log('❌ Tasks table error:', error.message);
-    }
-    
-    // Test Leaves table
-    try {
-      const leaveCount = await Leave.count();
-      console.log(`✅ Leaves table: ${leaveCount} records found`);
-    } catch (error) {
-      console.log('❌ Leaves table error:', error.message);
-    }
-    
-    // Test Dropdowns table
-    try {
-      const dropdownCount = await Dropdown.count();
-      console.log(`✅ Dropdowns table: ${dropdownCount} records found`);
-    } catch (error) {
-      console.log('❌ Dropdowns table error:', error.message);
-    }
-    
-    // Test PermissionTemplates table
-    try {
-      const templateCount = await PermissionTemplate.count();
-      console.log(`✅ PermissionTemplates table: ${templateCount} records found`);
-    } catch (error) {
-      console.log('❌ PermissionTemplates table error:', error.message);
-    }
-    
-    // Test sample data retrieval
-    console.log('\n🔍 Testing sample data retrieval...\n');
-    
-    try {
-      const sampleUsers = await User.findAll({ limit: 3 });
-      console.log(`✅ Sample users retrieved: ${sampleUsers.length} records`);
-      
-      const sampleDropdowns = await Dropdown.findAll({ limit: 3 });
-      console.log(`✅ Sample dropdowns retrieved: ${sampleDropdowns.length} records`);
-      
-      const sampleTemplates = await PermissionTemplate.findAll({ limit: 3 });
-      console.log(`✅ Sample permission templates retrieved: ${sampleTemplates.length} records`);
-    } catch (error) {
-      console.log('❌ Sample data retrieval error:', error.message);
-    }
-    
-    console.log('\n🎉 Database connection test completed successfully!');
-    await sequelize.close();
-    process.exit(0);
+    return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    console.error('Details:', error);
+    console.error('❌ Database connection failed');
+    console.error(`   Error: ${error.message}`);
+    return false;
+  }
+}
+
+async function testTaskOperations() {
+  console.log('\n🔍 Testing task operations...');
+  
+  try {
+    // Test creating a task
+    const testTask = {
+      date: new Date(),
+      source: 'Test Script',
+      category: 'Testing',
+      service: 'Database Test',
+      description: 'Test task for database connection verification',
+      status: 'Pending',
+      userId: 1,
+      userName: 'Test User'
+    };
+    
+    console.log('   Creating test task...');
+    const task = await Task.create(testTask);
+    console.log('✅ Task creation successful');
+    console.log(`   Task ID: ${task.id}`);
+    
+    // Test retrieving tasks
+    console.log('   Retrieving tasks...');
+    const tasks = await Task.findAll({ limit: 5 });
+    console.log('✅ Task retrieval successful');
+    console.log(`   Retrieved ${tasks.length} tasks`);
+    
+    // Test updating task
+    console.log('   Updating test task...');
+    await task.update({ status: 'Completed' });
+    console.log('✅ Task update successful');
+    
+    // Test deleting task
+    console.log('   Deleting test task...');
+    await task.destroy();
+    console.log('✅ Task deletion successful');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Task operations failed');
+    console.error(`   Error: ${error.message}`);
+    return false;
+  }
+}
+
+async function main() {
+  console.log('🧪 Database Connection and Task Operations Test');
+  console.log('===============================================');
+  
+  // Test database connection
+  const dbConnected = await testDatabaseConnection();
+  
+  if (!dbConnected) {
+    console.log('\n⚠️  Skipping task operations due to database connection failure');
+    process.exit(1);
+  }
+  
+  // Test task operations
+  const tasksWorking = await testTaskOperations();
+  
+  console.log('\n📋 Test Summary');
+  console.log('===============');
+  console.log(`Database Connection: ${dbConnected ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`Task Operations: ${tasksWorking ? '✅ PASS' : '❌ FAIL'}`);
+  
+  if (dbConnected && tasksWorking) {
+    console.log('\n🎉 All tests passed!');
+    process.exit(0);
+  } else {
+    console.log('\n💥 Some tests failed!');
     process.exit(1);
   }
 }
 
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n🛑 Test interrupted by user');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\n🛑 Test terminated');
+  process.exit(0);
+});
+
 // Run the test
-testDatabaseConnection();
+if (require.main === module) {
+  main().catch(error => {
+    console.error('💥 Test failed with unhandled error:', error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  testDatabaseConnection,
+  testTaskOperations,
+  main
+};

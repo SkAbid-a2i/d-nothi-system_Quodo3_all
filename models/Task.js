@@ -8,28 +8,40 @@ const Task = sequelize.define('Task', {
     autoIncrement: true
   },
   date: {
-    type: DataTypes.DATE,
-    allowNull: false
+    type: DataTypes.DATEONLY, // Changed to DATEONLY for better handling
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
   source: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true,
+    defaultValue: ''
   },
   category: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true,
+    defaultValue: ''
   },
   service: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true,
+    defaultValue: ''
   },
   userId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
   userName: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
   office: {
     type: DataTypes.STRING(255),
@@ -41,7 +53,10 @@ const Task = sequelize.define('Task', {
   },
   description: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
   status: {
     type: DataTypes.ENUM('Pending', 'In Progress', 'Completed', 'Cancelled'),
@@ -65,7 +80,22 @@ const Task = sequelize.define('Task', {
   timestamps: true,
   tableName: 'tasks',
   charset: 'utf8mb4',
-  collate: 'utf8mb4_unicode_ci'
+  collate: 'utf8mb4_unicode_ci',
+  // Add indexes for better query performance
+  indexes: [
+    {
+      fields: ['userId']
+    },
+    {
+      fields: ['office']
+    },
+    {
+      fields: ['status']
+    },
+    {
+      fields: ['date']
+    }
+  ]
 });
 
 module.exports = Task;

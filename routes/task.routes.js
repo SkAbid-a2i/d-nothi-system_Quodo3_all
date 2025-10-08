@@ -18,15 +18,30 @@ router.get('/', authenticate, async (req, res) => {
     } 
     // Admins and Supervisors can see their team's tasks
     else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      where.office = req.user.office;
+      // Check if office exists before filtering
+      if (req.user.office) {
+        where.office = req.user.office;
+      }
     }
     // SystemAdmin can see all tasks (no filter needed)
     
-    const tasks = await Task.findAll({ where, order: [['createdAt', 'DESC']] });
-    res.json(tasks);
+    const tasks = await Task.findAll({ 
+      where, 
+      order: [['createdAt', 'DESC']],
+      // Add error handling for database issues
+      logging: false // Reduce noise in logs
+    });
+    
+    // Ensure we return an array
+    const taskArray = Array.isArray(tasks) ? tasks : tasks ? [tasks] : [];
+    res.json(taskArray);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching tasks:', err);
+    // More detailed error response
+    res.status(500).json({ 
+      message: 'Server error while fetching tasks', 
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -37,27 +52,27 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
   try {
     const { date, source, category, service, userInformation, description, status = 'Pending', files = [] } = req.body;
 
-    // Debug user info
-    console.log('User info:', {
-      id: req.user.id,
-      fullName: req.user.fullName,
-      office: req.user.office
-    });
+    // Validate required fields
+    if (!date || !description) {
+      return res.status(400).json({ message: 'Date and description are required' });
+    }
     
-    // Create new task
-    const task = await Task.create({
-      date,
-      source,
-      category,
-      service,
-      userInformation,
-      description,
-      status,
-      files,
+    // Create new task with proper validation
+    const taskData = {
+      date: new Date(date),
+      source: source || '',
+      category: category || '',
+      service: service || '',
+      userInformation: userInformation || '',
+      description: description || '',
+      status: status || 'Pending',
+      files: files || [],
       userId: req.user.id,
-      userName: req.user.fullName,
+      userName: req.user.fullName || req.user.username,
       office: req.user.office || null
-    });
+    };
+
+    const task = await Task.create(taskData);
 
     // Notify about task creation
     notificationService.notifyTaskCreated(task);
@@ -65,7 +80,24 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
     res.status(201).json(task);
   } catch (err) {
     console.error('Error creating task:', err);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    // Check if it's a validation error
+    if (err.name === 'SequelizeValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: err.errors.map(e => e.message) 
+      });
+    }
+    // Check for database connection errors
+    if (err.name === 'SequelizeConnectionError' || err.name === 'SequelizeConnectionRefusedError') {
+      return res.status(503).json({ 
+        message: 'Database connection failed', 
+        error: 'Service temporarily unavailable' 
+      });
+    }
+    res.status(500).json({ 
+      message: 'Server error while creating task', 
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -91,34 +123,56 @@ router.put('/:id', authenticate, async (req, res) => {
       // SystemAdmin can modify any task - no additional checks needed
     } else if (req.user.role === 'Admin') {
       // Admins can modify any task in their office
-      if (task.office !== req.user.office) {
+      if (task.office && task.office !== req.user.office) {
         return res.status(403).json({ message: 'Access denied - Admins can only modify tasks from their office' });
       }
     } else if (task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only modify your own tasks' });
     }
 
-    // Update task
-    task.date = date || task.date;
-    task.source = source || task.source;
-    task.category = category || task.category;
-    task.service = service || task.service;
-    task.userInformation = userInformation || task.userInformation;
-    task.description = description || task.description;
-    task.status = status || task.status;
-    task.comments = comments;
-    task.attachments = attachments;
-    task.files = files;
+    // Update task with validation
+    const updateData = {
+      date: date ? new Date(date) : task.date,
+      source: source !== undefined ? source : task.source,
+      category: category !== undefined ? category : task.category,
+      service: service !== undefined ? service : task.service,
+      userInformation: userInformation !== undefined ? userInformation : task.userInformation,
+      description: description || task.description,
+      status: status || task.status,
+      comments: comments,
+      attachments: attachments,
+      files: files,
+      userId: req.user.id, // Ensure userId is maintained
+      userName: req.user.fullName || req.user.username, // Ensure userName is maintained
+      office: req.user.office || task.office // Ensure office is maintained
+    };
 
-    await task.save();
+    const updatedTask = await task.update(updateData);
 
     // Notify about task update
-    notificationService.notifyTaskUpdated(task);
+    notificationService.notifyTaskUpdated(updatedTask);
 
-    res.json(task);
+    res.json(updatedTask);
   } catch (err) {
     console.error('Error updating task:', err);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    // Check if it's a validation error
+    if (err.name === 'SequelizeValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: err.errors.map(e => e.message) 
+      });
+    }
+    // Check for database connection errors
+    if (err.name === 'SequelizeConnectionError' || err.name === 'SequelizeConnectionRefusedError') {
+      return res.status(503).json({ 
+        message: 'Database connection failed', 
+        error: 'Service temporarily unavailable' 
+      });
+    }
+    res.status(500).json({ 
+      message: 'Server error while updating task', 
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -143,7 +197,7 @@ router.delete('/:id', authenticate, async (req, res) => {
       // SystemAdmin can delete any task - no additional checks needed
     } else if (req.user.role === 'Admin') {
       // Admins can delete any task in their office
-      if (task.office !== req.user.office) {
+      if (task.office && task.office !== req.user.office) {
         return res.status(403).json({ message: 'Access denied - Admins can only delete tasks from their office' });
       }
     } else if (task.userId !== req.user.id) {
@@ -159,7 +213,17 @@ router.delete('/:id', authenticate, async (req, res) => {
     res.json({ message: 'Task removed' });
   } catch (err) {
     console.error('Error deleting task:', err);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    // Check for database connection errors
+    if (err.name === 'SequelizeConnectionError' || err.name === 'SequelizeConnectionRefusedError') {
+      return res.status(503).json({ 
+        message: 'Database connection failed', 
+        error: 'Service temporarily unavailable' 
+      });
+    }
+    res.status(500).json({ 
+      message: 'Server error while deleting task', 
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 

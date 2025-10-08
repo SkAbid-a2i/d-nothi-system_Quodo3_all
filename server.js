@@ -15,6 +15,8 @@ const PORT = process.env.PORT || 5000;
 const logger = require('./services/logger.service');
 // Import notification service
 const notificationService = require('./services/notification.service');
+// Import database monitoring service
+const dbMonitor = require('./services/db-monitor.service');
 
 // Database connection
 const sequelize = require('./config/database');
@@ -73,6 +75,9 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Start database monitoring
+dbMonitor.startMonitoring(30000); // Check every 30 seconds
+
 // Test database connection
 sequelize
   .authenticate()
@@ -117,6 +122,7 @@ const frontendLogRoutes = require('./routes/frontendLog.routes');
 const permissionRoutes = require('./routes/permission.routes');
 const fileRoutes = require('./routes/file.routes');
 const meetingRoutes = require('./routes/meeting.routes');
+const healthRoutes = require('./routes/health.routes');
 
 // Use routes
 app.use('/api/auth', (req, res, next) => {
@@ -179,6 +185,11 @@ app.use('/api/meetings', (req, res, next) => {
   next();
 }, meetingRoutes);
 
+app.use('/api/health', (req, res, next) => {
+  logger.info('Health routes accessed', { endpoint: '/api/health' + req.url });
+  next();
+}, healthRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error('Unhandled error', { 
@@ -228,6 +239,7 @@ const server = app.listen(PORT, async () => {
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  dbMonitor.stopMonitoring(); // Stop database monitoring
   server.close(() => {
     logger.info('Process terminated');
   });
@@ -235,9 +247,22 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
+  dbMonitor.stopMonitoring(); // Stop database monitoring
   server.close(() => {
     logger.info('Process terminated');
   });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  logger.error('Unhandled Promise Rejection', { error: err.message, stack: err.stack });
+  // Don't exit process, just log the error
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  // Don't exit process, just log the error
 });
 
 module.exports = app;
