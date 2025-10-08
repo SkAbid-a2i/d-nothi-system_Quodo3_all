@@ -898,6 +898,7 @@ const AgentDashboard = () => {
                         <TableCell>Service</TableCell>
                         <TableCell>User</TableCell>
                         <TableCell>Office</TableCell>
+                        <TableCell>User Info</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell>Actions</TableCell>
@@ -912,6 +913,7 @@ const AgentDashboard = () => {
                           <TableCell>{task.service || 'N/A'}</TableCell>
                           <TableCell>{task.userName || 'N/A'}</TableCell>
                           <TableCell>{task.office || 'N/A'}</TableCell>
+                          <TableCell>{task.userInformation || 'N/A'}</TableCell>
                           <TableCell>{task.description || 'N/A'}</TableCell>
                           <TableCell>
                             <Chip 

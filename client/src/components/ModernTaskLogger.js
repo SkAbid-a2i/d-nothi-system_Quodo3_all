@@ -55,6 +55,7 @@ const ModernTaskLogger = () => {
     source: '',
     category: '',
     service: '',
+    userInformation: '',
     description: '',
     status: 'Pending'
   });
@@ -180,7 +181,11 @@ const ModernTaskLogger = () => {
     try {
       setLoading(true);
       
-      const response = await taskAPI.createTask(formData);
+      // Include userInformation in the task creation
+      const taskData = {
+        ...formData
+      };
+      const response = await taskAPI.createTask(taskData);
       console.log('Create task response:', response);
       const newTask = Array.isArray(response.data) ? response.data[0] : 
                      response.data?.data || response.data || {};
@@ -191,6 +196,7 @@ const ModernTaskLogger = () => {
         source: '',
         category: '',
         service: '',
+        userInformation: '',
         description: '',
         status: 'Pending'
       });
@@ -212,6 +218,7 @@ const ModernTaskLogger = () => {
       source: task.source,
       category: task.category,
       service: task.service,
+      userInformation: task.userInformation || '',
       description: task.description,
       status: task.status
     });
@@ -222,7 +229,11 @@ const ModernTaskLogger = () => {
     try {
       setLoading(true);
       
-      const response = await taskAPI.updateTask(editingTask.id, formData);
+      // Include userInformation in the task update
+      const taskData = {
+        ...formData
+      };
+      const response = await taskAPI.updateTask(editingTask.id, taskData);
       console.log('Update task response:', response);
       const updatedTask = Array.isArray(response.data) ? response.data[0] : 
                          response.data?.data || response.data || {};
@@ -407,6 +418,18 @@ const ModernTaskLogger = () => {
                     <Grid item xs={12}>
                       <TextField
                         fullWidth
+                        label="User Information"
+                        name="userInformation"
+                        value={formData.userInformation}
+                        onChange={handleInputChange}
+                        multiline
+                        rows={2}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
                         label="Description"
                         name="description"
                         value={formData.description}
@@ -524,6 +547,7 @@ const ModernTaskLogger = () => {
                               <TableCell>Service</TableCell>
                               <TableCell>Description</TableCell>
                               <TableCell>User</TableCell>
+                              <TableCell>User Info</TableCell>
                               <TableCell>Status</TableCell>
                               <TableCell>Flag</TableCell>
                               <TableCell>Actions</TableCell>
@@ -547,6 +571,7 @@ const ModernTaskLogger = () => {
                                 <TableCell>{task.service}</TableCell>
                                 <TableCell>{task.description}</TableCell>
                                 <TableCell>{task.userName}</TableCell>
+                                <TableCell>{task.userInformation || 'N/A'}</TableCell>
                                 <TableCell>
                                   <Chip 
                                     label={task.status} 
@@ -750,6 +775,18 @@ const ModernTaskLogger = () => {
                     ))}
                   </Select>
                 </FormControl>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="User Information"
+                  name="userInformation"
+                  value={formData.userInformation}
+                  onChange={handleInputChange}
+                  multiline
+                  rows={2}
+                />
               </Grid>
               
               <Grid item xs={12}>

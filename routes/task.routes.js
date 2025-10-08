@@ -35,7 +35,7 @@ router.get('/', authenticate, async (req, res) => {
 // @access  Private (Agent, Admin, Supervisor)
 router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
-    const { date, source, category, service, description, status = 'Pending', files = [] } = req.body;
+    const { date, source, category, service, userInformation, description, status = 'Pending', files = [] } = req.body;
 
     // Debug user info
     console.log('User info:', {
@@ -50,6 +50,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       source,
       category,
       service,
+      userInformation,
       description,
       status,
       files,
@@ -74,7 +75,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, source, category, service, description, status, comments = [], attachments = [], files = [] } = req.body;
+    const { date, source, category, service, userInformation, description, status, comments = [], attachments = [], files = [] } = req.body;
 
     // Check if task exists
     const task = await Task.findByPk(id);
@@ -102,6 +103,7 @@ router.put('/:id', authenticate, async (req, res) => {
     task.source = source || task.source;
     task.category = category || task.category;
     task.service = service || task.service;
+    task.userInformation = userInformation || task.userInformation;
     task.description = description || task.description;
     task.status = status || task.status;
     task.comments = comments;

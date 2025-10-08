@@ -569,11 +569,11 @@ const TaskManagement = () => {
     csv += `User: ${data.user}\n\n`;
     
     // Tasks section
-    csv += 'Date,Source,Category,Service,Description,User,Status,Files\n';
+    csv += 'Date,Source,Category,Service,User Info,Description,User,Status,Files\n';
     
     data.tasks.forEach(task => {
       const filesCount = task.files ? task.files.length : 0;
-      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.service || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}","${filesCount}"\n`;
+      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.service || ''}","${task.userInformation || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}","${filesCount}"\n`;
     });
     
     return csv;
@@ -595,6 +595,7 @@ const TaskManagement = () => {
         pdf += `   Date: ${task.date || 'N/A'}\n`;
         pdf += `   Category: ${task.category || 'N/A'}\n`;
         pdf += `   Service: ${task.service || 'N/A'}\n`;
+        pdf += `   User Info: ${task.userInformation || 'N/A'}\n`;
         pdf += `   Status: ${task.status || 'N/A'}\n`;
         pdf += `   User: ${task.userName || 'N/A'}\n`;
         pdf += `   Files: ${task.files ? task.files.length : 0}\n\n`;
@@ -799,6 +800,7 @@ const TaskManagement = () => {
                     <TableCell>Service</TableCell>
                     <TableCell>Description</TableCell>
                     <TableCell>User</TableCell>
+                    <TableCell>User Info</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Files</TableCell>
                     {/* Removed Assigned To column */}
@@ -814,6 +816,7 @@ const TaskManagement = () => {
                       <TableCell>{task.service || 'N/A'}</TableCell>
                       <TableCell>{task.description || 'N/A'}</TableCell>
                       <TableCell>{task.userName || 'N/A'}</TableCell>
+                      <TableCell>{task.userInformation || 'N/A'}</TableCell>
                       <TableCell>
                         <Chip 
                           label={task.status || 'Pending'} 

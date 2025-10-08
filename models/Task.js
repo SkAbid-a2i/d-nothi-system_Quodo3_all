@@ -35,6 +35,10 @@ const Task = sequelize.define('Task', {
     type: DataTypes.STRING(255),
     allowNull: true
   },
+  userInformation: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: false
