@@ -102,14 +102,23 @@ const ModernTaskLogger = () => {
       ];
       
       // Only fetch users for admin roles who need the user filter
+      let usersPromiseIndex = -1;
       if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+        usersPromiseIndex = fetchPromises.length;
         fetchPromises.push(userAPI.getAllUsers());
       }
       
       const responses = await Promise.all(fetchPromises);
       
-      // Process dropdown responses
-      const [sourcesRes, categoriesRes, servicesRes, tasksRes, usersRes] = responses;
+      // Process responses correctly based on whether users were fetched
+      let sourcesRes, categoriesRes, servicesRes, tasksRes, usersRes;
+      if (usersPromiseIndex !== -1) {
+        // Users were fetched (admin roles)
+        [sourcesRes, categoriesRes, servicesRes, tasksRes, usersRes] = responses;
+      } else {
+        // Users were not fetched (agents)
+        [sourcesRes, categoriesRes, servicesRes, tasksRes] = responses;
+      }
       
       console.log('Sources response:', sourcesRes);
       console.log('Categories response:', categoriesRes);
@@ -130,6 +139,8 @@ const ModernTaskLogger = () => {
       
       console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData });
       if (usersRes) console.log('Processed users data:', usersData);
+      console.log('User role:', user?.role);
+      console.log('Should fetch users:', user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor'));
       
       setSources(sourcesData);
       setCategories(categoriesData);
