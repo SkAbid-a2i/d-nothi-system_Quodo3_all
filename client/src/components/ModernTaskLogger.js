@@ -64,12 +64,11 @@ const ModernTaskLogger = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [userFilter, setUserFilter] = useState(null); // Add user filter state
+  const [selectedUser, setSelectedUser] = useState(null);
   
   // All tasks state
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
-  const [allUsers, setAllUsers] = useState([]); // Add all users state
   
   // Edit task dialog state
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -81,22 +80,24 @@ const ModernTaskLogger = () => {
   const [services, setServices] = useState([]);
   const [statuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
   const [dropdownLoading, setDropdownLoading] = useState(false);
+  const [users, setUsers] = useState([]);
 
   // Fetch dropdown values on component mount
   useEffect(() => {
     fetchDropdownValues();
     fetchTasks();
-    fetchAllUsers(); // Fetch all users for the filter
+    fetchUsers();
   }, []);
 
-  const fetchAllUsers = async () => {
+  const fetchUsers = async () => {
     try {
       const response = await userAPI.getAllUsers();
       const usersData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
-      setAllUsers(usersData);
+      setUsers(usersData);
     } catch (error) {
       console.error('Error fetching users:', error);
+      showSnackbar('Error fetching users: ' + error.message, 'error');
     }
   };
 
@@ -174,14 +175,14 @@ const ModernTaskLogger = () => {
     }
     
     // Apply user filter
-    if (userFilter) {
+    if (selectedUser) {
       filtered = filtered.filter(task => 
-        task.userId === userFilter.id || task.userName === userFilter.username
+        task.userId === selectedUser.id || task.userName === selectedUser.username
       );
     }
     
     setFilteredTasks(filtered);
-  }, [searchTerm, statusFilter, userFilter, tasks]);
+  }, [searchTerm, statusFilter, selectedUser, tasks]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -511,28 +512,12 @@ const ModernTaskLogger = () => {
               {/* Task History */}
               <Grid item xs={12} md={7}>
                 <Paper sx={{ p: 3, height: '100%' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       Task History
                     </Typography>
                     
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Autocomplete
-                        sx={{ minWidth: 200 }}
-                        options={allUsers}
-                        getOptionLabel={(option) => option.fullName || option.username || 'Unknown User'}
-                        value={userFilter}
-                        onChange={(event, newValue) => setUserFilter(newValue)}
-                        renderInput={(params) => (
-                          <TextField 
-                            {...params} 
-                            label="Filter by User" 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        )}
-                      />
-                      
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                       <TextField
                         size="small"
                         placeholder="Search tasks..."
@@ -556,6 +541,22 @@ const ModernTaskLogger = () => {
                           ))}
                         </Select>
                       </FormControl>
+                      
+                      <Autocomplete
+                        sx={{ minWidth: 200 }}
+                        options={users}
+                        getOptionLabel={(option) => option.fullName || option.username || 'Unknown User'}
+                        value={selectedUser}
+                        onChange={(event, newValue) => setSelectedUser(newValue)}
+                        renderInput={(params) => (
+                          <TextField 
+                            {...params} 
+                            label="Filter by User" 
+                            size="small" 
+                            variant="outlined"
+                          />
+                        )}
+                      />
                     </Box>
                   </Box>
                   

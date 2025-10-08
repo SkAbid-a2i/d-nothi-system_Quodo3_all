@@ -7,21 +7,16 @@ import {
   Tab,
   Accordion,
   AccordionSummary,
-  AccordionDetails,
-  FormControl,
-  Select,
-  MenuItem
+  AccordionDetails
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
-  Language as LanguageIcon
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { useTranslation } from '../contexts/TranslationContext';
 
 const Help = () => {
-  const { t, changeLanguage } = useTranslation();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
-  const [language, setLanguage] = useState('en');
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -45,25 +40,10 @@ const Help = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>        
+      <Box sx={{ mb: 3 }}>        
         <Typography variant="h4" gutterBottom>
           {t('help.title')}
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <LanguageIcon sx={{ mr: 1 }} />
-          <FormControl size="small">
-            <Select
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                changeLanguage(e.target.value);
-              }}
-            >
-              <MenuItem value="en">English</MenuItem>
-              <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
       </Box>
 
       <Paper sx={{ p: 2, mb: 3 }}>
