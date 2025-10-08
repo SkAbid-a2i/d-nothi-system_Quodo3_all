@@ -87,7 +87,7 @@ const ModernTaskLogger = () => {
   // Fetch dropdown values on component mount
   useEffect(() => {
     fetchInitialData();
-  }, [user]);
+  }, [user?.id, user?.role]);
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -141,6 +141,7 @@ const ModernTaskLogger = () => {
       if (usersRes) console.log('Processed users data:', usersData);
       console.log('User role:', user?.role);
       console.log('Should fetch users:', user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor'));
+      console.log('Users data length:', usersData.length);
       
       setSources(sourcesData);
       setCategories(categoriesData);
@@ -660,6 +661,7 @@ const ModernTaskLogger = () => {
                             />
                           )}
                           isOptionEqualToValue={(option, value) => option.id === value.id}
+                          noOptionsText="No users found"
                         />
                       )}
                     </Box>
