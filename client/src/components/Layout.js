@@ -449,17 +449,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             D-Nothi Task Management
           </Typography>
           
-          {/* Collapse/Expand button moved to top bar */}
-          <Tooltip title={drawerOpen ? "Collapse menu" : "Expand menu"}>
-            <IconButton
-              color="inherit"
-              onClick={handleDrawerToggle}
-              sx={{ mx: 1 }}
-            >
-              {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
-            </IconButton>
-          </Tooltip>
-          
           <Tooltip title="Notifications">
             <IconButton
               size="large"
@@ -468,7 +457,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               onClick={handleNotificationMenuOpen}
             >
               <Badge badgeContent={notifications.length} color="error">
-                <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
+                <NotificationsIcon sx={{ 
+                  color: darkMode ? '#98fb98' : '#667eea'
+                }} />
               </Badge>
             </IconButton>
           </Tooltip>
@@ -679,11 +670,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleMenuClose}>
-          <AccountCircle sx={{ mr: 1 }} />
-          Profile
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          navigate('/settings');
+        }}>
           <SettingsIcon sx={{ mr: 1 }} />
           My account
         </MenuItem>

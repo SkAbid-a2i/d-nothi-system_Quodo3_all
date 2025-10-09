@@ -55,8 +55,6 @@ import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
-import useUserFilter from '../hooks/useUserFilter';
-import UserFilterDropdown from './UserFilterDropdown';
 
 const TaskManagement = () => {
   const { user } = useAuth();
@@ -82,8 +80,6 @@ const TaskManagement = () => {
   const [offices, setOffices] = useState([]); // Add offices state
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
   const [userInformation, setUserInformation] = useState(''); // Add user information state
-  const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
-  const [userFilter, setUserFilter] = useState(''); // Add user filter
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
@@ -109,8 +105,8 @@ const TaskManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
-  // Use the new user filter hook
-  const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
+  // Removed unused user filter state variables
+  // Removed useUserFilter hook since we're not using it anymore
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -151,20 +147,11 @@ const TaskManagement = () => {
       
       // Filter tasks based on user role
       if (user) {
-        if (user.role === 'Agent') {
-          // Agents only see their own tasks
+        if (user.role === 'Agent' || user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') {
+          // All roles only see their own tasks
           tasksData = tasksData.filter(task => 
             task.userId === user.id || task.userName === user.username
           );
-        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see tasks from their office
-          // But they are also agents, so they should see their own tasks AND their team's tasks
-          tasksData = tasksData.filter(task => 
-            task.office === user.office
-          );
-        } else if (user.role === 'SystemAdmin') {
-          // SystemAdmin sees all tasks (no filtering needed)
-          // tasksData remains unchanged
         }
         // Default case - no filtering
       }
@@ -497,7 +484,7 @@ const TaskManagement = () => {
     }
   };
 
-  // Filter tasks based on search term, status, and user
+  // Filter tasks based on search term and status
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -507,9 +494,7 @@ const TaskManagement = () => {
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     
-    const matchesUser = !userFilter || task.userName === userFilter;
-    
-    return matchesSearch && matchesStatus && matchesUser;
+    return matchesSearch && matchesStatus;
   });
 
   // Get task statistics
@@ -545,8 +530,6 @@ const TaskManagement = () => {
         // For total tasks, clear filters to show all
         setStatusFilter('');
         setSearchTerm('');
-        setUserFilter('');
-        setSelectedUser(null);
         break;
     }
     
@@ -770,8 +753,8 @@ const TaskManagement = () => {
         <Box>
           {/* Task Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-              <Grid item xs={12} sm={6} md={4}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={5} md={4}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -782,7 +765,7 @@ const TaskManagement = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid item xs={12} sm={4} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select 
@@ -798,62 +781,33 @@ const TaskManagement = () => {
                 </FormControl>
               </Grid>
               
-              {/* User Filter Dropdown - Only show for Admin roles */}
-              {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                <UserFilterDropdown
-                  users={users}
-                  selectedUser={selectedUser}
-                  onUserChange={(newValue) => {
-                    setSelectedUser(newValue);
-                    // Apply filter immediately when user selects a user
-                    if (newValue) {
-                      setUserFilter(newValue.username || newValue.email || '');
-                    } else {
-                      setUserFilter('');
-                    }
-                  }}
-                  label="Filter by User"
-                  loading={userLoading}
-                  gridSize={{ xs: 12, sm: 6, md: 4 }}
-                />
-              )}
-
-              <Grid item xs={12} sm={12} md={5}>
+              <Grid item xs={12} sm={3} md={5}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
-                    variant="outlined" 
-                    startIcon={<FilterIcon />}
-                    onClick={() => {
-                      // Apply filters
-                      if (selectedUser) {
-                        setUserFilter(selectedUser.username || selectedUser.email);
-                      }
-                    }}
-                  >
-                    Apply Filters
-                  </Button>
-                  <Button 
                     variant="outlined"
+                    size="small"
                     onClick={() => {
                       setSearchTerm('');
                       setStatusFilter('');
-                      setUserFilter('');
-                      setSelectedUser(null);
                     }}
                   >
                     Clear
                   </Button>
                   <Button 
-                    startIcon={<DownloadIcon />} 
+                    variant="contained"
+                    size="small"
+                    startIcon={<DownloadIcon />}
                     onClick={() => handleExport('CSV')}
                   >
-                    Export CSV
+                    CSV
                   </Button>
                   <Button 
-                    startIcon={<DownloadIcon />} 
+                    variant="contained"
+                    size="small"
+                    startIcon={<DownloadIcon />}
                     onClick={() => handleExport('PDF')}
                   >
-                    Export PDF
+                    PDF
                   </Button>
                 </Box>
               </Grid>
