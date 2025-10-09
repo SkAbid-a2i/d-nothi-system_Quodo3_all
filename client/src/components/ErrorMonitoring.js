@@ -79,7 +79,7 @@ const ErrorMonitoring = () => {
     logs.forEach(log => {
       if (log.level === 'error' || log.level === 'warn') {
         const message = log.message?.toLowerCase() || '';
-        const metadata = log.metadata || {};
+        // Removed unused metadata variable
 
         // Check for missing field issues
         if (message.includes('field') && (message.includes('missing') || message.includes('not found') || message.includes('undefined'))) {
@@ -253,7 +253,7 @@ const ErrorMonitoring = () => {
         fetchAnalysis();
       }
     }
-  }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab]);
+  }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab, fetchLogs, fetchAnalysis]);
 
   // Real-time polling
   useEffect(() => {
@@ -264,7 +264,18 @@ const ErrorMonitoring = () => {
       }, 5000); // Poll every 5 seconds
     }
     return () => clearInterval(interval);
-  }, [realtime, activeTab]);
+  }, [realtime, activeTab, fetchLogs]);
+
+  // Extract page name from URL
+  const getPageName = (url) => {
+    if (!url) return 'Unknown';
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      return urlObj.pathname || '/';
+    } catch (e) {
+      return url;
+    }
+  };
 
   const renderLogsTab = () => (
     <>
@@ -470,6 +481,7 @@ const ErrorMonitoring = () => {
                       <TableCell>Level</TableCell>
                       <TableCell>Source</TableCell>
                       <TableCell>User</TableCell>
+                      <TableCell>Page</TableCell>
                       <TableCell>Message</TableCell>
                       <TableCell>Details</TableCell>
                     </TableRow>
@@ -496,6 +508,23 @@ const ErrorMonitoring = () => {
                             />
                           </TableCell>
                           <TableCell>{log.userId || log.metadata?.userId || log.user || log.username || 'System'}</TableCell>
+                          <TableCell>
+                            {log.metadata?.source === 'frontend' ? (
+                              <Chip 
+                                label={getPageName(log.metadata?.url)} 
+                                size="small" 
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ) : (
+                              <Chip 
+                                label="Backend" 
+                                size="small" 
+                                color="default"
+                                variant="outlined"
+                              />
+                            )}
+                          </TableCell>
                           <TableCell>{log.message || 'No message'}</TableCell>
                           <TableCell>
                             {log.metadata && (
@@ -508,7 +537,7 @@ const ErrorMonitoring = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} align="center">
+                        <TableCell colSpan={7} align="center">
                           <Typography variant="body1" color="text.secondary">
                             No logs found
                           </Typography>
