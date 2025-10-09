@@ -159,8 +159,16 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    try {
+      console.log('Logout initiated');
+      logout();
+      console.log('Logout completed, redirecting to login');
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Even if there's an error, still try to navigate to login
+      navigate('/');
+    }
   };
 
   const handleNavigation = (path) => {
