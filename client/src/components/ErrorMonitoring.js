@@ -38,7 +38,7 @@ import {
   Visibility as VisibilityIcon,
   Api as ApiIcon
 } from '@mui/icons-material';
-import { logAPI } from '../services/api';
+import { logAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const ErrorMonitoring = () => {
@@ -249,15 +249,39 @@ const ErrorMonitoring = () => {
     }
   }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab]);
 
-  // Extract page name from URL
-  const getPageName = (url) => {
-    if (!url) return 'Unknown';
-    try {
-      const urlObj = new URL(url, window.location.origin);
-      return urlObj.pathname || '/';
-    } catch (e) {
-      return url;
+  // Extract page name from URL or metadata
+  const getPageName = (log) => {
+    // For frontend logs, extract page name from URL
+    if (log.metadata?.source === 'frontend' && log.metadata?.url) {
+      try {
+        const urlObj = new URL(log.metadata.url, window.location.origin);
+        // Return a more descriptive name based on the path
+        const path = urlObj.pathname;
+        if (path === '/') return 'Dashboard';
+        if (path.includes('/tasks')) return 'Task Management';
+        if (path.includes('/leave')) return 'Leave Management';
+        if (path.includes('/meetings')) return 'Meetings';
+        if (path.includes('/reports')) return 'Reports';
+        if (path.includes('/admin')) return 'Admin Console';
+        if (path.includes('/settings')) return 'Settings';
+        if (path.includes('/help')) return 'Help & Support';
+        return path || 'Unknown Page';
+      } catch (e) {
+        return log.metadata.url || 'Unknown Page';
+      }
     }
+    
+    // For backend logs, try to extract endpoint or component info
+    if (log.metadata?.endpoint) {
+      return log.metadata.endpoint;
+    }
+    
+    if (log.metadata?.component) {
+      return log.metadata.component;
+    }
+    
+    // Default fallback
+    return log.metadata?.source ? 'Frontend' : 'Backend';
   };
 
   const renderLogsTab = () => (
@@ -492,21 +516,12 @@ const ErrorMonitoring = () => {
                           </TableCell>
                           <TableCell>{log.userId || log.metadata?.userId || log.user || log.username || 'System'}</TableCell>
                           <TableCell>
-                            {log.metadata?.source === 'frontend' ? (
-                              <Chip 
-                                label={getPageName(log.metadata?.url)} 
-                                size="small" 
-                                color="primary"
-                                variant="outlined"
-                              />
-                            ) : (
-                              <Chip 
-                                label="Backend" 
-                                size="small" 
-                                color="default"
-                                variant="outlined"
-                              />
-                            )}
+                            <Chip 
+                              label={getPageName(log)} 
+                              size="small" 
+                              color={log.metadata?.source ? 'primary' : 'default'}
+                              variant="outlined"
+                            />
                           </TableCell>
                           <TableCell>{log.message || 'No message'}</TableCell>
                           <TableCell>

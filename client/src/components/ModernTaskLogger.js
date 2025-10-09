@@ -153,19 +153,11 @@ const ModernTaskLogger = () => {
       // Filter tasks based on user role
       let filteredTasksData = tasksData;
       if (user) {
-        if (user.role === 'Agent') {
-          // Agents only see their own tasks
+        if (user.role === 'Agent' || user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') {
+          // All roles (including admin roles) only see their own tasks
           filteredTasksData = tasksData.filter(task => 
             task.userId === user.id || task.userName === user.username
           );
-        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see tasks from their office
-          filteredTasksData = tasksData.filter(task => 
-            task.office === user.office
-          );
-        } else if (user.role === 'SystemAdmin') {
-          // SystemAdmin sees all tasks (no filtering needed)
-          // filteredTasksData remains unchanged
         }
       }
       
@@ -254,10 +246,9 @@ const ModernTaskLogger = () => {
             task.userId === user.id || task.userName === user.username
           );
         } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see tasks from their office
-          filteredTasksData = tasksData.filter(task => 
-            task.office === user.office
-          );
+          // Admins and Supervisors see all tasks (no filtering needed)
+          // They can filter by user selection in the UI
+          // filteredTasksData remains unchanged for Admin roles
         } else if (user.role === 'SystemAdmin') {
           // SystemAdmin sees all tasks (no filtering needed)
           // filteredTasksData remains unchanged
@@ -758,29 +749,7 @@ const ModernTaskLogger = () => {
                       </Select>
                     </FormControl>
                     
-                    {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                      <Autocomplete
-                        key={`user-filter-${users.length}`}
-                        sx={{ minWidth: 200 }}
-                        options={users}
-                        getOptionLabel={(option) => {
-                          if (!option) return '';
-                          return option.fullName || option.username || option.email || 'Unknown User';
-                        }}
-                        value={selectedUser}
-                        onChange={(event, newValue) => setSelectedUser(newValue)}
-                        renderInput={(params) => (
-                          <TextField 
-                            {...params} 
-                            label="Filter by User" 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        )}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                        noOptionsText="No users found"
-                      />
-                    )}
+                    {/* User filter removed since all users only see their own tasks */}
                   </Box>
                 </Box>
                 

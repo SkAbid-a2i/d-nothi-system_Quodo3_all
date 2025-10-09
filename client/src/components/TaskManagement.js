@@ -172,8 +172,8 @@ const TaskManagement = () => {
       console.error('Error fetching tasks:', error);
       console.error('Error response:', error.response);
       const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to fetch tasks';
-      setError(`Failed to fetch tasks: ${errorMessage}`);
-      showSnackbar(`Failed to fetch tasks: ${errorMessage}`, 'error');
+      setError('Failed to fetch tasks: ' + errorMessage);
+      showSnackbar('Failed to fetch tasks: ' + errorMessage, 'error');
     } finally {
       setDataLoading(false);
     }
@@ -203,7 +203,7 @@ const TaskManagement = () => {
     } catch (error) {
       console.error('Error updating task status:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to update task status';
-      showSnackbar(`Failed to update task status: ${errorMessage}`, 'error');
+      showSnackbar('Failed to update task status: ' + errorMessage, 'error');
       throw error;
     }
   };
@@ -225,15 +225,15 @@ const TaskManagement = () => {
   // Listen for real-time notifications
   useEffect(() => {
     const handleTaskCreated = (data) => {
-      showSnackbar(`New task created: ${data.task.description}`, 'info');
+      showSnackbar('New task created: ' + data.task.description, 'info');
       fetchTasks(); // Refresh data
     };
 
     const handleTaskUpdated = (data) => {
       if (data.deleted) {
-        showSnackbar(`Task deleted: ${data.description}`, 'warning');
+        showSnackbar('Task deleted: ' + data.description, 'warning');
       } else {
-        showSnackbar(`Task updated: ${data.task.description}`, 'info');
+        showSnackbar('Task updated: ' + data.task.description, 'info');
       }
       fetchTasks(); // Refresh data
     };
@@ -249,6 +249,21 @@ const TaskManagement = () => {
     };
   }, [fetchTasks]);
 
+  // Debug useEffect to monitor users state
+  useEffect(() => {
+    console.log('Users state changed:', users);
+    console.log('Users length:', users.length);
+    if (users.length > 0) {
+      console.log('First user:', users[0]);
+    }
+  }, [users]);
+  
+  // Additional debug for user role
+  useEffect(() => {
+    console.log('Current user:', user);
+    console.log('User role:', user?.role);
+  }, [user]);
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -261,35 +276,81 @@ const TaskManagement = () => {
   const fetchDropdownValues = async () => {
     setLoading(true);
     try {
+      console.log('Fetching dropdown values...');
       // Fetch all dropdown values in parallel
-      const [sourcesRes, categoriesRes, officesRes, usersRes] = await Promise.all([
+      const fetchPromises = [
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office'),
-        userAPI.getAllUsers() // Fetch all users for filtering
-      ]);
-    
-      setSources(sourcesRes.data || []);
-      setCategories(categoriesRes.data || []);
-      setOffices(officesRes.data || []);
+        dropdownAPI.getDropdownValues('Office')
+      ];
       
-      // Process users data
-      if (usersRes.data) {
+      // Always fetch users for admin roles
+      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+        fetchPromises.push(userAPI.getAllUsers());
+      }
+      
+      const responses = await Promise.all(fetchPromises);
+    
+      console.log('All responses:', responses);
+    
+      // Extract responses
+      let sourcesRes, categoriesRes, officesRes, usersRes;
+      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+        [sourcesRes, categoriesRes, officesRes, usersRes] = responses;
+      } else {
+        [sourcesRes, categoriesRes, officesRes] = responses;
+      }
+    
+      console.log('Sources response:', sourcesRes);
+      console.log('Categories response:', categoriesRes);
+      console.log('Offices response:', officesRes);
+      console.log('Users response:', usersRes);
+    
+      setSources(sourcesRes?.data || []);
+      setCategories(categoriesRes?.data || []);
+      setOffices(officesRes?.data || []);
+      
+      // Process users to ensure proper format
+      if (usersRes && usersRes.data && user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
         const userData = Array.isArray(usersRes.data) 
           ? usersRes.data 
-          : usersRes.data.data || usersRes.data.users || [];
+          : (usersRes.data.data || usersRes.data.users || usersRes.data || []);
           
-        const processedUsers = userData.map(user => ({
-          id: user.id,
-          label: `${user.fullName || user.username} (${user.username})`,
-          value: user.username,
-          ...user // Include all user properties
-        }));
+        console.log('Raw users data:', usersRes);
+        console.log('Processed users data:', userData);
+        console.log('Users data type:', typeof userData);
+        console.log('Users data length:', userData.length);
+        
+        // Process users to ensure proper format
+        const processedUsers = userData
+          .filter(user => user && user.id && (user.username || user.email)) // Filter out invalid users
+          .map(user => ({
+            id: user.id,
+            label: (user.fullName || user.username || user.email) + ' (' + (user.username || user.email) + ')',
+            value: user.username || user.email,
+            fullName: user.fullName,
+            username: user.username,
+            email: user.email,
+            role: user.role
+          }));
+        
+        console.log('Final processed users:', processedUsers);
+        console.log('Processed users length:', processedUsers.length);
         setUsers(processedUsers);
+        
+        // Also log the users state after setting it
+        setTimeout(() => {
+          console.log('Users state after setting:', processedUsers);
+        }, 0);
+      } else {
+        console.log('No users data received or user not authorized');
+        setUsers([]);
       }
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
+      console.error('Error response:', error.response);
       showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
+      setUsers([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -322,8 +383,8 @@ const TaskManagement = () => {
     } catch (error) {
       console.error('Error deleting task:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
-      setError(`Failed to delete task: ${errorMessage}`);
-      showSnackbar(`Failed to delete task: ${errorMessage}`, 'error');
+      setError('Failed to delete task: ' + errorMessage);
+      showSnackbar('Failed to delete task: ' + errorMessage, 'error');
     }
   };
   
@@ -421,8 +482,8 @@ const TaskManagement = () => {
       console.error('Error creating task:', error);
       console.error('Error response:', error.response);
       const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to create task';
-      setError(`Failed to create task: ${errorMessage}`);
-      showSnackbar(`Failed to create task: ${errorMessage}`, 'error');
+      setError('Failed to create task: ' + errorMessage);
+      showSnackbar('Failed to create task: ' + errorMessage, 'error');
     }
   };
 
@@ -485,8 +546,8 @@ const TaskManagement = () => {
     } catch (error) {
       console.error('Error updating task:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to update task';
-      setError(`Failed to update task: ${errorMessage}`);
-      showSnackbar(`Failed to update task: ${errorMessage}`, 'error');
+      setError('Failed to update task: ' + errorMessage);
+      showSnackbar('Failed to update task: ' + errorMessage, 'error');
     }
   };
 
@@ -554,7 +615,7 @@ const TaskManagement = () => {
   const handleExport = async (format) => {
     try {
       // Show loading state
-      showSnackbar(`Exporting as ${format.toUpperCase()}...`, 'info');
+      showSnackbar('Exporting as ' + format.toUpperCase() + '...', 'info');
       
       // Prepare data for export
       const exportData = {
@@ -571,18 +632,18 @@ const TaskManagement = () => {
         const csvContent = convertTasksToCSV(exportData);
         content = csvContent;
         mimeType = 'text/csv';
-        filename = `tasks_export_${new Date().toISOString().split('T')[0]}.csv`;
+        filename = 'tasks_export_' + new Date().toISOString().split('T')[0] + '.csv';
       } else if (format === 'PDF') {
         // For PDF, we'll create a simple text representation
         const pdfContent = convertTasksToPDF(exportData);
         content = pdfContent;
         mimeType = 'application/pdf';
-        filename = `tasks_export_${new Date().toISOString().split('T')[0]}.pdf`;
+        filename = 'tasks_export_' + new Date().toISOString().split('T')[0] + '.pdf';
       } else {
         // Default to JSON
         content = JSON.stringify(exportData, null, 2);
         mimeType = 'application/json';
-        filename = `tasks_export_${new Date().toISOString().split('T')[0]}.json`;
+        filename = 'tasks_export_' + new Date().toISOString().split('T')[0] + '.json';
       }
       
       // Create and download file
@@ -596,25 +657,25 @@ const TaskManagement = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      showSnackbar(`Exported as ${format.toUpperCase()} successfully!`, 'success');
+      showSnackbar('Exported as ' + format.toUpperCase() + ' successfully!', 'success');
     } catch (error) {
       console.error('Export error:', error);
-      showSnackbar(`Failed to export as ${format.toUpperCase()}`, 'error');
+      showSnackbar('Failed to export as ' + format.toUpperCase(), 'error');
     }
   };
 
   // Helper function to convert tasks to CSV
   const convertTasksToCSV = (data) => {
     let csv = 'Tasks Export\n';
-    csv += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
-    csv += `User: ${data.user}\n\n`;
+    csv += 'Generated: ' + new Date(data.generatedAt).toLocaleString() + '\n';
+    csv += 'User: ' + data.user + '\n\n';
     
     // Tasks section
     csv += 'Date,Source,Category,Service,User Info,Description,User,Status,Files\n';
     
     data.tasks.forEach(task => {
       const filesCount = task.files ? task.files.length : 0;
-      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.service || ''}","${task.userInformation || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}","${filesCount}"\n`;
+      csv += '"' + (task.date || '') + '","' + (task.source || '') + '","' + (task.category || '') + '","' + (task.service || '') + '","' + (task.userInformation || '') + '","' + (task.description || '') + '","' + (task.userName || '') + '","' + (task.status || '') + '","' + filesCount + '"\n';
     });
     
     return csv;
@@ -623,23 +684,23 @@ const TaskManagement = () => {
   // Helper function to convert tasks to PDF-like text
   const convertTasksToPDF = (data) => {
     let pdf = 'Tasks Export Report\n';
-    pdf += '='.repeat(50) + '\n';
-    pdf += `Generated: ${new Date(data.generatedAt).toLocaleString()}\n`;
-    pdf += `User: ${data.user}\n\n`;
+    pdf += '==================================================\n';
+    pdf += 'Generated: ' + new Date(data.generatedAt).toLocaleString() + '\n';
+    pdf += 'User: ' + data.user + '\n\n';
     
     // Tasks section
     if (data.tasks.length === 0) {
       pdf += 'No tasks found.\n\n';
     } else {
       data.tasks.forEach((task, index) => {
-        pdf += `${index + 1}. ${task.description || 'No description'}\n`;
-        pdf += `   Date: ${task.date || 'N/A'}\n`;
-        pdf += `   Category: ${task.category || 'N/A'}\n`;
-        pdf += `   Service: ${task.service || 'N/A'}\n`;
-        pdf += `   User Info: ${task.userInformation || 'N/A'}\n`;
-        pdf += `   Status: ${task.status || 'N/A'}\n`;
-        pdf += `   User: ${task.userName || 'N/A'}\n`;
-        pdf += `   Files: ${task.files ? task.files.length : 0}\n\n`;
+        pdf += (index + 1) + '. ' + (task.description || 'No description') + '\n';
+        pdf += '   Date: ' + (task.date || 'N/A') + '\n';
+        pdf += '   Category: ' + (task.category || 'N/A') + '\n';
+        pdf += '   Service: ' + (task.service || 'N/A') + '\n';
+        pdf += '   User Info: ' + (task.userInformation || 'N/A') + '\n';
+        pdf += '   Status: ' + (task.status || 'N/A') + '\n';
+        pdf += '   User: ' + (task.userName || 'N/A') + '\n';
+        pdf += '   Files: ' + (task.files ? task.files.length : 0) + '\n\n';
       });
     }
     
@@ -763,7 +824,7 @@ const TaskManagement = () => {
           {/* Task Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={3}>
+              <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -774,7 +835,7 @@ const TaskManagement = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={12} sm={6} md={2}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select 
@@ -792,16 +853,21 @@ const TaskManagement = () => {
               
               {/* User Filter Dropdown - Only show for Admin roles */}
               {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Autocomplete
+                    key={`user-filter-${users.length}-${JSON.stringify(users.slice(0, 5))}`}
                     options={users}
-                    getOptionLabel={(option) => option.label || option.fullName || option.username || 'Unknown User'}
+                    getOptionLabel={(option) => {
+                      if (!option) return '';
+                      return option.label || (option.fullName || option.username || option.email) + ' (' + (option.username || option.email) + ')' || 'Unknown User';
+                    }}
                     value={selectedUser}
                     onChange={(event, newValue) => {
+                      console.log('User selected:', newValue);
                       setSelectedUser(newValue);
                       // Apply filter immediately when user selects a user
                       if (newValue) {
-                        setUserFilter(newValue.username);
+                        setUserFilter(newValue.username || newValue.email || '');
                       } else {
                         setUserFilter('');
                       }
@@ -809,11 +875,13 @@ const TaskManagement = () => {
                     renderInput={(params) => (
                       <TextField {...params} label="Filter by User" fullWidth />
                     )}
+                    isOptionEqualToValue={(option, value) => option.id === value?.id}
+                    noOptionsText="No users found"
                   />
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={6} md={4}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
                     variant="outlined" 
@@ -821,7 +889,7 @@ const TaskManagement = () => {
                     onClick={() => {
                       // Apply filters
                       if (selectedUser) {
-                        setUserFilter(selectedUser.username);
+                        setUserFilter(selectedUser.username || selectedUser.email);
                       }
                     }}
                   >
@@ -904,7 +972,7 @@ const TaskManagement = () => {
                       </TableCell>
                       <TableCell>
                         {task.files && task.files.length > 0 ? (
-                          <Tooltip title={`${task.files.length} file(s)`}>
+                          <Tooltip title={task.files.length + ' file(s)'}>
                             <Chip 
                               icon={<DescriptionIcon />} 
                               label={task.files.length} 
@@ -1118,7 +1186,7 @@ const TaskManagement = () => {
                       <ListItem key={index}>
                         <ListItemText
                           primary={file.name}
-                          secondary={`${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
+                          secondary={(file.size / 1024).toFixed(2) + ' KB - ' + file.type}
                         />
                         <ListItemSecondaryAction>
                           <IconButton 
@@ -1317,10 +1385,10 @@ const TaskManagement = () => {
                   </Typography>
                   <List dense>
                     {editFiles.map((file, index) => (
-                      <ListItem key={`edit-${index}`}>
+                      <ListItem key={'edit-' + index}>
                         <ListItemText
                           primary={typeof file === 'string' ? file : file.name}
-                          secondary={typeof file === 'string' ? 'Existing file' : `${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
+                          secondary={typeof file === 'string' ? 'Existing file' : (file.size / 1024).toFixed(2) + ' KB - ' + file.type}
                         />
                         <ListItemSecondaryAction>
                           <IconButton 
