@@ -54,7 +54,6 @@ const ErrorMonitoring = () => {
   const [filterDate, setFilterDate] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [analysis, setAnalysis] = useState(null);
-  const [realtime, setRealtime] = useState(false);
 
   const stats = {
     total: logs.length,
@@ -239,11 +238,6 @@ const ErrorMonitoring = () => {
     }
   };
 
-  const toggleRealtime = () => {
-    setRealtime(!realtime);
-    showSnackbar(`Real-time monitoring ${!realtime ? 'enabled' : 'disabled'}`, 'info');
-  };
-
   // Fetch logs when filters change or component mounts
   useEffect(() => {
     if (user) {
@@ -253,18 +247,7 @@ const ErrorMonitoring = () => {
         fetchAnalysis();
       }
     }
-  }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab, fetchLogs, fetchAnalysis]);
-
-  // Real-time polling
-  useEffect(() => {
-    let interval;
-    if (realtime && activeTab === 0) {
-      interval = setInterval(() => {
-        fetchLogs();
-      }, 5000); // Poll every 5 seconds
-    }
-    return () => clearInterval(interval);
-  }, [realtime, activeTab, fetchLogs]);
+  }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab]);
 
   // Extract page name from URL
   const getPageName = (url) => {
@@ -386,12 +369,12 @@ const ErrorMonitoring = () => {
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} sm={2}>
                 <Button
-                  variant={realtime ? "contained" : "outlined"}
+                  variant="outlined"
                   startIcon={<RefreshIcon />}
-                  onClick={toggleRealtime}
+                  onClick={fetchLogs}
                   fullWidth
                 >
-                  {realtime ? 'Stop Realtime' : 'Start Realtime'}
+                  Refresh
                 </Button>
               </Grid>
               

@@ -39,7 +39,7 @@ import {
 } from '@mui/material';
 import { 
   Add as AddIcon, 
-  Edit as EditIcon, 
+  Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
@@ -52,7 +52,7 @@ import {
   Close as CloseIcon,
   Download as DownloadIcon
 } from '@mui/icons-material';
-import { dropdownAPI, taskAPI } from '../services/api';
+import { dropdownAPI, taskAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
@@ -262,34 +262,30 @@ const TaskManagement = () => {
     setLoading(true);
     try {
       // Fetch all dropdown values in parallel
-      const [sourcesRes, categoriesRes, officesRes] = await Promise.all([
+      const [sourcesRes, categoriesRes, officesRes, usersRes] = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office')
+        dropdownAPI.getDropdownValues('Office'),
+        userAPI.getAllUsers() // Fetch all users for filtering
       ]);
     
       setSources(sourcesRes.data || []);
       setCategories(categoriesRes.data || []);
       setOffices(officesRes.data || []);
       
-      // Fetch users separately to avoid blocking dropdown loading
-      try {
-        const usersRes = await taskAPI.getAllUsers();
-        if (usersRes.data) {
-          const userData = Array.isArray(usersRes.data) 
-            ? usersRes.data 
-            : usersRes.data.data || usersRes.data.users || [];
-            
-          const processedUsers = userData.map(user => ({
-            id: user.id,
-            label: `${user.fullName || user.username} (${user.username})`,
-            value: user.username
-          }));
-          setUsers(processedUsers);
-        }
-      } catch (userError) {
-        console.error('Error fetching users:', userError);
-        // Don't block the UI if user fetching fails
+      // Process users data
+      if (usersRes.data) {
+        const userData = Array.isArray(usersRes.data) 
+          ? usersRes.data 
+          : usersRes.data.data || usersRes.data.users || [];
+          
+        const processedUsers = userData.map(user => ({
+          id: user.id,
+          label: `${user.fullName || user.username} (${user.username})`,
+          value: user.username,
+          ...user // Include all user properties
+        }));
+        setUsers(processedUsers);
       }
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
@@ -653,7 +649,7 @@ const TaskManagement = () => {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h4" gutterBottom>
-        My Tasks
+        Task Modification & Activity
       </Typography>
       
       {/* Task Statistics Cards */}
@@ -767,7 +763,7 @@ const TaskManagement = () => {
           {/* Task Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={3}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -793,12 +789,41 @@ const TaskManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
+              
+              {/* User Filter Dropdown - Only show for Admin roles */}
+              {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
+                <Grid item xs={12} sm={3}>
+                  <Autocomplete
+                    options={users}
+                    getOptionLabel={(option) => option.label || option.fullName || option.username || 'Unknown User'}
+                    value={selectedUser}
+                    onChange={(event, newValue) => {
+                      setSelectedUser(newValue);
+                      // Apply filter immediately when user selects a user
+                      if (newValue) {
+                        setUserFilter(newValue.username);
+                      } else {
+                        setUserFilter('');
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Filter by User" fullWidth />
+                    )}
+                  />
+                </Grid>
+              )}
 
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
                     variant="outlined" 
                     startIcon={<FilterIcon />}
+                    onClick={() => {
+                      // Apply filters
+                      if (selectedUser) {
+                        setUserFilter(selectedUser.username);
+                      }
+                    }}
                   >
                     Apply Filters
                   </Button>
@@ -808,6 +833,7 @@ const TaskManagement = () => {
                       setSearchTerm('');
                       setStatusFilter('');
                       setUserFilter('');
+                      setSelectedUser(null);
                     }}
                   >
                     Clear

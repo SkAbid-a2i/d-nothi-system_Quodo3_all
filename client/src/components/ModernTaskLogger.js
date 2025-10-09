@@ -149,8 +149,28 @@ const ModernTaskLogger = () => {
       setSources(sourcesData);
       setCategories(categoriesData);
       setServices(servicesData);
-      setTasks(tasksData);
-      setFilteredTasks(tasksData);
+      
+      // Filter tasks based on user role
+      let filteredTasksData = tasksData;
+      if (user) {
+        if (user.role === 'Agent') {
+          // Agents only see their own tasks
+          filteredTasksData = tasksData.filter(task => 
+            task.userId === user.id || task.userName === user.username
+          );
+        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
+          // Admins and Supervisors see tasks from their office
+          filteredTasksData = tasksData.filter(task => 
+            task.office === user.office
+          );
+        } else if (user.role === 'SystemAdmin') {
+          // SystemAdmin sees all tasks (no filtering needed)
+          // filteredTasksData remains unchanged
+        }
+      }
+      
+      setTasks(filteredTasksData);
+      setFilteredTasks(filteredTasksData);
       if (usersRes) {
         console.log('Setting users state with data:', usersData);
         setUsers(usersData);
@@ -224,8 +244,28 @@ const ModernTaskLogger = () => {
       console.log('Tasks response:', response);
       const tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
-      setTasks(tasksData);
-      setFilteredTasks(tasksData);
+      
+      // Filter tasks based on user role
+      let filteredTasksData = tasksData;
+      if (user) {
+        if (user.role === 'Agent') {
+          // Agents only see their own tasks
+          filteredTasksData = tasksData.filter(task => 
+            task.userId === user.id || task.userName === user.username
+          );
+        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
+          // Admins and Supervisors see tasks from their office
+          filteredTasksData = tasksData.filter(task => 
+            task.office === user.office
+          );
+        } else if (user.role === 'SystemAdmin') {
+          // SystemAdmin sees all tasks (no filtering needed)
+          // filteredTasksData remains unchanged
+        }
+      }
+      
+      setTasks(filteredTasksData);
+      setFilteredTasks(filteredTasksData);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       console.error('Error response:', error.response);
@@ -289,10 +329,8 @@ const ModernTaskLogger = () => {
     // Role-based filtering
     if (user && user.role === 'Agent') {
       console.log('Filtering for Agent - showing only own tasks');
-      // Agents only see their own tasks
-      filtered = filtered.filter(task => 
-        task.userId === user.id || task.userName === user.username
-      );
+      // Agents only see their own tasks (already filtered in fetchTasks)
+      // No additional filtering needed here
     } else if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
       console.log('Filtering for Admin role - selectedUser:', selectedUser);
       // Admin roles can filter by user selection
@@ -330,14 +368,23 @@ const ModernTaskLogger = () => {
       
       // Include userInformation in the task creation
       const taskData = {
-        ...formData
+        ...formData,
+        userId: user?.id, // Automatically add user ID
+        userName: user?.fullName || user?.username // Automatically add user name
       };
       const response = await taskAPI.createTask(taskData);
       console.log('Create task response:', response);
       const newTask = Array.isArray(response.data) ? response.data[0] : 
                      response.data?.data || response.data || {};
       
-      setTasks([newTask, ...tasks]);
+      // Add new task to list with proper user info
+      const taskWithUserInfo = {
+        ...newTask,
+        userId: user?.id,
+        userName: user?.fullName || user?.username
+      };
+      
+      setTasks([taskWithUserInfo, ...tasks]);
       setFormData({
         date: new Date().toISOString().split('T')[0],
         source: '',
@@ -386,7 +433,7 @@ const ModernTaskLogger = () => {
                          response.data?.data || response.data || {};
       
       const updatedTasks = tasks.map(task => 
-        task.id === editingTask.id ? updatedTask : task
+        task.id === editingTask.id ? { ...task, ...updatedTask } : task
       );
       
       setTasks(updatedTasks);
@@ -409,6 +456,7 @@ const ModernTaskLogger = () => {
       
       const updatedTasks = tasks.filter(task => task.id !== taskId);
       setTasks(updatedTasks);
+      
       showSnackbar('Task deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -419,16 +467,15 @@ const ModernTaskLogger = () => {
     }
   };
 
-  // Handle status change directly from the table
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       setLoading(true);
       
+      // Update task status
       const response = await taskAPI.updateTask(taskId, { status: newStatus });
-      console.log('Update status response:', response);
-      const updatedTask = Array.isArray(response.data) ? response.data[0] : 
-                         response.data?.data || response.data || {};
+      console.log('Update task status response:', response);
       
+      // Update local state
       const updatedTasks = tasks.map(task => 
         task.id === taskId ? { ...task, status: newStatus } : task
       );
@@ -444,6 +491,10 @@ const ModernTaskLogger = () => {
     }
   };
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -452,440 +503,464 @@ const ModernTaskLogger = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
   return (
-    <Fade in={true} timeout={600}>
-      <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              fontWeight: 700,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1
-            }}
-          >
-            Task Logger
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
-            Create and manage your tasks efficiently
-          </Typography>
-        </Box>
-
-        <Grid container spacing={3}>
-          {/* Task Form */}
-          <Grid item xs={12} lg={4}>
-            <Zoom in={true} timeout={800}>
-              <Paper 
+    <Fade in={true} timeout={500}>
+      <Grid container spacing={3}>
+        {/* Header */}
+        <Grid item xs={12}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            mb: 3,
+            flexWrap: 'wrap',
+            gap: 2
+          }}>
+            <Box>
+              <Typography 
+                variant="h4" 
                 sx={{ 
-                  p: 3, 
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
-                  border: '1px solid rgba(102, 126, 234, 0.2)'
+                  fontWeight: 700,
+                  background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: 1
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Assignment sx={{ fontSize: 32, color: 'primary.main', mr: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Create New Task
-                  </Typography>
-                </Box>
-                
-                <Box component="form" onSubmit={handleSubmit}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Date"
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleInputChange}
-                        InputLabelProps={{ shrink: true }}
-                        required
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <FormControl fullWidth required>
-                        <InputLabel>Source</InputLabel>
-                        <Select
-                          name="source"
-                          value={formData.source}
-                          onChange={handleInputChange}
-                          label="Source"
-                          disabled={dropdownLoading}
-                        >
-                          {sources.map(source => (
-                            <MenuItem key={source.id || source.value} value={source.value}>{source.value}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <FormControl fullWidth required>
-                        <InputLabel>Category</InputLabel>
-                        <Select
-                          name="category"
-                          value={formData.category}
-                          onChange={handleInputChange}
-                          label="Category"
-                          disabled={dropdownLoading}
-                        >
-                          {categories.map(category => (
-                            <MenuItem key={category.id || category.value} value={category.value}>{category.value}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <FormControl fullWidth>
-                        <InputLabel>Service</InputLabel>
-                        <Select
-                          name="service"
-                          value={formData.service}
-                          onChange={handleInputChange}
-                          label="Service"
-                          disabled={dropdownLoading}
-                        >
-                          {services.map(service => (
-                            <MenuItem key={service.id || service.value} value={service.value}>{service.value}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="User Information"
-                        name="userInformation"
-                        value={formData.userInformation}
-                        onChange={handleInputChange}
-                        multiline
-                        rows={2}
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        multiline
-                        rows={4}
-                        required
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <FormControl fullWidth>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                          name="status"
-                          value={formData.status}
-                          onChange={handleInputChange}
-                          label="Status"
-                        >
-                          {statuses.map(status => (
-                            <MenuItem key={status} value={status}>{status}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        disabled={loading || dropdownLoading}
-                        startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
-                        sx={{ 
-                          py: 1.5,
-                          background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                          '&:hover': {
-                            background: 'linear-gradient(45deg, #764ba2, #667eea)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
-                          }
-                        }}
-                      >
-                        {loading ? 'Creating...' : 'Create Task'}
-                      </Button>
-                    </Grid>
+                Task Logger
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary">
+                Log and track your daily tasks efficiently
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={() => setActiveTab(1)}
+                sx={{ 
+                  background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)'
+                  }
+                }}
+              >
+                Create Task
+              </Button>
+            </Box>
+          </Box>
+        </Grid>
+        
+        {/* Create Task Form */}
+        <Grid item xs={12}>
+          <Zoom in={activeTab === 1}>
+            <Paper 
+              sx={{ 
+                p: 3, 
+                mb: 3,
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                display: activeTab === 1 ? 'block' : 'none'
+              }}
+            >
+              <Box component="form" onSubmit={handleSubmit}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                      Create New Task
+                    </Typography>
                   </Grid>
-                </Box>
-              </Paper>
-            </Zoom>
-          </Grid>
-          
-          {/* Task List and Recent Activity */}
-          <Grid item xs={12} lg={8}>
-            <Grid container spacing={3}>
-              {/* Task History */}
-              <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 3, height: '100%' }}>
+                  
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Date"
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Source</InputLabel>
+                      <Select
+                        name="source"
+                        value={formData.source}
+                        onChange={handleInputChange}
+                        label="Source"
+                        disabled={dropdownLoading}
+                      >
+                        {sources.map(source => (
+                          <MenuItem key={source.id || source.value} value={source.value}>{source.value}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        label="Category"
+                        disabled={dropdownLoading}
+                      >
+                        {categories.map(category => (
+                          <MenuItem key={category.id || category.value} value={category.value}>{category.value}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <FormControl fullWidth>
+                      <InputLabel>Service</InputLabel>
+                      <Select
+                        name="service"
+                        value={formData.service}
+                        onChange={handleInputChange}
+                        label="Service"
+                        disabled={dropdownLoading}
+                      >
+                        {services.map(service => (
+                          <MenuItem key={service.id || service.value} value={service.value}>{service.value}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="User Information"
+                      name="userInformation"
+                      value={formData.userInformation}
+                      onChange={handleInputChange}
+                      multiline
+                      rows={2}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      multiline
+                      rows={4}
+                      required
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <FormControl fullWidth>
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        label="Status"
+                      >
+                        {statuses.map(status => (
+                          <MenuItem key={status} value={status}>{status}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      disabled={loading || dropdownLoading}
+                      startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+                      sx={{ 
+                        py: 1.5,
+                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                        }
+                      }}
+                    >
+                      {loading ? 'Creating...' : 'Create Task'}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Paper>
+          </Zoom>
+        </Grid>
+        
+        {/* Task List and Recent Activity */}
+        <Grid item xs={12} lg={8}>
+          <Grid container spacing={3}>
+            {/* Task History */}
+            <Grid item xs={12} md={7}>
+              <Paper sx={{ p: 3, height: '100%' }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: { xs: 'flex-start', sm: 'center' }, 
+                  mb: 3, 
+                  flexWrap: 'wrap', 
+                  gap: 2,
+                  flexDirection: { xs: 'column', sm: 'row' }
+                }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Task History
+                  </Typography>
+                  
                   <Box sx={{ 
                     display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: { xs: 'flex-start', sm: 'center' }, 
-                    mb: 3, 
+                    gap: { xs: 1, sm: 2 }, 
                     flexWrap: 'wrap', 
-                    gap: 2,
-                    flexDirection: { xs: 'column', sm: 'row' }
+                    alignItems: 'center',
+                    width: { xs: '100%', sm: 'auto' },
+                    justifyContent: { xs: 'stretch', sm: 'flex-end' }
                   }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Task History
-                    </Typography>
+                    <TextField
+                      size="small"
+                      placeholder="Search tasks..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      InputProps={{
+                        startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
+                      }}
+                      sx={{ minWidth: 150 }}
+                    />
                     
-                    <Box sx={{ 
-                      display: 'flex', 
-                      gap: { xs: 1, sm: 2 }, 
-                      flexWrap: 'wrap', 
-                      alignItems: 'center',
-                      width: { xs: '100%', sm: 'auto' },
-                      justifyContent: { xs: 'stretch', sm: 'flex-end' }
-                    }}>
-                      <TextField
-                        size="small"
-                        placeholder="Search tasks..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        InputProps={{
-                          startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
-                        }}
-                        sx={{ minWidth: 150 }}
-                      />
-                      
-                      <FormControl size="small" sx={{ minWidth: 120 }}>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                          label="Status"
-                        >
-                          <MenuItem value="">All</MenuItem>
-                          {statuses.map(status => (
-                            <MenuItem key={status} value={status}>{status}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      
-                      {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                        <Autocomplete
-                          key={`user-filter-${users.length}`}
-                          sx={{ minWidth: 200 }}
-                          options={users}
-                          getOptionLabel={(option) => {
-                            if (!option) return '';
-                            return option.fullName || option.username || option.email || 'Unknown User';
-                          }}
-                          value={selectedUser}
-                          onChange={(event, newValue) => setSelectedUser(newValue)}
-                          renderInput={(params) => (
-                            <TextField 
-                              {...params} 
-                              label="Filter by User" 
-                              size="small" 
-                              variant="outlined"
-                            />
-                          )}
-                          isOptionEqualToValue={(option, value) => option.id === value.id}
-                          noOptionsText="No users found"
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                  
-                  <Tabs 
-                    value={activeTab} 
-                    onChange={handleTabChange} 
-                    sx={{ mb: 2 }}
-                    TabIndicatorProps={{ style: { background: 'linear-gradient(45deg, #667eea, #764ba2)' } }}
-                  >
-                    <Tab label="All Tasks" />
-                    <Tab label="Task Modification & Activity" />
-                  </Tabs>
-                  
-                  {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                      <CircularProgress />
-                    </Box>
-                  ) : (
-                    <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                      <TableContainer>
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell align="center">Date</TableCell>
-                              <TableCell align="center">Source</TableCell>
-                              <TableCell align="center">Category</TableCell>
-                              <TableCell align="center">Service</TableCell>
-                              <TableCell align="center">Description</TableCell>
-                              <TableCell align="center">User</TableCell>
-                              <TableCell align="center">User Info</TableCell>
-                              <TableCell align="center">Status</TableCell>
-                              <TableCell align="center">Flag</TableCell>
-                              <TableCell align="center">Actions</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {filteredTasks.map((task) => (
-                              <TableRow 
-                                key={task.id} 
-                                sx={{ 
-                                  '&:hover': { 
-                                    backgroundColor: 'action.hover',
-                                    transform: 'scale(1.01)',
-                                    transition: 'all 0.2s ease'
-                                  }
-                                }}
-                              >
-                                <TableCell align="center">{task.date}</TableCell>
-                                <TableCell align="center">{task.source}</TableCell>
-                                <TableCell align="center">{task.category}</TableCell>
-                                <TableCell align="center">{task.service}</TableCell>
-                                <TableCell align="center">{task.description}</TableCell>
-                                <TableCell align="center">{task.userName}</TableCell>
-                                <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
-                                <TableCell align="center">
-                                  <Chip 
-                                    label={task.status} 
-                                    size="small"
-                                    sx={{ 
-                                      bgcolor: task.status === 'Completed' ? '#10b98120' : 
-                                              task.status === 'In Progress' ? '#3b82f620' : 
-                                              task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
-                                      color: task.status === 'Completed' ? '#10b981' : 
-                                            task.status === 'In Progress' ? '#3b82f6' : 
-                                            task.status === 'Cancelled' ? '#ef4444' : '#f59e0b',
-                                      fontWeight: 600
-                                    }} 
-                                  />
-                                </TableCell>
-                                <TableCell align="center">
-                                  <FormControl fullWidth size="small">
-                                    <Select
-                                      value={task.status}
-                                      onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                                      displayEmpty
-                                      sx={{ 
-                                        minWidth: 120,
-                                        '& .MuiSelect-select': {
-                                          py: 0.5,
-                                          px: 1
-                                        }
-                                      }}
-                                    >
-                                      {statuses.map(status => (
-                                        <MenuItem key={status} value={status}>
-                                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                            <FlagIcon 
-                                              sx={{ 
-                                                fontSize: 16, 
-                                                mr: 1,
-                                                color: status === 'Completed' ? '#10b981' : 
-                                                       status === 'In Progress' ? '#3b82f6' : 
-                                                       status === 'Cancelled' ? '#ef4444' : '#f59e0b'
-                                              }} 
-                                            />
-                                            {status}
-                                          </Box>
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
-                                  </FormControl>
-                                </TableCell>
-                                <TableCell align="center">
-                                  <IconButton 
-                                    size="small" 
-                                    color="primary" 
-                                    onClick={() => handleEditTask(task)}
-                                    sx={{ mr: 1 }}
-                                  >
-                                    <EditIcon />
-                                  </IconButton>
-                                  <IconButton 
-                                    size="small" 
-                                    color="error" 
-                                    onClick={() => handleDeleteTask(task.id)}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
-              
-              {/* Recent Activity */}
-              <Grid item xs={12} md={5}>
-                <Paper sx={{ p: 3, height: '100%' }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                    Recent Activity
-                  </Typography>
-                  
-                  <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                    {tasks.slice(0, 5).map((task, index) => (
-                      <Box 
-                        key={task.id} 
-                        sx={{ 
-                          p: 2, 
-                          mb: 2, 
-                          bgcolor: index % 2 === 0 ? 'grey.50' : 'white',
-                          borderRadius: 2,
-                          borderLeft: '4px solid',
-                          borderLeftColor: task.status === 'Completed' ? 'success.main' : 
-                                          task.status === 'In Progress' ? 'primary.main' : 
-                                          task.status === 'Cancelled' ? 'error.main' : 'warning.main'
-                        }}
+                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        label="Status"
                       >
-                        <Typography variant="body2" fontWeight="bold">
-                          {task.description}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {task.userName} • {task.date}
-                        </Typography>
-                        <Box sx={{ mt: 1 }}>
-                          <Chip 
-                            label={task.status} 
-                            size="small"
-                            sx={{ 
-                              bgcolor: task.status === 'Completed' ? '#10b98120' : 
-                                      task.status === 'In Progress' ? '#3b82f620' : 
-                                      task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
-                              color: task.status === 'Completed' ? '#10b981' : 
-                                    task.status === 'In Progress' ? '#3b82f6' : 
-                                    task.status === 'Cancelled' ? '#ef4444' : '#f59e0b'
-                            }} 
-                          />
-                          <Chip 
-                            label={task.category} 
+                        <MenuItem value="">All</MenuItem>
+                        {statuses.map(status => (
+                          <MenuItem key={status} value={status}>{status}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    
+                    {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
+                      <Autocomplete
+                        key={`user-filter-${users.length}`}
+                        sx={{ minWidth: 200 }}
+                        options={users}
+                        getOptionLabel={(option) => {
+                          if (!option) return '';
+                          return option.fullName || option.username || option.email || 'Unknown User';
+                        }}
+                        value={selectedUser}
+                        onChange={(event, newValue) => setSelectedUser(newValue)}
+                        renderInput={(params) => (
+                          <TextField 
+                            {...params} 
+                            label="Filter by User" 
                             size="small" 
-                            sx={{ ml: 1, bgcolor: 'info.light', color: 'info.contrastText' }}
+                            variant="outlined"
                           />
-                        </Box>
-                      </Box>
-                    ))}
+                        )}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        noOptionsText="No users found"
+                      />
+                    )}
                   </Box>
-                </Paper>
-              </Grid>
+                </Box>
+                
+                <Tabs 
+                  value={activeTab} 
+                  onChange={handleTabChange} 
+                  sx={{ mb: 2 }}
+                  TabIndicatorProps={{ style: { background: 'linear-gradient(45deg, #667eea, #764ba2)' } }}
+                >
+                  <Tab label="All Tasks" />
+                  <Tab label="Task Modification & Activity" />
+                </Tabs>
+                
+                {loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : (
+                  <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell align="center">Date</TableCell>
+                            <TableCell align="center">Source</TableCell>
+                            <TableCell align="center">Category</TableCell>
+                            <TableCell align="center">Service</TableCell>
+                            <TableCell align="center">Description</TableCell>
+                            <TableCell align="center">User</TableCell>
+                            <TableCell align="center">User Info</TableCell>
+                            <TableCell align="center">Status</TableCell>
+                            <TableCell align="center">Flag</TableCell>
+                            <TableCell align="center">Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {filteredTasks.map((task) => (
+                            <TableRow 
+                              key={task.id} 
+                              sx={{ 
+                                '&:hover': { 
+                                  backgroundColor: 'action.hover',
+                                  transform: 'scale(1.01)',
+                                  transition: 'all 0.2s ease'
+                                }
+                              }}
+                            >
+                              <TableCell align="center">{task.date}</TableCell>
+                              <TableCell align="center">{task.source}</TableCell>
+                              <TableCell align="center">{task.category}</TableCell>
+                              <TableCell align="center">{task.service}</TableCell>
+                              <TableCell align="center">{task.description}</TableCell>
+                              <TableCell align="center">{task.userName}</TableCell>
+                              <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
+                              <TableCell align="center">
+                                <Chip 
+                                  label={task.status} 
+                                  size="small"
+                                  sx={{ 
+                                    bgcolor: task.status === 'Completed' ? '#10b98120' : 
+                                            task.status === 'In Progress' ? '#3b82f620' : 
+                                            task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
+                                    color: task.status === 'Completed' ? '#10b981' : 
+                                          task.status === 'In Progress' ? '#3b82f6' : 
+                                          task.status === 'Cancelled' ? '#ef4444' : '#f59e0b',
+                                    fontWeight: 600
+                                  }} 
+                                />
+                              </TableCell>
+                              <TableCell align="center">
+                                <FormControl fullWidth size="small">
+                                  <Select
+                                    value={task.status}
+                                    onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                                    displayEmpty
+                                    sx={{ 
+                                      minWidth: 120,
+                                      '& .MuiSelect-select': {
+                                        py: 0.5,
+                                        px: 1
+                                      }
+                                    }}
+                                  >
+                                    {statuses.map(status => (
+                                      <MenuItem key={status} value={status}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                          <FlagIcon 
+                                            sx={{ 
+                                              fontSize: 16, 
+                                              mr: 1,
+                                              color: status === 'Completed' ? '#10b981' : 
+                                                     status === 'In Progress' ? '#3b82f6' : 
+                                                     status === 'Cancelled' ? '#ef4444' : '#f59e0b'
+                                            }} 
+                                          />
+                                          {status}
+                                        </Box>
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              </TableCell>
+                              <TableCell align="center">
+                                <IconButton 
+                                  size="small" 
+                                  color="primary" 
+                                  onClick={() => handleEditTask(task)}
+                                  sx={{ mr: 1 }}
+                                >
+                                  <EditIcon />
+                                </IconButton>
+                                <IconButton 
+                                  size="small" 
+                                  color="error" 
+                                  onClick={() => handleDeleteTask(task.id)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+            
+            {/* Recent Activity */}
+            <Grid item xs={12} md={5}>
+              <Paper sx={{ p: 3, height: '100%' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                  Recent Activity
+                </Typography>
+                
+                <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                  {tasks.slice(0, 5).map((task, index) => (
+                    <Box 
+                      key={task.id} 
+                      sx={{ 
+                        p: 2, 
+                        mb: 2, 
+                        bgcolor: index % 2 === 0 ? 'grey.50' : 'white',
+                        borderRadius: 2,
+                        borderLeft: '4px solid',
+                        borderLeftColor: task.status === 'Completed' ? 'success.main' : 
+                                        task.status === 'In Progress' ? 'primary.main' : 
+                                        task.status === 'Cancelled' ? 'error.main' : 'warning.main'
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight="bold">
+                        {task.description}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {task.userName} • {task.date}
+                      </Typography>
+                      <Box sx={{ mt: 1 }}>
+                        <Chip 
+                          label={task.status} 
+                          size="small"
+                          sx={{ 
+                            bgcolor: task.status === 'Completed' ? '#10b98120' : 
+                                    task.status === 'In Progress' ? '#3b82f620' : 
+                                    task.status === 'Cancelled' ? '#ef444420' : '#f59e0b20',
+                            color: task.status === 'Completed' ? '#10b981' : 
+                                  task.status === 'In Progress' ? '#3b82f6' : 
+                                  task.status === 'Cancelled' ? '#ef4444' : '#f59e0b'
+                          }} 
+                        />
+                        <Chip 
+                          label={task.category} 
+                          size="small" 
+                          sx={{ ml: 1, bgcolor: 'info.light', color: 'info.contrastText' }}
+                        />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
             </Grid>
           </Grid>
         </Grid>
@@ -1007,18 +1082,15 @@ const ModernTaskLogger = () => {
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button 
-              onClick={() => setOpenEditDialog(false)}
-              startIcon={<CancelIcon />}
-            >
+            <Button onClick={() => setOpenEditDialog(false)} startIcon={<CancelIcon />}>
               Cancel
             </Button>
             <Button 
               onClick={handleUpdateTask} 
               variant="contained" 
-              color="primary"
-              startIcon={<SaveIcon />}
-              disabled={loading || dropdownLoading}
+              color="primary" 
+              startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+              disabled={loading}
             >
               {loading ? 'Updating...' : 'Update Task'}
             </Button>
@@ -1040,7 +1112,7 @@ const ModernTaskLogger = () => {
             {snackbar.message}
           </Alert>
         </Snackbar>
-      </Box>
+      </Grid>
     </Fade>
   );
 };
