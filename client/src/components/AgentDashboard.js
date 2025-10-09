@@ -69,6 +69,8 @@ import { taskAPI, leaveAPI, dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
+import useUserFilter from '../hooks/useUserFilter'; // Add this import
+import UserFilterDropdown from './UserFilterDropdown'; // Add this import
 
 const AgentDashboard = () => {
   const { user } = useAuth();
@@ -83,7 +85,11 @@ const AgentDashboard = () => {
   const [allLeaves, setAllLeaves] = useState([]); // Store all leaves for filtering
   const [users, setUsers] = useState([]); // Add users state for filtering
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
+  const [userFilter, setUserFilter] = useState(''); // Add user filter state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  // Use the user filter hook
+  const { users: filteredUsers, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
   
   // View Details dialog state
   const [viewDetailsDialog, setViewDetailsDialog] = useState({ open: false, type: '', data: null });
@@ -416,14 +422,14 @@ const AgentDashboard = () => {
       (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-    (selectedUser === null || task.userName === selectedUser.value)
+    (userFilter === '' || task.userName === userFilter)
   );
 
   // Filter leaves based on search term and user
   const filteredLeaves = leaves.filter(leave => 
     (searchTerm === '' || 
       (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-    (selectedUser === null || leave.userName === selectedUser.value)
+    (userFilter === '' || leave.userName === userFilter)
   );
 
   // Handle task edit
@@ -775,32 +781,45 @@ const AgentDashboard = () => {
               </Grid>
               
               {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
-                <Grid item xs={12} sm={3}>
-                  <Autocomplete
-                    options={users}
-                    getOptionLabel={(option) => option.label || option}
-                    value={selectedUser}
-                    onChange={(event, newValue) => setSelectedUser(newValue)}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Filter by User" fullWidth />
-                    )}
-                  />
-                </Grid>
+                <UserFilterDropdown
+                  users={filteredUsers}
+                  selectedUser={selectedUser}
+                  onUserChange={(newValue) => {
+                    setSelectedUser(newValue);
+                    // Apply filter immediately when user selects a user
+                    if (newValue) {
+                      setUserFilter(newValue.username || newValue.email || '');
+                    } else {
+                      setUserFilter('');
+                    }
+                  }}
+                  label="Filter by User"
+                  loading={userLoading}
+                  gridSize={{ xs: 12, sm: 3 }}
+                />
               )}
               
               <Grid item xs={12} sm={3}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                  <Button 
+                    variant="outlined"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedUser(null);
+                      setUserFilter('');
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
                   <Button 
                     startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('CSV')}
-                    sx={{ ml: 2, mr: 1 }}
                   >
                     Export CSV
                   </Button>
                   <Button 
                     startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('PDF')}
-                    sx={{ mr: 1 }}
                   >
                     Export PDF
                   </Button>
