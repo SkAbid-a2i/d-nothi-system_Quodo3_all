@@ -40,8 +40,7 @@ import {
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
   Notifications as NotificationsIcon,
-  AccountCircle as AccountCircleIcon,
-  ExitToApp as ExitToAppIcon,
+  AccountCircle,
   Language as LanguageIcon,
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -79,7 +78,7 @@ const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
   },
 }));
 
-const StyledAppBar = styled(AppBar)(({ theme, open, darkMode }) => ({
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
   background: theme.palette.mode === 'dark' 
     ? 'rgba(30, 30, 46, 0.9)' 
     : 'rgba(255, 255, 255, 0.9)',
@@ -91,18 +90,6 @@ const StyledAppBar = styled(AppBar)(({ theme, open, darkMode }) => ({
     ? '1px solid rgba(255, 255, 255, 0.1)' 
     : '1px solid rgba(0, 0, 0, 0.1)',
   zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(['margin', 'width'], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(['margin', 'width'], {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  }),
 }));
 
 const StyledListItem = styled(ListItem)(({ theme, selected }) => ({
@@ -433,6 +420,116 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       flexDirection: { xs: 'column', md: 'row' }
     }}>
       <CssBaseline />
+      <StyledAppBar position="fixed">
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              background: darkMode 
+                ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
+                : 'linear-gradient(45deg, #667eea, #764ba2)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 700
+            }}
+          >
+            D-Nothi Task Management
+          </Typography>
+          
+          {/* Collapse/Expand button moved to top bar */}
+          <Tooltip title={drawerOpen ? "Collapse menu" : "Expand menu"}>
+            <IconButton
+              color="inherit"
+              onClick={handleDrawerToggle}
+              sx={{ mx: 1 }}
+            >
+              {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Notifications">
+            <IconButton
+              size="large"
+              aria-label="show notifications"
+              color="inherit"
+              onClick={handleNotificationMenuOpen}
+            >
+              <Badge badgeContent={notifications.length} color="error">
+                <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Language">
+            <IconButton
+              size="large"
+              aria-label="change language"
+              color="inherit"
+              onClick={toggleLanguage}
+              sx={{ mx: 1 }}
+            >
+              <LanguageIcon sx={{ color: darkMode ? 'white' : 'black' }} />
+            </IconButton>
+          </Tooltip>
+          
+          <FormControlLabel
+            control={
+              <Switch 
+                checked={darkMode} 
+                onChange={toggleDarkMode} 
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: '#98fb98',
+                  },
+                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                    backgroundColor: '#98fb98',
+                  },
+                }}
+              />
+            }
+            label={darkMode ? <DarkModeIcon sx={{ color: '#98fb98' }} /> : <LightModeIcon sx={{ color: '#f4a261' }} />}
+          />
+          
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', ml: 2 }}>
+            <Tooltip title="Account">
+              <IconButton
+                size="large"
+                edge="end"
+                aria-label="account of current user"
+                aria-controls={menuId}
+                aria-haspopup="true"
+                onClick={handleProfileMenuOpen}
+                color="inherit"
+              >
+                <Avatar 
+                  sx={{ 
+                    width: 32, 
+                    height: 32,
+                    bgcolor: 'primary.main',
+                    color: 'white'
+                  }}
+                >
+                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Toolbar>
+      </StyledAppBar>
+      
       <StyledDrawer
         variant={isMobile ? 'temporary' : 'permanent'}
         open={isMobile ? mobileOpen : drawerOpen}
@@ -520,9 +617,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 </StyledListItem>
               );
             })}
-
+            
             <Divider sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', my: 2 }} />
-            <StyledListItem
+            <StyledListItem 
               button
               selected={location.pathname === '/settings'}
               onClick={() => handleNavigation('/settings')}
@@ -535,165 +632,65 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           </List>
         </Box>
       </StyledDrawer>
-
-      {/* App Bar */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <StyledAppBar position="fixed" open={drawerOpen} darkMode={darkMode}>
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ 
-                mr: 2,
-                color: darkMode ? '#98fb98' : '#667eea'
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-            
-            <Typography 
-              variant="h6" 
-              noWrap 
-              component="div" 
-              sx={{ 
-                flexGrow: 1,
-                background: darkMode 
-                  ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
-                  : 'linear-gradient(45deg, #667eea, #764ba2)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 700
-              }}
-            >
-              D-Nothi Task Management
-            </Typography>
-            
-            <Tooltip title="Notifications">
-              <IconButton
-                size="large"
-                aria-label="show notifications"
-                color="inherit"
-                onClick={handleNotificationMenuOpen}
-              >
-                <Badge badgeContent={notifications.length} color="error">
-                  <NotificationsIcon sx={{ 
-                    color: darkMode ? '#98fb98' : '#667eea'
-                  }} />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-            
-            <Tooltip title="Language">
-              <IconButton
-                size="large"
-                aria-label="change language"
-                color="inherit"
-                onClick={toggleLanguage}
-                sx={{ mx: 1 }}
-              >
-                <LanguageIcon sx={{ color: darkMode ? 'white' : 'black' }} />
-              </IconButton>
-            </Tooltip>
-            
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={darkMode} 
-                  onChange={toggleDarkMode} 
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: '#98fb98',
-                    },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: '#98fb98',
-                    },
-                  }}
-                />
-              }
-              label={darkMode ? <DarkModeIcon sx={{ color: '#98fb98' }} /> : <LightModeIcon sx={{ color: '#f4a261' }} />}
-            />
-            
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', ml: 2 }}>
-              <Tooltip title="Account">
-                <IconButton
-                  size="large"
-                  edge="end"
-                  aria-label="account of current user"
-                  aria-controls={menuId}
-                  aria-haspopup="true"
-                  onClick={handleProfileMenuOpen}
-                  color="inherit"
-                >
-                  <Avatar 
-                    sx={{ 
-                      width: 32, 
-                      height: 32,
-                      bgcolor: 'primary.main',
-                      color: 'white'
-                    }}
-                  >
-                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                  </Avatar>
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Toolbar>
-        </StyledAppBar>
-        
-        <Box component="main" sx={{ 
-          flexGrow: 1, 
-          p: { xs: 1, sm: 2, md: 3 },
-          width: { xs: '100%', md: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)` },
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-        }}>
-          <Toolbar />
-          <Fade in={true} timeout={500}>
-            <Box sx={{ 
-              minHeight: 'calc(100vh - 64px - 24px)',
-              background: darkMode 
-                ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
-                : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)',
-              borderRadius: { xs: 0, sm: 2, md: 3 },
-              p: { xs: 1, sm: 2, md: 3 },
-              boxShadow: darkMode 
-                ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                : '0 8px 32px rgba(0, 0, 0, 0.1)',
-              border: darkMode 
-                ? '1px solid rgba(255, 255, 255, 0.1)' 
-                : '1px solid rgba(0, 0, 0, 0.05)'
-            }}>
-              {children || <Outlet />}
-            </Box>
-          </Fade>
-        </Box>
+      
+      <Box component="main" sx={{ 
+        flexGrow: 1, 
+        p: { xs: 1, sm: 2, md: 3 },
+        width: { xs: '100%', md: `calc(100% - ${drawerOpen ? drawerWidth : collapsedDrawerWidth}px)` },
+        transition: theme.transitions.create('width', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
+      }}>
+        <Toolbar />
+        <Fade in={true} timeout={500}>
+          <Box sx={{ 
+            minHeight: 'calc(100vh - 64px - 24px)',
+            background: darkMode 
+              ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
+              : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)',
+            borderRadius: { xs: 0, sm: 2, md: 3 },
+            p: { xs: 1, sm: 2, md: 3 },
+            boxShadow: darkMode 
+              ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
+              : '0 8px 32px rgba(0, 0, 0, 0.1)',
+            border: darkMode 
+              ? '1px solid rgba(255, 255, 255, 0.1)' 
+              : '1px solid rgba(0, 0, 0, 0.05)'
+          }}>
+            {children || <Outlet />}
+          </Box>
+        </Fade>
       </Box>
       
       {/* Profile Menu */}
       <Menu
         anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        id={menuId}
+        keepMounted
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={() => {
-          handleMenuClose();
-          navigate('/settings');
-        }}>
+        <MenuItem onClick={handleMenuClose}>
+          <AccountCircle sx={{ mr: 1 }} />
+          Profile
+        </MenuItem>
+        <MenuItem onClick={handleMenuClose}>
           <SettingsIcon sx={{ mr: 1 }} />
           My account
         </MenuItem>
-        <MenuItem onClick={handleProfileMenuOpen}>
-          <AccountCircleIcon sx={{ mr: 1 }} />
-          {t('layout.profile')}
-        </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>
-          <ExitToAppIcon sx={{ mr: 1 }} />
-          {t('layout.logout')}
+          <LogoutIcon sx={{ mr: 1 }} />
+          {t('navigation.logout')}
         </MenuItem>
       </Menu>
       
