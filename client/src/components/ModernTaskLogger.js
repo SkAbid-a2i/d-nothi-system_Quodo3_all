@@ -66,7 +66,6 @@ const ModernTaskLogger = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
   
   // All tasks state
   const [tasks, setTasks] = useState([]);
@@ -82,7 +81,6 @@ const ModernTaskLogger = () => {
   const [services, setServices] = useState([]);
   const [statuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
   const [dropdownLoading, setDropdownLoading] = useState(false);
-  const [users, setUsers] = useState([]);
 
   // Fetch dropdown values on component mount
   useEffect(() => {
@@ -94,40 +92,20 @@ const ModernTaskLogger = () => {
     setDropdownLoading(true);
     try {
       // Fetch all data together for better performance
-      const fetchPromises = [
+      const responses = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
         dropdownAPI.getDropdownValues('Service'),
         taskAPI.getAllTasks()
-      ];
+      ]);
       
-      // Only fetch users for admin roles who need the user filter
-      let usersPromiseIndex = -1;
-      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
-        console.log('Adding user API call to fetch promises');
-        usersPromiseIndex = fetchPromises.length;
-        fetchPromises.push(userAPI.getAllUsers());
-      } else {
-        console.log('Not adding user API call - user role:', user?.role);
-      }
-      
-      const responses = await Promise.all(fetchPromises);
-      
-      // Process responses correctly based on whether users were fetched
-      let sourcesRes, categoriesRes, servicesRes, tasksRes, usersRes;
-      if (usersPromiseIndex !== -1) {
-        // Users were fetched (admin roles)
-        [sourcesRes, categoriesRes, servicesRes, tasksRes, usersRes] = responses;
-      } else {
-        // Users were not fetched (agents)
-        [sourcesRes, categoriesRes, servicesRes, tasksRes] = responses;
-      }
+      // Process responses
+      const [sourcesRes, categoriesRes, servicesRes, tasksRes] = responses;
       
       console.log('Sources response:', sourcesRes);
       console.log('Categories response:', categoriesRes);
       console.log('Services response:', servicesRes);
       console.log('Tasks response:', tasksRes);
-      if (usersRes) console.log('Users response:', usersRes);
       
       const sourcesData = Array.isArray(sourcesRes.data) ? sourcesRes.data : 
                          sourcesRes.data?.data || sourcesRes.data || [];
@@ -137,14 +115,9 @@ const ModernTaskLogger = () => {
                           servicesRes.data?.data || servicesRes.data || [];
       const tasksData = Array.isArray(tasksRes.data) ? tasksRes.data : 
                        tasksRes.data?.data || tasksRes.data || [];
-      const usersData = usersRes ? (Array.isArray(usersRes.data) ? usersRes.data : 
-                                   usersRes.data?.data || usersRes.data || []) : [];
       
       console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData });
-      if (usersRes) console.log('Processed users data:', usersData);
       console.log('User role:', user?.role);
-      console.log('Should fetch users:', user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor'));
-      console.log('Users data length:', usersData.length);
       
       setSources(sourcesData);
       setCategories(categoriesData);
@@ -163,12 +136,6 @@ const ModernTaskLogger = () => {
       
       setTasks(filteredTasksData);
       setFilteredTasks(filteredTasksData);
-      if (usersRes) {
-        console.log('Setting users state with data:', usersData);
-        setUsers(usersData);
-      } else {
-        console.log('Not setting users state - no usersRes');
-      }
       
     } catch (error) {
       console.error('Error fetching initial data:', error);
@@ -186,7 +153,6 @@ const ModernTaskLogger = () => {
       showSnackbar('Unable to load data. Please check your connection and try again.', 'error');
       setTasks([]);
       setFilteredTasks([]);
-      setUsers([]);
     } finally {
       setLoading(false);
       setDropdownLoading(false);
@@ -237,22 +203,13 @@ const ModernTaskLogger = () => {
       const tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
-      // Filter tasks based on user role
+      // Filter tasks based on user role - all roles only see their own tasks
       let filteredTasksData = tasksData;
       if (user) {
-        if (user.role === 'Agent') {
-          // Agents only see their own tasks
-          filteredTasksData = tasksData.filter(task => 
-            task.userId === user.id || task.userName === user.username
-          );
-        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see all tasks (no filtering needed)
-          // They can filter by user selection in the UI
-          // filteredTasksData remains unchanged for Admin roles
-        } else if (user.role === 'SystemAdmin') {
-          // SystemAdmin sees all tasks (no filtering needed)
-          // filteredTasksData remains unchanged
-        }
+        // All roles (including admin roles) only see their own tasks
+        filteredTasksData = tasksData.filter(task => 
+          task.userId === user.id || task.userName === user.username
+        );
       }
       
       setTasks(filteredTasksData);
@@ -268,40 +225,11 @@ const ModernTaskLogger = () => {
     }
   };
 
-  const fetchUsers = async (retryCount = 0) => {
-    try {
-      console.log('Fetching users...');
-      const response = await userAPI.getAllUsers();
-      console.log('Users API response:', response);
-      const usersData = Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || [];
-      console.log('Processed users data:', usersData);
-      console.log('Users data type:', typeof usersData);
-      console.log('Users data length:', usersData.length);
-      setUsers(usersData);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      console.error('Error response:', error.response);
-      
-      // Retry logic for temporary connection issues
-      if (retryCount < 3 && (error.code === 'ECONNABORTED' || error.message.includes('timeout') || error.message.includes('network'))) {
-        console.log(`Retrying fetchUsers (attempt ${retryCount + 1}/3)...`);
-        setTimeout(() => {
-          fetchUsers(retryCount + 1);
-        }, 1000 * (retryCount + 1)); // Exponential backoff
-        return;
-      }
-      
-      // Show a more user-friendly error message
-      showSnackbar('Unable to load user list. Please try again later.', 'error');
-      // Set empty array to prevent UI issues
-      setUsers([]);
-    }
-  };
+  
 
   useEffect(() => {
-    console.log('Filtering tasks - user:', user, 'selectedUser:', selectedUser, 'tasks length:', tasks.length);
-    // Filter tasks based on search, status, and user
+    console.log('Filtering tasks - user:', user, 'tasks length:', tasks.length);
+    // Filter tasks based on search and status
     let filtered = [...tasks]; // Create a copy to avoid mutating original array
     
     if (searchTerm) {
@@ -317,25 +245,9 @@ const ModernTaskLogger = () => {
       filtered = filtered.filter(task => task.status === statusFilter);
     }
     
-    // Role-based filtering
-    if (user && user.role === 'Agent') {
-      console.log('Filtering for Agent - showing only own tasks');
-      // Agents only see their own tasks (already filtered in fetchTasks)
-      // No additional filtering needed here
-    } else if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
-      console.log('Filtering for Admin role - selectedUser:', selectedUser);
-      // Admin roles can filter by user selection
-      if (selectedUser) {
-        filtered = filtered.filter(task => 
-          task.userId === selectedUser.id || task.userName === selectedUser.username
-        );
-      }
-      // For Admin roles, if no user is selected, show all tasks (no additional filtering)
-    }
-    
     console.log('Filtered tasks length:', filtered.length);
     setFilteredTasks(filtered);
-  }, [searchTerm, statusFilter, selectedUser, tasks, user]);
+  }, [searchTerm, statusFilter, tasks]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -706,11 +618,10 @@ const ModernTaskLogger = () => {
                 <Box sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
-                  alignItems: { xs: 'flex-start', sm: 'center' }, 
+                  alignItems: 'center', 
                   mb: 3, 
                   flexWrap: 'wrap', 
-                  gap: 2,
-                  flexDirection: { xs: 'column', sm: 'row' }
+                  gap: 2
                 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     Task History
@@ -718,11 +629,9 @@ const ModernTaskLogger = () => {
                   
                   <Box sx={{ 
                     display: 'flex', 
-                    gap: { xs: 1, sm: 2 }, 
+                    gap: 2, 
                     flexWrap: 'wrap', 
-                    alignItems: 'center',
-                    width: { xs: '100%', sm: 'auto' },
-                    justifyContent: { xs: 'stretch', sm: 'flex-end' }
+                    alignItems: 'center'
                   }}>
                     <TextField
                       size="small"
@@ -748,8 +657,6 @@ const ModernTaskLogger = () => {
                         ))}
                       </Select>
                     </FormControl>
-                    
-                    {/* User filter removed since all users only see their own tasks */}
                   </Box>
                 </Box>
                 

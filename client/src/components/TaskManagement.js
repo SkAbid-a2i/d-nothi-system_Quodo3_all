@@ -87,6 +87,7 @@ const TaskManagement = () => {
   const [userInformation, setUserInformation] = useState(''); // Add user information state
   const [users, setUsers] = useState([]); // Add users state for filtering
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
+  const [userFilter, setUserFilter] = useState(''); // Add user filter
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
@@ -111,7 +112,7 @@ const TaskManagement = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [userFilter, setUserFilter] = useState(''); // Add user filter
+  
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -249,16 +250,7 @@ const TaskManagement = () => {
     };
   }, [fetchTasks]);
 
-  // Debug useEffect to monitor users state
-  useEffect(() => {
-    console.log('Users state changed:', users);
-    console.log('Users length:', users.length);
-    if (users.length > 0) {
-      console.log('First user:', users[0]);
-    }
-  }, [users]);
-  
-  // Additional debug for user role
+    // Additional debug for user role
   useEffect(() => {
     console.log('Current user:', user);
     console.log('User role:', user?.role);
@@ -271,6 +263,15 @@ const TaskManagement = () => {
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
+
+  // Debug useEffect to monitor users state
+  useEffect(() => {
+    console.log('Users state changed:', users);
+    console.log('Users length:', users.length);
+    if (users.length > 0) {
+      console.log('First user:', users[0]);
+    }
+  }, [users]);
 
   // Fetch dropdown values on component mount
   const fetchDropdownValues = async () => {
@@ -337,11 +338,6 @@ const TaskManagement = () => {
         console.log('Final processed users:', processedUsers);
         console.log('Processed users length:', processedUsers.length);
         setUsers(processedUsers);
-        
-        // Also log the users state after setting it
-        setTimeout(() => {
-          console.log('Users state after setting:', processedUsers);
-        }, 0);
       } else {
         console.log('No users data received or user not authorized');
         setUsers([]);
@@ -600,6 +596,7 @@ const TaskManagement = () => {
         setStatusFilter('');
         setSearchTerm('');
         setUserFilter('');
+        setSelectedUser(null);
         break;
     }
     
@@ -823,8 +820,8 @@ const TaskManagement = () => {
         <Box>
           {/* Task Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
+            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+              <Grid item xs={12} sm={6} md={4}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -835,7 +832,7 @@ const TaskManagement = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select 
@@ -853,7 +850,7 @@ const TaskManagement = () => {
               
               {/* User Filter Dropdown - Only show for Admin roles */}
               {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Autocomplete
                     key={`user-filter-${users.length}-${JSON.stringify(users.slice(0, 5))}`}
                     options={users}
@@ -881,7 +878,7 @@ const TaskManagement = () => {
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={12} sm={12} md={5}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
                     variant="outlined" 

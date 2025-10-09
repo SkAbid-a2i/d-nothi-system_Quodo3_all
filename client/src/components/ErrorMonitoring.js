@@ -258,7 +258,8 @@ const ErrorMonitoring = () => {
         // Return a more descriptive name based on the path
         const path = urlObj.pathname;
         if (path === '/') return 'Dashboard';
-        if (path.includes('/tasks')) return 'Task Management';
+        if (path.includes('/tasks/logger')) return 'Task Logger Page';
+        if (path.includes('/tasks')) return 'Task Modification & Activity Page';
         if (path.includes('/leave')) return 'Leave Management';
         if (path.includes('/meetings')) return 'Meetings';
         if (path.includes('/reports')) return 'Reports';
@@ -273,10 +274,33 @@ const ErrorMonitoring = () => {
     
     // For backend logs, try to extract endpoint or component info
     if (log.metadata?.endpoint) {
+      // Map common endpoints to page names
+      if (log.metadata.endpoint.includes('task')) {
+        if (log.metadata.endpoint.includes('logger')) {
+          return 'Task Logger Page';
+        } else {
+          return 'Task Modification & Activity Page';
+        }
+      }
+      if (log.metadata.endpoint.includes('leave')) return 'Leave Management';
+      if (log.metadata.endpoint.includes('meeting')) return 'Meetings';
+      if (log.metadata.endpoint.includes('report')) return 'Reports';
+      if (log.metadata.endpoint.includes('admin')) return 'Admin Console';
+      if (log.metadata.endpoint.includes('setting')) return 'Settings';
+      if (log.metadata.endpoint.includes('help')) return 'Help & Support';
       return log.metadata.endpoint;
     }
     
     if (log.metadata?.component) {
+      // Map common components to page names
+      if (log.metadata.component.includes('TaskLogger')) return 'Task Logger Page';
+      if (log.metadata.component.includes('TaskManagement')) return 'Task Modification & Activity Page';
+      if (log.metadata.component.includes('Leave')) return 'Leave Management';
+      if (log.metadata.component.includes('Meeting')) return 'Meetings';
+      if (log.metadata.component.includes('Report')) return 'Reports';
+      if (log.metadata.component.includes('Admin')) return 'Admin Console';
+      if (log.metadata.component.includes('Setting')) return 'Settings';
+      if (log.metadata.component.includes('Help')) return 'Help & Support';
       return log.metadata.component;
     }
     
