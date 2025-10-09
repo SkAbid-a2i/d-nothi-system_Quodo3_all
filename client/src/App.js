@@ -21,10 +21,6 @@ import Settings from './components/Settings';
 import Help from './components/Help';
 import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
-import DebugComponent from './components/DebugComponent';
-import TestComponent from './components/TestComponent';
-import ApiTest from './components/ApiTest';
-import TaskDebug from './components/TaskDebug';
 import MeetingEngagement from './components/MeetingEngagement';
 import ErrorMonitoring from './components/ErrorMonitoring';
 
@@ -306,10 +302,6 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route path="/debug" element={<DebugComponent />} />
-              <Route path="/test" element={<TestComponent />} />
-              <Route path="/api-test" element={<ApiTest />} />
-              <Route path="/task-debug" element={<TaskDebug />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />

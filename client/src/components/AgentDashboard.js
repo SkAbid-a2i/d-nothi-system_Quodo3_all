@@ -512,7 +512,7 @@ const AgentDashboard = () => {
     }));
   };
 
-  // Fetch reports data from API instead of using mock data
+  // Fetch reports data from API
   const fetchReportsData = useCallback(async () => {
     try {
       // In a real app, this would come from the backend
@@ -651,15 +651,6 @@ const AgentDashboard = () => {
   // Get actual reports and notifications data
   const reportsData = getReportsData();
   const notificationsData = getNotificationsData();
-
-  // Mock data for reports (in a real app, this would come from the backend)
-  const mockReports = [
-    { id: 1, name: 'Weekly Task Report', generatedAt: '2023-06-15 14:30:00', filter: 'Last 7 days' },
-    { id: 2, name: 'Monthly Leave Report', generatedAt: '2023-06-01 09:15:00', filter: 'June 2023' },
-    { id: 3, name: 'Quarterly Performance Report', generatedAt: '2023-04-01 16:45:00', filter: 'Q2 2023' },
-    { id: 4, name: 'Annual Summary Report', generatedAt: '2022-12-31 18:00:00', filter: 'Year 2022' },
-    { id: 5, name: 'Department-wise Task Distribution', generatedAt: '2023-06-10 11:20:00', filter: 'All departments' }
-  ];
 
   return (
     <Box sx={{ flexGrow: 1 }}>

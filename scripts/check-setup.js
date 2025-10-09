@@ -105,7 +105,6 @@ const requiredDirs = [
   'middleware',
   'validators',
   'scripts',
-  '__tests__',
   'client/src/components',
   'client/src/contexts',
   'client/src/services'
