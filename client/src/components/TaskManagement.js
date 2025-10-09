@@ -143,9 +143,6 @@ const TaskManagement = () => {
       let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
-      // Store all tasks for filtering
-      setAllTasks(tasksData);
-      
       // Filter tasks based on user role
       if (user) {
         if (user.role === 'Agent') {
@@ -186,12 +183,6 @@ const TaskManagement = () => {
       
       // Update local state
       setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
-      );
-      
-      setAllTasks(prevTasks => 
         prevTasks.map(task => 
           task.id === taskId ? { ...task, status: newStatus } : task
         )
