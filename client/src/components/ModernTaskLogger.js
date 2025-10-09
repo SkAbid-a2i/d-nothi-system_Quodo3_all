@@ -865,10 +865,10 @@ const ModernTaskLogger = () => {
                                         task.status === 'Cancelled' ? 'error.main' : 'warning.main'
                       }}
                     >
-                      <Typography variant="body2" fontWeight="bold">
+                      <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary' }}>
                         {task.description}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                         {task.userName} • {task.date}
                       </Typography>
                       <Box sx={{ mt: 1 }}>

@@ -427,7 +427,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
+            sx={{ 
+              mr: 2,
+              color: darkMode ? '#98fb98' : '#667eea'
+            }}
           >
             <MenuIcon />
           </IconButton>
@@ -679,11 +682,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleMenuClose}>
-          <AccountCircle sx={{ mr: 1 }} />
-          Profile
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          navigate('/settings');
+        }}>
           <SettingsIcon sx={{ mr: 1 }} />
           My account
         </MenuItem>

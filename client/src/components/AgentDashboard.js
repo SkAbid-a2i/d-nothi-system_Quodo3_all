@@ -1132,10 +1132,10 @@ const AgentDashboard = () => {
                                           item.status === 'In Progress' ? 'primary.main' : 'warning.main'
                         }}
                       >
-                        <Typography variant="body2" fontWeight="bold">
+                        <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary' }}>
                           {item.type === 'task' ? (item.description || 'New task') : (item.reason || 'New leave request')}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           {item.userName ? `By ${item.userName}` : 'System'} •{' '}
                           {new Date(item.createdAt || item.date).toLocaleString()}
                         </Typography>
@@ -1172,7 +1172,7 @@ const AgentDashboard = () => {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                  <Typography color="text.secondary">No recent activity</Typography>
+                  <Typography sx={{ color: 'text.secondary' }}>No recent activity</Typography>
                 </Box>
               )}
             </Box>
