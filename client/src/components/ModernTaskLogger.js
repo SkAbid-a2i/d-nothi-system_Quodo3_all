@@ -89,7 +89,7 @@ const ModernTaskLogger = () => {
     fetchInitialData();
   }, [user?.id, user?.role]);
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = async (retryCount = 0) => {
     setLoading(true);
     setDropdownLoading(true);
     try {
@@ -161,7 +161,17 @@ const ModernTaskLogger = () => {
     } catch (error) {
       console.error('Error fetching initial data:', error);
       console.error('Error response:', error.response);
-      showSnackbar('Error fetching data: ' + error.message, 'error');
+      
+      // Retry logic for temporary connection issues
+      if (retryCount < 3 && (error.code === 'ECONNABORTED' || error.message.includes('timeout') || error.message.includes('network'))) {
+        console.log(`Retrying fetchInitialData (attempt ${retryCount + 1}/3)...`);
+        setTimeout(() => {
+          fetchInitialData(retryCount + 1);
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+        return; // Don't set loading states yet
+      }
+      
+      showSnackbar('Unable to load data. Please check your connection and try again.', 'error');
       setTasks([]);
       setFilteredTasks([]);
       setUsers([]);
@@ -227,7 +237,7 @@ const ModernTaskLogger = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (retryCount = 0) => {
     try {
       console.log('Fetching users...');
       const response = await userAPI.getAllUsers();
@@ -241,14 +251,27 @@ const ModernTaskLogger = () => {
     } catch (error) {
       console.error('Error fetching users:', error);
       console.error('Error response:', error.response);
-      showSnackbar('Error fetching users: ' + error.message, 'error');
+      
+      // Retry logic for temporary connection issues
+      if (retryCount < 3 && (error.code === 'ECONNABORTED' || error.message.includes('timeout') || error.message.includes('network'))) {
+        console.log(`Retrying fetchUsers (attempt ${retryCount + 1}/3)...`);
+        setTimeout(() => {
+          fetchUsers(retryCount + 1);
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+        return;
+      }
+      
+      // Show a more user-friendly error message
+      showSnackbar('Unable to load user list. Please try again later.', 'error');
+      // Set empty array to prevent UI issues
+      setUsers([]);
     }
   };
 
   useEffect(() => {
     console.log('Filtering tasks - user:', user, 'selectedUser:', selectedUser, 'tasks length:', tasks.length);
     // Filter tasks based on search, status, and user
-    let filtered = tasks;
+    let filtered = [...tasks]; // Create a copy to avoid mutating original array
     
     if (searchTerm) {
       filtered = filtered.filter(task => 
@@ -278,6 +301,7 @@ const ModernTaskLogger = () => {
           task.userId === selectedUser.id || task.userName === selectedUser.username
         );
       }
+      // For Admin roles, if no user is selected, show all tasks (no additional filtering)
     }
     
     console.log('Filtered tasks length:', filtered.length);
