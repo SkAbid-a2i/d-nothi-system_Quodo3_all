@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -43,6 +43,8 @@ import {
 import { useTranslation } from '../contexts/TranslationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { dropdownAPI, taskAPI, userAPI } from '../services/api';
+import useUserFilter from '../hooks/useUserFilter'; // Add this import
+import UserFilterDropdown from './UserFilterDropdown'; // Add this import
 
 const ModernTaskLogger = () => {
   const { t } = useTranslation();
@@ -65,6 +67,8 @@ const ModernTaskLogger = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null); // Add this state
+  const [userFilter, setUserFilter] = useState(''); // Add this state
   
   // All tasks state
   const [tasks, setTasks] = useState([]);
@@ -80,6 +84,9 @@ const ModernTaskLogger = () => {
   const [services, setServices] = useState([]);
   const [statuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
   const [dropdownLoading, setDropdownLoading] = useState(false);
+
+  // Use the user filter hook
+  const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user); // Add this hook
 
   // Fetch dropdown values on component mount
   useEffect(() => {
@@ -241,7 +248,7 @@ const ModernTaskLogger = () => {
 
   useEffect(() => {
     console.log('Filtering tasks - user:', user, 'tasks length:', tasks.length);
-    // Filter tasks based on search and status
+    // Filter tasks based on search, status, and user
     let filtered = [...tasks]; // Create a copy to avoid mutating original array
     
     if (searchTerm) {
@@ -257,9 +264,14 @@ const ModernTaskLogger = () => {
       filtered = filtered.filter(task => task.status === statusFilter);
     }
     
+    // Add user filter
+    if (userFilter) {
+      filtered = filtered.filter(task => task.userName === userFilter);
+    }
+    
     console.log('Filtered tasks length:', filtered.length);
     setFilteredTasks(filtered);
-  }, [searchTerm, statusFilter, tasks]);
+  }, [searchTerm, statusFilter, userFilter, tasks]); // Add userFilter to dependencies
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -670,12 +682,34 @@ const ModernTaskLogger = () => {
                       </Select>
                     </FormControl>
                     
+                    {/* User Filter Dropdown - Only show for Admin roles */}
+                    {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
+                      <UserFilterDropdown
+                        users={users}
+                        selectedUser={selectedUser}
+                        onUserChange={(newValue) => {
+                          setSelectedUser(newValue);
+                          // Apply filter immediately when user selects a user
+                          if (newValue) {
+                            setUserFilter(newValue.username || newValue.email || '');
+                          } else {
+                            setUserFilter('');
+                          }
+                        }}
+                        label="Filter by User"
+                        loading={userLoading}
+                        gridSize={{}}
+                      />
+                    )}
+                    
                     <Button 
                       variant="outlined" 
                       size="small"
                       onClick={() => {
                         setSearchTerm('');
                         setStatusFilter('');
+                        setUserFilter(''); // Clear user filter
+                        setSelectedUser(null); // Clear selected user
                       }}
                     >
                       Clear Filters
