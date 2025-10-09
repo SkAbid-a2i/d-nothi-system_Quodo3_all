@@ -1,17 +1,27 @@
 const nodemailer = require('nodemailer');
 const emailConfig = require('../config/email.config');
 
-// Create transporter
-const transporter = nodemailer.createTransport(emailConfig.smtp);
+// Create transporter only if email configuration is provided
+let transporter = null;
+let isEmailConfigured = false;
 
-// Verify transporter configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.log('Email transporter configuration error:', error);
-  } else {
-    console.log('Email transporter is ready to send messages');
-  }
-});
+// Check if email configuration is provided
+if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport(emailConfig.smtp);
+  isEmailConfigured = true;
+  
+  // Verify transporter configuration
+  transporter.verify((error, success) => {
+    if (error) {
+      console.log('Email transporter configuration error:', error);
+      isEmailConfigured = false;
+    } else {
+      console.log('Email transporter is ready to send messages');
+    }
+  });
+} else {
+  console.log('Email service not configured - skipping email transporter setup');
+}
 
 // Email service functions
 const emailService = {
@@ -25,6 +35,12 @@ const emailService = {
    * @returns {Promise} - Email sending promise
    */
   sendEmail: async (options) => {
+    // If email is not configured, just log and return
+    if (!isEmailConfigured) {
+      console.log('Email service not configured, skipping email send');
+      return { messageId: 'email-not-configured' };
+    }
+    
     try {
       const mailOptions = {
         from: emailConfig.from,
@@ -50,6 +66,12 @@ const emailService = {
    * @returns {Promise} - Email sending promise
    */
   sendLeaveRequestNotification: async (leaveData, adminEmail) => {
+    // If email is not configured, just log and return
+    if (!isEmailConfigured) {
+      console.log('Email service not configured, skipping leave request notification');
+      return { messageId: 'email-not-configured' };
+    }
+    
     try {
       const template = emailConfig.templates.leaveRequest;
       const htmlBody = template.body
@@ -76,6 +98,12 @@ const emailService = {
    * @returns {Promise} - Email sending promise
    */
   sendLeaveApprovalNotification: async (leaveData, employeeEmail) => {
+    // If email is not configured, just log and return
+    if (!isEmailConfigured) {
+      console.log('Email service not configured, skipping leave approval notification');
+      return { messageId: 'email-not-configured' };
+    }
+    
     try {
       const template = emailConfig.templates.leaveApproved;
       const htmlBody = template.body
@@ -101,6 +129,12 @@ const emailService = {
    * @returns {Promise} - Email sending promise
    */
   sendLeaveRejectionNotification: async (leaveData, employeeEmail) => {
+    // If email is not configured, just log and return
+    if (!isEmailConfigured) {
+      console.log('Email service not configured, skipping leave rejection notification');
+      return { messageId: 'email-not-configured' };
+    }
+    
     try {
       const template = emailConfig.templates.leaveRejected;
       const htmlBody = template.body
@@ -118,7 +152,13 @@ const emailService = {
       console.error('Error sending leave rejection notification:', error);
       throw error;
     }
-  }
+  },
+  
+  /**
+   * Check if email service is configured
+   * @returns {boolean} - Whether email service is configured
+   */
+  isConfigured: () => isEmailConfigured
 };
 
 module.exports = emailService;

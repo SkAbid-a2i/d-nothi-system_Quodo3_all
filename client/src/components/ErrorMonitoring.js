@@ -264,8 +264,8 @@ const ErrorMonitoring = () => {
         if (path.includes('/meetings')) return 'Meetings';
         if (path.includes('/reports')) return 'Reports';
         if (path.includes('/admin')) return 'Admin Console';
-        if (path.includes('/settings')) return 'Settings';
         if (path.includes('/help')) return 'Help & Support';
+        if (path.includes('/settings')) return 'Settings';
         return path || 'Unknown Page';
       } catch (e) {
         return log.metadata.url || 'Unknown Page';
@@ -286,8 +286,8 @@ const ErrorMonitoring = () => {
       if (log.metadata.endpoint.includes('meeting')) return 'Meetings';
       if (log.metadata.endpoint.includes('report')) return 'Reports';
       if (log.metadata.endpoint.includes('admin')) return 'Admin Console';
-      if (log.metadata.endpoint.includes('setting')) return 'Settings';
       if (log.metadata.endpoint.includes('help')) return 'Help & Support';
+      if (log.metadata.endpoint.includes('setting')) return 'Settings';
       return log.metadata.endpoint;
     }
     
@@ -299,8 +299,8 @@ const ErrorMonitoring = () => {
       if (log.metadata.component.includes('Meeting')) return 'Meetings';
       if (log.metadata.component.includes('Report')) return 'Reports';
       if (log.metadata.component.includes('Admin')) return 'Admin Console';
-      if (log.metadata.component.includes('Setting')) return 'Settings';
       if (log.metadata.component.includes('Help')) return 'Help & Support';
+      if (log.metadata.component.includes('Setting')) return 'Settings';
       return log.metadata.component;
     }
     

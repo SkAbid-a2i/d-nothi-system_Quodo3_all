@@ -230,7 +230,11 @@ const server = app.listen(PORT, async () => {
   // Test email service
   try {
     const emailService = require('./services/email.service');
-    logger.info('Email service initialized');
+    if (emailService.isConfigured()) {
+      logger.info('Email service initialized and configured');
+    } else {
+      logger.info('Email service initialized but not configured (emails will be skipped)');
+    }
   } catch (error) {
     logger.error('Failed to initialize email service', { error: error.message, stack: error.stack });
   }

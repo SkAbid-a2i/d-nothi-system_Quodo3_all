@@ -30,6 +30,19 @@ services:
         value: 7d
       - key: FRONTEND_URL
         value: https://d-nothi-system-quodo3-all.vercel.app
+      # Email Configuration (Optional - uncomment and set values if you want to enable email)
+      # - key: EMAIL_HOST
+      #   value: smtp.gmail.com
+      # - key: EMAIL_PORT
+      #   value: 587
+      # - key: EMAIL_SECURE
+      #   value: false
+      # - key: EMAIL_USER
+      #   sync: false
+      # - key: EMAIL_PASS
+      #   sync: false
+      # - key: EMAIL_FROM
+      #   value: "D-Nothi Task Management <no-reply@d-nothi.com>"
 
   - type: web
     name: quodo3-frontend

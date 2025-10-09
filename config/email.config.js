@@ -1,4 +1,4 @@
-// Email configuration
+// Email configuration (Optional - emails will be skipped if not configured)
 module.exports = {
   // SMTP configuration
   smtp: {
