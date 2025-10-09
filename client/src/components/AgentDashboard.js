@@ -1107,9 +1107,7 @@ const AgentDashboard = () => {
         {/* Recent Activity */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2, height: '100%' }}>
-            <Typography variant="h6" gutterBottom sx={{ 
-              color: 'text.primary'
-            }}>
+            <Typography variant="h6" gutterBottom>
               Recent Activity
             </Typography>
             <Box sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
@@ -1134,14 +1132,10 @@ const AgentDashboard = () => {
                                           item.status === 'In Progress' ? 'primary.main' : 'warning.main'
                         }}
                       >
-                        <Typography variant="body2" fontWeight="bold" sx={{ 
-                          color: 'text.primary'
-                        }}>
+                        <Typography variant="body2" fontWeight="bold">
                           {item.type === 'task' ? (item.description || 'New task') : (item.reason || 'New leave request')}
                         </Typography>
-                        <Typography variant="caption" sx={{ 
-                          color: 'text.secondary'
-                        }}>
+                        <Typography variant="caption" color="text.secondary">
                           {item.userName ? `By ${item.userName}` : 'System'} •{' '}
                           {new Date(item.createdAt || item.date).toLocaleString()}
                         </Typography>
@@ -1178,11 +1172,7 @@ const AgentDashboard = () => {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                  <Typography sx={{ 
-                    color: 'text.secondary'
-                  }}>
-                    No recent activity
-                  </Typography>
+                  <Typography color="text.secondary">No recent activity</Typography>
                 </Box>
               )}
             </Box>
