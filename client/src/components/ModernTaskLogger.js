@@ -83,10 +83,19 @@ const ModernTaskLogger = () => {
 
   // Fetch dropdown values on component mount
   useEffect(() => {
-    fetchInitialData();
+    // Only fetch data if user is available
+    if (user) {
+      fetchInitialData();
+    }
   }, [user?.id, user?.role]);
 
   const fetchInitialData = async (retryCount = 0) => {
+    // Don't fetch data if user is not available yet
+    if (!user) {
+      console.log('User not available yet, skipping initial data fetch');
+      return;
+    }
+    
     setLoading(true);
     setDropdownLoading(true);
     try {
@@ -193,6 +202,12 @@ const ModernTaskLogger = () => {
   };
 
   const fetchTasks = async () => {
+    // Don't fetch tasks if user is not available yet
+    if (!user) {
+      console.log('User not available yet, skipping task fetch');
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await taskAPI.getAllTasks();
@@ -395,13 +410,13 @@ const ModernTaskLogger = () => {
     setActiveTab(newValue);
   };
 
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
-  const handleCloseSnackbar = () => {
+  const handleCloseSnackbar = useCallback(() => {
     setSnackbar({ ...snackbar, open: false });
-  };
+  }, [snackbar]);
 
   return (
     <Fade in={true} timeout={500}>

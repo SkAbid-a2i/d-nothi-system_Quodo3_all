@@ -133,6 +133,12 @@ const TaskManagement = () => {
   }, [editSelectedCategory]);
 
   const fetchTasks = useCallback(async () => {
+    // Don't fetch tasks if user is not available yet
+    if (!user) {
+      console.log('User not available yet, skipping task fetch');
+      return;
+    }
+    
     setDataLoading(true);
     try {
       console.log('Fetching tasks...');
@@ -200,20 +206,28 @@ const TaskManagement = () => {
 
   // Fetch tasks on component mount
   useEffect(() => {
-    fetchTasks();
-    fetchDropdownValues();
-    
-    // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
-    
-    // Clean up subscription on component unmount
-    return () => {
-      autoRefreshService.unsubscribe('TaskManagement');
-    };
-  }, [fetchTasks, fetchDropdownValues]);
+    // Only fetch data if user is available
+    if (user) {
+      fetchTasks();
+      fetchDropdownValues();
+      
+      // Subscribe to auto-refresh service
+      autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
+      
+      // Clean up subscription on component unmount
+      return () => {
+        autoRefreshService.unsubscribe('TaskManagement');
+      };
+    }
+  }, []); // Remove dependencies since these are stable functions
 
   // Listen for real-time notifications
   useEffect(() => {
+    // Only set up notifications if user is available
+    if (!user) {
+      return;
+    }
+    
     const handleTaskCreated = (data) => {
       showSnackbar('New task created: ' + data.task.description, 'info');
       fetchTasks(); // Refresh data
@@ -237,7 +251,7 @@ const TaskManagement = () => {
       notificationService.off('taskCreated', handleTaskCreated);
       notificationService.off('taskUpdated', handleTaskUpdated);
     };
-  }, [fetchTasks]);
+  }, []); // Remove fetchTasks dependency since it's stable
 
     // Additional debug for user role
   useEffect(() => {
@@ -245,13 +259,13 @@ const TaskManagement = () => {
     console.log('User role:', user?.role);
   }, [user]);
 
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
-  const handleCloseSnackbar = () => {
+  const handleCloseSnackbar = useCallback(() => {
     setSnackbar({ ...snackbar, open: false });
-  };
+  }, [snackbar]);
 
   // Fetch dropdown values on component mount
   const fetchDropdownValues = useCallback(async () => {
@@ -286,7 +300,7 @@ const TaskManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [showSnackbar, setSources, setCategories, setOffices]);
+  }, []);
 
   const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
     try {
