@@ -46,24 +46,21 @@ import {
   Assignment as AssignmentIcon,
   CheckCircle as CheckCircleIcon,
   HourglassEmpty as HourglassEmptyIcon,
-  Cancel as CancelIcon,
   Upload as UploadIcon,
   Description as DescriptionIcon,
   Close as CloseIcon,
   Download as DownloadIcon
 } from '@mui/icons-material';
-import { dropdownAPI, taskAPI, userAPI } from '../services/api';
+import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
-
-// Add this new import for the flag update function
-import axios from 'axios';
+import useUserFilter from '../hooks/useUserFilter';
+import UserFilterDropdown from './UserFilterDropdown';
 
 const TaskManagement = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
-  const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
   const [dataLoading, setDataLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -85,7 +82,6 @@ const TaskManagement = () => {
   const [offices, setOffices] = useState([]); // Add offices state
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
   const [userInformation, setUserInformation] = useState(''); // Add user information state
-  const [users, setUsers] = useState([]); // Add users state for filtering
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [userFilter, setUserFilter] = useState(''); // Add user filter
   const [description, setDescription] = useState('');
@@ -113,6 +109,8 @@ const TaskManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
+  // Use the new user filter hook
+  const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -221,7 +219,7 @@ const TaskManagement = () => {
     return () => {
       autoRefreshService.unsubscribe('TaskManagement');
     };
-  }, [fetchTasks]);
+  }, [fetchTasks, fetchDropdownValues]);
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -264,17 +262,8 @@ const TaskManagement = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Debug useEffect to monitor users state
-  useEffect(() => {
-    console.log('Users state changed:', users);
-    console.log('Users length:', users.length);
-    if (users.length > 0) {
-      console.log('First user:', users[0]);
-    }
-  }, [users]);
-
   // Fetch dropdown values on component mount
-  const fetchDropdownValues = async () => {
+  const fetchDropdownValues = useCallback(async () => {
     setLoading(true);
     try {
       console.log('Fetching dropdown values...');
@@ -285,72 +274,28 @@ const TaskManagement = () => {
         dropdownAPI.getDropdownValues('Office')
       ];
       
-      // Always fetch users for admin roles
-      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
-        fetchPromises.push(userAPI.getAllUsers());
-      }
-      
       const responses = await Promise.all(fetchPromises);
     
       console.log('All responses:', responses);
     
       // Extract responses
-      let sourcesRes, categoriesRes, officesRes, usersRes;
-      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
-        [sourcesRes, categoriesRes, officesRes, usersRes] = responses;
-      } else {
-        [sourcesRes, categoriesRes, officesRes] = responses;
-      }
+      const [sourcesRes, categoriesRes, officesRes] = responses;
     
       console.log('Sources response:', sourcesRes);
       console.log('Categories response:', categoriesRes);
       console.log('Offices response:', officesRes);
-      console.log('Users response:', usersRes);
     
       setSources(sourcesRes?.data || []);
       setCategories(categoriesRes?.data || []);
       setOffices(officesRes?.data || []);
-      
-      // Process users to ensure proper format
-      if (usersRes && usersRes.data && user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
-        const userData = Array.isArray(usersRes.data) 
-          ? usersRes.data 
-          : (usersRes.data.data || usersRes.data.users || usersRes.data || []);
-          
-        console.log('Raw users data:', usersRes);
-        console.log('Processed users data:', userData);
-        console.log('Users data type:', typeof userData);
-        console.log('Users data length:', userData.length);
-        
-        // Process users to ensure proper format
-        const processedUsers = userData
-          .filter(user => user && user.id && (user.username || user.email)) // Filter out invalid users
-          .map(user => ({
-            id: user.id,
-            label: (user.fullName || user.username || user.email) + ' (' + (user.username || user.email) + ')',
-            value: user.username || user.email,
-            fullName: user.fullName,
-            username: user.username,
-            email: user.email,
-            role: user.role
-          }));
-        
-        console.log('Final processed users:', processedUsers);
-        console.log('Processed users length:', processedUsers.length);
-        setUsers(processedUsers);
-      } else {
-        console.log('No users data received or user not authorized');
-        setUsers([]);
-      }
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
       console.error('Error response:', error.response);
       showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
-      setUsers([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
-  };
+  }, [showSnackbar, setSources, setCategories, setOffices]);
 
   const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
     try {
@@ -850,32 +795,22 @@ const TaskManagement = () => {
               
               {/* User Filter Dropdown - Only show for Admin roles */}
               {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <Autocomplete
-                    key={`user-filter-${users.length}-${JSON.stringify(users.slice(0, 5))}`}
-                    options={users}
-                    getOptionLabel={(option) => {
-                      if (!option) return '';
-                      return option.label || (option.fullName || option.username || option.email) + ' (' + (option.username || option.email) + ')' || 'Unknown User';
-                    }}
-                    value={selectedUser}
-                    onChange={(event, newValue) => {
-                      console.log('User selected:', newValue);
-                      setSelectedUser(newValue);
-                      // Apply filter immediately when user selects a user
-                      if (newValue) {
-                        setUserFilter(newValue.username || newValue.email || '');
-                      } else {
-                        setUserFilter('');
-                      }
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Filter by User" fullWidth />
-                    )}
-                    isOptionEqualToValue={(option, value) => option.id === value?.id}
-                    noOptionsText="No users found"
-                  />
-                </Grid>
+                <UserFilterDropdown
+                  users={users}
+                  selectedUser={selectedUser}
+                  onUserChange={(newValue) => {
+                    setSelectedUser(newValue);
+                    // Apply filter immediately when user selects a user
+                    if (newValue) {
+                      setUserFilter(newValue.username || newValue.email || '');
+                    } else {
+                      setUserFilter('');
+                    }
+                  }}
+                  label="Filter by User"
+                  loading={userLoading}
+                  gridSize={{ xs: 12, sm: 6, md: 4 }}
+                />
               )}
 
               <Grid item xs={12} sm={12} md={5}>

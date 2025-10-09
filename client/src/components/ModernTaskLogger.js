@@ -28,8 +28,7 @@ import {
   Tabs,
   Tab,
   Fade,
-  Zoom,
-  Autocomplete
+  Zoom
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -123,15 +122,13 @@ const ModernTaskLogger = () => {
       setCategories(categoriesData);
       setServices(servicesData);
       
-      // Filter tasks based on user role
+      // Filter tasks - ALL users only see their own tasks, regardless of role
       let filteredTasksData = tasksData;
       if (user) {
-        if (user.role === 'Agent' || user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') {
-          // All roles (including admin roles) only see their own tasks
-          filteredTasksData = tasksData.filter(task => 
-            task.userId === user.id || task.userName === user.username
-          );
-        }
+        // ALL users (including admin roles) only see their own tasks
+        filteredTasksData = tasksData.filter(task => 
+          task.userId === user.id || task.userName === user.username
+        );
       }
       
       setTasks(filteredTasksData);
@@ -203,10 +200,10 @@ const ModernTaskLogger = () => {
       const tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
-      // Filter tasks based on user role - all roles only see their own tasks
+      // Filter tasks - ALL users only see their own tasks, regardless of role
       let filteredTasksData = tasksData;
       if (user) {
-        // All roles (including admin roles) only see their own tasks
+        // ALL users (including admin roles) only see their own tasks
         filteredTasksData = tasksData.filter(task => 
           task.userId === user.id || task.userName === user.username
         );
@@ -619,8 +616,8 @@ const ModernTaskLogger = () => {
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center', 
-                  mb: 3, 
-                  flexWrap: 'wrap', 
+                  mb: 3,
+                  flexWrap: 'wrap',
                   gap: 2
                 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -657,6 +654,17 @@ const ModernTaskLogger = () => {
                         ))}
                       </Select>
                     </FormControl>
+                    
+                    <Button 
+                      variant="outlined" 
+                      size="small"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setStatusFilter('');
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
                   </Box>
                 </Box>
                 
