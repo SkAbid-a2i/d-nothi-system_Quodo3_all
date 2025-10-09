@@ -149,25 +149,10 @@ const TaskManagement = () => {
       let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
-      // Filter tasks based on user role
-      if (user) {
-        if (user.role === 'Agent') {
-          // Agents only see their own tasks
-          tasksData = tasksData.filter(task => 
-            task.userId === user.id || task.userName === user.username
-          );
-        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see tasks from their office
-          // But they are also agents, so they should see their own tasks AND their team's tasks
-          tasksData = tasksData.filter(task => 
-            task.office === user.office
-          );
-        } else if (user.role === 'SystemAdmin') {
-          // SystemAdmin sees all tasks (no filtering needed)
-          // tasksData remains unchanged
-        }
-        // Default case - no filtering
-      }
+      // Filter tasks - ALL users (including Admin roles) only see their own tasks
+      tasksData = tasksData.filter(task => 
+        task.userId === user.id || task.userName === user.username
+      );
       
       setTasks(tasksData);
     } catch (error) {
@@ -770,8 +755,8 @@ const TaskManagement = () => {
         <Box>
           {/* Task Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-              <Grid item xs={12} sm={6} md={4}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -798,36 +783,13 @@ const TaskManagement = () => {
                 </FormControl>
               </Grid>
               
-              {/* User Filter Dropdown - Only show for Admin roles */}
-              {(user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) && (
-                <UserFilterDropdown
-                  users={users}
-                  selectedUser={selectedUser}
-                  onUserChange={(newValue) => {
-                    setSelectedUser(newValue);
-                    // Apply filter immediately when user selects a user
-                    if (newValue) {
-                      setUserFilter(newValue.username || newValue.email || '');
-                    } else {
-                      setUserFilter('');
-                    }
-                  }}
-                  label="Filter by User"
-                  loading={userLoading}
-                  gridSize={{ xs: 12, sm: 6, md: 4 }}
-                />
-              )}
-
-              <Grid item xs={12} sm={12} md={5}>
+              <Grid item xs={12} sm={12} md={6}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
                     variant="outlined" 
                     startIcon={<FilterIcon />}
                     onClick={() => {
                       // Apply filters
-                      if (selectedUser) {
-                        setUserFilter(selectedUser.username || selectedUser.email);
-                      }
                     }}
                   >
                     Apply Filters
@@ -837,8 +799,6 @@ const TaskManagement = () => {
                     onClick={() => {
                       setSearchTerm('');
                       setStatusFilter('');
-                      setUserFilter('');
-                      setSelectedUser(null);
                     }}
                   >
                     Clear

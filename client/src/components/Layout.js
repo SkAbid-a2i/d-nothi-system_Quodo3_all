@@ -452,17 +452,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
             D-Nothi Task Management
           </Typography>
           
-          {/* Collapse/Expand button moved to top bar */}
-          <Tooltip title={drawerOpen ? "Collapse menu" : "Expand menu"}>
-            <IconButton
-              color="inherit"
-              onClick={handleDrawerToggle}
-              sx={{ mx: 1 }}
-            >
-              {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
-            </IconButton>
-          </Tooltip>
-          
           <Tooltip title="Notifications">
             <IconButton
               size="large"

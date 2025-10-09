@@ -127,28 +127,10 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
-      // Store all tasks for filtering
-      setAllTasks(tasksData);
-      
-      // Filter tasks based on user role
-      if (user) {
-        if (user.role === 'Agent') {
-          // Agents only see their own tasks
-          tasksData = tasksData.filter(task => 
-            task.userId === user.id || task.userName === user.username
-          );
-        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see tasks from their office
-          // But they are also agents, so they should see their own tasks AND their team's tasks
-          tasksData = tasksData.filter(task => 
-            task.office === user.office
-          );
-        } else if (user.role === 'SystemAdmin') {
-          // SystemAdmin sees all tasks (no filtering needed)
-          // tasksData remains unchanged
-        }
-        // Default case - no filtering
-      }
+      // ALL users (including Admin roles) only see their own tasks
+      tasksData = tasksData.filter(task => 
+        task.userId === user.id || task.userName === user.username
+      );
       
       setTasks(tasksData);
       
@@ -161,28 +143,10 @@ const AgentDashboard = () => {
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
       
-      // Store all leaves for filtering
-      setAllLeaves(leavesData);
-      
-      // Filter leaves based on user role
-      if (user) {
-        if (user.role === 'Agent') {
-          // Agents only see their own leaves
-          leavesData = leavesData.filter(leave => 
-            leave.userId === user.id || leave.userName === user.username
-          );
-        } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-          // Admins and Supervisors see leaves from their office
-          // But they are also agents, so they should see their own leaves AND their team's leaves
-          leavesData = leavesData.filter(leave => 
-            leave.office === user.office
-          );
-        } else if (user.role === 'SystemAdmin') {
-          // SystemAdmin sees all leaves (no filtering needed)
-          // leavesData remains unchanged
-        }
-        // Default case - no filtering
-      }
+      // ALL users (including Admin roles) only see their own leaves
+      leavesData = leavesData.filter(leave => 
+        leave.userId === user.id || leave.userName === user.username
+      );
       
       setLeaves(leavesData);
       
