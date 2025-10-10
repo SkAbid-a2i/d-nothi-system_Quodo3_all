@@ -56,7 +56,7 @@ const PermissionTemplateManagement = () => {
   // Define all possible permissions
   const allPermissions = [
     'canCreateTasks',
-    'canAssignTasks',
+    'canCreateMeetings',
     'canViewAllTasks',
     'canCreateLeaves',
     'canApproveLeaves',
@@ -73,7 +73,7 @@ const PermissionTemplateManagement = () => {
     name: '',
     permissions: {
       canCreateTasks: false,
-      canAssignTasks: false,
+      canCreateMeetings: false,
       canViewAllTasks: false,
       canCreateLeaves: false,
       canApproveLeaves: false,
@@ -194,7 +194,7 @@ const PermissionTemplateManagement = () => {
         name: '',
         permissions: {
           canCreateTasks: false,
-          canAssignTasks: false,
+          canCreateMeetings: false,
           canViewAllTasks: false,
           canCreateLeaves: false,
           canApproveLeaves: false,

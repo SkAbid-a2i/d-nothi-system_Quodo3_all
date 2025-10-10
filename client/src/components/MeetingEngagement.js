@@ -184,9 +184,6 @@ const MeetingEngagement = () => {
       setSuccess('Meeting created successfully!');
       showSnackbar('Meeting created successfully!', 'success');
       
-      // Refresh meetings list
-      fetchMeetings();
-      
       // Close dialog if it's open
       setOpenDialog(false);
     } catch (error) {

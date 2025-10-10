@@ -1101,7 +1101,7 @@ const AgentDashboard = () => {
                         sx={{ 
                           p: 2, 
                           mb: 1, 
-                          bgcolor: index % 2 === 0 ? 'grey.50' : 'white',
+                          bgcolor: 'background.paper',
                           borderRadius: 1,
                           borderLeft: '4px solid',
                           borderLeftColor: item.status === 'Completed' ? 'success.main' : 

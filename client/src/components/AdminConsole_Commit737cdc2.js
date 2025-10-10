@@ -74,9 +74,9 @@ const AdminConsole = () => {
   const [templateName, setTemplateName] = useState('');
   const [templatePermissions, setTemplatePermissions] = useState({
     canApproveLeaves: false,
-    canAssignTasks: false,
     canCreateLeaves: true,
     canCreateTasks: true,
+    canCreateMeetings: false,
     canManageDropdowns: false,
     canManageFiles: false,
     canManageUsers: false,
@@ -384,9 +384,9 @@ const AdminConsole = () => {
       setTemplateName('');
       setTemplatePermissions({
         canApproveLeaves: false,
-        canAssignTasks: false,
         canCreateLeaves: true,
         canCreateTasks: true,
+        canCreateMeetings: false,
         canManageDropdowns: false,
         canManageFiles: false,
         canManageUsers: false,
@@ -841,9 +841,9 @@ const AdminConsole = () => {
                                   setTemplateName('');
                                   setTemplatePermissions({
                                     canApproveLeaves: false,
-                                    canAssignTasks: false,
                                     canCreateLeaves: true,
                                     canCreateTasks: true,
+                                    canCreateMeetings: false,
                                     canManageDropdowns: false,
                                     canManageFiles: false,
                                     canManageUsers: false,

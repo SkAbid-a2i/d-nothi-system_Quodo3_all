@@ -420,6 +420,14 @@ const LeaveManagement = () => {
 
   // Action handlers
   const handleApproveLeave = (leave) => {
+    // Check if user has permission to approve leaves
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      setError('You do not have permission to approve leave requests');
+      showSnackbar('You do not have permission to approve leave requests', 'error');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     if (!leave || !leave.id) {
       setError('Invalid leave selection');
       setTimeout(() => setError(''), 5000);
@@ -429,6 +437,14 @@ const LeaveManagement = () => {
   };
 
   const handleRejectLeave = (leave) => {
+    // Check if user has permission to reject leaves
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      setError('You do not have permission to reject leave requests');
+      showSnackbar('You do not have permission to reject leave requests', 'error');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     if (!leave || !leave.id) {
       setError('Invalid leave selection');
       setTimeout(() => setError(''), 5000);
@@ -837,7 +853,7 @@ const LeaveManagement = () => {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      {leave.status === 'Pending' && (
+                      {leave.status === 'Pending' && user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') && (
                         <>
                           <IconButton 
                             size="small" 
