@@ -96,7 +96,14 @@ const MeetingEngagement = () => {
       const response = await meetingAPI.getAllMeetings();
       // Handle different response structures
       const meetingsData = response.data?.data || response.data || [];
-      setMeetings(Array.isArray(meetingsData) ? meetingsData : []);
+      
+      // Ensure each meeting has proper user data
+      const processedMeetings = Array.isArray(meetingsData) ? meetingsData.map(meeting => ({
+        ...meeting,
+        users: meeting.selectedUsers || meeting.users || []
+      })) : [];
+      
+      setMeetings(processedMeetings);
     } catch (error) {
       console.error('Error fetching meetings:', error);
       // Don't show error for meetings as it's not critical, but set empty array
@@ -825,16 +832,16 @@ const MeetingEngagement = () => {
                   </Box>
                 </Grid>
                 
-                {selectedMeeting.users && selectedMeeting.users.length > 0 && (
+                {(selectedMeeting.selectedUsers || selectedMeeting.users) && (selectedMeeting.selectedUsers || selectedMeeting.users).length > 0 && (
                   <Grid item xs={12}>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      Attendees ({selectedMeeting.users.length})
+                      Attendees ({(selectedMeeting.selectedUsers || selectedMeeting.users).length})
                     </Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {selectedMeeting.users.map((attendee) => (
+                      {(selectedMeeting.selectedUsers || selectedMeeting.users).map((attendee) => (
                         <Chip
                           key={attendee.id || attendee._id || attendee.username}
-                          label={attendee.fullName || attendee.username || 'Unknown User'}
+                          label={attendee.fullName || attendee.username || attendee.name || 'Unknown User'}
                           sx={{ 
                             bgcolor: '#667eea20',
                             color: '#667eea',

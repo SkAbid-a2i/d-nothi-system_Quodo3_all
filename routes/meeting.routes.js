@@ -15,14 +15,7 @@ router.get('/', authenticate, async (req, res) => {
     
     // Agents can only see meetings they're invited to or created
     if (req.user.role === 'Agent') {
-      where = {
-        [require('sequelize').Op.or]: [
-          { createdBy: req.user.id },
-          { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } }
-        ]
-      };
-      
-      // Also include meetings where the user is associated through the MeetingUsers table
+      // First get meetings where the user is associated through the MeetingUsers table
       const userMeetings = await Meeting.findAll({
         include: [{
           model: User,
@@ -34,14 +27,20 @@ router.get('/', authenticate, async (req, res) => {
       });
       
       const userMeetingIds = userMeetings.map(m => m.id);
+      
+      // Build where clause to include meetings created by user, selected user IDs, or associated through MeetingUsers
+      where = {
+        [require('sequelize').Op.or]: [
+          { createdBy: req.user.id },
+          { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } }
+        ]
+      };
+      
+      // Add meeting IDs from MeetingUsers association if any
       if (userMeetingIds.length > 0) {
-        where = {
-          [require('sequelize').Op.or]: [
-            { createdBy: req.user.id },
-            { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } },
-            { id: { [require('sequelize').Op.in]: userMeetingIds } }
-          ]
-        };
+        where[require('sequelize').Op.or].push({
+          id: { [require('sequelize').Op.in]: userMeetingIds }
+        });
       }
     } 
     // Admins and Supervisors can see meetings from their office
@@ -186,6 +185,21 @@ router.put('/:id', authenticate, async (req, res) => {
       await meeting.setSelectedUsers(selectedUserIds);
     }
 
+    // Create audit log for meeting update
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'UPDATE',
+        resourceType: 'MEETING',
+        resourceId: meeting.id,
+        description: `Meeting "${meeting.subject}" updated by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for meeting update:', auditError);
+    }
+
     // Send notification about meeting update
     notificationService.notifyMeetingUpdated(meeting);
 
@@ -230,6 +244,21 @@ router.delete('/:id', authenticate, async (req, res) => {
 
     // Delete meeting
     await meeting.destroy();
+
+    // Create audit log for meeting deletion
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'DELETE',
+        resourceType: 'MEETING',
+        resourceId: meeting.id,
+        description: `Meeting "${meeting.subject}" deleted by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for meeting deletion:', auditError);
+    }
 
     // Send notification about meeting deletion
     notificationService.notifyMeetingDeleted(meeting);

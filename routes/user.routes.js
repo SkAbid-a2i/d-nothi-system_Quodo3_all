@@ -60,6 +60,21 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       office,
     });
 
+    // Create audit log for user creation
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'CREATE',
+        resourceType: 'USER',
+        resourceId: user.id,
+        description: `User "${username}" created by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for user creation:', auditError);
+    }
+
     // Send notification
     notificationService.notifyUserCreated({
       id: user.id,
@@ -108,6 +123,21 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
 
     await user.save();
 
+    // Create audit log for user update
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'UPDATE',
+        resourceType: 'USER',
+        resourceId: user.id,
+        description: `User "${username || user.username}" updated by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for user update:', auditError);
+    }
+
     // Send notification
     notificationService.notifyUserUpdated({
       id: user.id,
@@ -150,6 +180,21 @@ router.delete('/:id', authenticate, authorize('SystemAdmin'), async (req, res) =
     // Don't actually delete, just deactivate
     user.isActive = false;
     await user.save();
+
+    // Create audit log for user deactivation
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'DELETE',
+        resourceType: 'USER',
+        resourceId: user.id,
+        description: `User "${user.username}" deactivated by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for user deactivation:', auditError);
+    }
 
     // Send notification
     notificationService.notifyUserDeleted({

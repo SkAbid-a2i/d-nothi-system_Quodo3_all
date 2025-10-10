@@ -67,14 +67,19 @@ router.get('/analyze', authenticate, authorize('SystemAdmin'), (req, res) => {
 });
 
 // Get recent logs (Admin, SystemAdmin, and Supervisor can access)
-router.get('/recent', authenticate, authorize(['SystemAdmin', 'Admin', 'Supervisor']), (req, res) => {
+router.get('/recent', authenticate, authorize(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
   try {
-    const logs = logger.getAllLogs();
-    // Get last 50 logs
-    const recentLogs = logs.slice(-50);
+    const AuditLog = require('../models/AuditLog');
+    
+    // Get last 50 audit logs ordered by creation time
+    const logs = await AuditLog.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
+    
     res.json({
-      logs: recentLogs,
-      count: recentLogs.length
+      logs: logs,
+      count: logs.length
     });
   } catch (error) {
     console.error('Error fetching recent logs:', error);

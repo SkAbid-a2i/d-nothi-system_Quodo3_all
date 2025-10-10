@@ -74,6 +74,21 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 
     const task = await Task.create(taskData);
 
+    // Create audit log for task creation
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'CREATE',
+        resourceType: 'TASK',
+        resourceId: task.id,
+        description: `Task "${description.substring(0, 50)}${description.length > 50 ? '...' : ''}" created by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for task:', auditError);
+    }
+
     // Notify about task creation
     notificationService.notifyTaskCreated(task);
 
@@ -149,6 +164,21 @@ router.put('/:id', authenticate, async (req, res) => {
 
     const updatedTask = await task.update(updateData);
 
+    // Create audit log for task update
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'UPDATE',
+        resourceType: 'TASK',
+        resourceId: task.id,
+        description: `Task "${description.substring(0, 50) || task.description.substring(0, 50)}${(description || task.description).length > 50 ? '...' : ''}" updated by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for task update:', auditError);
+    }
+
     // Notify about task update
     notificationService.notifyTaskUpdated(updatedTask);
 
@@ -202,6 +232,21 @@ router.delete('/:id', authenticate, async (req, res) => {
       }
     } else if (task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only delete your own tasks' });
+    }
+
+    // Create audit log for task deletion
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'DELETE',
+        resourceType: 'TASK',
+        resourceId: task.id,
+        description: `Task "${task.description.substring(0, 50)}${task.description.length > 50 ? '...' : ''}" deleted by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for task deletion:', auditError);
     }
 
     // Delete task

@@ -82,10 +82,12 @@ class NotificationService {
       });
       
       // Get selected user IDs
-      const selectedUserIds = fullMeeting.selectedUsers.map(user => user.id);
+      const selectedUserIds = fullMeeting && fullMeeting.selectedUsers 
+        ? fullMeeting.selectedUsers.map(user => user.id) 
+        : [];
       
       // Add creator to the list
-      if (!selectedUserIds.includes(meeting.createdBy)) {
+      if (meeting.createdBy && !selectedUserIds.includes(meeting.createdBy)) {
         selectedUserIds.push(meeting.createdBy);
       }
       
@@ -105,9 +107,14 @@ class NotificationService {
       const relevantUserIds = [...new Set([...selectedUserIds, ...adminUserIds])];
       
       // Send to relevant users only
-      relevantUserIds.forEach(userId => {
-        this.sendToUser(userId, data);
-      });
+      if (relevantUserIds.length > 0) {
+        relevantUserIds.forEach(userId => {
+          this.sendToUser(userId, data);
+        });
+      } else {
+        // Fallback to broadcast if no specific users
+        this.broadcast(data);
+      }
     } catch (error) {
       console.error('Error sending meeting notification to relevant users:', error);
       // Fallback to broadcast if there's an error
@@ -124,7 +131,7 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users (in a real app, you'd send only to relevant users)
+    // Send to all users
     this.broadcast(notification);
   }
 
@@ -137,7 +144,7 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users (in a real app, you'd send only to relevant users)
+    // Send to all users
     this.broadcast(notification);
   }
 

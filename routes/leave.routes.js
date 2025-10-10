@@ -59,6 +59,21 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       reason,
     });
 
+    // Create audit log for leave request
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'CREATE',
+        resourceType: 'LEAVE',
+        resourceId: leave.id,
+        description: `Leave request for ${req.user.username} from ${startDate} to ${endDate}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for leave request:', auditError);
+    }
+
     // Notify about leave request
     notificationService.notifyLeaveRequested(leave);
 
@@ -141,6 +156,21 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor', 'Syste
 
     await leave.save();
 
+    // Create audit log for leave approval
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'APPROVE',
+        resourceType: 'LEAVE',
+        resourceId: leave.id,
+        description: `Leave request for ${leave.userName} approved by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for leave approval:', auditError);
+    }
+
     // Notify about leave approval
     notificationService.notifyLeaveApproved(leave);
 
@@ -210,6 +240,21 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'System
     leave.approvedAt = new Date();
 
     await leave.save();
+
+    // Create audit log for leave rejection
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'REJECT',
+        resourceType: 'LEAVE',
+        resourceId: leave.id,
+        description: `Leave request for ${leave.userName} rejected by ${req.user.username}. Reason: ${rejectionReason || 'Not specified'}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for leave rejection:', auditError);
+    }
 
     // Notify about leave rejection
     notificationService.notifyLeaveRejected(leave);
