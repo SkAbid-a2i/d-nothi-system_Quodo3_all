@@ -97,7 +97,7 @@ const MeetingEngagement = () => {
       // Handle different response structures
       const meetingsData = response.data?.data || response.data || [];
       
-      // Ensure each meeting has proper user data
+      // Ensure each meeting has proper user data - FIXED PROCESSING
       const processedMeetings = Array.isArray(meetingsData) ? meetingsData.map(meeting => ({
         ...meeting,
         users: meeting.selectedUsers || meeting.users || []

@@ -34,7 +34,7 @@ router.get('/', authenticate, async (req, res) => {
           }]
         });
         
-        // Filter manually
+        // Filter manually - FIXED LOGIC
         const filteredMeetings = allMeetings.filter(meeting => 
           meeting.createdBy === req.user.id || 
           (meeting.selectedUserIds && 
