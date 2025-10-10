@@ -3,8 +3,8 @@ const router = express.Router();
 const AuditLog = require('../models/AuditLog');
 const { authenticate: authenticateToken, authorize: authorizeRole } = require('../middleware/auth.middleware');
 
-// Get all audit logs (SystemAdmin only)
-router.get('/', authenticateToken, authorizeRole(['SystemAdmin']), async (req, res) => {
+// Get all audit logs (Admin, SystemAdmin, and Supervisor can access)
+router.get('/', authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
   try {
     const { page = 1, limit = 20, userId, action, resourceType } = req.query;
     
@@ -55,6 +55,25 @@ router.post('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error creating audit log:', error);
     res.status(500).json({ message: 'Error creating audit log' });
+  }
+});
+
+// Get recent audit logs (Admin, SystemAdmin, and Supervisor can access)
+router.get('/recent', authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
+  try {
+    // Get last 50 audit logs ordered by creation time
+    const logs = await AuditLog.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
+    
+    res.json({
+      logs: logs,
+      count: logs.length
+    });
+  } catch (error) {
+    console.error('Error fetching recent audit logs:', error);
+    res.status(500).json({ message: 'Error fetching recent audit logs' });
   }
 });
 

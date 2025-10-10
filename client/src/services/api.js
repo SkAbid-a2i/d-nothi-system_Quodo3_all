@@ -117,7 +117,7 @@ export const reportAPI = {
 export const auditAPI = {
   getAllLogs: (params) => api.get('/audit', { params }),
   createLog: (logData) => api.post('/audit', logData),
-  getRecentLogs: () => api.get('/logs/recent'), // Use the new logs endpoint
+  getRecentLogs: () => api.get('/audit/recent'), // Use the recent audit logs endpoint
 };
 
 // File endpoints

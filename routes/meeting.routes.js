@@ -21,7 +21,8 @@ router.get('/', authenticate, async (req, res) => {
           model: User,
           as: 'selectedUsers',
           where: { id: req.user.id },
-          attributes: []
+          attributes: [],
+          required: true
         }],
         attributes: ['id']
       });
@@ -29,19 +30,21 @@ router.get('/', authenticate, async (req, res) => {
       const userMeetingIds = userMeetings.map(m => m.id);
       
       // Build where clause to include meetings created by user, selected user IDs, or associated through MeetingUsers
-      where = {
-        [require('sequelize').Op.or]: [
-          { createdBy: req.user.id },
-          { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } }
-        ]
-      };
+      const orConditions = [
+        { createdBy: req.user.id },
+        { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } }
+      ];
       
       // Add meeting IDs from MeetingUsers association if any
       if (userMeetingIds.length > 0) {
-        where[require('sequelize').Op.or].push({
+        orConditions.push({
           id: { [require('sequelize').Op.in]: userMeetingIds }
         });
       }
+      
+      where = {
+        [require('sequelize').Op.or]: orConditions
+      };
     } 
     // Admins and Supervisors can see meetings from their office
     else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
@@ -111,6 +114,9 @@ router.post('/', authenticate, async (req, res) => {
     // Associate selected users with the meeting
     if (selectedUserIds && selectedUserIds.length > 0) {
       await meeting.addSelectedUsers(selectedUserIds);
+      // Also update the selectedUserIds field to ensure consistency
+      meeting.selectedUserIds = selectedUserIds;
+      await meeting.save();
     }
 
     // Send notifications to selected users
