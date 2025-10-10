@@ -113,10 +113,11 @@ export const reportAPI = {
   getSummaryReport: (params) => api.get('/reports/summary', { params }),
 };
 
-// Audit endpoints
+// Audit endpoints (deprecated - use logAPI instead)
 export const auditAPI = {
   getAllLogs: (params) => api.get('/audit', { params }),
   createLog: (logData) => api.post('/audit', logData),
+  getRecentLogs: () => api.get('/logs/recent'), // Use the new logs endpoint
 };
 
 // File endpoints

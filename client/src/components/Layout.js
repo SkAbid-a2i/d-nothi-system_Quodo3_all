@@ -222,6 +222,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       setUnreadCount(transformedNotifications.length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Don't show error to user but still set empty notifications
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setLoadingNotifications(false);
     }

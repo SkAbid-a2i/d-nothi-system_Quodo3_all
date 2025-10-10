@@ -65,6 +65,56 @@ class NotificationService {
     });
   }
 
+  // Send notification to relevant users for a meeting
+  async sendToRelevantUsersForMeeting(meeting, data) {
+    try {
+      // Get the meeting with selected users
+      const Meeting = require('../models/Meeting');
+      const User = require('../models/User');
+      
+      const fullMeeting = await Meeting.findByPk(meeting.id, {
+        include: [{
+          model: User,
+          as: 'selectedUsers',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }]
+      });
+      
+      // Get selected user IDs
+      const selectedUserIds = fullMeeting.selectedUsers.map(user => user.id);
+      
+      // Add creator to the list
+      if (!selectedUserIds.includes(meeting.createdBy)) {
+        selectedUserIds.push(meeting.createdBy);
+      }
+      
+      // Add Admin, SystemAdmin, and Supervisor users
+      const adminUsers = await User.findAll({
+        where: {
+          role: {
+            [require('sequelize').Op.in]: ['Admin', 'SystemAdmin', 'Supervisor']
+          }
+        },
+        attributes: ['id']
+      });
+      
+      const adminUserIds = adminUsers.map(user => user.id);
+      
+      // Combine all relevant user IDs
+      const relevantUserIds = [...new Set([...selectedUserIds, ...adminUserIds])];
+      
+      // Send to relevant users only
+      relevantUserIds.forEach(userId => {
+        this.sendToUser(userId, data);
+      });
+    } catch (error) {
+      console.error('Error sending meeting notification to relevant users:', error);
+      // Fallback to broadcast if there's an error
+      this.broadcast(data);
+    }
+  }
+
   // Notify about task creation
   notifyTaskCreated(task) {
     const notification = {
@@ -256,8 +306,8 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users (in a real app, you'd send only to relevant users)
-    this.broadcast(notification);
+    // Send to selected users and Admin roles
+    this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
   // Notify about meeting update
@@ -269,8 +319,8 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users (in a real app, you'd send only to relevant users)
-    this.broadcast(notification);
+    // Send to selected users and Admin roles
+    this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
   // Notify about meeting deletion
@@ -282,8 +332,8 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users (in a real app, you'd send only to relevant users)
-    this.broadcast(notification);
+    // Send to selected users and Admin roles
+    this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
   // Get number of connected clients

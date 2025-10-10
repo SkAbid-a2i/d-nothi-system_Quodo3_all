@@ -31,7 +31,8 @@ import {
   LocationOn as LocationOnIcon,
   VideoCall as VideoCallIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { userAPI, meetingAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,8 +59,10 @@ const MeetingEngagement = () => {
     selectedUsers: []
   });
   
-  // Dialog state
+  // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [meetingDetailDialogOpen, setMeetingDetailDialogOpen] = useState(false);
 
   // Fetch users and meetings on component mount
   useEffect(() => {
@@ -160,7 +163,6 @@ const MeetingEngagement = () => {
       
       // Handle response
       const newMeeting = response.data?.data || response.data || {};
-      
       // Add to meetings list at the beginning
       setMeetings(prev => [newMeeting, ...prev]);
       
@@ -201,7 +203,6 @@ const MeetingEngagement = () => {
     if (meeting.users && Array.isArray(meeting.users)) {
       meeting.users.forEach(selectedUser => {
         // In a real implementation, this would be sent via the notification service
-        console.log(`Notification sent to ${selectedUser.username || selectedUser.fullName} for meeting: ${meeting.subject}`);
         
         // Simulate notification
         showSnackbar(`Meeting notification sent to ${selectedUser.username || selectedUser.fullName}`, 'info');
@@ -244,6 +245,16 @@ const MeetingEngagement = () => {
       duration: '30',
       selectedUsers: []
     });
+  };
+
+  const handleOpenMeetingDetail = (meeting) => {
+    setSelectedMeeting(meeting);
+    setMeetingDetailDialogOpen(true);
+  };
+
+  const handleCloseMeetingDetail = () => {
+    setMeetingDetailDialogOpen(false);
+    setSelectedMeeting(null);
   };
 
   const handleEditMeeting = (meeting) => {
@@ -390,8 +401,15 @@ const MeetingEngagement = () => {
                         height: '100%',
                         border: '1px solid',
                         borderColor: 'primary.main',
-                        background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)'
+                        background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+                          transition: 'all 0.2s ease'
+                        }
                       }}
+                      onClick={() => handleOpenMeetingDetail(meeting)}
                     >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -714,6 +732,133 @@ const MeetingEngagement = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      
+      {/* Meeting Detail Dialog */}
+      <Dialog 
+        open={meetingDetailDialogOpen} 
+        onClose={handleCloseMeetingDetail} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <VideoCallIcon sx={{ mr: 1, color: 'primary.main' }} />
+              Meeting Details
+            </Box>
+            <Chip 
+              label={selectedMeeting ? getMeetingStatus(selectedMeeting) : ''} 
+              size="small"
+              color={selectedMeeting ? getMeetingStatusColor(getMeetingStatus(selectedMeeting)) : 'default'}
+            />
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedMeeting && (
+            <Box sx={{ pt: 2 }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+                    {selectedMeeting.subject || 'No Subject'}
+                  </Typography>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <VideoCallIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main' }} />
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      Platform: 
+                      <Typography component="span" sx={{ fontWeight: 400, ml: 1 }}>
+                        {selectedMeeting.platform || 'zoom'}
+                      </Typography>
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <AccessTimeIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main' }} />
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      Date & Time: 
+                      <Typography component="span" sx={{ fontWeight: 400, ml: 1 }}>
+                        {selectedMeeting.date && selectedMeeting.time 
+                          ? `${selectedMeeting.date} at ${selectedMeeting.time}` 
+                          : 'Not specified'}
+                      </Typography>
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <AccessTimeIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main' }} />
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      Duration: 
+                      <Typography component="span" sx={{ fontWeight: 400, ml: 1 }}>
+                        {selectedMeeting.duration || 30} minutes
+                      </Typography>
+                    </Typography>
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {selectedMeeting.location && (
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                      <LocationOnIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main', mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {selectedMeeting.platform === 'physical' ? 'Location' : 'Link'}:
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 400, mt: 0.5 }}>
+                          {selectedMeeting.location}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                    <PersonIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main', mt: 0.5 }} />
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        Created by:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 400, mt: 0.5 }}>
+                        {selectedMeeting.creator?.fullName || selectedMeeting.creator?.username || 'Unknown User'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+                
+                {selectedMeeting.users && selectedMeeting.users.length > 0 && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                      Attendees ({selectedMeeting.users.length})
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {selectedMeeting.users.map((attendee) => (
+                        <Chip
+                          key={attendee.id || attendee._id || attendee.username}
+                          label={attendee.fullName || attendee.username || 'Unknown User'}
+                          sx={{ 
+                            bgcolor: '#667eea20',
+                            color: '#667eea',
+                            fontWeight: 600
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Grid>
+                )}
+                
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'right', mt: 2 }}>
+                    Created: {new Date(selectedMeeting.createdAt).toLocaleString()}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMeetingDetail}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -66,8 +66,8 @@ router.get('/analyze', authenticate, authorize('SystemAdmin'), (req, res) => {
   }
 });
 
-// Get recent logs (SystemAdmin only)
-router.get('/recent', authenticate, authorize('SystemAdmin'), (req, res) => {
+// Get recent logs (Admin, SystemAdmin, and Supervisor can access)
+router.get('/recent', authenticate, authorize(['SystemAdmin', 'Admin', 'Supervisor']), (req, res) => {
   try {
     const logs = logger.getAllLogs();
     // Get last 50 logs

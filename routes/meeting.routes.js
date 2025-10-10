@@ -21,6 +21,28 @@ router.get('/', authenticate, async (req, res) => {
           { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } }
         ]
       };
+      
+      // Also include meetings where the user is associated through the MeetingUsers table
+      const userMeetings = await Meeting.findAll({
+        include: [{
+          model: User,
+          as: 'selectedUsers',
+          where: { id: req.user.id },
+          attributes: []
+        }],
+        attributes: ['id']
+      });
+      
+      const userMeetingIds = userMeetings.map(m => m.id);
+      if (userMeetingIds.length > 0) {
+        where = {
+          [require('sequelize').Op.or]: [
+            { createdBy: req.user.id },
+            { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } },
+            { id: { [require('sequelize').Op.in]: userMeetingIds } }
+          ]
+        };
+      }
     } 
     // Admins and Supervisors can see meetings from their office
     else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
