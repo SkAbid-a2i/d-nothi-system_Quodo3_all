@@ -127,10 +127,15 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
-      // ALL users (including Admin roles) only see their own tasks
-      tasksData = tasksData.filter(task => 
-        task.userId === user.id || task.userName === user.username
-      );
+      // Check if user has admin privileges (SystemAdmin, Admin, or Supervisor)
+      const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
+      
+      // If user is admin, show all tasks; otherwise, show only their own tasks
+      if (!isAdmin) {
+        tasksData = tasksData.filter(task => 
+          task.userId === user.id || task.userName === user.username
+        );
+      }
       
       setTasks(tasksData);
       
@@ -143,10 +148,12 @@ const AgentDashboard = () => {
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
       
-      // ALL users (including Admin roles) only see their own leaves
-      leavesData = leavesData.filter(leave => 
-        leave.userId === user.id || leave.userName === user.username
-      );
+      // If user is admin, show all leaves; otherwise, show only their own leaves
+      if (!isAdmin) {
+        leavesData = leavesData.filter(leave => 
+          leave.userId === user.id || leave.userName === user.username
+        );
+      }
       
       setLeaves(leavesData);
       
@@ -254,8 +261,8 @@ const AgentDashboard = () => {
       
       // Prepare data for export
       const exportData = {
-        tasks: filteredTasks,
-        leaves: filteredLeaves,
+        tasks: finalFilteredTasks,
+        leaves: finalFilteredLeaves,
         generatedAt: new Date().toISOString(),
         user: user?.username || 'Unknown'
       };
@@ -385,16 +392,23 @@ const AgentDashboard = () => {
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-    (userFilter === '' || task.userName === userFilter)
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase())))
   );
+  
+  // Apply user filter only for non-admin users
+  const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
+  const finalFilteredTasks = isAdmin ? filteredTasks : 
+    filteredTasks.filter(task => userFilter === '' || task.userName === userFilter);
 
   // Filter leaves based on search term and user
   const filteredLeaves = leaves.filter(leave => 
     (searchTerm === '' || 
-      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-    (userFilter === '' || leave.userName === userFilter)
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase())))
   );
+  
+  // Apply user filter only for non-admin users
+  const finalFilteredLeaves = isAdmin ? filteredLeaves : 
+    filteredLeaves.filter(leave => userFilter === '' || leave.userName === userFilter);
 
   // Handle task edit
   const handleEditTask = async (task) => {
@@ -986,7 +1000,7 @@ const AgentDashboard = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {filteredTasks.map((task) => (
+                      {finalFilteredTasks.map((task) => (
                         <TableRow key={task.id}>
                           <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell>{task.source || 'N/A'}</TableCell>
@@ -1039,7 +1053,7 @@ const AgentDashboard = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {filteredLeaves.map((leave) => (
+                      {finalFilteredLeaves.map((leave) => (
                         <TableRow key={leave.id}>
                           <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
@@ -1159,7 +1173,7 @@ const AgentDashboard = () => {
           {viewDetailsDialog.type === 'tasks' && (
             <Box>
               <DialogContentText sx={{ mb: 2 }}>
-                Showing all tasks assigned to you.
+                {isAdmin ? 'Showing all tasks in the system.' : 'Showing all tasks assigned to you.'}
               </DialogContentText>
               <TableContainer>
                 <Table>
@@ -1199,7 +1213,7 @@ const AgentDashboard = () => {
           {viewDetailsDialog.type === 'leaves' && (
             <Box>
               <DialogContentText sx={{ mb: 2 }}>
-                Showing pending leave requests for you.
+                {isAdmin ? 'Showing all leave requests in the system.' : 'Showing pending leave requests for you.'}
               </DialogContentText>
               <TableContainer>
                 <Table>
