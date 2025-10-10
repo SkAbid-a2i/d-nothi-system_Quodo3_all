@@ -201,33 +201,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Fetch real notifications
   const fetchNotifications = async () => {
-    if (loadingNotifications) return;
-    
-    setLoadingNotifications(true);
-    try {
-      const response = await auditAPI.getRecentLogs();
-      const recentLogs = response.data || [];
-      
-      // Transform logs into notifications
-      const transformedNotifications = recentLogs.map(log => ({
-        id: log.id,
-        message: `${log.action} - ${log.description || 'No description'}`,
-        time: new Date(log.createdAt).toLocaleString(),
-        type: log.action.toLowerCase().includes('error') ? 'error' : 
-              log.action.toLowerCase().includes('warning') ? 'warning' : 'info',
-        read: false // In a real app, you'd track read status
-      }));
-      
-      setNotifications(transformedNotifications);
-      setUnreadCount(transformedNotifications.length);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      // Don't show error to user but still set empty notifications
-      setNotifications([]);
-      setUnreadCount(0);
-    } finally {
-      setLoadingNotifications(false);
-    }
+    // Use notification history from the service instead of audit logs
+    const notificationHistory = notificationService.getNotificationHistory();
+    setNotifications(notificationHistory);
+    setUnreadCount(notificationHistory.length);
   };
 
   // Handle screen size changes
