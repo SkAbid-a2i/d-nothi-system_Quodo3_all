@@ -195,6 +195,9 @@ const MeetingEngagement = () => {
       
       // Close dialog if it's open
       setOpenDialog(false);
+      
+      // Refresh meetings to ensure consistency
+      fetchMeetings();
     } catch (error) {
       console.error('Error creating meeting:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to create meeting';
@@ -206,15 +209,8 @@ const MeetingEngagement = () => {
   };
 
   const sendMeetingNotifications = (meeting) => {
-    // Send notification to each selected user
-    if (meeting.users && Array.isArray(meeting.users)) {
-      meeting.users.forEach(selectedUser => {
-        // In a real implementation, this would be sent via the notification service
-        
-        // Simulate notification
-        showSnackbar(`Meeting notification sent to ${selectedUser.username || selectedUser.fullName}`, 'info');
-      });
-    }
+    // Notification is now handled by the backend service
+    // No need to send from frontend
     
     // Set up reminder notification 15 minutes before meeting
     if (meeting.date && meeting.time) {
@@ -286,8 +282,7 @@ const MeetingEngagement = () => {
       showSnackbar('Meeting deleted successfully!', 'success');
       // Remove from meetings list
       setMeetings(prev => prev.filter(meeting => meeting.id !== meetingId));
-      // Refresh meetings list
-      fetchMeetings();
+      // Meeting list will be updated via real-time notifications
     } catch (error) {
       console.error('Error deleting meeting:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to delete meeting';

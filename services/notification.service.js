@@ -81,17 +81,29 @@ class NotificationService {
         }]
       });
       
-      // Get selected user IDs
-      const selectedUserIds = fullMeeting && fullMeeting.selectedUsers 
-        ? fullMeeting.selectedUsers.map(user => user.id) 
-        : [];
+      // Get selected user IDs from both sources (JSON field and association table)
+      let selectedUserIds = [];
+      
+      // From JSON field
+      if (meeting.selectedUserIds && Array.isArray(meeting.selectedUserIds)) {
+        selectedUserIds = [...selectedUserIds, ...meeting.selectedUserIds];
+      }
+      
+      // From association table
+      if (fullMeeting && fullMeeting.selectedUsers) {
+        const associationUserIds = fullMeeting.selectedUsers.map(user => user.id);
+        selectedUserIds = [...selectedUserIds, ...associationUserIds];
+      }
       
       // Add creator to the list
       if (meeting.createdBy && !selectedUserIds.includes(meeting.createdBy)) {
         selectedUserIds.push(meeting.createdBy);
       }
       
-      // Add Admin, SystemAdmin, and Supervisor users
+      // Remove duplicates
+      selectedUserIds = [...new Set(selectedUserIds)];
+      
+      // Add Admin, SystemAdmin, and Supervisor users (they should receive all meeting notifications)
       const adminUsers = await User.findAll({
         where: {
           role: {

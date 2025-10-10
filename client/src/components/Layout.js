@@ -247,6 +247,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Listen for real-time notifications
   useEffect(() => {
+    // Only connect if we have a user
+    if (!user || !user.id) return;
+    
+    // Connect to notification service
+    notificationService.connect(user.id);
     // Handle all notifications through a unified handler
     const handleAllNotifications = (data) => {
       const notificationType = data.type;
@@ -348,13 +353,18 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
     // Subscribe to all notifications through the unified handler
     notificationService.onAllNotifications(handleAllNotifications);
+          
+    // Ensure connection to notification service
+    if (user && user.id) {
+      notificationService.connect(user.id);
+    }
 
     // Cleanup on unmount
     return () => {
       // Remove all listeners
       notificationService.listeners.clear();
     };
-  }, []);
+  }, [user]);
 
   // Filter notifications based on current page
   const getFilteredNotifications = () => {

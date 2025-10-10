@@ -13,41 +13,8 @@ router.get('/', authenticate, async (req, res) => {
   try {
     let where = {};
     
-    // Agents can only see meetings they're invited to or created
-    if (req.user.role === 'Agent') {
-      // First get meetings where the user is associated through the MeetingUsers table
-      const userMeetings = await Meeting.findAll({
-        include: [{
-          model: User,
-          as: 'selectedUsers',
-          where: { id: req.user.id },
-          attributes: [],
-          required: true
-        }],
-        attributes: ['id']
-      });
-      
-      const userMeetingIds = userMeetings.map(m => m.id);
-      
-      // Build where clause to include meetings created by user, selected user IDs, or associated through MeetingUsers
-      const orConditions = [
-        { createdBy: req.user.id },
-        { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } }
-      ];
-      
-      // Add meeting IDs from MeetingUsers association if any
-      if (userMeetingIds.length > 0) {
-        orConditions.push({
-          id: { [require('sequelize').Op.in]: userMeetingIds }
-        });
-      }
-      
-      where = {
-        [require('sequelize').Op.or]: orConditions
-      };
-    } 
-    // Admins and Supervisors can see meetings from their office
-    else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+    // Agents, Admins and Supervisors can see meetings from their office
+    if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
       // Get all users in the office
       const officeUsers = await User.findAll({
         where: { office: req.user.office },
@@ -59,12 +26,16 @@ router.get('/', authenticate, async (req, res) => {
       where = {
         [require('sequelize').Op.or]: [
           { createdBy: req.user.id },
-          { selectedUserIds: { [require('sequelize').Op.overlap]: officeUserIds } }
+          { selectedUserIds: { [require('sequelize').Op.overlap]: officeUserIds } },
+          // Also check through the association table
+          {
+            '$selectedUsers.id$': { [require('sequelize').Op.in]: officeUserIds }
+          }
         ]
       };
     }
-    // SystemAdmin can see all meetings
-    
+    // SystemAdmin can see all meetings - no where clause needed
+
     const meetings = await Meeting.findAll({ 
       where, 
       order: [['date', 'DESC'], ['time', 'DESC']],
@@ -114,9 +85,6 @@ router.post('/', authenticate, async (req, res) => {
     // Associate selected users with the meeting
     if (selectedUserIds && selectedUserIds.length > 0) {
       await meeting.addSelectedUsers(selectedUserIds);
-      // Also update the selectedUserIds field to ensure consistency
-      meeting.selectedUserIds = selectedUserIds;
-      await meeting.save();
     }
 
     // Send notifications to selected users
