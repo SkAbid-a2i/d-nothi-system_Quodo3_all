@@ -23,6 +23,7 @@ import Files from './components/Files';
 import LogMonitoring from './components/LogMonitoring';
 import MeetingEngagement from './components/MeetingEngagement';
 import ErrorMonitoring from './components/ErrorMonitoring';
+import CollaborationLink from './components/CollaborationLink';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -385,6 +386,13 @@ function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<MeetingEngagement />} />
+              </Route>
+              <Route path="/collaboration" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                </ProtectedRoute>
+              }>
+                <Route index element={<CollaborationLink />} />
               </Route>
               {/* Fallback route for debugging */}
               <Route path="*" element={

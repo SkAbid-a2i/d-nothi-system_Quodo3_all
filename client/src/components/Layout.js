@@ -45,7 +45,8 @@ import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   VideoCall as VideoCallIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
@@ -139,6 +140,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
+    { text: t('navigation.collaboration'), icon: <InfoIcon />, path: '/collaboration' },
     { text: t('navigation.errorMonitoring'), icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },

@@ -100,7 +100,7 @@ const MeetingEngagement = () => {
       // Ensure each meeting has proper user data - FIXED PROCESSING
       const processedMeetings = Array.isArray(meetingsData) ? meetingsData.map(meeting => ({
         ...meeting,
-        users: meeting.selectedUsers || meeting.users || []
+        users: meeting.selectedUsers || meeting.attendees || meeting.users || []  // Updated to prioritize 'selectedUsers'
       })) : [];
       
       setMeetings(processedMeetings);
@@ -168,15 +168,23 @@ const MeetingEngagement = () => {
       // Create meeting through API
       const response = await meetingAPI.createMeeting(meetingData);
       
-      // Handle response
+      // Handle response - ensure we're getting the correct data structure
       const newMeeting = response.data?.data || response.data || {};
+      
+      // Ensure the meeting has proper user data
+      const meetingWithUsers = {
+        ...newMeeting,
+        users: newMeeting.selectedUsers || newMeeting.attendees || newMeeting.users || [],  // Updated to prioritize 'selectedUsers'
+        selectedUserIds: newMeeting.selectedUserIds || formData.selectedUsers
+      };
+      
       // Add to meetings list at the beginning
-      setMeetings(prev => [newMeeting, ...prev]);
+      setMeetings(prev => [meetingWithUsers, ...prev]);
       
       // Send notifications to selected users
       const selectedUsersDetails = users.filter(u => formData.selectedUsers.includes(u.id));
       if (selectedUsersDetails.length > 0) {
-        sendMeetingNotifications({...newMeeting, users: selectedUsersDetails});
+        sendMeetingNotifications({...meetingWithUsers, users: selectedUsersDetails});
       }
       
       // Reset form

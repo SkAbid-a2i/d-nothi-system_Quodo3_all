@@ -21,6 +21,7 @@ const dbMonitor = require('./services/db-monitor.service');
 // Database connection
 const sequelize = require('./config/database');
 const MeetingUsers = require('./models/MeetingUsers');
+const { setupAssociations } = require('./models/associations');
 
 // Middleware
 app.use(helmet());
@@ -123,6 +124,7 @@ const permissionRoutes = require('./routes/permission.routes');
 const fileRoutes = require('./routes/file.routes');
 const meetingRoutes = require('./routes/meeting.routes');
 const healthRoutes = require('./routes/health.routes');
+const collaborationRoutes = require('./routes/collaboration.routes');
 
 // Use routes
 app.use('/api/auth', (req, res, next) => {
@@ -185,6 +187,11 @@ app.use('/api/meetings', (req, res, next) => {
   next();
 }, meetingRoutes);
 
+app.use('/api/collaborations', (req, res, next) => {
+  logger.info('Collaboration routes accessed', { endpoint: '/api/collaborations' + req.url });
+  next();
+}, collaborationRoutes);
+
 app.use('/api/health', (req, res, next) => {
   logger.info('Health routes accessed', { endpoint: '/api/health' + req.url });
   next();
@@ -217,6 +224,9 @@ app.use('*', (req, res) => {
 // Start server
 const server = app.listen(PORT, async () => {
   logger.info(`Server is running on port ${PORT}`);
+  
+  // Setup model associations
+  setupAssociations();
   
   // Sync database models
   try {

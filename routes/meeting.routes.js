@@ -171,7 +171,7 @@ router.post('/', authenticate, async (req, res) => {
         attributes: ['id', 'username', 'fullName']
       }, {
         model: User,
-        as: 'selectedUsers',
+        as: 'attendees',
         attributes: ['id', 'username', 'fullName'],
         through: { attributes: [] }
       }]

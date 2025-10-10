@@ -38,7 +38,8 @@ const translations = {
     description: 'বিবরণ',
     status: 'অবস্থা',
     actions: 'ক্রিয়াকলাপ',
-    welcome: 'স্বাগতম'
+    welcome: 'স্বাগতম',
+    saving: 'সংরক্ষণ করা হচ্ছে...'
   },
   
   // Navigation
@@ -49,6 +50,7 @@ const translations = {
     teamTasks: 'দলের টাস্কগুলি',
     leaves: 'ছুটি ম্যানেজমেন্ট',
     meetings: 'সভা',
+    collaboration: 'সহযোগিতা লিঙ্ক',
     errorMonitoring: 'ত্রুটি পর্যবেক্ষণ',
     files: 'ফাইল ম্যানেজমেন্ট',
     adminConsole: 'অ্যাডমিন কনসোল',
@@ -58,6 +60,45 @@ const translations = {
     logout: 'লগআউট'
   },
   
+  // Collaboration
+  collaboration: {
+    title: 'সহযোগিতা লিঙ্ক',
+    description: 'আপনার দলের সাথে সহযোগিতা লিঙ্ক তৈরি এবং পরিচালনা করুন',
+    collaborationLinks: 'সহযোগিতা লিঙ্কগুলি',
+    createLink: 'লিঙ্ক তৈরি করুন',
+    activeCollaborationLinks: 'সক্রিয় সহযোগিতা লিঙ্কগুলি',
+    noCollaborationLinks: 'কোনও সহযোগিতা লিঙ্ক পাওয়া যায়নি',
+    createFirstLink: '"লিঙ্ক তৈরি করুন" বোতাম ব্যবহার করে আপনার প্রথম সহযোগিতা লিঙ্ক তৈরি করুন',
+    editCollaborationLink: 'সহযোগিতা লিঙ্ক সম্পাদনা করুন',
+    createCollaborationLink: 'নতুন সহযোগিতা লিঙ্ক তৈরি করুন',
+    collaborationDetails: 'সহযোগিতা বিস্তারিত',
+    noTitle: 'শিরোনাম নেই',
+    noDescription: 'কোনও বিবরণ প্রদান করা হয়নি',
+    created: 'তৈরি হয়েছে',
+    title: 'শিরোনাম',
+    description: 'বিবরণ',
+    availability: 'উপলব্ধতা',
+    urgency: 'জরুরি',
+    always: 'সর্বদা',
+    none: 'কিছুই না',
+    week: 'সপ্তাহ',
+    month: 'মাস',
+    year: 'বছর',
+    day: 'দিন',
+    halfDay: 'অর্ধেক দিন',
+    immediate: 'অবিলম্বে',
+    moderate: 'মাঝারি',
+    asap: 'যত তাড়াতাড়ি সম্ভব',
+    daily: 'প্রতিদিন',
+    updateLink: 'লিঙ্ক আপডেট করুন',
+    pleaseProvideTitle: 'একটি শিরোনাম প্রদান করুন',
+    updatedSuccessfully: 'সহযোগিতা সফলভাবে আপডেট হয়েছে!',
+    createdSuccessfully: 'সহযোগিতা সফলভাবে তৈরি হয়েছে!',
+    deletedSuccessfully: 'সহযোগিতা সফলভাবে মুছে ফেলা হয়েছে!',
+    failedToSave: 'সহযোগিতা সংরক্ষণ করতে ব্যর্থ',
+    failedToDelete: 'সহযোগিতা মুছে ফেলতে ব্যর্থ'
+  },
+
   // Login
   login: {
     title: 'D-Nothi সিস্টেমে সাইন ইন করুন',
@@ -268,5 +309,7 @@ const translations = {
 };
 
 export default translations;
+
+
 
 

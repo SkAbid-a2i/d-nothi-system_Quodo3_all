@@ -136,6 +136,7 @@ export const logAPI = {
   getRecentLogs: () => api.get('/logs/recent'),
   analyzeLogs: (params) => api.get('/logs/analyze', { params }),
   sendFrontendLog: (logData) => api.post('/logs/frontend', logData),
+  clearLogs: () => api.delete('/logs'), // Add clear logs endpoint
 };
 
 // Permission template endpoints
@@ -152,6 +153,14 @@ export const meetingAPI = {
   createMeeting: (meetingData) => api.post('/meetings', meetingData),
   updateMeeting: (id, meetingData) => api.put(`/meetings/${id}`, meetingData),
   deleteMeeting: (id) => api.delete(`/meetings/${id}`),
+};
+
+// Collaboration endpoints
+export const collaborationAPI = {
+  getAllCollaborations: () => api.get('/collaborations'),
+  createCollaboration: (collaborationData) => api.post('/collaborations', collaborationData),
+  updateCollaboration: (id, collaborationData) => api.put(`/collaborations/${id}`, collaborationData),
+  deleteCollaboration: (id) => api.delete(`/collaborations/${id}`),
 };
 
 export default api;

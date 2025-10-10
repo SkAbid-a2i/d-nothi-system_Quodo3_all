@@ -38,7 +38,8 @@ const translations = {
     description: 'Description',
     status: 'Status',
     actions: 'Actions',
-    welcome: 'Welcome'
+    welcome: 'Welcome',
+    saving: 'Saving...'
   },
   
   // Navigation
@@ -49,6 +50,7 @@ const translations = {
     teamTasks: 'Team Tasks',
     leaves: 'Leave Management',
     meetings: 'Meetings',
+    collaboration: 'Collaboration Link',
     errorMonitoring: 'Error Monitoring',
     files: 'File Management',
     adminConsole: 'Admin Console',
@@ -58,6 +60,45 @@ const translations = {
     logout: 'Logout'
   },
   
+  // Collaboration
+  collaboration: {
+    title: 'Collaboration Link',
+    description: 'Create and manage collaboration links with your team',
+    collaborationLinks: 'Collaboration Links',
+    createLink: 'Create Link',
+    activeCollaborationLinks: 'Active Collaboration Links',
+    noCollaborationLinks: 'No collaboration links found',
+    createFirstLink: 'Create your first collaboration link using the "Create Link" button',
+    editCollaborationLink: 'Edit Collaboration Link',
+    createCollaborationLink: 'Create New Collaboration Link',
+    collaborationDetails: 'Collaboration Details',
+    noTitle: 'No Title',
+    noDescription: 'No description provided',
+    created: 'Created',
+    title: 'Title',
+    description: 'Description',
+    availability: 'Availability',
+    urgency: 'Urgency',
+    always: 'Always',
+    none: 'None',
+    week: 'Week',
+    month: 'Month',
+    year: 'Year',
+    day: 'Day',
+    halfDay: 'Half Day',
+    immediate: 'Immediate',
+    moderate: 'Moderate',
+    asap: 'Asap',
+    daily: 'Daily',
+    updateLink: 'Update Link',
+    pleaseProvideTitle: 'Please provide a title',
+    updatedSuccessfully: 'Collaboration updated successfully!',
+    createdSuccessfully: 'Collaboration created successfully!',
+    deletedSuccessfully: 'Collaboration deleted successfully!',
+    failedToSave: 'Failed to save collaboration',
+    failedToDelete: 'Failed to delete collaboration'
+  },
+
   // Login
   login: {
     title: 'Sign in to D-Nothi System',
@@ -268,6 +309,8 @@ const translations = {
 };
 
 export default translations;
+
+
 
 
 

@@ -36,7 +36,8 @@ import {
   Code as CodeIcon,
   Storage as StorageIcon,
   Visibility as VisibilityIcon,
-  Api as ApiIcon
+  Api as ApiIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { logAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -54,6 +55,7 @@ const ErrorMonitoring = () => {
   const [filterDate, setFilterDate] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [analysis, setAnalysis] = useState(null);
+  const [allUsers, setAllUsers] = useState([]); // Add state for all users
 
   const stats = {
     total: logs.length,
@@ -130,6 +132,17 @@ const ErrorMonitoring = () => {
   };
 
   const errorAnalysis = analyzeErrors();
+
+  // Fetch all users for the user filter dropdown
+  const fetchUsers = async () => {
+    try {
+      const response = await userAPI.getAllUsers();
+      const usersData = response.data?.data || response.data || [];
+      setAllUsers(Array.isArray(usersData) ? usersData : []);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -229,12 +242,52 @@ const ErrorMonitoring = () => {
 
   const clearLogs = async () => {
     try {
-      // In a real implementation, you would call an API to clear logs
+      // Call the backend API to clear logs
+      await logAPI.clearLogs(); // This will need to be implemented in the API
       setLogs([]);
       showSnackbar('Logs cleared successfully', 'success');
     } catch (err) {
       console.error('Error clearing logs:', err);
-      showSnackbar('Failed to clear logs', 'error');
+      showSnackbar('Failed to clear logs: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
+
+  // Add function to download logs
+  const downloadLogs = () => {
+    try {
+      // Create CSV content
+      const headers = ['Timestamp', 'Level', 'Source', 'User', 'Page', 'Message', 'Details'];
+      const csvContent = [
+        headers.join(','),
+        ...logs.map(log => {
+          const row = [
+            `"${log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}"`,
+            `"${log.level || 'Unknown'}"`,
+            `"${log.metadata?.source ? 'Frontend' : 'Backend'}"`,
+            `"${log.userId || log.metadata?.userId || log.user || log.username || 'System'}"`,
+            `"${getPageName(log)}"`,
+            `"${log.message || 'No message'}"`,
+            `"${log.metadata ? (typeof log.metadata === 'string' ? log.metadata : JSON.stringify(log.metadata)) : ''}"`
+          ];
+          return row.join(',');
+        })
+      ].join('\n');
+
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `error_logs_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar('Logs downloaded successfully', 'success');
+    } catch (err) {
+      console.error('Error downloading logs:', err);
+      showSnackbar('Failed to download logs', 'error');
     }
   };
 
@@ -243,6 +296,7 @@ const ErrorMonitoring = () => {
     if (user) {
       if (activeTab === 0) {
         fetchLogs();
+        fetchUsers(); // Fetch users for the dropdown
       } else if (activeTab === 1) {
         fetchAnalysis();
       }
@@ -459,12 +513,22 @@ const ErrorMonitoring = () => {
               </Grid>
               
               <Grid item xs={12} sm={2}>
-                <TextField
-                  fullWidth
-                  label="Filter by User"
-                  value={filterUser}
-                  onChange={(e) => setFilterUser(e.target.value)}
-                />
+                <FormControl fullWidth>
+                  <InputLabel>Filter by User</InputLabel>
+                  <Select
+                    value={filterUser}
+                    onChange={(e) => setFilterUser(e.target.value)}
+                    label="Filter by User"
+                    displayEmpty
+                  >
+                    <MenuItem value=""><em>All Users</em></MenuItem>
+                    {allUsers.map((usr) => (
+                      <MenuItem key={usr.id} value={usr.id}>
+                        {usr.fullName || usr.username}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
               
               <Grid item xs={12} sm={2}>
@@ -478,14 +542,25 @@ const ErrorMonitoring = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={1}>
                 <Button 
                   variant="outlined" 
                   startIcon={<DeleteIcon />}
                   onClick={clearLogs}
                   fullWidth
                 >
-                  Clear Logs
+                  Clear
+                </Button>
+              </Grid>
+              
+              <Grid item xs={6} sm={1}>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<DownloadIcon />}
+                  onClick={downloadLogs}
+                  fullWidth
+                >
+                  Export
                 </Button>
               </Grid>
             </Grid>
@@ -538,7 +613,18 @@ const ErrorMonitoring = () => {
                               size="small"
                             />
                           </TableCell>
-                          <TableCell>{log.userId || log.metadata?.userId || log.user || log.username || 'System'}</TableCell>
+                          <TableCell>
+                            {/* Show user information */}
+                            {log.userId || log.metadata?.userId ? (
+                              <Chip 
+                                label={log.userId || log.metadata?.userId}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ) : (
+                              'System'
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Chip 
                               label={getPageName(log)} 

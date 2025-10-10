@@ -87,4 +87,33 @@ router.get('/recent', authenticate, authorize(['SystemAdmin', 'Admin', 'Supervis
   }
 });
 
+// Clear logs (SystemAdmin only)
+router.delete('/', authenticate, authorize('SystemAdmin'), (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Get the logs directory
+    const logDir = path.join(__dirname, '../logs');
+    
+    // Check if directory exists
+    if (fs.existsSync(logDir)) {
+      // Read all files in the logs directory
+      const files = fs.readdirSync(logDir);
+      
+      // Delete all log files
+      files.forEach(file => {
+        if (file.endsWith('.log')) {
+          fs.unlinkSync(path.join(logDir, file));
+        }
+      });
+    }
+    
+    res.json({ message: 'Logs cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing logs:', error);
+    res.status(500).json({ message: 'Error clearing logs' });
+  }
+});
+
 module.exports = router;

@@ -47,19 +47,4 @@ const Meeting = sequelize.define('Meeting', {
   collate: 'utf8mb4_unicode_ci'
 });
 
-// Define associations
-Meeting.belongsTo(User, {
-  foreignKey: 'createdBy',
-  as: 'creator'
-});
-
-// Association for selected users
-Meeting.belongsToMany(User, {
-  through: 'meeting_users',
-  foreignKey: 'meetingId',
-  otherKey: 'userId',
-  as: 'selectedUsers',
-  timestamps: false // Important: meeting_users table has no timestamps
-});
-
 module.exports = Meeting;
