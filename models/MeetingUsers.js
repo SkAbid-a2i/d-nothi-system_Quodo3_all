@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const MeetingUsers = sequelize.define('MeetingUsers', {
   meetingId: {
     type: DataTypes.INTEGER,
+    primaryKey: true,
     references: {
       model: 'meetings',
       key: 'id'
@@ -11,6 +12,7 @@ const MeetingUsers = sequelize.define('MeetingUsers', {
   },
   userId: {
     type: DataTypes.INTEGER,
+    primaryKey: true,
     references: {
       model: 'users',
       key: 'id'

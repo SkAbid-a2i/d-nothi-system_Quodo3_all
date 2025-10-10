@@ -55,10 +55,11 @@ Meeting.belongsTo(User, {
 
 // Association for selected users
 Meeting.belongsToMany(User, {
-  through: 'MeetingUsers',
+  through: 'meeting_users',
   foreignKey: 'meetingId',
   otherKey: 'userId',
-  as: 'selectedUsers'
+  as: 'selectedUsers',
+  timestamps: false // Important: meeting_users table has no timestamps
 });
 
 module.exports = Meeting;

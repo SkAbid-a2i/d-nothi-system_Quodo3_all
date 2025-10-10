@@ -3,6 +3,8 @@ const Meeting = require('../models/Meeting');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const notificationService = require('../services/notification.service');
+const { Op } = require('sequelize');
+const sequelize = require('../config/database');
 
 const router = express.Router();
 
@@ -15,16 +17,47 @@ router.get('/', authenticate, async (req, res) => {
     
     // Agents can only see meetings they're invited to or created
     if (req.user.role === 'Agent') {
-      where = {
-        [require('sequelize').Op.or]: [
-          { createdBy: req.user.id },
-          { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } },
-          // Also check through the association table
-          {
-            '$selectedUsers.id$': req.user.id
-          }
-        ]
-      };
+      // For SQLite, we need to handle filtering differently due to JSON operator limitations
+      if (sequelize.getDialect() === 'sqlite') {
+        // Get all meetings with associations
+        const allMeetings = await Meeting.findAll({ 
+          order: [['date', 'DESC'], ['time', 'DESC']],
+          include: [{
+            model: User,
+            as: 'creator',
+            attributes: ['id', 'username', 'fullName']
+          }, {
+            model: User,
+            as: 'selectedUsers',
+            attributes: ['id', 'username', 'fullName'],
+            through: { attributes: [] }
+          }]
+        });
+        
+        // Filter manually
+        const filteredMeetings = allMeetings.filter(meeting => 
+          meeting.createdBy === req.user.id || 
+          (meeting.selectedUserIds && 
+           Array.isArray(meeting.selectedUserIds) && 
+           meeting.selectedUserIds.includes(req.user.id)) ||
+          (meeting.selectedUsers && 
+           meeting.selectedUsers.some(u => u.id === req.user.id))
+        );
+        
+        return res.json(filteredMeetings);
+      } else {
+        // For other databases, use Sequelize filtering
+        where = {
+          [Op.or]: [
+            { createdBy: req.user.id },
+            { selectedUserIds: { [Op.contains]: [req.user.id] } },
+            // Also check through the association table
+            {
+              '$selectedUsers.id$': req.user.id
+            }
+          ]
+        };
+      }
     } 
     // Admins, SystemAdmins and Supervisors can see all meetings in their office
     else if (req.user.role === 'Admin' || req.user.role === 'SystemAdmin' || req.user.role === 'Supervisor') {
@@ -36,16 +69,30 @@ router.get('/', authenticate, async (req, res) => {
       
       const officeUserIds = officeUsers.map(user => user.id);
       
-      where = {
-        [require('sequelize').Op.or]: [
-          { createdBy: req.user.id },
-          { selectedUserIds: { [require('sequelize').Op.overlap]: officeUserIds } },
-          // Also check through the association table
-          {
-            '$selectedUsers.id$': { [require('sequelize').Op.in]: officeUserIds }
-          }
-        ]
-      };
+      // For SQLite, we need to handle filtering differently due to JSON operator limitations
+      if (sequelize.getDialect() === 'sqlite') {
+        where = {
+          [Op.or]: [
+            { createdBy: req.user.id },
+            // Also check through the association table
+            {
+              '$selectedUsers.id$': { [Op.in]: officeUserIds }
+            }
+          ]
+        };
+      } else {
+        // For other databases, also check JSON overlap
+        where = {
+          [Op.or]: [
+            { createdBy: req.user.id },
+            { selectedUserIds: { [Op.overlap]: officeUserIds } },
+            // Also check through the association table
+            {
+              '$selectedUsers.id$': { [Op.in]: officeUserIds }
+            }
+          ]
+        };
+      }
     }
     // SystemAdmin can see all meetings - no where clause needed
 
@@ -95,7 +142,7 @@ router.post('/', authenticate, async (req, res) => {
       selectedUserIds: selectedUserIds || []
     });
 
-    // Associate selected users with the meeting
+    // Associate selected users with the meeting (both JSON field and association table)
     if (selectedUserIds && selectedUserIds.length > 0) {
       await meeting.addSelectedUsers(selectedUserIds);
     }
@@ -167,7 +214,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
     await meeting.save();
 
-    // Update user associations
+    // Update user associations (both JSON field and association table)
     if (selectedUserIds) {
       await meeting.setSelectedUsers(selectedUserIds);
     }
