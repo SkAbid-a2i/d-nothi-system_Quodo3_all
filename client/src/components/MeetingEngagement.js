@@ -261,6 +261,9 @@ const MeetingEngagement = () => {
   };
 
   const handleEditMeeting = (meeting) => {
+    // Close meeting detail dialog if open
+    setMeetingDetailDialogOpen(false);
+    
     // Set form data with meeting details
     setFormData({
       subject: meeting.subject || '',
@@ -475,7 +478,10 @@ const MeetingEngagement = () => {
                         <IconButton 
                           size="small" 
                           color="primary"
-                          onClick={() => handleEditMeeting(meeting)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditMeeting(meeting);
+                          }}
                         >
                           <EditIcon />
                         </IconButton>
@@ -549,6 +555,9 @@ const MeetingEngagement = () => {
                   >
                     <MenuItem value="zoom">Zoom</MenuItem>
                     <MenuItem value="meet">Google Meet</MenuItem>
+                    <MenuItem value="teams">Microsoft Teams</MenuItem>
+                    <MenuItem value="whatsapp">WhatsApp</MenuItem>
+                    <MenuItem value="skype">Skype</MenuItem>
                     <MenuItem value="physical">Physical Meeting</MenuItem>
                   </Select>
                 </FormControl>

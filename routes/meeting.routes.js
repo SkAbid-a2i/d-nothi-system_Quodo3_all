@@ -13,8 +13,21 @@ router.get('/', authenticate, async (req, res) => {
   try {
     let where = {};
     
-    // Agents, Admins and Supervisors can see meetings from their office
-    if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+    // Agents can only see meetings they're invited to or created
+    if (req.user.role === 'Agent') {
+      where = {
+        [require('sequelize').Op.or]: [
+          { createdBy: req.user.id },
+          { selectedUserIds: { [require('sequelize').Op.contains]: [req.user.id] } },
+          // Also check through the association table
+          {
+            '$selectedUsers.id$': req.user.id
+          }
+        ]
+      };
+    } 
+    // Admins, SystemAdmins and Supervisors can see all meetings in their office
+    else if (req.user.role === 'Admin' || req.user.role === 'SystemAdmin' || req.user.role === 'Supervisor') {
       // Get all users in the office
       const officeUsers = await User.findAll({
         where: { office: req.user.office },
