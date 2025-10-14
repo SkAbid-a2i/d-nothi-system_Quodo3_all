@@ -238,6 +238,23 @@ const ErrorMonitoring = () => {
     }
   };
 
+  // Add filter functions for the cards
+  const filterByLevel = (level) => {
+    if (level === 'all') {
+      setFilterLevel('all');
+    } else {
+      setFilterLevel(level);
+    }
+  };
+
+  const filterBySource = (source) => {
+    if (source === 'all') {
+      setFilterSource('all');
+    } else {
+      setFilterSource(source);
+    }
+  };
+
   // Fetch logs when filters change or component mounts
   useEffect(() => {
     if (user) {
@@ -311,11 +328,14 @@ const ErrorMonitoring = () => {
   const renderLogsTab = () => (
     <>
       <Grid container spacing={3}>
-        {/* Stats Cards */}
+        {/* Stats Cards - Make them clickable to filter logs */}
         <Grid item xs={12}>
           <Grid container spacing={2}>
             <Grid item xs={6} sm={4} md={2}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+                onClick={() => filterByLevel('all')}
+              >
                 <CardContent>
                   <Box display="flex" alignItems="center">
                     <InfoIcon sx={{ mr: 2, color: 'primary.main' }} />
@@ -331,7 +351,10 @@ const ErrorMonitoring = () => {
             </Grid>
             
             <Grid item xs={6} sm={4} md={2}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+                onClick={() => filterByLevel('error')}
+              >
                 <CardContent>
                   <Box display="flex" alignItems="center">
                     <ErrorIcon sx={{ mr: 2, color: 'error.main' }} />
@@ -347,7 +370,10 @@ const ErrorMonitoring = () => {
             </Grid>
             
             <Grid item xs={6} sm={4} md={2}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+                onClick={() => filterByLevel('warn')}
+              >
                 <CardContent>
                   <Box display="flex" alignItems="center">
                     <WarningIcon sx={{ mr: 2, color: 'warning.main' }} />
@@ -363,7 +389,10 @@ const ErrorMonitoring = () => {
             </Grid>
             
             <Grid item xs={6} sm={4} md={2}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+                onClick={() => filterByLevel('info')}
+              >
                 <CardContent>
                   <Box display="flex" alignItems="center">
                     <InfoIcon sx={{ mr: 2, color: 'info.main' }} />
@@ -379,7 +408,10 @@ const ErrorMonitoring = () => {
             </Grid>
             
             <Grid item xs={6} sm={4} md={2}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+                onClick={() => filterBySource('frontend')}
+              >
                 <CardContent>
                   <Box display="flex" alignItems="center">
                     <VisibilityIcon sx={{ mr: 2, color: 'secondary.main' }} />
@@ -395,7 +427,10 @@ const ErrorMonitoring = () => {
             </Grid>
             
             <Grid item xs={6} sm={4} md={2}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+                onClick={() => filterBySource('backend')}
+              >
                 <CardContent>
                   <Box display="flex" alignItems="center">
                     <StorageIcon sx={{ mr: 2, color: 'primary.main' }} />
@@ -415,7 +450,7 @@ const ErrorMonitoring = () => {
         <Grid item xs={12}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <Button
                   variant="outlined"
                   startIcon={<RefreshIcon />}
@@ -426,7 +461,7 @@ const ErrorMonitoring = () => {
                 </Button>
               </Grid>
               
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <FormControl fullWidth>
                   <InputLabel>Log Level</InputLabel>
                   <Select 
@@ -443,7 +478,7 @@ const ErrorMonitoring = () => {
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <FormControl fullWidth>
                   <InputLabel>Source</InputLabel>
                   <Select 
@@ -458,7 +493,7 @@ const ErrorMonitoring = () => {
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <TextField
                   fullWidth
                   label="Filter by User"
@@ -467,7 +502,7 @@ const ErrorMonitoring = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <TextField
                   fullWidth
                   label="Filter by Date"
@@ -478,7 +513,7 @@ const ErrorMonitoring = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} sm={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <Button 
                   variant="outlined" 
                   startIcon={<DeleteIcon />}

@@ -23,6 +23,11 @@ class TranslationService {
   }
 
   getCurrentLanguage() {
+    // Check for saved language preference first
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage && this.translations[savedLanguage]) {
+      this.currentLanguage = savedLanguage;
+    }
     return this.currentLanguage;
   }
 

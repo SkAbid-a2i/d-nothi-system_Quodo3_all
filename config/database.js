@@ -13,7 +13,7 @@ console.log('- SSL Enabled:', process.env.DB_SSL === 'true' ? 'Yes' : 'No');
 let sequelize;
 
 // Use TiDB configuration for production, SQLite for development
-// Only use TiDB when explicitly in production environment
+// Only use TiDB when explicitly in production environment or when DB_HOST is set
 if (process.env.NODE_ENV === 'production' || process.env.DB_HOST) {
   // Use MySQL/TiDB for production or when DB_HOST is explicitly set
   console.log('Using MySQL/TiDB database');

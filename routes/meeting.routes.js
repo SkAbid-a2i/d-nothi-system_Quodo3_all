@@ -51,10 +51,10 @@ router.get('/', authenticate, async (req, res) => {
       }]
     });
     
-    res.json(meetings);
+    res.json({ data: meetings });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -117,7 +117,7 @@ router.post('/', authenticate, async (req, res) => {
       }]
     });
 
-    res.status(201).json(fullMeeting);
+    res.status(201).json({ data: fullMeeting });
   } catch (err) {
     console.error('Error creating meeting:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -191,7 +191,7 @@ router.put('/:id', authenticate, async (req, res) => {
       }]
     });
 
-    res.json(fullMeeting);
+    res.json({ data: fullMeeting });
   } catch (err) {
     console.error('Error updating meeting:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
