@@ -35,9 +35,6 @@ const translations = {
     email: 'Email',
     role: 'Role',
     office: 'Office',
-    description: 'Description',
-    status: 'Status',
-    actions: 'Actions',
     welcome: 'Welcome',
     saving: 'Saving...',
     deleting: 'Deleting...',
@@ -182,7 +179,7 @@ const translations = {
     userUpdateFailed: 'Failed to update user',
     userDeletionFailed: 'Failed to delete user',
     userStatusUpdateFailed: 'Failed to update user status',
-    role: {
+    roleOptions: {
       agent: 'Agent',
       supervisor: 'Supervisor',
       admin: 'Administrator',
@@ -230,7 +227,6 @@ const translations = {
     security: 'Security Settings',
     application: 'Application Settings',
     language: 'Language',
-    theme: 'Theme',
     theme: {
       light: 'Light',
       dark: 'Dark'

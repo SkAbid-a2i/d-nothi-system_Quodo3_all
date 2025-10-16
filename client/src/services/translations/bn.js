@@ -35,9 +35,6 @@ const translations = {
     email: 'ইমেইল',
     role: 'ভূমিকা',
     office: 'অফিস',
-    description: 'বিবরণ',
-    status: 'অবস্থা',
-    actions: 'ক্রিয়াকলাপ',
     welcome: 'স্বাগতম',
     saving: 'সংরক্ষণ হচ্ছে...',
     deleting: 'মুছে ফেলা হচ্ছে...',
@@ -182,7 +179,7 @@ const translations = {
     userUpdateFailed: 'ব্যবহারকারী আপডেট করতে ব্যর্থ',
     userDeletionFailed: 'ব্যবহারকারী মুছে ফেলতে ব্যর্থ',
     userStatusUpdateFailed: 'ব্যবহারকারীর অবস্থা আপডেট করতে ব্যর্থ',
-    role: {
+    roleOptions: {
       agent: 'এজেন্ট',
       supervisor: 'সুপারভাইজার',
       admin: 'প্রশাসক',
@@ -230,7 +227,6 @@ const translations = {
     security: 'নিরাপত্তা সেটিংস',
     application: 'অ্যাপ্লিকেশন সেটিংস',
     language: 'ভাষা',
-    theme: 'থিম',
     theme: {
       light: 'আলো',
       dark: 'অন্ধকার'

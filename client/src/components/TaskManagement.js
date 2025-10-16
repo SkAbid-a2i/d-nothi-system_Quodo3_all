@@ -107,6 +107,7 @@ const TaskManagement = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
   
   // Use the new user filter hook
   const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
