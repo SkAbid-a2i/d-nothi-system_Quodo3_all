@@ -149,10 +149,16 @@ const TaskManagement = () => {
       let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
-      // Filter tasks - ALL users (including Admin roles) only see their own tasks
-      tasksData = tasksData.filter(task => 
-        task.userId === user.id || task.userName === user.username
-      );
+      // For SystemAdmin, show all tasks
+      // For other roles, show only their own tasks
+      if (user.role === 'SystemAdmin') {
+        // SystemAdmin sees all tasks - no filtering needed
+      } else {
+        // Other users only see their own tasks
+        tasksData = tasksData.filter(task => 
+          task.userId === user.id || task.userName === user.username
+        );
+      }
       
       setTasks(tasksData);
     } catch (error) {
@@ -492,6 +498,8 @@ const TaskManagement = () => {
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     
+    // When userFilter is empty, show all tasks (for SystemAdmin) or user's own tasks
+    // When userFilter is set, filter by that specific user
     const matchesUser = !userFilter || (task.userName && task.userName === userFilter);
     
     return matchesSearch && matchesStatus && matchesUser;

@@ -70,13 +70,18 @@ const CollaborationLink = () => {
   const fetchCollaborations = async () => {
     setLoading(true);
     try {
+      console.log('Fetching collaborations...');
       const response = await collaborationAPI.getAllCollaborations();
+      console.log('Collaborations response:', response);
       const collaborationsData = response.data?.data || response.data || [];
       setCollaborations(Array.isArray(collaborationsData) ? collaborationsData : []);
+      console.log('Set collaborations:', collaborationsData);
     } catch (err) {
       console.error('Error fetching collaborations:', err);
-      setError(t('collaboration.errorFetching'));
-      showSnackbar(t('collaboration.errorFetching'), 'error');
+      console.error('Error response:', err.response);
+      const errorMessage = err.response?.data?.message || err.message || t('collaboration.errorFetching') || 'Failed to fetch collaborations';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
       setCollaborations([]); // Set empty array on error
     } finally {
       setLoading(false);
@@ -135,8 +140,9 @@ const CollaborationLink = () => {
 
   const handleSubmit = async () => {
     if (!formData.title) {
-      setError(t('collaboration.titleRequired'));
-      showSnackbar(t('collaboration.titleRequired'), 'error');
+      const errorMessage = t('collaboration.titleRequired') || 'Title is required';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
       return;
     }
 
@@ -149,17 +155,21 @@ const CollaborationLink = () => {
         urgency: formData.urgency
       };
 
+      console.log('Submitting collaboration data:', collaborationData);
       let response;
       if (selectedCollaboration) {
         // Update existing collaboration
+        console.log('Updating collaboration:', selectedCollaboration.id);
         response = await collaborationAPI.updateCollaboration(selectedCollaboration.id, collaborationData);
-        showSnackbar(t('collaboration.collaborationUpdated'), 'success');
+        showSnackbar(t('collaboration.collaborationUpdated') || 'Collaboration link updated successfully!', 'success');
       } else {
         // Create new collaboration
+        console.log('Creating new collaboration');
         response = await collaborationAPI.createCollaboration(collaborationData);
-        showSnackbar(t('collaboration.collaborationCreated'), 'success');
+        showSnackbar(t('collaboration.collaborationCreated') || 'Collaboration link created successfully!', 'success');
       }
 
+      console.log('Collaboration response:', response);
       // Update local state
       const updatedCollaboration = response.data?.data || response.data;
       if (selectedCollaboration) {
@@ -177,7 +187,8 @@ const CollaborationLink = () => {
       handleCloseDialog();
     } catch (err) {
       console.error('Error saving collaboration:', err);
-      const errorMessage = err.response?.data?.message || t('collaboration.errorSaving');
+      console.error('Error response:', err.response);
+      const errorMessage = err.response?.data?.message || err.message || t('collaboration.errorSaving') || 'Error saving collaboration link. Please try again.';
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
     } finally {

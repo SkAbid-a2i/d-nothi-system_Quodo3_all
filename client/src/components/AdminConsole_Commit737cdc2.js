@@ -393,6 +393,32 @@ const AdminConsole = () => {
     }
   };
 
+  // Download Excel template
+  const handleDownloadTemplate = () => {
+    // Create CSV content for the template
+    const csvContent = `Type,Value,Parent
+Source,Email,
+Source,Phone,
+Category,IT,
+Category,HR,
+Service,Software Installation,IT
+Service,Hardware Repair,IT
+Service,Recruitment,HR
+Office,Dhaka Office,
+Office,Chittagong Office,`;
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'dropdown_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Permission template functions
   const handleTemplateSubmit = async (e) => {
     e.preventDefault();
@@ -1242,6 +1268,14 @@ const AdminConsole = () => {
                 Office,Chittagong Office,
               </Typography>
             </Paper>
+            
+            <Button 
+              variant="outlined" 
+              onClick={handleDownloadTemplate}
+              sx={{ mb: 2 }}
+            >
+              Download Excel Template
+            </Button>
             
             <input
               type="file"
