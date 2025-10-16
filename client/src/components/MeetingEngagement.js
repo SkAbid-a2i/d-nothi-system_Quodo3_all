@@ -414,7 +414,7 @@ const MeetingEngagement = () => {
                       onClick={() => handleOpenMeetingDetail(meeting)}
                     >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.2rem' }}>
                           {meeting.subject || 'No Subject'}
                         </Typography>
                         <Chip 
@@ -514,7 +514,7 @@ const MeetingEngagement = () => {
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
-            maxHeight: '90vh',
+            maxHeight: '80vh',
             overflowY: 'auto'
           }
         }}
@@ -754,7 +754,7 @@ const MeetingEngagement = () => {
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
-            maxHeight: '90vh',
+            maxHeight: '80vh',
             overflowY: 'auto'
           }
         }}
@@ -777,7 +777,7 @@ const MeetingEngagement = () => {
             <Box sx={{ pt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 600, mb: 2, fontSize: '1.5rem' }}>
                     {selectedMeeting.subject || 'No Subject'}
                   </Typography>
                 </Grid>

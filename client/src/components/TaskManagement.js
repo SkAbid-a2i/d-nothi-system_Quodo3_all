@@ -492,10 +492,12 @@ const TaskManagement = () => {
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     
-    const matchesUser = !userFilter || task.userName === userFilter;
+    const matchesUser = !userFilter || (task.userName && task.userName === userFilter);
     
     return matchesSearch && matchesStatus && matchesUser;
   });
+  
+  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', userFilter);
 
   // Get task statistics
   const getTaskStats = () => {
@@ -790,8 +792,10 @@ const TaskManagement = () => {
                   }))}
                   selectedUser={selectedUser}
                   onUserChange={(user) => {
+                    console.log('User filter changed:', user);
                     setSelectedUser(user);
                     setUserFilter(user ? user.username : '');
+                    console.log('User filter set to:', user ? user.username : '');
                   }}
                   label="Filter by User"
                   loading={userLoading}
@@ -804,7 +808,8 @@ const TaskManagement = () => {
                     variant="outlined" 
                     startIcon={<FilterIcon />}
                     onClick={() => {
-                      // Apply filters
+                      // Apply filters - this is handled automatically by the filteredTasks computation
+                      console.log('Filters applied');
                     }}
                   >
                     Apply Filters
