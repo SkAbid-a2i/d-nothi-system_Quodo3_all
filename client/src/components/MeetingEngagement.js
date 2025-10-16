@@ -251,33 +251,51 @@ const MeetingEngagement = () => {
   };
 
   const handleOpenMeetingDetail = (meeting) => {
+    // Close the create/edit dialog if it's open
+    if (openDialog) {
+      setOpenDialog(false);
+    }
+    
     setSelectedMeeting(meeting);
     setMeetingDetailDialogOpen(true);
   };
-
-  const handleCloseMeetingDetail = () => {
-    setMeetingDetailDialogOpen(false);
-    setSelectedMeeting(null);
-  };
-
+  
   const handleEditMeeting = (meeting) => {
-    // Set form data with meeting details
-    setFormData({
-      subject: meeting.subject || '',
-      platform: meeting.platform || 'zoom',
-      location: meeting.location || '',
-      date: meeting.date || '',
-      time: meeting.time || '',
-      duration: meeting.duration ? meeting.duration.toString() : '30',
-      selectedUsers: meeting.selectedUserIds || meeting.selectedUsers || []
-    });
+    // Close the meeting detail dialog first
+    if (meetingDetailDialogOpen) {
+      setMeetingDetailDialogOpen(false);
+      setSelectedMeeting(null);
+    }
     
-    // Open dialog in edit mode
-    setOpenDialog(true);
+    // Small delay to ensure proper dialog closing
+    setTimeout(() => {
+      // Set form data with meeting details
+      setFormData({
+        subject: meeting.subject || '',
+        platform: meeting.platform || 'zoom',
+        location: meeting.location || '',
+        date: meeting.date || '',
+        time: meeting.time || '',
+        duration: meeting.duration ? meeting.duration.toString() : '30',
+        selectedUsers: meeting.selectedUserIds || meeting.selectedUsers || []
+      });
+      
+      // Open dialog in edit mode
+      setOpenDialog(true);
+    }, 100);
   };
 
   const handleDeleteMeeting = async (meetingId) => {
     try {
+      // Close any open dialogs first
+      if (meetingDetailDialogOpen) {
+        setMeetingDetailDialogOpen(false);
+        setSelectedMeeting(null);
+      }
+      
+      // Small delay to ensure proper dialog closing
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await meetingAPI.deleteMeeting(meetingId);
       showSnackbar('Meeting deleted successfully!', 'success');
       // Remove from meetings list
