@@ -308,6 +308,11 @@ const MeetingEngagement = () => {
     }
   };
 
+  const handleCloseMeetingDetail = () => {
+    setMeetingDetailDialogOpen(false);
+    setSelectedMeeting(null);
+  };
+
   const getMeetingStatus = (meeting) => {
     if (!meeting.date || !meeting.time) return 'Unknown';
     
