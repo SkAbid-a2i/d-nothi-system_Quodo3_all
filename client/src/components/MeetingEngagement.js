@@ -498,14 +498,32 @@ const MeetingEngagement = () => {
                         <IconButton 
                           size="small" 
                           color="primary"
-                          onClick={() => handleEditMeeting(meeting)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (meetingDetailDialogOpen) {
+                              handleCloseMeetingDetail();
+                              // Small delay to ensure dialog is closed before opening edit dialog
+                              setTimeout(() => handleEditMeeting(meeting), 100);
+                            } else {
+                              handleEditMeeting(meeting);
+                            }
+                          }}
                         >
                           <EditIcon />
                         </IconButton>
                         <IconButton 
                           size="small" 
                           color="error"
-                          onClick={() => handleDeleteMeeting(meeting.id || meeting._id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (meetingDetailDialogOpen) {
+                              handleCloseMeetingDetail();
+                              // Small delay to ensure dialog is closed before deleting
+                              setTimeout(() => handleDeleteMeeting(meeting.id || meeting._id), 100);
+                            } else {
+                              handleDeleteMeeting(meeting.id || meeting._id);
+                            }
+                          }}
                         >
                           <DeleteIcon />
                         </IconButton>

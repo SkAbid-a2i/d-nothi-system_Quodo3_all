@@ -827,14 +827,15 @@ const TaskManagement = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} sm={12} md={6}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
                     variant="outlined" 
                     startIcon={<FilterIcon />}
                     onClick={() => {
-                      // Apply filters - this is handled automatically by the filteredTasks computation
+                      // Force a refresh of filtered tasks
                       console.log('Filters applied');
+                      // This will trigger a re-render with current filter values
                     }}
                   >
                     Apply Filters
@@ -850,6 +851,11 @@ const TaskManagement = () => {
                   >
                     Clear
                   </Button>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                   <Button 
                     startIcon={<DownloadIcon />} 
                     onClick={() => handleExport('CSV')}

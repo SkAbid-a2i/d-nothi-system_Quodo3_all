@@ -18,9 +18,7 @@ import {
   DialogActions,
   CircularProgress,
   Alert,
-  Snackbar,
-  FormControlLabel,
-  Switch
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -70,12 +68,11 @@ const CollaborationLink = () => {
   const fetchCollaborations = async () => {
     setLoading(true);
     try {
-      console.log('Fetching collaborations...');
+      console.log('Fetching collaborations for user:', user);
       const response = await collaborationAPI.getAllCollaborations();
       console.log('Collaborations response:', response);
       const collaborationsData = response.data?.data || response.data || [];
       setCollaborations(Array.isArray(collaborationsData) ? collaborationsData : []);
-      console.log('Set collaborations:', collaborationsData);
     } catch (err) {
       console.error('Error fetching collaborations:', err);
       console.error('Error response:', err.response);
@@ -138,7 +135,8 @@ const CollaborationLink = () => {
     }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
     if (!formData.title) {
       const errorMessage = t('collaboration.titleRequired') || 'Title is required';
       setError(errorMessage);
@@ -200,10 +198,10 @@ const CollaborationLink = () => {
     try {
       await collaborationAPI.deleteCollaboration(id);
       setCollaborations(prev => prev.filter(item => item.id !== id));
-      showSnackbar(t('collaboration.collaborationDeleted'), 'success');
+      showSnackbar(t('collaboration.collaborationDeleted') || 'Collaboration link deleted successfully!', 'success');
     } catch (err) {
       console.error('Error deleting collaboration:', err);
-      const errorMessage = err.response?.data?.message || t('collaboration.errorDeleting');
+      const errorMessage = err.response?.data?.message || err.message || t('collaboration.errorDeleting') || 'Error deleting collaboration link. Please try again.';
       showSnackbar(errorMessage, 'error');
     }
   };
