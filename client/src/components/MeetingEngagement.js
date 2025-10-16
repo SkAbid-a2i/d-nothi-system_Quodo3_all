@@ -507,7 +507,18 @@ const MeetingEngagement = () => {
       </Grid>
       
       {/* Create Meeting Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }
+        }}
+      >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <VideoCallIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -741,6 +752,12 @@ const MeetingEngagement = () => {
         onClose={handleCloseMeetingDetail} 
         maxWidth="md" 
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }
+        }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

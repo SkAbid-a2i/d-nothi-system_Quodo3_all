@@ -38,7 +38,11 @@ const translations = {
     description: 'Description',
     status: 'Status',
     actions: 'Actions',
-    welcome: 'Welcome'
+    welcome: 'Welcome',
+    saving: 'Saving...',
+    deleting: 'Deleting...',
+    all: 'All',
+    na: 'N/A'
   },
   
   // Navigation
@@ -55,7 +59,8 @@ const translations = {
     reports: 'Reports',
     settings: 'Settings',
     help: 'Help & Support',
-    logout: 'Logout'
+    logout: 'Logout',
+    collaboration: 'Collaboration'
   },
   
   // Login
@@ -264,11 +269,91 @@ const translations = {
         answer: 'On the dashboard, use the export buttons to download reports in CSV, Excel, or PDF format.'
       }
     }
+  },
+  
+  // Error Monitoring translations
+  errors: {
+    title: 'Error Monitoring',
+    description: 'Track and monitor system errors and issues in real-time',
+    logs: 'Logs',
+    analysis: 'Analysis',
+    totalLogs: 'Total Logs',
+    errorMessage: 'Error Message',
+    count: 'Count',
+    examples: 'Examples',
+    timestamp: 'Timestamp',
+    level: 'Level',
+    message: 'Message',
+    apiActivity: 'API Activity',
+    totalRequests: 'Total Requests',
+    apiErrors: 'API Errors',
+    methods: 'Methods',
+    requestsByMethod: 'Requests by Method',
+    frontendIssues: 'Frontend Issues',
+    totalFrontendLogs: 'Total Frontend Logs',
+    fieldIssues: 'Field Issues',
+    componentErrors: 'Component Errors',
+    commonErrors: 'Common Errors',
+    migrationIssues: 'Migration Issues',
+    totalMigrationIssues: 'Total Migration Issues',
+    errors: 'Errors',
+    warnings: 'Warnings',
+    recentMigrationLogs: 'Recent Migration Logs',
+    taskLoggerPage: 'Task Logger Page',
+    taskModificationPage: 'Task Modification & Activity Page',
+    leaveManagement: 'Leave Management',
+    meetings: 'Meetings',
+    reports: 'Reports',
+    adminConsole: 'Admin Console',
+    helpSupport: 'Help & Support',
+    settings: 'Settings',
+    unknownPage: 'Unknown Page',
+    specificIssues: 'Specific Issues Identified',
+    issueIn: 'Issue identified in',
+    component: 'Component',
+    uiIssue: 'UI Issue',
+    details: 'Details',
+    noLogsToExport: 'No logs to export',
+    logsExported: 'Logs exported successfully',
+    exportFailed: 'Failed to export logs',
+    noAnalysisToExport: 'No analysis to export',
+    analysisExported: 'Analysis exported successfully'
+  },
+  
+  // Collaboration translations
+  collaboration: {
+    title: 'Collaboration',
+    description: 'Create and manage collaboration links for team projects',
+    createLink: 'Create Collaboration Link',
+    editLink: 'Edit Collaboration Link',
+    updateLink: 'Update Collaboration Link',
+    collaborationDetails: 'Collaboration Details',
+    titleLabel: 'Collaboration Title',
+    descriptionLabel: 'Description',
+    availability: 'Availability',
+    urgency: 'Urgency',
+    createdBy: 'Created By',
+    created: 'Created',
+    always: 'Always',
+    weekdays: 'Weekdays',
+    weekends: 'Weekends',
+    businessHours: 'Business Hours',
+    immediate: 'Immediate',
+    moderate: 'Moderate',
+    asap: 'As Soon As Possible',
+    daily: 'Daily',
+    none: 'None',
+    noTitle: 'No Title',
+    noDescription: 'No description provided',
+    collaborationCreated: 'Collaboration link created successfully!',
+    collaborationUpdated: 'Collaboration link updated successfully!',
+    collaborationDeleted: 'Collaboration link deleted successfully!',
+    errorSaving: 'Error saving collaboration link. Please try again.',
+    errorDeleting: 'Error deleting collaboration link. Please try again.',
+    confirmDelete: 'Are you sure you want to delete this collaboration link?'
   }
 };
 
 export default translations;
-
-
 
 

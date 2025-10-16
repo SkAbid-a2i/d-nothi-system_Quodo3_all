@@ -40,9 +40,11 @@ import {
 } from '@mui/icons-material';
 import { logAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/TranslationContext';
 
 const ErrorMonitoring = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -199,6 +201,218 @@ const ErrorMonitoring = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  // Export logs to CSV
+  const exportLogsToCSV = () => {
+    if (!logs || logs.length === 0) {
+      showSnackbar(t('errors.noLogsToExport'), 'warning');
+      return;
+    }
+
+    try {
+      // Create CSV content
+      const headers = ['Timestamp', 'Level', 'Source', 'User', 'Page', 'Message', 'Details'];
+      const csvContent = [
+        headers.join(','),
+        ...logs.map(log => [
+          log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A',
+          log.level || 'Unknown',
+          log.metadata?.source ? 'Frontend' : 'Backend',
+          log.userId || log.metadata?.userId || log.user || log.username || 'System',
+          getPageName(log),
+          `"${(log.message || 'No message').replace(/"/g, '""')}"`,
+          log.metadata ? `"${JSON.stringify(log.metadata).replace(/"/g, '""')}"` : 'N/A'
+        ].map(field => `"${field}"`).join(','))
+      ].join('\n');
+
+      // Create download link
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `error_logs_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(t('errors.logsExported'), 'success');
+    } catch (err) {
+      console.error('Error exporting logs:', err);
+      showSnackbar(t('errors.exportFailed'), 'error');
+    }
+  };
+
+  // Export logs to JSON
+  const exportLogsToJSON = () => {
+    if (!logs || logs.length === 0) {
+      showSnackbar(t('errors.noLogsToExport'), 'warning');
+      return;
+    }
+
+    try {
+      // Create JSON content
+      const jsonContent = JSON.stringify(logs, null, 2);
+      
+      // Create download link
+      const blob = new Blob([jsonContent], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `error_logs_${new Date().toISOString().split('T')[0]}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(t('errors.logsExported'), 'success');
+    } catch (err) {
+      console.error('Error exporting logs:', err);
+      showSnackbar(t('errors.exportFailed'), 'error');
+    }
+  };
+
+  // Export logs to PDF (simplified version)
+  const exportLogsToPDF = () => {
+    if (!logs || logs.length === 0) {
+      showSnackbar(t('errors.noLogsToExport'), 'warning');
+      return;
+    }
+
+    try {
+      // Create a simple text-based PDF content
+      let pdfContent = `${t('errors.title')}\n`;
+      pdfContent += `Exported on: ${new Date().toLocaleString()}\n\n`;
+      pdfContent += `Total Logs: ${logs.length}\n`;
+      pdfContent += `Errors: ${stats.errors}\n`;
+      pdfContent += `Warnings: ${stats.warnings}\n\n`;
+      
+      // Add log entries
+      logs.forEach((log, index) => {
+        pdfContent += `--- Log ${index + 1} ---\n`;
+        pdfContent += `Timestamp: ${log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}\n`;
+        pdfContent += `Level: ${log.level || 'Unknown'}\n`;
+        pdfContent += `Source: ${log.metadata?.source ? 'Frontend' : 'Backend'}\n`;
+        pdfContent += `User: ${log.userId || log.metadata?.userId || log.user || log.username || 'System'}\n`;
+        pdfContent += `Page: ${getPageName(log)}\n`;
+        pdfContent += `Message: ${log.message || 'No message'}\n`;
+        if (log.metadata) {
+          pdfContent += `Details: ${JSON.stringify(log.metadata)}\n`;
+        }
+        pdfContent += '\n';
+      });
+      
+      // Create download link
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `error_logs_${new Date().toISOString().split('T')[0]}.txt`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(t('errors.logsExported'), 'success');
+    } catch (err) {
+      console.error('Error exporting logs:', err);
+      showSnackbar(t('errors.exportFailed'), 'error');
+    }
+  };
+
+  // Export analysis to PDF
+  const exportAnalysisToPDF = () => {
+    if (!analysis) {
+      showSnackbar(t('errors.noAnalysisToExport'), 'warning');
+      return;
+    }
+
+    try {
+      // Create a simple text-based PDF content for analysis
+      let pdfContent = `${t('errors.analysis')}\n`;
+      pdfContent += `Exported on: ${new Date().toLocaleString()}\n\n`;
+      
+      // Add analysis data
+      pdfContent += `Total Logs: ${analysis.byLevel?.error || 0}\n`;
+      pdfContent += `Warnings: ${analysis.byLevel?.warn || 0}\n`;
+      pdfContent += `Frontend Issues: ${analysis.frontendIssues?.errors || 0}\n`;
+      pdfContent += `Migration Issues: ${analysis.migrationIssues?.total || 0}\n\n`;
+      
+      pdfContent += `Field Issues: ${errorAnalysis.missingFields.length}\n`;
+      pdfContent += `Component Errors: ${errorAnalysis.uiIssues.length}\n`;
+      pdfContent += `API Errors: ${errorAnalysis.apiErrors.length}\n\n`;
+      
+      // Add specific issues
+      if (errorAnalysis.uiIssues.length > 0) {
+        pdfContent += 'Specific Issues:\n';
+        errorAnalysis.uiIssues.forEach((issue, index) => {
+          pdfContent += `${index + 1}. ${issue.message || 'No message'}\n`;
+          if (issue.issueType) {
+            pdfContent += `   Type: ${issue.issueType}\n`;
+          }
+          if (issue.component) {
+            pdfContent += `   Component: ${issue.component}\n`;
+          }
+          if (issue.description) {
+            pdfContent += `   Description: ${issue.description}\n`;
+          }
+          pdfContent += '\n';
+        });
+      }
+      
+      // Create download link
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `error_analysis_${new Date().toISOString().split('T')[0]}.txt`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(t('errors.analysisExported'), 'success');
+    } catch (err) {
+      console.error('Error exporting analysis:', err);
+      showSnackbar(t('errors.exportFailed'), 'error');
+    }
+  };
+
+  // Export analysis to JSON
+  const exportAnalysisToJSON = () => {
+    if (!analysis) {
+      showSnackbar(t('errors.noAnalysisToExport'), 'warning');
+      return;
+    }
+
+    try {
+      // Create JSON content
+      const exportData = {
+        analysis: analysis,
+        errorAnalysis: errorAnalysis,
+        exportDate: new Date().toISOString(),
+        stats: stats
+      };
+      
+      const jsonContent = JSON.stringify(exportData, null, 2);
+      
+      // Create download link
+      const blob = new Blob([jsonContent], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `error_analysis_${new Date().toISOString().split('T')[0]}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(t('errors.analysisExported'), 'success');
+    } catch (err) {
+      console.error('Error exporting analysis:', err);
+      showSnackbar(t('errors.exportFailed'), 'error');
+    }
+  };
+
   const getLevelColor = (level) => {
     switch (level) {
       case 'error': return 'error';
@@ -274,18 +488,18 @@ const ErrorMonitoring = () => {
         const urlObj = new URL(log.metadata.url, window.location.origin);
         // Return a more descriptive name based on the path
         const path = urlObj.pathname;
-        if (path === '/') return 'Dashboard';
-        if (path.includes('/tasks/logger')) return 'Task Logger Page';
-        if (path.includes('/tasks')) return 'Task Modification & Activity Page';
-        if (path.includes('/leave')) return 'Leave Management';
-        if (path.includes('/meetings')) return 'Meetings';
-        if (path.includes('/reports')) return 'Reports';
-        if (path.includes('/admin')) return 'Admin Console';
-        if (path.includes('/help')) return 'Help & Support';
-        if (path.includes('/settings')) return 'Settings';
-        return path || 'Unknown Page';
+        if (path === '/') return t('errors.dashboard');
+        if (path.includes('/tasks/logger')) return t('errors.taskLoggerPage');
+        if (path.includes('/tasks')) return t('errors.taskModificationPage');
+        if (path.includes('/leave')) return t('errors.leaveManagement');
+        if (path.includes('/meetings')) return t('errors.meetings');
+        if (path.includes('/reports')) return t('errors.reports');
+        if (path.includes('/admin')) return t('errors.adminConsole');
+        if (path.includes('/help')) return t('errors.helpSupport');
+        if (path.includes('/settings')) return t('errors.settings');
+        return path || t('errors.unknownPage');
       } catch (e) {
-        return log.metadata.url || 'Unknown Page';
+        return log.metadata.url || t('errors.unknownPage');
       }
     }
     
@@ -294,30 +508,30 @@ const ErrorMonitoring = () => {
       // Map common endpoints to page names
       if (log.metadata.endpoint.includes('task')) {
         if (log.metadata.endpoint.includes('logger')) {
-          return 'Task Logger Page';
+          return t('errors.taskLoggerPage');
         } else {
-          return 'Task Modification & Activity Page';
+          return t('errors.taskModificationPage');
         }
       }
-      if (log.metadata.endpoint.includes('leave')) return 'Leave Management';
-      if (log.metadata.endpoint.includes('meeting')) return 'Meetings';
-      if (log.metadata.endpoint.includes('report')) return 'Reports';
-      if (log.metadata.endpoint.includes('admin')) return 'Admin Console';
-      if (log.metadata.endpoint.includes('help')) return 'Help & Support';
-      if (log.metadata.endpoint.includes('setting')) return 'Settings';
+      if (log.metadata.endpoint.includes('leave')) return t('errors.leaveManagement');
+      if (log.metadata.endpoint.includes('meeting')) return t('errors.meetings');
+      if (log.metadata.endpoint.includes('report')) return t('errors.reports');
+      if (log.metadata.endpoint.includes('admin')) return t('errors.adminConsole');
+      if (log.metadata.endpoint.includes('help')) return t('errors.helpSupport');
+      if (log.metadata.endpoint.includes('setting')) return t('errors.settings');
       return log.metadata.endpoint;
     }
     
     if (log.metadata?.component) {
       // Map common components to page names
-      if (log.metadata.component.includes('TaskLogger')) return 'Task Logger Page';
-      if (log.metadata.component.includes('TaskManagement')) return 'Task Modification & Activity Page';
-      if (log.metadata.component.includes('Leave')) return 'Leave Management';
-      if (log.metadata.component.includes('Meeting')) return 'Meetings';
-      if (log.metadata.component.includes('Report')) return 'Reports';
-      if (log.metadata.component.includes('Admin')) return 'Admin Console';
-      if (log.metadata.component.includes('Help')) return 'Help & Support';
-      if (log.metadata.component.includes('Setting')) return 'Settings';
+      if (log.metadata.component.includes('TaskLogger')) return t('errors.taskLoggerPage');
+      if (log.metadata.component.includes('TaskManagement')) return t('errors.taskModificationPage');
+      if (log.metadata.component.includes('Leave')) return t('errors.leaveManagement');
+      if (log.metadata.component.includes('Meeting')) return t('errors.meetings');
+      if (log.metadata.component.includes('Report')) return t('errors.reports');
+      if (log.metadata.component.includes('Admin')) return t('errors.adminConsole');
+      if (log.metadata.component.includes('Help')) return t('errors.helpSupport');
+      if (log.metadata.component.includes('Setting')) return t('errors.settings');
       return log.metadata.component;
     }
     
@@ -520,7 +734,38 @@ const ErrorMonitoring = () => {
                   onClick={clearLogs}
                   fullWidth
                 >
-                  Clear Logs
+                  {t('common.clear')}
+                </Button>
+              </Grid>
+              
+              {/* Export Buttons */}
+              <Grid item xs={12} sm={6} md={3}>
+                <Button
+                  variant="contained"
+                  onClick={exportLogsToCSV}
+                  fullWidth
+                  sx={{
+                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #764ba2, #667eea)'
+                    },
+                    mb: 1
+                  }}
+                >
+                  {t('common.export')} CSV
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={exportLogsToJSON}
+                  fullWidth
+                  sx={{
+                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #764ba2, #667eea)'
+                    }
+                  }}
+                >
+                  {t('common.export')} JSON
                 </Button>
               </Grid>
             </Grid>
@@ -625,7 +870,7 @@ const ErrorMonitoring = () => {
                       {analysis.byLevel?.error || 0}
                     </Typography>
                     <Typography color="text.secondary">
-                      Total Errors
+                      {t('errors.totalLogs')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -638,7 +883,7 @@ const ErrorMonitoring = () => {
                       {analysis.byLevel?.warn || 0}
                     </Typography>
                     <Typography color="text.secondary">
-                      Warnings
+                      {t('errors.warnings')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -651,7 +896,7 @@ const ErrorMonitoring = () => {
                       {analysis.frontendIssues?.errors || 0}
                     </Typography>
                     <Typography color="text.secondary">
-                      Frontend Errors
+                      {t('errors.frontendIssues')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -664,7 +909,7 @@ const ErrorMonitoring = () => {
                       {analysis.migrationIssues?.total || 0}
                     </Typography>
                     <Typography color="text.secondary">
-                      Migration Issues
+                      {t('errors.migrationIssues')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -677,7 +922,7 @@ const ErrorMonitoring = () => {
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                 <ErrorIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Error Analysis
+                {t('errors.commonErrors')}
               </Typography>
               
               <Grid container spacing={2}>
@@ -685,13 +930,13 @@ const ErrorMonitoring = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" color="error" sx={{ mb: 1 }}>
-                        Missing Fields
+                        {t('errors.fieldIssues')}
                       </Typography>
                       <Typography variant="h4" component="div">
                         {errorAnalysis.missingFields.length}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Fields not visible or missing in UI
+                        {t('errors.fieldIssues')}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -701,13 +946,13 @@ const ErrorMonitoring = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" color="warning" sx={{ mb: 1 }}>
-                        UI Issues
+                        {t('errors.componentErrors')}
                       </Typography>
                       <Typography variant="h4" component="div">
                         {errorAnalysis.uiIssues.length}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        User interface problems
+                        {t('errors.componentErrors')}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -717,13 +962,13 @@ const ErrorMonitoring = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" color="info" sx={{ mb: 1 }}>
-                        API Errors
+                        {t('errors.apiErrors')}
                       </Typography>
                       <Typography variant="h4" component="div">
                         {errorAnalysis.apiErrors.length}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        API request/response issues
+                        {t('errors.apiErrors')}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -734,7 +979,7 @@ const ErrorMonitoring = () => {
               {(errorAnalysis.uiIssues.length > 0 || errorAnalysis.apiErrors.length > 0) && (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                    Specific Issues Identified
+                    {t('errors.specificIssues')}
                   </Typography>
                   
                   {errorAnalysis.uiIssues.filter(issue => issue.issueType).map((issue, index) => (
@@ -748,10 +993,10 @@ const ErrorMonitoring = () => {
                           size="small"
                           onClick={() => {
                             // In a real implementation, this would navigate to the specific component
-                            showSnackbar(`Issue identified in ${issue.component}: ${issue.description}`, 'info');
+                            showSnackbar(`${t('errors.issueIn')} ${issue.component}: ${issue.description}`, 'info');
                           }}
                         >
-                          View Details
+                          {t('common.view')}
                         </Button>
                       }
                     >
@@ -759,10 +1004,10 @@ const ErrorMonitoring = () => {
                         {issue.issueType}
                       </Typography>
                       <Typography variant="body2">
-                        Component: {issue.component}
+                        {t('errors.component')}: {issue.component}
                       </Typography>
                       <Typography variant="body2">
-                        Description: {issue.description}
+                        {t('errors.description')}: {issue.description}
                       </Typography>
                     </Alert>
                   ))}
@@ -770,14 +1015,14 @@ const ErrorMonitoring = () => {
                   {errorAnalysis.uiIssues.filter(issue => !issue.issueType).slice(0, 3).map((issue, index) => (
                     <Alert key={index} severity="warning" sx={{ mb: 2 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        UI Issue
+                        {t('errors.uiIssue')}
                       </Typography>
                       <Typography variant="body2">
                         {issue.message}
                       </Typography>
                       {issue.metadata && (
                         <Typography variant="body2" color="text.secondary">
-                          Details: {typeof issue.metadata === 'string' ? issue.metadata : JSON.stringify(issue.metadata)}
+                          {t('errors.details')}: {typeof issue.metadata === 'string' ? issue.metadata : JSON.stringify(issue.metadata)}
                         </Typography>
                       )}
                     </Alert>
@@ -792,22 +1037,22 @@ const ErrorMonitoring = () => {
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                 <ApiIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                API Activity
+                {t('errors.apiActivity')}
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="body1">
-                    <strong>Total Requests:</strong> {analysis.apiActivity?.totalRequests || 0}
+                    <strong>{t('errors.totalRequests')}:</strong> {analysis.apiActivity?.totalRequests || 0}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="body1">
-                    <strong>API Errors:</strong> {analysis.apiActivity?.errors || 0}
+                    <strong>{t('errors.apiErrors')}:</strong> {analysis.apiActivity?.errors || 0}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="body1">
-                    <strong>Methods:</strong> {Object.keys(analysis.apiActivity?.byMethod || {}).length}
+                    <strong>{t('errors.methods')}:</strong> {Object.keys(analysis.apiActivity?.byMethod || {}).length}
                   </Typography>
                 </Grid>
               </Grid>
@@ -815,7 +1060,7 @@ const ErrorMonitoring = () => {
               {analysis.apiActivity?.byMethod && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Requests by Method:
+                    {t('errors.requestsByMethod')}:
                   </Typography>
                   <Grid container spacing={1}>
                     {Object.entries(analysis.apiActivity.byMethod).map(([method, count]) => (
@@ -838,27 +1083,27 @@ const ErrorMonitoring = () => {
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                 <VisibilityIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Frontend Issues
+                {t('errors.frontendIssues')}
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={3}>
                   <Typography variant="body1">
-                    <strong>Total Frontend Logs:</strong> {analysis.frontendIssues?.total || 0}
+                    <strong>{t('errors.totalFrontendLogs')}:</strong> {analysis.frontendIssues?.total || 0}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={3}>
                   <Typography variant="body1">
-                    <strong>Field Issues:</strong> {analysis.frontendIssues?.fieldIssues || 0}
+                    <strong>{t('errors.fieldIssues')}:</strong> {analysis.frontendIssues?.fieldIssues || 0}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={3}>
                   <Typography variant="body1">
-                    <strong>API Errors:</strong> {analysis.frontendIssues?.apiErrors || 0}
+                    <strong>{t('errors.apiErrors')}:</strong> {analysis.frontendIssues?.apiErrors || 0}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={3}>
                   <Typography variant="body1">
-                    <strong>Component Errors:</strong> {analysis.frontendIssues?.componentErrors || 0}
+                    <strong>{t('errors.componentErrors')}:</strong> {analysis.frontendIssues?.componentErrors || 0}
                   </Typography>
                 </Grid>
               </Grid>
@@ -871,15 +1116,15 @@ const ErrorMonitoring = () => {
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                   <ErrorIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Common Errors
+                  {t('errors.commonErrors')}
                 </Typography>
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Error Message</TableCell>
-                        <TableCell>Count</TableCell>
-                        <TableCell>Examples</TableCell>
+                        <TableCell>{t('errors.errorMessage')}</TableCell>
+                        <TableCell>{t('errors.count')}</TableCell>
+                        <TableCell>{t('errors.examples')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -909,28 +1154,28 @@ const ErrorMonitoring = () => {
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                   <StorageIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Migration Issues
+                  {t('errors.migrationIssues')}
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  <strong>Total Migration Issues:</strong> {analysis.migrationIssues.total}
+                  <strong>{t('errors.totalMigrationIssues')}:</strong> {analysis.migrationIssues.total}
                   <br />
-                  <strong>Errors:</strong> {analysis.migrationIssues.errors}
+                  <strong>{t('errors.errors')}:</strong> {analysis.migrationIssues.errors}
                   <br />
-                  <strong>Warnings:</strong> {analysis.migrationIssues.warnings}
+                  <strong>{t('errors.warnings')}:</strong> {analysis.migrationIssues.warnings}
                 </Typography>
                 
                 {analysis.migrationIssues.details && (
                   <>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                      Recent Migration Logs:
+                      {t('errors.recentMigrationLogs')}:
                     </Typography>
                     <TableContainer>
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>Timestamp</TableCell>
-                            <TableCell>Level</TableCell>
-                            <TableCell>Message</TableCell>
+                            <TableCell>{t('errors.timestamp')}</TableCell>
+                            <TableCell>{t('errors.level')}</TableCell>
+                            <TableCell>{t('errors.message')}</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -979,10 +1224,10 @@ const ErrorMonitoring = () => {
             mb: 1
           }}
         >
-          Error Monitoring
+          {t('errors.title')}
         </Typography>
         <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
-          Track and monitor system errors and issues in real-time
+          {t('errors.description')}
         </Typography>
       </Box>
 
@@ -1004,9 +1249,40 @@ const ErrorMonitoring = () => {
           onChange={(e, newValue) => setActiveTab(newValue)}
           variant="fullWidth"
         >
-          <Tab label="Logs" />
-          <Tab label="Analysis" />
+          <Tab label={t('errors.logs')} />
+          <Tab label={t('errors.analysis')} />
         </Tabs>
+        {/* Export Analysis Buttons */}
+        {activeTab === 1 && (
+          <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              onClick={exportAnalysisToJSON}
+              startIcon={<StorageIcon />}
+              sx={{
+                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #764ba2, #667eea)'
+                }
+              }}
+            >
+              {t('common.export')} Analysis JSON
+            </Button>
+            <Button
+              variant="contained"
+              onClick={exportAnalysisToPDF}
+              startIcon={<StorageIcon />}
+              sx={{
+                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #764ba2, #667eea)'
+                }
+              }}
+            >
+              {t('common.export')} Analysis PDF
+            </Button>
+          </Box>
+        )}
       </Paper>
 
       <Divider sx={{ mb: 3 }} />

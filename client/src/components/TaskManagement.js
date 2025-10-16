@@ -83,7 +83,6 @@ const TaskManagement = () => {
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
   const [userInformation, setUserInformation] = useState(''); // Add user information state
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
-  const [userFilter, setUserFilter] = useState(''); // Add user filter
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
@@ -781,6 +780,21 @@ const TaskManagement = () => {
                     <MenuItem value="Completed">Completed</MenuItem>
                   </Select>
                 </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <UserFilterDropdown
+                  users={users.map(u => ({
+                    ...u,
+                    label: `${u.fullName || u.username} (${u.username})`
+                  }))}
+                  selectedUser={selectedUser}
+                  onUserChange={(user) => {
+                    setSelectedUser(user);
+                    setUserFilter(user ? user.username : '');
+                  }}
+                  label="Filter by User"
+                  loading={userLoading}
+                />
               </Grid>
               
               <Grid item xs={12} sm={12} md={6}>

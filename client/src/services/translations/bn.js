@@ -38,7 +38,11 @@ const translations = {
     description: 'বিবরণ',
     status: 'অবস্থা',
     actions: 'ক্রিয়াকলাপ',
-    welcome: 'স্বাগতম'
+    welcome: 'স্বাগতম',
+    saving: 'সংরক্ষণ হচ্ছে...',
+    deleting: 'মুছে ফেলা হচ্ছে...',
+    all: 'সব',
+    na: 'প্রযোজ্য নয়'
   },
   
   // Navigation
@@ -55,7 +59,8 @@ const translations = {
     reports: 'প্রতিবেদন',
     settings: 'সেটিংস',
     help: 'সাহায্য এবং সমর্থন',
-    logout: 'লগআউট'
+    logout: 'লগআউট',
+    collaboration: 'সহযোগিতা'
   },
   
   // Login
@@ -264,6 +269,88 @@ const translations = {
         answer: 'ড্যাশবোর্ডে, সিএসভি, এক্সেল বা পিডিএফ ফর্ম্যাটে প্রতিবেদন ডাউনলোড করতে রপ্তানি বোতামগুলি ব্যবহার করুন।'
       }
     }
+  },
+  
+  // Error Monitoring translations
+  errors: {
+    title: 'ত্রুটি পর্যবেক্ষণ',
+    description: 'সিস্টেম ত্রুটি এবং সমস্যাগুলি ট্র্যাক এবং মনিটর করুন',
+    logs: 'লগ',
+    analysis: 'বিশ্লেষণ',
+    totalLogs: 'মোট লগ',
+    errorMessage: 'ত্রুটি বার্তা',
+    count: 'গণনা',
+    examples: 'উদাহরণ',
+    timestamp: 'টাইমস্ট্যাম্প',
+    level: 'স্তর',
+    message: 'বার্তা',
+    apiActivity: 'API কার্যকলাপ',
+    totalRequests: 'মোট অনুরোধ',
+    apiErrors: 'API ত্রুটি',
+    methods: 'পদ্ধতি',
+    requestsByMethod: 'পদ্ধতি অনুযায়ী অনুরোধ',
+    frontendIssues: 'ফ্রন্টএন্ড সমস্যা',
+    totalFrontendLogs: 'মোট ফ্রন্টএন্ড লগ',
+    fieldIssues: 'ক্ষেত্র সমস্যা',
+    componentErrors: 'উপাদান ত্রুটি',
+    commonErrors: 'সাধারণ ত্রুটি',
+    migrationIssues: 'মাইগ্রেশন সমস্যা',
+    totalMigrationIssues: 'মোট মাইগ্রেশন সমস্যা',
+    errors: 'ত্রুটি',
+    warnings: 'সতর্কতা',
+    recentMigrationLogs: 'সাম্প্রতিক মাইগ্রেশন লগ',
+    taskLoggerPage: 'টাস্ক লগার পৃষ্ঠা',
+    taskModificationPage: 'টাস্ক পরিবর্তন ও কার্যকলাপ পৃষ্ঠা',
+    leaveManagement: 'ছুটি ম্যানেজমেন্ট',
+    meetings: 'সভা',
+    reports: 'প্রতিবেদন',
+    adminConsole: 'অ্যাডমিন কনসোল',
+    helpSupport: 'সাহায্য ও সমর্থন',
+    settings: 'সেটিংস',
+    unknownPage: 'অজানা পৃষ্ঠা',
+    specificIssues: 'নির্দিষ্ট সমস্যা চিহ্নিত',
+    issueIn: 'সমস্যা চিহ্নিত',
+    component: 'উপাদান',
+    uiIssue: 'UI সমস্যা',
+    details: 'বিস্তারিত',
+    noLogsToExport: 'রপ্তানি করার জন্য কোন লগ নেই',
+    logsExported: 'লগ সফলভাবে রপ্তানি করা হয়েছে',
+    exportFailed: 'লগ রপ্তানি করতে ব্যর্থ',
+    noAnalysisToExport: 'রপ্তানি করার জন্য কোন বিশ্লেষণ নেই',
+    analysisExported: 'বিশ্লেষণ সফলভাবে রপ্তানি করা হয়েছে'
+  },
+  
+  // Collaboration translations
+  collaboration: {
+    title: 'সহযোগিতা',
+    description: 'দলের প্রকল্পের জন্য সহযোগিতার লিঙ্ক তৈরি এবং পরিচালনা করুন',
+    createLink: 'সহযোগিতার লিঙ্ক তৈরি করুন',
+    editLink: 'সহযোগিতার লিঙ্ক সম্পাদনা করুন',
+    updateLink: 'সহযোগিতার লিঙ্ক আপডেট করুন',
+    collaborationDetails: 'সহযোগিতার বিস্তারিত',
+    titleLabel: 'সহযোগিতার শিরোনাম',
+    descriptionLabel: 'বিবরণ',
+    availability: 'উপলব্ধতা',
+    urgency: 'জরুরি',
+    createdBy: 'তৈরি করেছেন',
+    created: 'তৈরি হয়েছে',
+    always: 'সবসময়',
+    weekdays: 'কর্মদিবস',
+    weekends: 'সপ্তাহান্ত',
+    businessHours: 'অফিস সময়',
+    immediate: 'অতি ত্বরিত',
+    moderate: 'মাঝারি',
+    asap: 'যত তাড়াতাড়ি সম্ভব',
+    daily: 'প্রতিদিন',
+    none: 'কিছু না',
+    noTitle: 'শিরোনাম নেই',
+    noDescription: 'কোন বিবরণ দেওয়া হয়নি',
+    collaborationCreated: 'সহযোগিতার লিঙ্ক সফলভাবে তৈরি হয়েছে!',
+    collaborationUpdated: 'সহযোগিতার লিঙ্ক সফলভাবে আপডেট হয়েছে!',
+    collaborationDeleted: 'সহযোগিতার লিঙ্ক সফলভাবে মুছে ফেলা হয়েছে!',
+    errorSaving: 'সহযোগিতার লিঙ্ক সংরক্ষণ করতে ত্রুটি। অনুগ্রহ করে আবার চেষ্টা করুন।',
+    errorDeleting: 'সহযোগিতার লিঙ্ক মুছে ফেলতে ত্রুটি। অনুগ্রহ করে আবার চেষ্টা করুন।',
+    confirmDelete: 'আপনি কি নিশ্চিত যে এই সহযোগিতার লিঙ্কটি মুছে ফেলতে চান?'
   }
 };
 

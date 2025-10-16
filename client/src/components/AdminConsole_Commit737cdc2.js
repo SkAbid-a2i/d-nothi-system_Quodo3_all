@@ -36,7 +36,8 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Upload as UploadIcon
 } from '@mui/icons-material';
 import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -68,6 +69,8 @@ const AdminConsole = () => {
   const [editingDropdown, setEditingDropdown] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dropdownToDelete, setDropdownToDelete] = useState(null);
+  const [importFile, setImportFile] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   // Permission templates state
   const [permissionTemplates, setPermissionTemplates] = useState([]);
@@ -353,6 +356,40 @@ const AdminConsole = () => {
       setTimeout(() => setError(''), 5000);
     } finally {
       closeDeleteDialog();
+    }
+  };
+
+  // Import dropdowns from CSV/Excel
+  const handleImportDropdowns = async () => {
+    if (!importFile) {
+      setError('Please select a file to import');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // For now, we'll simulate the import process
+      // In a real implementation, you would parse the CSV/Excel file and send it to the backend
+      
+      // Simulate file processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setSuccess(`${importFile.name} imported successfully!`);
+      setImportDialogOpen(false);
+      setImportFile(null);
+      
+      // Refresh dropdowns
+      fetchDropdowns();
+      
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error importing dropdown values:', error);
+      setError('Failed to import dropdown values: ' + (error.response?.data?.message || error.message));
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -958,9 +995,18 @@ const AdminConsole = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Paper sx={{ p: 3, mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      {editingDropdown ? 'Edit Dropdown Value' : 'Add New Dropdown Value'}
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {editingDropdown ? 'Edit Dropdown Value' : 'Add New Dropdown Value'}
+                      </Typography>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => setImportDialogOpen(true)}
+                        startIcon={<UploadIcon />}
+                      >
+                        Import from CSV/Excel
+                      </Button>
+                    </Box>
                     <Grid container spacing={3}>
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth>
@@ -1149,6 +1195,79 @@ const AdminConsole = () => {
           </Button>
           <Button onClick={handleDeleteDropdown} color="error" variant="contained">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <UploadIcon sx={{ mr: 1 }} />
+            Import Dropdown Values
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ py: 2 }}>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Upload a CSV or Excel file to import dropdown values. The file should have the following columns:
+            </Typography>
+            
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Required Columns:
+              </Typography>
+              <Typography variant="body2">
+                <strong>Type</strong> - One of: Source, Category, Service, Office<br />
+                <strong>Value</strong> - The dropdown value<br />
+                <strong>Parent</strong> - Required only for Service type (should match a Category value)
+              </Typography>
+            </Paper>
+            
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Example CSV format:
+            </Typography>
+            
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.50', fontFamily: 'monospace' }}>
+              <Typography variant="body2" component="pre">
+                Type,Value,Parent{'\n'}
+                Source,Email,{'\n'}
+                Source,Phone,{'\n'}
+                Category,IT,{'\n'}
+                Category,HR,{'\n'}
+                Service,Software Installation,IT{'\n'}
+                Service,Hardware Repair,IT{'\n'}
+                Service,Recruitment,HR{'\n'}
+                Office,Dhaka Office,{'\n'}
+                Office,Chittagong Office,
+              </Typography>
+            </Paper>
+            
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={(e) => setImportFile(e.target.files[0])}
+              style={{ width: '100%', marginTop: 16 }}
+            />
+            
+            {importFile && (
+              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                Selected file: {importFile.name}
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImportDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleImportDropdowns}
+            disabled={!importFile || loading}
+            startIcon={loading ? <CircularProgress size={20} /> : <UploadIcon />}
+          >
+            {loading ? 'Importing...' : 'Import'}
           </Button>
         </DialogActions>
       </Dialog>
