@@ -27,15 +27,17 @@ import {
   Save as SaveIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Info as InfoIcon,
   AccessTime as AccessTimeIcon,
   PriorityHigh as PriorityHighIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
+import { collaborationAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 
 const CollaborationLink = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [collaborations, setCollaborations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,36 +60,28 @@ const CollaborationLink = () => {
     urgency: 'None'
   });
 
-  // Mock data for now - in a real implementation, this would come from an API
+  // Fetch collaborations on component mount
   useEffect(() => {
-    const mockCollaborations = [
-      {
-        id: 1,
-        title: 'Project Planning Meeting',
-        description: 'Weekly planning session for project milestones and deliverables.',
-        availability: 'Always',
-        urgency: 'Moderate',
-        creator: {
-          fullName: 'John Doe',
-          username: 'johndoe'
-        },
-        createdAt: '2025-10-01T10:00:00Z'
-      },
-      {
-        id: 2,
-        title: 'Urgent Bug Fix',
-        description: 'Critical bug affecting user login functionality needs immediate attention.',
-        availability: 'Immediate',
-        urgency: 'Immediate',
-        creator: {
-          fullName: 'Jane Smith',
-          username: 'janesmith'
-        },
-        createdAt: '2025-10-05T14:30:00Z'
-      }
-    ];
-    setCollaborations(mockCollaborations);
-  }, []);
+    if (user) {
+      fetchCollaborations();
+    }
+  }, [user]);
+
+  const fetchCollaborations = async () => {
+    setLoading(true);
+    try {
+      const response = await collaborationAPI.getAllCollaborations();
+      const collaborationsData = response.data?.data || response.data || [];
+      setCollaborations(Array.isArray(collaborationsData) ? collaborationsData : []);
+    } catch (err) {
+      console.error('Error fetching collaborations:', err);
+      setError(t('collaboration.errorFetching'));
+      showSnackbar(t('collaboration.errorFetching'), 'error');
+      setCollaborations([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenDialog = (collaboration = null) => {
     if (collaboration) {
@@ -140,40 +134,52 @@ const CollaborationLink = () => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.title) {
+      setError(t('collaboration.titleRequired'));
+      showSnackbar(t('collaboration.titleRequired'), 'error');
+      return;
+    }
+
     setSaving(true);
     try {
-      // In a real implementation, this would be an API call
-      // const response = await collaborationAPI.create(formData);
-      
-      // Mock implementation
-      const newCollaboration = {
-        id: selectedCollaboration ? selectedCollaboration.id : collaborations.length + 1,
-        ...formData,
-        creator: {
-          fullName: 'Current User',
-          username: 'currentuser'
-        },
-        createdAt: new Date().toISOString()
+      const collaborationData = {
+        title: formData.title,
+        description: formData.description,
+        availability: formData.availability,
+        urgency: formData.urgency
       };
 
+      let response;
       if (selectedCollaboration) {
         // Update existing collaboration
-        setCollaborations(prev => 
-          prev.map(item => 
-            item.id === selectedCollaboration.id ? newCollaboration : item
-          )
-        );
+        response = await collaborationAPI.updateCollaboration(selectedCollaboration.id, collaborationData);
         showSnackbar(t('collaboration.collaborationUpdated'), 'success');
       } else {
         // Create new collaboration
-        setCollaborations(prev => [...prev, newCollaboration]);
+        response = await collaborationAPI.createCollaboration(collaborationData);
         showSnackbar(t('collaboration.collaborationCreated'), 'success');
       }
-      
+
+      // Update local state
+      const updatedCollaboration = response.data?.data || response.data;
+      if (selectedCollaboration) {
+        // Update existing collaboration in list
+        setCollaborations(prev => 
+          prev.map(item => 
+            item.id === selectedCollaboration.id ? updatedCollaboration : item
+          )
+        );
+      } else {
+        // Add new collaboration to list
+        setCollaborations(prev => [updatedCollaboration, ...prev]);
+      }
+
       handleCloseDialog();
     } catch (err) {
-      setError(t('collaboration.errorSaving'));
-      showSnackbar(t('collaboration.errorSaving'), 'error');
+      console.error('Error saving collaboration:', err);
+      const errorMessage = err.response?.data?.message || t('collaboration.errorSaving');
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setSaving(false);
     }
@@ -181,14 +187,13 @@ const CollaborationLink = () => {
 
   const handleDelete = async (id) => {
     try {
-      // In a real implementation, this would be an API call
-      // await collaborationAPI.delete(id);
-      
-      // Mock implementation
+      await collaborationAPI.deleteCollaboration(id);
       setCollaborations(prev => prev.filter(item => item.id !== id));
       showSnackbar(t('collaboration.collaborationDeleted'), 'success');
     } catch (err) {
-      showSnackbar(t('collaboration.errorDeleting'), 'error');
+      console.error('Error deleting collaboration:', err);
+      const errorMessage = err.response?.data?.message || t('collaboration.errorDeleting');
+      showSnackbar(errorMessage, 'error');
     }
   };
 
@@ -215,6 +220,11 @@ const CollaborationLink = () => {
       case 'Daily': return 'success';
       default: return 'default';
     }
+  };
+
+  // Check if current user can edit or delete a collaboration
+  const canEditOrDelete = (collaboration) => {
+    return user && (user.id === collaboration.createdBy || user.role === 'SystemAdmin');
   };
 
   return (
@@ -251,13 +261,13 @@ const CollaborationLink = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
           {success}
         </Alert>
       )}
@@ -277,12 +287,14 @@ const CollaborationLink = () => {
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
+                  cursor: 'pointer',
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: 6
                   },
                   transition: 'all 0.3s ease-in-out'
                 }}
+                onClick={() => handleOpenCollaborationDetail(collaboration)}
               >
                 <Box sx={{ 
                   display: 'flex', 
@@ -332,26 +344,29 @@ const CollaborationLink = () => {
                     </Typography>
                   </Box>
                   <Box>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleOpenCollaborationDetail(collaboration)}
-                      sx={{ mr: 1 }}
-                    >
-                      <InfoIcon />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleOpenDialog(collaboration)}
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleDelete(collaboration.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    {canEditOrDelete(collaboration) && (
+                      <>
+                        <IconButton 
+                          size="small" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDialog(collaboration);
+                          }}
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(collaboration.id);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </>
+                    )}
                   </Box>
                 </Box>
               </Paper>
@@ -366,6 +381,12 @@ const CollaborationLink = () => {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }
+        }}
       >
         <DialogTitle>
           {selectedCollaboration 
@@ -383,6 +404,11 @@ const CollaborationLink = () => {
                   value={formData.title}
                   onChange={handleChange}
                   required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
               </Grid>
 
@@ -395,7 +421,11 @@ const CollaborationLink = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
               </Grid>
 
@@ -406,6 +436,7 @@ const CollaborationLink = () => {
                     name="availability"
                     value={formData.availability}
                     onChange={handleChange}
+                    label={t('collaboration.availability')}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: '8px'
@@ -427,6 +458,7 @@ const CollaborationLink = () => {
                     name="urgency"
                     value={formData.urgency}
                     onChange={handleChange}
+                    label={t('collaboration.urgency')}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: '8px'
@@ -491,6 +523,12 @@ const CollaborationLink = () => {
         onClose={handleCloseCollaborationDetail}
         maxWidth="md"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }
+        }}
       >
         <DialogTitle>
           <Box sx={{ 
@@ -499,7 +537,7 @@ const CollaborationLink = () => {
             justifyContent: 'space-between' 
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <InfoIcon sx={{ mr: 1, color: 'primary.main' }} />
+              <AccessTimeIcon sx={{ mr: 1, color: 'primary.main' }} />
               {t('collaboration.collaborationDetails')}
             </Box>
             {selectedCollaboration && (

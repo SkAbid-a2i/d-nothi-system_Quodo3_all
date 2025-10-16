@@ -154,4 +154,12 @@ export const meetingAPI = {
   deleteMeeting: (id) => api.delete(`/meetings/${id}`),
 };
 
+// Collaboration endpoints
+export const collaborationAPI = {
+  getAllCollaborations: () => api.get('/collaborations'),
+  createCollaboration: (collaborationData) => api.post('/collaborations', collaborationData),
+  updateCollaboration: (id, collaborationData) => api.put(`/collaborations/${id}`, collaborationData),
+  deleteCollaboration: (id) => api.delete(`/collaborations/${id}`),
+};
+
 export default api;
