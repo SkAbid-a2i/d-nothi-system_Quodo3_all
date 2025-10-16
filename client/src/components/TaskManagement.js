@@ -141,7 +141,7 @@ const TaskManagement = () => {
     
     setDataLoading(true);
     try {
-      console.log('Fetching tasks...');
+      console.log('Fetching tasks for user:', user);
       const response = await taskAPI.getAllTasks();
       console.log('Tasks response:', response);
       
@@ -149,15 +149,19 @@ const TaskManagement = () => {
       let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
+      console.log('Raw tasks data:', tasksData);
+      
       // For SystemAdmin, show all tasks
       // For other roles, show only their own tasks
       if (user.role === 'SystemAdmin') {
         // SystemAdmin sees all tasks - no filtering needed
+        console.log('SystemAdmin: showing all tasks');
       } else {
         // Other users only see their own tasks
         tasksData = tasksData.filter(task => 
           task.userId === user.id || task.userName === user.username
         );
+        console.log('Non-SystemAdmin: filtered to user tasks', tasksData.length);
       }
       
       setTasks(tasksData);
@@ -498,14 +502,27 @@ const TaskManagement = () => {
     
     const matchesStatus = !statusFilter || task.status === statusFilter;
     
-    // When userFilter is empty, show all tasks (for SystemAdmin) or user's own tasks
-    // When userFilter is set, filter by that specific user
-    const matchesUser = !userFilter || (task.userName && task.userName === userFilter);
+    // For SystemAdmin:
+    // - When no user is selected in filter (userFilter is empty), show all tasks
+    // - When a user is selected in filter, show only that user's tasks
+    // For other users:
+    // - Always show only their own tasks (userFilter logic doesn't apply)
+    let matchesUser = true;
+    if (user && user.role === 'SystemAdmin') {
+      // SystemAdmin can filter by user
+      if (userFilter) {
+        matchesUser = task.userName === userFilter;
+      }
+      // If no userFilter, matchesUser remains true (show all tasks)
+    } else {
+      // Other users only see their own tasks regardless of userFilter
+      matchesUser = task.userName === user?.username;
+    }
     
     return matchesSearch && matchesStatus && matchesUser;
   });
   
-  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', userFilter);
+  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', userFilter, 'Current user role:', user?.role);
 
   // Get task statistics
   const getTaskStats = () => {
@@ -827,6 +844,8 @@ const TaskManagement = () => {
                     onClick={() => {
                       setSearchTerm('');
                       setStatusFilter('');
+                      setUserFilter('');
+                      setSelectedUser(null);
                     }}
                   >
                     Clear
