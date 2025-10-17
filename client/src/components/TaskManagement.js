@@ -143,6 +143,19 @@ const TaskManagement = () => {
     showSnackbar('Filters cleared', 'info');
   };
 
+  // Apply filters automatically when inputs change (for better UX)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedFilters({
+        searchTerm,
+        statusFilter,
+        userFilter
+      });
+    }, 300); // Debounce filter application
+    
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, userFilter]);
+
   // Filter services when category changes (for create form)
   useEffect(() => {
     if (selectedCategory) {

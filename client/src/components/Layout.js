@@ -196,9 +196,24 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     notificationService.clearNotificationHistory();
   };
 
+  // Clear notification for individual user
+  const clearUserNotifications = () => {
+    // In a real implementation, we would send a request to the backend to clear
+    // notifications for this specific user, but for now we'll just clear locally
+    setNotifications([]);
+    setUnreadCount(0);
+    notificationService.clearNotificationHistory();
+    showSnackbar('Notifications cleared', 'success');
+  };
+
   const handleMenuClose = () => {
     setAnchorEl(null);
     setNotificationAnchor(null);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    // In a real implementation, you might want to use a global snackbar context
+    console.log(`${severity}: ${message}`);
   };
 
   // Fetch real notifications

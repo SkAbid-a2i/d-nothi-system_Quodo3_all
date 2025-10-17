@@ -32,6 +32,7 @@ import {
 import { collaborationAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
+import notificationService from '../services/notificationService';
 
 const CollaborationLink = () => {
   const { t } = useTranslation();
