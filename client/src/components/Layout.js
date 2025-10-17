@@ -45,7 +45,8 @@ import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   VideoCall as VideoCallIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  Group as GroupIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
@@ -139,7 +140,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
-    { text: t('navigation.collaboration'), icon: <VideoCallIcon />, path: '/collaboration' },
+    { text: t('navigation.collaboration'), icon: <GroupIcon />, path: '/collaboration' },
     { text: t('navigation.errorMonitoring'), icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
@@ -333,6 +334,18 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           message = `Meeting cancelled: ${data.meeting?.subject || 'No subject'}`;
           displayType = 'warning';
           break;
+        case 'collaborationCreated':
+          message = `New collaboration link created: ${data.collaboration?.title || 'No title'}`;
+          displayType = 'info';
+          break;
+        case 'collaborationUpdated':
+          message = `Collaboration link updated: ${data.collaboration?.title || 'No title'}`;
+          displayType = 'info';
+          break;
+        case 'collaborationDeleted':
+          message = `Collaboration link deleted: ${data.collaboration?.title || 'No title'}`;
+          displayType = 'warning';
+          break;
         default:
           message = data.message || `New notification: ${notificationType}`;
           displayType = 'info';
@@ -382,6 +395,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       users: [],
       dropdowns: [],
       permissions: [],
+      collaborations: [],
       system: [],
       other: []
     };
@@ -399,6 +413,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         grouped.dropdowns.push(notification);
       } else if (notification.type.includes('permission')) {
         grouped.permissions.push(notification);
+      } else if (notification.type.includes('collaboration')) {
+        grouped.collaborations.push(notification);
       } else if (notification.type.includes('system') || notification.type.includes('error')) {
         grouped.system.push(notification);
       } else {
@@ -417,6 +433,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     if (type.includes('user')) return 'User';
     if (type.includes('dropdown')) return 'Dropdown';
     if (type.includes('permission')) return 'Permission';
+    if (type.includes('collaboration')) return 'Collaboration';
     if (type.includes('system') || type.includes('error')) return 'System';
     return 'Other';
   };
@@ -429,6 +446,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     if (type.includes('user')) return '#f4a261';
     if (type.includes('dropdown')) return '#2a9d8f';
     if (type.includes('permission')) return '#e76f51';
+    if (type.includes('collaboration')) return '#4361ee';
     if (type.includes('system') || type.includes('error')) return '#e63946';
     return '#8ac926';
   };

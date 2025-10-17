@@ -285,6 +285,21 @@ class NotificationService {
     this.on('meetingDeleted', callback);
   }
 
+  // Listen for collaboration creation
+  onCollaborationCreated(callback) {
+    this.on('collaborationCreated', callback);
+  }
+
+  // Listen for collaboration updates
+  onCollaborationUpdated(callback) {
+    this.on('collaborationUpdated', callback);
+  }
+
+  // Listen for collaboration deletions
+  onCollaborationDeleted(callback) {
+    this.on('collaborationDeleted', callback);
+  }
+
   // Listen for all notifications (new unified listener)
   onAllNotifications(callback) {
     // Listen for all known notification types
@@ -294,7 +309,8 @@ class NotificationService {
       'userCreated', 'userUpdated', 'userDeleted',
       'dropdownCreated', 'dropdownUpdated', 'dropdownDeleted',
       'permissionTemplateCreated', 'permissionTemplateUpdated', 'permissionTemplateDeleted',
-      'meetingCreated', 'meetingUpdated', 'meetingDeleted'
+      'meetingCreated', 'meetingUpdated', 'meetingDeleted',
+      'collaborationCreated', 'collaborationUpdated', 'collaborationDeleted'
     ];
     
     allTypes.forEach(type => {

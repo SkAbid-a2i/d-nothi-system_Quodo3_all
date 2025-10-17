@@ -112,6 +112,37 @@ const TaskManagement = () => {
   // Use the new user filter hook
   const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
 
+  // State for applied filters
+  const [appliedFilters, setAppliedFilters] = useState({
+    searchTerm: '',
+    statusFilter: '',
+    userFilter: ''
+  });
+
+  // Apply filters when Apply button is clicked
+  const applyFilters = () => {
+    setAppliedFilters({
+      searchTerm,
+      statusFilter,
+      userFilter
+    });
+    showSnackbar('Filters applied', 'info');
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setUserFilter('');
+    setSelectedUser(null);
+    setAppliedFilters({
+      searchTerm: '',
+      statusFilter: '',
+      userFilter: ''
+    });
+    showSnackbar('Filters cleared', 'info');
+  };
+
   // Filter services when category changes (for create form)
   useEffect(() => {
     if (selectedCategory) {
@@ -492,15 +523,15 @@ const TaskManagement = () => {
     }
   };
 
-  // Filter tasks based on search term, status, and user
+  // Filter tasks based on applied filters
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = !searchTerm || 
-      (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = !appliedFilters.searchTerm || 
+      (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+      (task.service && task.service.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()));
     
-    const matchesStatus = !statusFilter || task.status === statusFilter;
+    const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
     
     // For SystemAdmin:
     // - When no user is selected in filter (userFilter is empty), show all tasks
@@ -510,8 +541,8 @@ const TaskManagement = () => {
     let matchesUser = true;
     if (user && user.role === 'SystemAdmin') {
       // SystemAdmin can filter by user
-      if (userFilter) {
-        matchesUser = task.userName === userFilter;
+      if (appliedFilters.userFilter) {
+        matchesUser = task.userName === appliedFilters.userFilter;
       }
       // If no userFilter, matchesUser remains true (show all tasks)
     } else {
@@ -522,7 +553,7 @@ const TaskManagement = () => {
     return matchesSearch && matchesStatus && matchesUser;
   });
   
-  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', userFilter, 'Current user role:', user?.role);
+  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', appliedFilters.userFilter, 'Current user role:', user?.role);
 
   // Get task statistics
   const getTaskStats = () => {
@@ -546,12 +577,15 @@ const TaskManagement = () => {
     switch (filterType) {
       case 'pending':
         setStatusFilter('Pending');
+        setAppliedFilters(prev => ({...prev, statusFilter: 'Pending'}));
         break;
       case 'inProgress':
         setStatusFilter('In Progress');
+        setAppliedFilters(prev => ({...prev, statusFilter: 'In Progress'}));
         break;
       case 'completed':
         setStatusFilter('Completed');
+        setAppliedFilters(prev => ({...prev, statusFilter: 'Completed'}));
         break;
       default:
         // For total tasks, clear filters to show all
@@ -559,6 +593,11 @@ const TaskManagement = () => {
         setSearchTerm('');
         setUserFilter('');
         setSelectedUser(null);
+        setAppliedFilters({
+          searchTerm: '',
+          statusFilter: '',
+          userFilter: ''
+        });
         break;
     }
     
@@ -832,22 +871,13 @@ const TaskManagement = () => {
                   <Button 
                     variant="outlined" 
                     startIcon={<FilterIcon />}
-                    onClick={() => {
-                      // This button is for visual feedback - filtering happens automatically
-                      console.log('Filters applied');
-                      showSnackbar('Filters applied', 'info');
-                    }}
+                    onClick={applyFilters}
                   >
                     Apply
                   </Button>
                   <Button 
                     variant="outlined"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setStatusFilter('');
-                      setUserFilter('');
-                      setSelectedUser(null);
-                    }}
+                    onClick={clearFilters}
                   >
                     Clear
                   </Button>
