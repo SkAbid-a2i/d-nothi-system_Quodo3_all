@@ -45,9 +45,9 @@ import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   VideoCall as VideoCallIcon,
-  Error as ErrorIcon,
-  Group as GroupIcon
+  Error as ErrorIcon
 } from '@mui/icons-material';
+import CollaborationCustomIcon from './CollaborationCustomIcon';
 import { styled, alpha } from '@mui/material/styles';
 import notificationService from '../services/notificationService';
 import { auditAPI } from '../services/api';
@@ -140,7 +140,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
-    { text: t('navigation.collaboration'), icon: <GroupIcon />, path: '/collaboration' },
+    { text: t('navigation.collaboration'), icon: <CollaborationCustomIcon />, path: '/collaboration' },
     { text: t('navigation.errorMonitoring'), icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
@@ -186,22 +186,18 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   const handleNotificationMenuOpen = (event) => {
     setNotificationAnchor(event.currentTarget);
-    fetchNotifications();
+    // Don't fetch notifications automatically to preserve real-time notifications
+    // Only update the unread count to 0 when user opens the notification panel
+    if (unreadCount > 0) {
+      setUnreadCount(0);
+    }
   };
 
+  // Clear notifications for individual user
   const handleClearNotifications = () => {
     setNotifications([]);
     setUnreadCount(0);
     // Also clear notification history in service
-    notificationService.clearNotificationHistory();
-  };
-
-  // Clear notification for individual user
-  const clearUserNotifications = () => {
-    // In a real implementation, we would send a request to the backend to clear
-    // notifications for this specific user, but for now we'll just clear locally
-    setNotifications([]);
-    setUnreadCount(0);
     notificationService.clearNotificationHistory();
     showSnackbar('Notifications cleared', 'success');
   };
@@ -211,41 +207,14 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     setNotificationAnchor(null);
   };
 
-  const showSnackbar = (message, severity = 'success') => {
-    // In a real implementation, you might want to use a global snackbar context
-    console.log(`${severity}: ${message}`);
-  };
-
   // Fetch real notifications
   const fetchNotifications = async () => {
-    if (loadingNotifications) return;
-    
-    setLoadingNotifications(true);
-    try {
-      const response = await auditAPI.getRecentLogs();
-      const recentLogs = response.data || [];
-      
-      // Transform logs into notifications
-      const transformedNotifications = recentLogs.map(log => ({
-        id: log.id,
-        message: `${log.action} - ${log.description || 'No description'}`,
-        time: new Date(log.createdAt).toLocaleString(),
-        type: log.action.toLowerCase().includes('error') ? 'error' : 
-              log.action.toLowerCase().includes('warning') ? 'warning' : 'info',
-        read: false // In a real app, you'd track read status
-      }));
-      
-      setNotifications(transformedNotifications);
-      setUnreadCount(transformedNotifications.length);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      // Don't show error to user but still set empty notifications
-      setNotifications([]);
-      setUnreadCount(0);
-    } finally {
-      setLoadingNotifications(false);
-    }
+    // This function is deprecated and should not be used
+    // Real-time notifications are handled through the notification service
+    console.warn('fetchNotifications is deprecated. Use real-time notifications instead.');
   };
+
+  // Handle screen size changes
 
   // Handle screen size changes
   useEffect(() => {
