@@ -355,6 +355,60 @@ class NotificationService {
     this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
+  // Notify about collaboration creation
+  notifyCollaborationCreated(collaboration) {
+    const notification = {
+      type: 'collaborationCreated',
+      collaborationId: collaboration.id,
+      collaboration: collaboration,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users in the same office
+    if (collaboration.office) {
+      this.sendToOffice(collaboration.office, notification);
+    } else {
+      // Fallback to broadcast if no office specified
+      this.broadcast(notification);
+    }
+  }
+
+  // Notify about collaboration update
+  notifyCollaborationUpdated(collaboration) {
+    const notification = {
+      type: 'collaborationUpdated',
+      collaborationId: collaboration.id,
+      collaboration: collaboration,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users in the same office
+    if (collaboration.office) {
+      this.sendToOffice(collaboration.office, notification);
+    } else {
+      // Fallback to broadcast if no office specified
+      this.broadcast(notification);
+    }
+  }
+
+  // Notify about collaboration deletion
+  notifyCollaborationDeleted(collaboration) {
+    const notification = {
+      type: 'collaborationDeleted',
+      collaborationId: collaboration.id,
+      collaboration: collaboration,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users in the same office
+    if (collaboration.office) {
+      this.sendToOffice(collaboration.office, notification);
+    } else {
+      // Fallback to broadcast if no office specified
+      this.broadcast(notification);
+    }
+  }
+
   // Get number of connected clients
   getConnectedClients() {
     return this.clients.size;

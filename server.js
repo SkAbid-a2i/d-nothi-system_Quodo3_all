@@ -40,7 +40,8 @@ app.use(cors({
   optionsSuccessStatus: 200,
   exposedHeaders: ['Authorization'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  preflightContinue: false
 }));
 
 // Custom logging middleware
@@ -123,6 +124,10 @@ const permissionRoutes = require('./routes/permission.routes');
 const fileRoutes = require('./routes/file.routes');
 const meetingRoutes = require('./routes/meeting.routes');
 const healthRoutes = require('./routes/health.routes');
+const collaborationRoutes = require('./routes/collaboration.routes');
+
+// Add debugging to check if routes are loaded
+console.log('Collaboration routes loaded:', !!collaborationRoutes);
 
 // Use routes
 app.use('/api/auth', (req, res, next) => {
@@ -130,7 +135,25 @@ app.use('/api/auth', (req, res, next) => {
   next();
 }, authRoutes);
 
-app.use('/api/users', (req, res, next) => {
+// Add specific CORS handling for users
+app.use('/api/users', cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}), (req, res, next) => {
   logger.info('User routes accessed', { endpoint: '/api/users' + req.url });
   next();
 }, userRoutes);
@@ -184,6 +207,29 @@ app.use('/api/meetings', (req, res, next) => {
   logger.info('Meeting routes accessed', { endpoint: '/api/meetings' + req.url });
   next();
 }, meetingRoutes);
+
+// Add specific CORS handling for collaborations
+app.use('/api/collaborations', cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}), (req, res, next) => {
+  console.log('Collaboration routes accessed', { endpoint: '/api/collaborations' + req.url });
+  next();
+}, collaborationRoutes);
 
 app.use('/api/health', (req, res, next) => {
   logger.info('Health routes accessed', { endpoint: '/api/health' + req.url });

@@ -828,17 +828,17 @@ const TaskManagement = () => {
               </Grid>
               
               <Grid item xs={12} sm={6} md={3}>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button 
                     variant="outlined" 
                     startIcon={<FilterIcon />}
                     onClick={() => {
-                      // Force a refresh of filtered tasks
+                      // This button is for visual feedback - filtering happens automatically
                       console.log('Filters applied');
-                      // This will trigger a re-render with current filter values
+                      showSnackbar('Filters applied', 'info');
                     }}
                   >
-                    Apply Filters
+                    Apply
                   </Button>
                   <Button 
                     variant="outlined"
