@@ -1,6 +1,7 @@
 // Logger service for backend error tracking and monitoring
 const fs = require('fs');
 const path = require('path');
+const notificationService = require('./notification.service'); // Add this import
 
 // Simple date formatting function to avoid dependency issues
 function formatDate(date, format) {
@@ -49,12 +50,86 @@ class Logger {
     if (level === 'error') {
       const errorLogFile = path.join(this.logDir, `${formatDate(new Date(), 'yyyy-MM-dd')}-error.log`);
       fs.appendFileSync(errorLogFile, JSON.stringify(logEntry) + '\n');
+      
+      // Send error notification to relevant users
+      this.sendErrorNotification(logEntry);
+    }
+
+    // For warnings, also write to a separate warning log
+    if (level === 'warn') {
+      const warningLogFile = path.join(this.logDir, `${formatDate(new Date(), 'yyyy-MM-dd')}-warning.log`);
+      fs.appendFileSync(warningLogFile, JSON.stringify(logEntry) + '\n');
+      
+      // Send warning notification to relevant users
+      this.sendWarningNotification(logEntry);
     }
 
     // For frontend logs, write to a separate frontend log
     if (metadata.source === 'frontend') {
       const frontendLogFile = path.join(this.logDir, `${formatDate(new Date(), 'yyyy-MM-dd')}-frontend.log`);
       fs.appendFileSync(frontendLogFile, JSON.stringify(logEntry) + '\n');
+    }
+  }
+
+  // Send error notification to SystemAdmin, Admin, and Supervisor users
+  async sendErrorNotification(logEntry) {
+    try {
+      const User = require('../models/User');
+      
+      // Get all admin users
+      const adminUsers = await User.findAll({
+        where: {
+          role: {
+            [require('sequelize').Op.in]: ['SystemAdmin', 'Admin', 'Supervisor']
+          }
+        },
+        attributes: ['id']
+      });
+      
+      // Send notification to each admin user
+      adminUsers.forEach(user => {
+        const notification = {
+          type: 'errorNotification',
+          message: logEntry.message,
+          timestamp: logEntry.timestamp,
+          metadata: logEntry.metadata
+        };
+        
+        notificationService.sendToUser(user.id, notification);
+      });
+    } catch (error) {
+      console.error('Error sending error notification:', error);
+    }
+  }
+
+  // Send warning notification to SystemAdmin, Admin, and Supervisor users
+  async sendWarningNotification(logEntry) {
+    try {
+      const User = require('../models/User');
+      
+      // Get all admin users
+      const adminUsers = await User.findAll({
+        where: {
+          role: {
+            [require('sequelize').Op.in]: ['SystemAdmin', 'Admin', 'Supervisor']
+          }
+        },
+        attributes: ['id']
+      });
+      
+      // Send notification to each admin user
+      adminUsers.forEach(user => {
+        const notification = {
+          type: 'warningNotification',
+          message: logEntry.message,
+          timestamp: logEntry.timestamp,
+          metadata: logEntry.metadata
+        };
+        
+        notificationService.sendToUser(user.id, notification);
+      });
+    } catch (error) {
+      console.error('Error sending warning notification:', error);
     }
   }
 
@@ -118,6 +193,22 @@ class Logger {
     }
 
     const logContent = fs.readFileSync(errorLogFile, 'utf8');
+    return logContent
+      .split('\n')
+      .filter(line => line.trim() !== '')
+      .map(line => JSON.parse(line));
+  }
+
+  // Get warning logs for a specific date
+  getWarningLogs(date = null) {
+    const logDate = date || formatDate(new Date(), 'yyyy-MM-dd');
+    const warningLogFile = path.join(this.logDir, `${logDate}-warning.log`);
+    
+    if (!fs.existsSync(warningLogFile)) {
+      return [];
+    }
+
+    const logContent = fs.readFileSync(warningLogFile, 'utf8');
     return logContent
       .split('\n')
       .filter(line => line.trim() !== '')

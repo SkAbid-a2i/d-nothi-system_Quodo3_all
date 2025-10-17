@@ -100,6 +100,7 @@ class NotificationService {
     switch (notificationType) {
       case 'taskCreated':
       case 'taskUpdated':
+      case 'taskDeleted':
         autoRefreshService.triggerRefresh('tasks');
         autoRefreshService.triggerRefresh('dashboard');
         break;
@@ -128,6 +129,11 @@ class NotificationService {
       case 'meetingUpdated':
       case 'meetingDeleted':
         autoRefreshService.triggerRefresh('meetings');
+        break;
+      case 'collaborationCreated':
+      case 'collaborationUpdated':
+      case 'collaborationDeleted':
+        autoRefreshService.triggerRefresh('collaborations');
         break;
       default:
         // For unknown notification types, trigger a general refresh
@@ -208,6 +214,11 @@ class NotificationService {
   // Listen for task updates
   onTaskUpdated(callback) {
     this.on('taskUpdated', callback);
+  }
+
+  // Listen for task deletions
+  onTaskDeleted(callback) {
+    this.on('taskDeleted', callback);
   }
 
   // Listen for leave requests
@@ -300,17 +311,28 @@ class NotificationService {
     this.on('collaborationDeleted', callback);
   }
 
+  // Listen for error monitoring notifications
+  onErrorNotification(callback) {
+    this.on('errorNotification', callback);
+  }
+
+  // Listen for warning notifications
+  onWarningNotification(callback) {
+    this.on('warningNotification', callback);
+  }
+
   // Listen for all notifications (new unified listener)
   onAllNotifications(callback) {
     // Listen for all known notification types
     const allTypes = [
-      'taskCreated', 'taskUpdated',
+      'taskCreated', 'taskUpdated', 'taskDeleted',
       'leaveRequested', 'leaveApproved', 'leaveRejected',
       'userCreated', 'userUpdated', 'userDeleted',
       'dropdownCreated', 'dropdownUpdated', 'dropdownDeleted',
       'permissionTemplateCreated', 'permissionTemplateUpdated', 'permissionTemplateDeleted',
       'meetingCreated', 'meetingUpdated', 'meetingDeleted',
-      'collaborationCreated', 'collaborationUpdated', 'collaborationDeleted'
+      'collaborationCreated', 'collaborationUpdated', 'collaborationDeleted',
+      'errorNotification', 'warningNotification'
     ];
     
     allTypes.forEach(type => {

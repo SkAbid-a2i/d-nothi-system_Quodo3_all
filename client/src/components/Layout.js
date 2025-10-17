@@ -336,6 +336,14 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           message = `Collaboration link deleted: ${data.collaboration?.title || 'No title'}`;
           displayType = 'warning';
           break;
+        case 'errorNotification':
+          message = `Error: ${data.message || 'System error occurred'}`;
+          displayType = 'error';
+          break;
+        case 'warningNotification':
+          message = `Warning: ${data.message || 'System warning'}`;
+          displayType = 'warning';
+          break;
         default:
           message = data.message || `New notification: ${notificationType}`;
           displayType = 'info';
@@ -386,6 +394,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       dropdowns: [],
       permissions: [],
       collaborations: [],
+      errors: [],
+      warnings: [],
       system: [],
       other: []
     };
@@ -405,7 +415,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         grouped.permissions.push(notification);
       } else if (notification.type.includes('collaboration')) {
         grouped.collaborations.push(notification);
-      } else if (notification.type.includes('system') || notification.type.includes('error')) {
+      } else if (notification.type.includes('error')) {
+        grouped.errors.push(notification);
+      } else if (notification.type.includes('warning')) {
+        grouped.warnings.push(notification);
+      } else if (notification.type.includes('system')) {
         grouped.system.push(notification);
       } else {
         grouped.other.push(notification);
@@ -424,7 +438,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     if (type.includes('dropdown')) return 'Dropdown';
     if (type.includes('permission')) return 'Permission';
     if (type.includes('collaboration')) return 'Collaboration';
-    if (type.includes('system') || type.includes('error')) return 'System';
+    if (type.includes('error')) return 'Error';
+    if (type.includes('warning')) return 'Warning';
+    if (type.includes('system')) return 'System';
     return 'Other';
   };
 
@@ -437,7 +453,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     if (type.includes('dropdown')) return '#2a9d8f';
     if (type.includes('permission')) return '#e76f51';
     if (type.includes('collaboration')) return '#4361ee';
-    if (type.includes('system') || type.includes('error')) return '#e63946';
+    if (type.includes('error')) return '#e63946';
+    if (type.includes('warning')) return '#f59e0b';
+    if (type.includes('system')) return '#8b5cf6';
     return '#8ac926';
   };
 

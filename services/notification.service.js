@@ -134,6 +134,32 @@ class NotificationService {
     }
   }
 
+  // Send notification to all admin users (SystemAdmin, Admin, Supervisor)
+  async sendToAdminUsers(data) {
+    try {
+      const User = require('../models/User');
+      
+      // Get all admin users
+      const adminUsers = await User.findAll({
+        where: {
+          role: {
+            [require('sequelize').Op.in]: ['SystemAdmin', 'Admin', 'Supervisor']
+          }
+        },
+        attributes: ['id']
+      });
+      
+      // Send notification to each admin user
+      adminUsers.forEach(user => {
+        this.sendToUser(user.id, data);
+      });
+    } catch (error) {
+      console.error('Error sending notification to admin users:', error);
+      // Fallback to broadcast if there's an error
+      this.broadcast(data);
+    }
+  }
+
   // Notify about task creation
   notifyTaskCreated(task) {
     const notification = {
@@ -151,6 +177,19 @@ class NotificationService {
   notifyTaskUpdated(task) {
     const notification = {
       type: 'taskUpdated',
+      taskId: task.id,
+      task: task,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send to all users
+    this.broadcast(notification);
+  }
+
+  // Notify about task deletion
+  notifyTaskDeleted(task) {
+    const notification = {
+      type: 'taskDeleted',
       taskId: task.id,
       task: task,
       timestamp: new Date().toISOString()
@@ -209,7 +248,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about user update
@@ -222,7 +261,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about user deletion
@@ -235,7 +274,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about dropdown creation
@@ -248,7 +287,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about dropdown update
@@ -261,7 +300,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about dropdown deletion
@@ -274,7 +313,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about permission template creation
@@ -287,7 +326,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about permission template update
@@ -300,7 +339,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about permission template deletion
@@ -313,7 +352,7 @@ class NotificationService {
     };
     
     // Send to all admins
-    this.broadcast(notification);
+    this.sendToAdminUsers(notification);
   }
 
   // Notify about meeting creation
@@ -407,6 +446,32 @@ class NotificationService {
       // Fallback to broadcast if no office specified
       this.broadcast(notification);
     }
+  }
+
+  // Notify about error
+  notifyError(errorData) {
+    const notification = {
+      type: 'errorNotification',
+      message: errorData.message,
+      timestamp: new Date().toISOString(),
+      metadata: errorData.metadata || {}
+    };
+    
+    // Send to all admin users
+    this.sendToAdminUsers(notification);
+  }
+
+  // Notify about warning
+  notifyWarning(warningData) {
+    const notification = {
+      type: 'warningNotification',
+      message: warningData.message,
+      timestamp: new Date().toISOString(),
+      metadata: warningData.metadata || {}
+    };
+    
+    // Send to all admin users
+    this.sendToAdminUsers(notification);
   }
 
   // Get number of connected clients

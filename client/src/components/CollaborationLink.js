@@ -265,20 +265,24 @@ const CollaborationLink = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)', minHeight: '100vh' }}>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        mb: 3,
+        mb: 4,
         flexWrap: 'wrap',
-        gap: 2
+        gap: 2,
+        background: 'white',
+        borderRadius: 3,
+        p: 3,
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
       }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, background: 'linear-gradient(45deg, #667eea, #764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             {t('collaboration.title')}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
             {t('collaboration.description')}
           </Typography>
         </Box>
@@ -288,8 +292,14 @@ const CollaborationLink = () => {
           onClick={() => handleOpenDialog()}
           sx={{
             background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            borderRadius: '50px',
+            padding: '12px 24px',
+            fontWeight: 600,
+            fontSize: '1rem',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
             '&:hover': {
-              background: 'linear-gradient(45deg, #764ba2, #667eea)'
+              background: 'linear-gradient(45deg, #764ba2, #667eea)',
+              boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)'
             }
           }}
         >
@@ -298,38 +308,42 @@ const CollaborationLink = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 3, boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)' }} onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
+        <Alert severity="success" sx={{ mb: 3, borderRadius: 3, boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)' }} onClose={() => setSuccess('')}>
           {success}
         </Alert>
       )}
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+          <CircularProgress size={60} thickness={4} sx={{ color: '#667eea' }} />
         </Box>
       ) : (
         <Grid container spacing={3}>
           {collaborations.map((collaboration) => (
             <Grid item xs={12} md={6} lg={4} key={collaboration.id}>
               <Paper 
-                elevation={3}
+                elevation={0}
                 sx={{ 
                   p: 3, 
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   cursor: 'pointer',
+                  borderRadius: 3,
+                  background: 'white',
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 6
-                  },
-                  transition: 'all 0.3s ease-in-out'
+                    transform: 'translateY(-8px)',
+                    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
+                    border: '1px solid rgba(102, 126, 234, 0.3)'
+                  }
                 }}
                 onClick={() => handleOpenCollaborationDetail(collaboration)}
               >
@@ -342,9 +356,10 @@ const CollaborationLink = () => {
                   <Typography 
                     variant="h6" 
                     sx={{ 
-                      fontWeight: 600, 
+                      fontWeight: 700, 
                       flex: 1,
-                      wordBreak: 'break-word'
+                      wordBreak: 'break-word',
+                      color: '#333'
                     }}
                   >
                     {collaboration.title || t('collaboration.noTitle')}
@@ -353,7 +368,12 @@ const CollaborationLink = () => {
                     label={collaboration.urgency || 'None'}
                     size="small"
                     color={getUrgencyColor(collaboration.urgency)}
-                    sx={{ ml: 1 }}
+                    sx={{ 
+                      ml: 1,
+                      fontWeight: 600,
+                      borderRadius: '20px',
+                      boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
+                    }}
                   />
                 </Box>
 
@@ -361,9 +381,10 @@ const CollaborationLink = () => {
                   variant="body2" 
                   color="text.secondary" 
                   sx={{ 
-                    mb: 2, 
+                    mb: 3, 
                     flex: 1,
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    lineHeight: 1.6
                   }}
                 >
                   {collaboration.description || t('collaboration.noDescription')}
@@ -373,10 +394,12 @@ const CollaborationLink = () => {
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  mt: 'auto'
+                  mt: 'auto',
+                  pt: 2,
+                  borderTop: '1px solid rgba(0, 0, 0, 0.05)'
                 }}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                       {t('collaboration.availability')}: {collaboration.availability || 'Always'}
                     </Typography>
                   </Box>
@@ -389,9 +412,15 @@ const CollaborationLink = () => {
                             e.stopPropagation();
                             handleOpenDialog(collaboration);
                           }}
-                          sx={{ mr: 1 }}
+                          sx={{ 
+                            mr: 1,
+                            background: 'rgba(102, 126, 234, 0.1)',
+                            '&:hover': {
+                              background: 'rgba(102, 126, 234, 0.2)'
+                            }
+                          }}
                         >
-                          <EditIcon />
+                          <EditIcon sx={{ color: '#667eea' }} />
                         </IconButton>
                         <IconButton 
                           size="small" 
@@ -399,8 +428,14 @@ const CollaborationLink = () => {
                             e.stopPropagation();
                             handleDelete(collaboration.id);
                           }}
+                          sx={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            '&:hover': {
+                              background: 'rgba(239, 68, 68, 0.2)'
+                            }
+                          }}
                         >
-                          <DeleteIcon />
+                          <DeleteIcon sx={{ color: '#ef4444' }} />
                         </IconButton>
                       </>
                     )}
@@ -420,18 +455,23 @@ const CollaborationLink = () => {
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
-            maxHeight: '80vh',
-            overflowY: 'auto'
+            borderRadius: 3,
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)'
           }
         }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(45deg, #667eea, #764ba2)', 
+          color: 'white',
+          fontWeight: 600,
+          fontSize: '1.5rem'
+        }}>
           {selectedCollaboration 
             ? t('collaboration.editLink') 
             : t('collaboration.createLink')}
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ pt: 1 }}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
@@ -441,9 +481,22 @@ const CollaborationLink = () => {
                   value={formData.title}
                   onChange={handleChange}
                   required
+                  variant="outlined"
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px'
+                      borderRadius: '12px',
+                      '& fieldset': {
+                        borderWidth: '2px'
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontWeight: 500
                     }
                   }}
                 />
@@ -453,22 +506,35 @@ const CollaborationLink = () => {
                 <TextField
                   fullWidth
                   multiline
-                  rows={4}
+                  rows={5}
                   label={t('collaboration.descriptionLabel')}
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
+                  variant="outlined"
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px'
+                      borderRadius: '12px',
+                      '& fieldset': {
+                        borderWidth: '2px'
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontWeight: 500
                     }
                   }}
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('collaboration.availability')}</InputLabel>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel sx={{ fontWeight: 500 }}>{t('collaboration.availability')}</InputLabel>
                   <Select
                     name="availability"
                     value={formData.availability}
@@ -476,7 +542,16 @@ const CollaborationLink = () => {
                     label={t('collaboration.availability')}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px'
+                        borderRadius: '12px',
+                        '& fieldset': {
+                          borderWidth: '2px'
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#667eea'
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#667eea'
+                        }
                       }
                     }}
                   >
@@ -489,8 +564,8 @@ const CollaborationLink = () => {
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('collaboration.urgency')}</InputLabel>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel sx={{ fontWeight: 500 }}>{t('collaboration.urgency')}</InputLabel>
                   <Select
                     name="urgency"
                     value={formData.urgency}
@@ -498,7 +573,16 @@ const CollaborationLink = () => {
                     label={t('collaboration.urgency')}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px'
+                        borderRadius: '12px',
+                        '& fieldset': {
+                          borderWidth: '2px'
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#667eea'
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#667eea'
+                        }
                       }
                     }}
                   >
@@ -513,19 +597,34 @@ const CollaborationLink = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={handleCloseDialog}
+            sx={{
+              borderRadius: '50px',
+              padding: '8px 20px',
+              fontWeight: 600
+            }}
+          >
             {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             variant="contained"
-            startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+            startIcon={saving ? <CircularProgress size={20} sx={{ color: 'white' }} /> : <SaveIcon />}
             disabled={saving}
             sx={{
               background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              borderRadius: '50px',
+              padding: '8px 24px',
+              fontWeight: 600,
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
               '&:hover': {
-                background: 'linear-gradient(45deg, #764ba2, #667eea)'
+                background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)'
+              },
+              '&.Mui-disabled': {
+                background: 'rgba(0, 0, 0, 0.12)'
               }
             }}
           >
@@ -548,7 +647,11 @@ const CollaborationLink = () => {
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          sx={{ 
+            width: '100%',
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+          }}
         >
           {snackbar.message}
         </Alert>
@@ -562,19 +665,24 @@ const CollaborationLink = () => {
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
-            maxHeight: '80vh',
-            overflowY: 'auto'
+            borderRadius: 3,
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)'
           }
         }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(45deg, #667eea, #764ba2)', 
+          color: 'white',
+          fontWeight: 600,
+          fontSize: '1.5rem'
+        }}>
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'space-between' 
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <AccessTimeIcon sx={{ mr: 1, color: 'primary.main' }} />
+              <AccessTimeIcon sx={{ mr: 1 }} />
               {t('collaboration.collaborationDetails')}
             </Box>
             {selectedCollaboration && (
@@ -582,21 +690,27 @@ const CollaborationLink = () => {
                 label={selectedCollaboration.urgency || 'None'}
                 size="small"
                 color={getUrgencyColor(selectedCollaboration.urgency)}
+                sx={{ 
+                  fontWeight: 600,
+                  borderRadius: '20px',
+                  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)'
+                }}
               />
             )}
           </Box>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: 3 }}>
           {selectedCollaboration && (
-            <Box sx={{ pt: 2 }}>
-              <Grid container spacing={3}>
+            <Box sx={{ pt: 1 }}>
+              <Grid container spacing={4}>
                 <Grid item xs={12}>
                   <Typography 
-                    variant="h5" 
+                    variant="h4" 
                     sx={{ 
-                      fontWeight: 600, 
-                      mb: 2,
-                      wordBreak: 'break-word'
+                      fontWeight: 700, 
+                      mb: 3,
+                      wordBreak: 'break-word',
+                      color: '#333'
                     }}
                   >
                     {selectedCollaboration.title || t('collaboration.noTitle')}
@@ -604,24 +718,28 @@ const CollaborationLink = () => {
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <AccessTimeIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main' }} />
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {t('collaboration.availability')}:
-                      <Typography component="span" sx={{ fontWeight: 400, ml: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <AccessTimeIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                        {t('collaboration.availability')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 400, mt: 0.5, fontSize: '1rem' }}>
                         {selectedCollaboration.availability || 'Always'}
                       </Typography>
-                    </Typography>
+                    </Box>
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <PriorityHighIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main' }} />
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {t('collaboration.urgency')}:
-                      <Typography component="span" sx={{ fontWeight: 400, ml: 1 }}>
+                    <PriorityHighIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                        {t('collaboration.urgency')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 400, mt: 0.5, fontSize: '1rem' }}>
                         {selectedCollaboration.urgency || 'None'}
                       </Typography>
-                    </Typography>
+                    </Box>
                   </Box>
                 </Grid>
 
@@ -629,12 +747,12 @@ const CollaborationLink = () => {
                 {selectedCollaboration.creator && (
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                      <PersonIcon sx={{ fontSize: 20, mr: 1, color: 'primary.main', mt: 0.5 }} />
+                      <PersonIcon sx={{ fontSize: 24, mr: 2, color: '#667eea', mt: 0.5 }} />
                       <Box>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                           {t('collaboration.createdBy')}:
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 400, mt: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 400, mt: 0.5, fontSize: '1rem' }}>
                           {selectedCollaboration.creator.fullName || selectedCollaboration.creator.username}
                         </Typography>
                       </Box>
@@ -643,14 +761,17 @@ const CollaborationLink = () => {
                 )}
 
                 <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#333' }}>
                     {t('collaboration.description')}
                   </Typography>
                   <Typography 
                     variant="body1" 
                     sx={{ 
                       whiteSpace: 'pre-line',
-                      wordBreak: 'break-word'
+                      wordBreak: 'break-word',
+                      lineHeight: 1.8,
+                      fontSize: '1.1rem',
+                      color: '#555'
                     }}
                   >
                     {selectedCollaboration.description || t('collaboration.noDescription')}
@@ -663,7 +784,9 @@ const CollaborationLink = () => {
                     sx={{ 
                       color: 'text.secondary', 
                       textAlign: 'right', 
-                      mt: 2 
+                      mt: 2,
+                      pt: 2,
+                      borderTop: '1px solid rgba(0, 0, 0, 0.1)'
                     }}
                   >
                     {t('collaboration.created')}: 
@@ -676,8 +799,15 @@ const CollaborationLink = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseCollaborationDetail}>
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={handleCloseCollaborationDetail}
+            sx={{
+              borderRadius: '50px',
+              padding: '8px 24px',
+              fontWeight: 600
+            }}
+          >
             {t('common.close')}
           </Button>
         </DialogActions>

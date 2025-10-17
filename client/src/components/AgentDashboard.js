@@ -478,13 +478,13 @@ const AgentDashboard = () => {
     }
   };
 
-  // Get task distribution data for charts
+  // Get task distribution data for charts - use filtered tasks instead of all tasks
   const getTaskDistributionData = () => {
-    if (!tasks || tasks.length === 0) return [];
+    if (!finalFilteredTasks || finalFilteredTasks.length === 0) return [];
     
     // Group tasks by category
     const categoryCount = {};
-    tasks.forEach(task => {
+    finalFilteredTasks.forEach(task => {
       const category = task.category || 'Unknown';
       categoryCount[category] = (categoryCount[category] || 0) + 1;
     });
@@ -496,38 +496,37 @@ const AgentDashboard = () => {
     }));
   };
 
-  // Fetch reports data from API
+  // Fetch reports data from API - use filtered data
   const fetchReportsData = useCallback(async () => {
     try {
-      // In a real app, this would come from the backend
-      // For now, we'll create dynamic reports based on actual data
+      // Generate dynamic reports based on filtered data
       const reports = [
         { 
           id: 1, 
           name: 'Weekly Task Report', 
           generatedAt: new Date().toLocaleString(), 
           filter: 'Last 7 days',
-          taskCount: tasks.length,
-          pendingTasks: tasks.filter(t => t.status === 'Pending').length,
-          completedTasks: tasks.filter(t => t.status === 'Completed').length
+          taskCount: finalFilteredTasks.length,
+          pendingTasks: finalFilteredTasks.filter(t => t.status === 'Pending').length,
+          completedTasks: finalFilteredTasks.filter(t => t.status === 'Completed').length
         },
         { 
           id: 2, 
           name: 'Monthly Leave Report', 
           generatedAt: new Date().toLocaleString(), 
           filter: 'Current Month',
-          leaveCount: leaves.length,
-          approvedLeaves: leaves.filter(l => l.status === 'Approved').length,
-          pendingLeaves: leaves.filter(l => l.status === 'Pending').length
+          leaveCount: finalFilteredLeaves.length,
+          approvedLeaves: finalFilteredLeaves.filter(l => l.status === 'Approved').length,
+          pendingLeaves: finalFilteredLeaves.filter(l => l.status === 'Pending').length
         },
         { 
           id: 3, 
           name: 'Performance Summary', 
           generatedAt: new Date().toLocaleString(), 
           filter: 'All Time',
-          totalTasks: tasks.length,
-          totalLeaves: leaves.length,
-          completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100) : 0
+          totalTasks: finalFilteredTasks.length,
+          totalLeaves: finalFilteredLeaves.length,
+          completionRate: finalFilteredTasks.length > 0 ? Math.round((finalFilteredTasks.filter(t => t.status === 'Completed').length / finalFilteredTasks.length) * 100) : 0
         }
       ];
       return reports;
@@ -535,39 +534,39 @@ const AgentDashboard = () => {
       console.error('Error fetching reports data:', error);
       return [];
     }
-  }, [tasks, leaves]);
+  }, [finalFilteredTasks, finalFilteredLeaves]);
 
-  // Get reports data based on actual data
+  // Get reports data based on actual data - use filtered data
   const getReportsData = useCallback(() => {
     try {
-      // Generate dynamic reports based on actual data
+      // Generate dynamic reports based on filtered data
       const reports = [
         { 
           id: 1, 
           name: 'Weekly Task Report', 
           generatedAt: new Date().toLocaleString(), 
           filter: 'Last 7 days',
-          taskCount: tasks.length,
-          pendingTasks: tasks.filter(t => t.status === 'Pending').length,
-          completedTasks: tasks.filter(t => t.status === 'Completed').length
+          taskCount: finalFilteredTasks.length,
+          pendingTasks: finalFilteredTasks.filter(t => t.status === 'Pending').length,
+          completedTasks: finalFilteredTasks.filter(t => t.status === 'Completed').length
         },
         { 
           id: 2, 
           name: 'Monthly Leave Report', 
           generatedAt: new Date().toLocaleString(), 
           filter: 'Current Month',
-          leaveCount: leaves.length,
-          approvedLeaves: leaves.filter(l => l.status === 'Approved').length,
-          pendingLeaves: leaves.filter(l => l.status === 'Pending').length
+          leaveCount: finalFilteredLeaves.length,
+          approvedLeaves: finalFilteredLeaves.filter(l => l.status === 'Approved').length,
+          pendingLeaves: finalFilteredLeaves.filter(l => l.status === 'Pending').length
         },
         { 
           id: 3, 
           name: 'Performance Summary', 
           generatedAt: new Date().toLocaleString(), 
           filter: 'All Time',
-          totalTasks: tasks.length,
-          totalLeaves: leaves.length,
-          completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100) : 0
+          totalTasks: finalFilteredTasks.length,
+          totalLeaves: finalFilteredLeaves.length,
+          completionRate: finalFilteredTasks.length > 0 ? Math.round((finalFilteredTasks.filter(t => t.status === 'Completed').length / finalFilteredTasks.length) * 100) : 0
         }
       ];
       return reports;
@@ -575,15 +574,15 @@ const AgentDashboard = () => {
       console.error('Error generating reports data:', error);
       return [];
     }
-  }, [tasks, leaves]);
+  }, [finalFilteredTasks, finalFilteredLeaves]);
 
-  // Get notifications data based on actual data
+  // Get notifications data based on actual data - use filtered data
   const getNotificationsData = useCallback(() => {
     try {
       const notifications = [];
       
-      // Add task-related notifications
-      tasks.slice(0, 3).forEach(task => {
+      // Add task-related notifications from filtered tasks
+      finalFilteredTasks.slice(0, 3).forEach(task => {
         notifications.push({
           id: `task-${task.id}`,
           message: `Task "${task.description}" is ${task.status}`,
@@ -592,8 +591,8 @@ const AgentDashboard = () => {
         });
       });
       
-      // Add leave-related notifications
-      leaves.slice(0, 3).forEach(leave => {
+      // Add leave-related notifications from filtered leaves
+      finalFilteredLeaves.slice(0, 3).forEach(leave => {
         if (leave.status === 'Pending') {
           notifications.push({
             id: `leave-${leave.id}`,
@@ -630,7 +629,7 @@ const AgentDashboard = () => {
       console.error('Error generating notifications data:', error);
       return [];
     }
-  }, [tasks, leaves]);
+  }, [finalFilteredTasks, finalFilteredLeaves]);
 
   // Get actual reports and notifications data
   const reportsData = getReportsData();
