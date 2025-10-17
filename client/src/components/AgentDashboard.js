@@ -764,12 +764,7 @@ const AgentDashboard = () => {
                   selectedUser={selectedUser}
                   onUserChange={(newValue) => {
                     setSelectedUser(newValue);
-                    // Apply filter immediately when user selects a user
-                    if (newValue) {
-                      setUserFilter(newValue.username || newValue.email || '');
-                    } else {
-                      setUserFilter('');
-                    }
+                    // Don't apply filter immediately, let user click Apply button
                   }}
                   label="Filter by User"
                   loading={userLoading}
@@ -788,6 +783,19 @@ const AgentDashboard = () => {
                     }}
                   >
                     Clear Filters
+                  </Button>
+                  <Button 
+                    variant="contained"
+                    onClick={() => {
+                      // Apply user filter when Apply button is clicked
+                      if (selectedUser) {
+                        setUserFilter(selectedUser.username || selectedUser.email || '');
+                      } else {
+                        setUserFilter('');
+                      }
+                    }}
+                  >
+                    Apply
                   </Button>
                   <Button 
                     startIcon={<DownloadIcon />} 

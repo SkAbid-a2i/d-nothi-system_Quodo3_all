@@ -66,6 +66,33 @@ const CollaborationLink = () => {
     }
   }, [user]);
 
+  // Listen for collaboration notifications
+  useEffect(() => {
+    const handleCollaborationCreated = () => {
+      fetchCollaborations();
+    };
+
+    const handleCollaborationUpdated = () => {
+      fetchCollaborations();
+    };
+
+    const handleCollaborationDeleted = () => {
+      fetchCollaborations();
+    };
+
+    // Subscribe to collaboration notifications
+    notificationService.onCollaborationCreated(handleCollaborationCreated);
+    notificationService.onCollaborationUpdated(handleCollaborationUpdated);
+    notificationService.onCollaborationDeleted(handleCollaborationDeleted);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('collaborationCreated', handleCollaborationCreated);
+      notificationService.off('collaborationUpdated', handleCollaborationUpdated);
+      notificationService.off('collaborationDeleted', handleCollaborationDeleted);
+    };
+  }, []);
+
   const fetchCollaborations = async () => {
     setLoading(true);
     try {
