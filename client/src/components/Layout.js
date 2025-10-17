@@ -207,6 +207,12 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     setNotificationAnchor(null);
   };
 
+  // Show snackbar helper function
+  const showSnackbar = (message, severity = 'success') => {
+    // In a real implementation, you might want to use a global snackbar context
+    console.log(`${severity}: ${message}`);
+  };
+
   // Fetch real notifications
   const fetchNotifications = async () => {
     // This function is deprecated and should not be used
