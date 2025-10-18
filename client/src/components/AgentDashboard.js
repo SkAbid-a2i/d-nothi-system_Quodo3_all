@@ -130,8 +130,12 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
-      // If user is admin, show all tasks; otherwise, show only their own tasks
-      if (!isAdmin) {
+      // If user is admin, show all tasks initially, but apply user filter if set
+      if (isAdmin) {
+        // For admin users, we still want to show all tasks initially
+        // The user filter will be applied in the finalFilteredTasks calculation
+      } else {
+        // For non-admin users, show only their own tasks
         tasksData = tasksData.filter(task => 
           task.userId === user.id || task.userName === user.username
         );
@@ -148,8 +152,12 @@ const AgentDashboard = () => {
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
       
-      // If user is admin, show all leaves; otherwise, show only their own leaves
-      if (!isAdmin) {
+      // If user is admin, show all leaves initially, but apply user filter if set
+      if (isAdmin) {
+        // For admin users, we still want to show all leaves initially
+        // The user filter will be applied in the finalFilteredLeaves calculation
+      } else {
+        // For non-admin users, show only their own leaves
         leavesData = leavesData.filter(leave => 
           leave.userId === user.id || leave.userName === user.username
         );

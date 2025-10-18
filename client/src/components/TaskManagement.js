@@ -124,7 +124,7 @@ const TaskManagement = () => {
     setAppliedFilters({
       searchTerm,
       statusFilter,
-      userFilter
+      userFilter: selectedUser ? selectedUser.username : ''
     });
     showSnackbar('Filters applied', 'info');
   };
@@ -133,7 +133,6 @@ const TaskManagement = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
-    setUserFilter('');
     setSelectedUser(null);
     setAppliedFilters({
       searchTerm: '',
@@ -557,13 +556,13 @@ const TaskManagement = () => {
   
   console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', appliedFilters.userFilter, 'Current user role:', user?.role);
 
-  // Get task statistics
+  // Get task statistics based on filtered tasks
   const getTaskStats = () => {
     const stats = {
-      total: tasks.length,
-      pending: tasks.filter(t => t.status === 'Pending').length,
-      inProgress: tasks.filter(t => t.status === 'In Progress').length,
-      completed: tasks.filter(t => t.status === 'Completed').length
+      total: filteredTasks.length,
+      pending: filteredTasks.filter(t => t.status === 'Pending').length,
+      inProgress: filteredTasks.filter(t => t.status === 'In Progress').length,
+      completed: filteredTasks.filter(t => t.status === 'Completed').length
     };
     return stats;
   };
@@ -593,7 +592,6 @@ const TaskManagement = () => {
         // For total tasks, clear filters to show all
         setStatusFilter('');
         setSearchTerm('');
-        setUserFilter('');
         setSelectedUser(null);
         setAppliedFilters({
           searchTerm: '',
@@ -860,8 +858,7 @@ const TaskManagement = () => {
                   onUserChange={(user) => {
                     console.log('User filter changed:', user);
                     setSelectedUser(user);
-                    setUserFilter(user ? user.username : '');
-                    console.log('User filter set to:', user ? user.username : '');
+                    // Don't update userFilter immediately, let Apply button handle it
                   }}
                   label="Filter by User"
                   loading={userLoading}

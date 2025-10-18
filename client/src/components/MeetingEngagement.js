@@ -397,6 +397,78 @@ const MeetingEngagement = () => {
     }
   };
 
+  // Add this helper function before the return statement
+  const getMeetingStatus = (date, time) => {
+    const meetingDateTime = new Date(`${date}T${time}`);
+    const now = new Date();
+    
+    // If meeting is in the future (within 1 hour), it's "Coming Soon"
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+    if (meetingDateTime > now && meetingDateTime <= oneHourFromNow) {
+      return 'coming-soon';
+    }
+    
+    // If meeting is in the future (more than 1 hour), it's "Upcoming"
+    if (meetingDateTime > oneHourFromNow) {
+      return 'upcoming';
+    }
+    
+    // If meeting is happening now (started but not ended)
+    const meetingEndTime = new Date(meetingDateTime.getTime() + 60 * 60 * 1000); // Assume 1 hour duration for checking
+    if (meetingDateTime <= now && meetingEndTime > now) {
+      return 'ongoing';
+    }
+    
+    // If meeting has ended
+    if (meetingEndTime <= now) {
+      return 'ended';
+    }
+    
+    return 'upcoming';
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'coming-soon': return 'Coming Soon';
+      case 'ongoing': return 'Ongoing';
+      case 'ended': return 'Ended';
+      default: return 'Upcoming';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'coming-soon': return '#ffa726'; // Orange
+      case 'ongoing': return '#66bb6a'; // Green
+      case 'ended': return '#90a4ae'; // Gray
+      default: return '#42a5f5'; // Blue
+    }
+  };
+
+  // Sort meetings by status and time
+  const sortedMeetings = [...meetings].sort((a, b) => {
+    const statusA = getMeetingStatus(a.date, a.time);
+    const statusB = getMeetingStatus(b.date, b.time);
+    
+    // Define status priority: ongoing > coming-soon > upcoming > ended
+    const statusPriority = {
+      'ongoing': 1,
+      'coming-soon': 2,
+      'upcoming': 3,
+      'ended': 4
+    };
+    
+    // Sort by status priority first
+    if (statusPriority[statusA] !== statusPriority[statusB]) {
+      return statusPriority[statusA] - statusPriority[statusB];
+    }
+    
+    // If same status, sort by date/time
+    const dateTimeA = new Date(`${a.date}T${a.time}`);
+    const dateTimeB = new Date(`${b.date}T${b.time}`);
+    return dateTimeA - dateTimeB;
+  });
+
   return (
     <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)', minHeight: '100vh' }}>
       <Box sx={{ 
@@ -458,189 +530,191 @@ const MeetingEngagement = () => {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {meetings.map((meeting) => (
-            <Grid item xs={12} md={6} lg={4} key={meeting.id}>
-              <Card 
-                elevation={0}
-                sx={{ 
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  background: 'white',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
-                    border: '1px solid rgba(102, 126, 234, 0.3)'
-                  }
-                }}
-              >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'flex-start',
-                    mb: 2
-                  }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 700, 
-                        flex: 1,
-                        wordBreak: 'break-word',
-                        color: '#333'
-                      }}
-                    >
-                      {meeting.subject || 'No Subject'}
-                    </Typography>
-                    <Chip
-                      icon={getPlatformIcon(meeting.platform)}
-                      label={meeting.platform || 'zoom'}
-                      size="small"
-                      sx={{ 
-                        ml: 1,
-                        fontWeight: 600,
-                        borderRadius: '20px',
-                        bgcolor: `${getPlatformColor(meeting.platform)}20`,
-                        color: getPlatformColor(meeting.platform),
-                        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
-                      }}
-                    />
-                  </Box>
+          {sortedMeetings.map((meeting) => {
+            const meetingStatus = getMeetingStatus(meeting.date, meeting.time);
+            return (
+              <Grid item xs={12} md={6} lg={4} key={meeting.id}>
+                <Card 
+                  elevation={0}
+                  sx={{ 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 3,
+                    background: 'white',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
+                      border: '1px solid rgba(102, 126, 234, 0.3)'
+                    }
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'flex-start',
+                      mb: 2
+                    }}>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontWeight: 700, 
+                          flex: 1,
+                          wordBreak: 'break-word',
+                          color: '#333'
+                        }}
+                      >
+                        {meeting.subject || 'No Subject'}
+                      </Typography>
+                      <Chip
+                        label={getStatusLabel(meetingStatus)}
+                        size="small"
+                        sx={{ 
+                          ml: 1,
+                          fontWeight: 600,
+                          borderRadius: '20px',
+                          bgcolor: `${getStatusColor(meetingStatus)}20`,
+                          color: getStatusColor(meetingStatus),
+                          boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
+                        }}
+                      />
+                    </Box>
 
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    mb: 2,
-                    p: 1,
-                    bgcolor: 'rgba(102, 126, 234, 0.1)',
-                    borderRadius: '8px'
-                  }}>
-                    <PersonIcon sx={{ 
-                      fontSize: 16, 
-                      mr: 1, 
-                      color: '#667eea' 
-                    }} />
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        fontWeight: 500,
-                        color: '#667eea'
-                      }}
-                    >
-                      {meeting.creator?.fullName || meeting.creator?.username || 'Unknown Creator'}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <CalendarIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {meeting.date ? new Date(meeting.date).toLocaleDateString() : 'No Date'}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mb: 2,
+                      p: 1,
+                      bgcolor: 'rgba(102, 126, 234, 0.1)',
+                      borderRadius: '8px'
+                    }}>
+                      <PersonIcon sx={{ 
+                        fontSize: 16, 
+                        mr: 1, 
+                        color: '#667eea' 
+                      }} />
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          fontWeight: 500,
+                          color: '#667eea'
+                        }}
+                      >
+                        {meeting.creator?.fullName || meeting.creator?.username || 'Unknown Creator'}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <ScheduleIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {meeting.time || 'No Time'} ({getDurationLabel(meeting.duration)})
-                      </Typography>
-                    </Box>
-                    {meeting.location && (
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <LocationOnIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
+
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <CalendarIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {meeting.location}
+                          {meeting.date ? new Date(meeting.date).toLocaleDateString() : 'No Date'}
                         </Typography>
                       </Box>
-                    )}
-                  </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <ScheduleIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {meeting.time || 'No Time'} ({getDurationLabel(meeting.duration)})
+                        </Typography>
+                      </Box>
+                      {meeting.location && (
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <LocationOnIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {meeting.location}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
 
-                  {meeting.users && meeting.users.length > 0 && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                        Participants ({meeting.users.length}):
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                        {meeting.users.slice(0, 3).map((user, index) => (
-                          <Tooltip key={user.id} title={user.fullName || user.username}>
+                    {meeting.users && meeting.users.length > 0 && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                          Participants ({meeting.users.length}):
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                          {meeting.users.slice(0, 3).map((user, index) => (
+                            <Tooltip key={user.id} title={user.fullName || user.username}>
+                              <Avatar 
+                                sx={{ 
+                                  width: 24, 
+                                  height: 24, 
+                                  fontSize: '0.7rem',
+                                  bgcolor: '#667eea'
+                                }}
+                              >
+                                {user.fullName?.charAt(0) || user.username?.charAt(0) || 'U'}
+                              </Avatar>
+                            </Tooltip>
+                          ))}
+                          {meeting.users.length > 3 && (
                             <Avatar 
                               sx={{ 
                                 width: 24, 
                                 height: 24, 
                                 fontSize: '0.7rem',
-                                bgcolor: '#667eea'
+                                bgcolor: '#764ba2'
                               }}
                             >
-                              {user.fullName?.charAt(0) || user.username?.charAt(0) || 'U'}
+                              +{meeting.users.length - 3}
                             </Avatar>
-                          </Tooltip>
-                        ))}
-                        {meeting.users.length > 3 && (
-                          <Avatar 
-                            sx={{ 
-                              width: 24, 
-                              height: 24, 
-                              fontSize: '0.7rem',
-                              bgcolor: '#764ba2'
-                            }}
-                          >
-                            +{meeting.users.length - 3}
-                          </Avatar>
-                        )}
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                </CardContent>
+                    )}
+                  </CardContent>
 
-                <CardActions sx={{ 
-                  justifyContent: 'space-between', 
-                  p: 2,
-                  pt: 0
-                }}>
-                  <Button 
-                    size="small" 
-                    onClick={() => handleOpenMeetingDetail(meeting)}
-                    sx={{ 
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      color: '#667eea'
-                    }}
-                  >
-                    View Details
-                  </Button>
-                  <Box>
-                    <IconButton 
+                  <CardActions sx={{ 
+                    justifyContent: 'space-between', 
+                    p: 2,
+                    pt: 0
+                  }}>
+                    <Button 
                       size="small" 
-                      onClick={() => handleEditMeeting(meeting)}
+                      onClick={() => handleOpenMeetingDetail(meeting)}
                       sx={{ 
-                        mr: 1,
-                        background: 'rgba(102, 126, 234, 0.1)',
-                        '&:hover': {
-                          background: 'rgba(102, 126, 234, 0.2)'
-                        }
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        color: '#667eea'
                       }}
                     >
-                      <EditIcon sx={{ color: '#667eea' }} />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleDeleteMeeting(meeting.id)}
-                      sx={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        '&:hover': {
-                          background: 'rgba(239, 68, 68, 0.2)'
-                        }
-                      }}
-                    >
-                      <DeleteIcon sx={{ color: '#ef4444' }} />
-                    </IconButton>
-                  </Box>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
+                      View Details
+                    </Button>
+                    <Box>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleEditMeeting(meeting)}
+                        sx={{ 
+                          mr: 1,
+                          background: 'rgba(102, 126, 234, 0.1)',
+                          '&:hover': {
+                            background: 'rgba(102, 126, 234, 0.2)'
+                          }
+                        }}
+                      >
+                        <EditIcon sx={{ color: '#667eea' }} />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleDeleteMeeting(meeting.id)}
+                        sx={{
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          '&:hover': {
+                            background: 'rgba(239, 68, 68, 0.2)'
+                          }
+                        }}
+                      >
+                        <DeleteIcon sx={{ color: '#ef4444' }} />
+                      </IconButton>
+                    </Box>
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 
@@ -648,12 +722,13 @@ const MeetingEngagement = () => {
       <Dialog 
         open={openDialog} 
         onClose={handleCloseDialog}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
             borderRadius: 3,
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)'
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
+            minHeight: '70vh'
           }
         }}
       >
@@ -728,13 +803,15 @@ const MeetingEngagement = () => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Location/Link"
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
+                  multiline
+                  rows={4}
                   variant="outlined"
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -855,56 +932,55 @@ const MeetingEngagement = () => {
                 <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                   Select Participants
                 </Typography>
-                <Paper sx={{ maxHeight: 200, overflow: 'auto', p: 2 }}>
-                  <FormGroup>
+                <Paper sx={{ maxHeight: 300, overflow: 'auto', p: 2 }}>
+                  <Grid container spacing={1}>
                     {users.map((user) => (
-                      <FormControlLabel
-                        key={user.id}
-                        control={
-                          <Checkbox
-                            checked={formData.selectedUsers.includes(user.id)}
-                            onChange={() => handleUserSelect(user.id)}
-                            sx={{
-                              color: '#667eea',
-                              '&.Mui-checked': {
+                      <Grid item xs={12} sm={6} md={4} key={user.id}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.selectedUsers.includes(user.id)}
+                              onChange={() => handleUserSelect(user.id)}
+                              sx={{
                                 color: '#667eea',
-                              },
-                            }}
-                          />
-                        }
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar 
-                              sx={{ 
-                                width: 32, 
-                                height: 32, 
-                                fontSize: '0.8rem',
-                                mr: 1,
-                                bgcolor: '#667eea'
+                                '&.Mui-checked': {
+                                  color: '#667eea',
+                                },
                               }}
-                            >
-                              {user.fullName?.charAt(0) || user.username?.charAt(0) || 'U'}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {user.fullName || user.username}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {user.email}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        }
-                        sx={{ 
-                          alignItems: 'flex-start',
-                          mb: 1,
-                          '& .MuiFormControlLabel-label': {
-                            width: '100%'
+                            />
                           }
-                        }}
-                      />
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Avatar 
+                                sx={{ 
+                                  width: 32, 
+                                  height: 32, 
+                                  fontSize: '0.8rem',
+                                  mr: 1,
+                                  bgcolor: '#667eea'
+                                }}
+                              >
+                                {user.fullName?.charAt(0) || user.username?.charAt(0) || 'U'}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {user.fullName || user.username}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {user.email}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          }
+                          sx={{ 
+                            alignItems: 'flex-start',
+                            width: '100%',
+                            mr: 0
+                          }}
+                        />
+                      </Grid>
                     ))}
-                  </FormGroup>
+                  </Grid>
                 </Paper>
               </Grid>
             </Grid>
