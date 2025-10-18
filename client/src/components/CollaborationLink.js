@@ -18,7 +18,8 @@ import {
   DialogActions,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  useTheme
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,6 +36,7 @@ import { useTranslation } from '../contexts/TranslationContext';
 import notificationService from '../services/notificationService';
 
 const CollaborationLink = () => {
+  const theme = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
   const [collaborations, setCollaborations] = useState([]);
@@ -265,7 +267,13 @@ const CollaborationLink = () => {
   };
 
   return (
-    <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)', minHeight: '100vh' }}>
+    <Box sx={{ 
+      p: 3, 
+      background: theme.palette.mode === 'dark' 
+        ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' 
+        : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)', 
+      minHeight: '100vh' 
+    }}>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -273,10 +281,12 @@ const CollaborationLink = () => {
         mb: 4,
         flexWrap: 'wrap',
         gap: 2,
-        background: 'white',
+        background: theme.palette.mode === 'dark' ? '#1e293b' : 'white',
         borderRadius: 3,
         p: 3,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        boxShadow: theme.palette.mode === 'dark' 
+          ? '0 4px 20px rgba(0, 0, 0, 0.5)' 
+          : '0 4px 20px rgba(0, 0, 0, 0.08)'
       }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, background: 'linear-gradient(45deg, #667eea, #764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -336,8 +346,10 @@ const CollaborationLink = () => {
                   flexDirection: 'column',
                   cursor: 'pointer',
                   borderRadius: 3,
-                  background: 'white',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  background: theme.palette.mode === 'dark' ? '#1e293b' : 'white',
+                  border: theme.palette.mode === 'dark' 
+                    ? '1px solid rgba(255, 255, 255, 0.1)' 
+                    : '1px solid rgba(0, 0, 0, 0.08)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
                     transform: 'translateY(-8px)',
@@ -396,19 +408,21 @@ const CollaborationLink = () => {
                   alignItems: 'center', 
                   mb: 2,
                   p: 1,
-                  bgcolor: 'rgba(102, 126, 234, 0.1)',
+                  bgcolor: theme.palette.mode === 'dark' 
+                    ? 'rgba(102, 126, 234, 0.2)' 
+                    : 'rgba(102, 126, 234, 0.1)',
                   borderRadius: '8px'
                 }}>
                   <PersonIcon sx={{ 
                     fontSize: 16, 
                     mr: 1, 
-                    color: '#667eea' 
+                    color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' 
                   }} />
                   <Typography 
                     variant="caption" 
                     sx={{ 
                       fontWeight: 500,
-                      color: '#667eea'
+                      color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea'
                     }}
                   >
                     {collaboration.creator?.fullName || collaboration.creator?.username || 'Unknown Creator'}
@@ -445,7 +459,7 @@ const CollaborationLink = () => {
                             }
                           }}
                         >
-                          <EditIcon sx={{ color: '#667eea' }} />
+                          <EditIcon sx={{ color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                         </IconButton>
                         <IconButton 
                           size="small" 
@@ -460,7 +474,7 @@ const CollaborationLink = () => {
                             }
                           }}
                         >
-                          <DeleteIcon sx={{ color: '#ef4444' }} />
+                          <DeleteIcon sx={{ color: theme.palette.mode === 'dark' ? '#f87171' : '#ef4444' }} />
                         </IconButton>
                       </>
                     )}
@@ -744,7 +758,7 @@ const CollaborationLink = () => {
 
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <AccessTimeIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <AccessTimeIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                         {t('collaboration.availability')}
@@ -756,7 +770,7 @@ const CollaborationLink = () => {
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <PriorityHighIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <PriorityHighIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                         {t('collaboration.urgency')}
@@ -772,7 +786,7 @@ const CollaborationLink = () => {
                 {selectedCollaboration.creator && (
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                      <PersonIcon sx={{ fontSize: 24, mr: 2, color: '#667eea', mt: 0.5 }} />
+                      <PersonIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea', mt: 0.5 }} />
                       <Box>
                         <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                           {t('collaboration.createdBy')}:
@@ -786,7 +800,7 @@ const CollaborationLink = () => {
                 )}
 
                 <Grid item xs={12}>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#333' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#333' }}>
                     {t('collaboration.description')}
                   </Typography>
                   <Typography 
@@ -796,7 +810,7 @@ const CollaborationLink = () => {
                       wordBreak: 'break-word',
                       lineHeight: 1.8,
                       fontSize: '1.1rem',
-                      color: '#555'
+                      color: theme.palette.mode === 'dark' ? '#cbd5e1' : '#555'
                     }}
                   >
                     {selectedCollaboration.description || t('collaboration.noDescription')}

@@ -27,7 +27,8 @@ import {
   CardActions,
   Avatar,
   Divider,
-  Tooltip
+  Tooltip,
+  useTheme
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,6 +48,7 @@ import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 
 const MeetingEngagement = () => {
+  const theme = useTheme();
   const { user } = useAuth();
   const [meetings, setMeetings] = useState([]);
   const [users, setUsers] = useState([]);
@@ -470,7 +472,13 @@ const MeetingEngagement = () => {
   });
 
   return (
-    <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)', minHeight: '100vh' }}>
+    <Box sx={{ 
+      p: 3, 
+      background: theme.palette.mode === 'dark' 
+        ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' 
+        : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)', 
+      minHeight: '100vh' 
+    }}>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -478,10 +486,12 @@ const MeetingEngagement = () => {
         mb: 4,
         flexWrap: 'wrap',
         gap: 2,
-        background: 'white',
+        background: theme.palette.mode === 'dark' ? '#1e293b' : 'white',
         borderRadius: 3,
         p: 3,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        boxShadow: theme.palette.mode === 'dark' 
+          ? '0 4px 20px rgba(0, 0, 0, 0.5)' 
+          : '0 4px 20px rgba(0, 0, 0, 0.08)'
       }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, background: 'linear-gradient(45deg, #667eea, #764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -541,15 +551,20 @@ const MeetingEngagement = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: 3,
-                    background: 'white',
-                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    background: theme.palette.mode === 'dark' ? '#1e293b' : 'white',
+                    border: theme.palette.mode === 'dark' 
+                      ? '1px solid rgba(255, 255, 255, 0.1)' 
+                      : '1px solid rgba(0, 0, 0, 0.08)',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       transform: 'translateY(-8px)',
                       boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
-                      border: '1px solid rgba(102, 126, 234, 0.3)'
-                    }
+                      border: '1px solid rgba(102, 126, 234, 0.3)',
+                      cursor: 'pointer'
+                    },
+                    cursor: 'pointer'
                   }}
+                  onClick={() => handleOpenMeetingDetail(meeting)}
                 >
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Box sx={{ 
@@ -564,7 +579,7 @@ const MeetingEngagement = () => {
                           fontWeight: 700, 
                           flex: 1,
                           wordBreak: 'break-word',
-                          color: '#333'
+                          color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#333'
                         }}
                       >
                         {meeting.subject || 'No Subject'}
@@ -588,7 +603,9 @@ const MeetingEngagement = () => {
                       alignItems: 'center', 
                       mb: 2,
                       p: 1,
-                      bgcolor: 'rgba(102, 126, 234, 0.1)',
+                      bgcolor: theme.palette.mode === 'dark' 
+                        ? 'rgba(102, 126, 234, 0.2)' 
+                        : 'rgba(102, 126, 234, 0.1)',
                       borderRadius: '8px'
                     }}>
                       <PersonIcon sx={{ 
@@ -600,7 +617,7 @@ const MeetingEngagement = () => {
                         variant="caption" 
                         sx={{ 
                           fontWeight: 500,
-                          color: '#667eea'
+                          color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea'
                         }}
                       >
                         {meeting.creator?.fullName || meeting.creator?.username || 'Unknown Creator'}
@@ -609,20 +626,20 @@ const MeetingEngagement = () => {
 
                     <Box sx={{ mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <CalendarIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
+                        <CalendarIcon sx={{ fontSize: 18, mr: 1, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                           {meeting.date ? new Date(meeting.date).toLocaleDateString() : 'No Date'}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <ScheduleIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
+                        <ScheduleIcon sx={{ fontSize: 18, mr: 1, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                           {meeting.time || 'No Time'} ({getDurationLabel(meeting.duration)})
                         </Typography>
                       </Box>
                       {meeting.location && (
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <LocationOnIcon sx={{ fontSize: 18, mr: 1, color: '#667eea' }} />
+                          <LocationOnIcon sx={{ fontSize: 18, mr: 1, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {meeting.location}
                           </Typography>
@@ -668,25 +685,17 @@ const MeetingEngagement = () => {
                   </CardContent>
 
                   <CardActions sx={{ 
-                    justifyContent: 'space-between', 
+                    justifyContent: 'flex-end', 
                     p: 2,
                     pt: 0
                   }}>
-                    <Button 
-                      size="small" 
-                      onClick={() => handleOpenMeetingDetail(meeting)}
-                      sx={{ 
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        color: '#667eea'
-                      }}
-                    >
-                      View Details
-                    </Button>
                     <Box>
                       <IconButton 
                         size="small" 
-                        onClick={() => handleEditMeeting(meeting)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditMeeting(meeting);
+                        }}
                         sx={{ 
                           mr: 1,
                           background: 'rgba(102, 126, 234, 0.1)',
@@ -695,11 +704,14 @@ const MeetingEngagement = () => {
                           }
                         }}
                       >
-                        <EditIcon sx={{ color: '#667eea' }} />
+                        <EditIcon sx={{ color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                       </IconButton>
                       <IconButton 
                         size="small" 
-                        onClick={() => handleDeleteMeeting(meeting.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMeeting(meeting.id);
+                        }}
                         sx={{
                           background: 'rgba(239, 68, 68, 0.1)',
                           '&:hover': {
@@ -707,7 +719,7 @@ const MeetingEngagement = () => {
                           }
                         }}
                       >
-                        <DeleteIcon sx={{ color: '#ef4444' }} />
+                        <DeleteIcon sx={{ color: theme.palette.mode === 'dark' ? '#f87171' : '#ef4444' }} />
                       </IconButton>
                     </Box>
                   </CardActions>
@@ -722,13 +734,13 @@ const MeetingEngagement = () => {
       <Dialog 
         open={openDialog} 
         onClose={handleCloseDialog}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
             borderRadius: 3,
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
-            minHeight: '70vh'
+            minHeight: '80vh'
           }
         }}
       >
@@ -932,7 +944,7 @@ const MeetingEngagement = () => {
                 <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                   Select Participants
                 </Typography>
-                <Paper sx={{ maxHeight: 300, overflow: 'auto', p: 2 }}>
+                <Paper sx={{ maxHeight: 300, overflow: 'auto', p: 2, bgcolor: 'background.paper' }}>
                   <Grid container spacing={1}>
                     {users.map((user) => (
                       <Grid item xs={12} sm={6} md={4} key={user.id}>
@@ -950,7 +962,15 @@ const MeetingEngagement = () => {
                             />
                           }
                           label={
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center',
+                              p: 1,
+                              borderRadius: 1,
+                              bgcolor: formData.selectedUsers.includes(user.id) ? 'rgba(102, 126, 234, 0.1)' : 'transparent',
+                              transition: 'background-color 0.2s ease',
+                              width: '100%'
+                            }}>
                               <Avatar 
                                 sx={{ 
                                   width: 32, 
@@ -975,7 +995,10 @@ const MeetingEngagement = () => {
                           sx={{ 
                             alignItems: 'flex-start',
                             width: '100%',
-                            mr: 0
+                            mr: 0,
+                            '&:hover': {
+                              bgcolor: 'rgba(102, 126, 234, 0.05)'
+                            }
                           }}
                         />
                       </Grid>
@@ -1097,7 +1120,7 @@ const MeetingEngagement = () => {
                       fontWeight: 700, 
                       mb: 3,
                       wordBreak: 'break-word',
-                      color: '#333'
+                      color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#333'
                     }}
                   >
                     {selectedMeeting.subject || 'No Subject'}
@@ -1106,7 +1129,7 @@ const MeetingEngagement = () => {
 
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <CalendarIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <CalendarIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                         Date
@@ -1118,7 +1141,7 @@ const MeetingEngagement = () => {
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <ScheduleIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <ScheduleIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                         Time & Duration
@@ -1132,7 +1155,7 @@ const MeetingEngagement = () => {
 
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <LocationOnIcon sx={{ fontSize: 24, mr: 2, color: '#667eea' }} />
+                    <LocationOnIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea' }} />
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                         Location
@@ -1146,7 +1169,7 @@ const MeetingEngagement = () => {
                   {/* Creator Information */}
                   {selectedMeeting.creator && (
                     <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                      <PersonIcon sx={{ fontSize: 24, mr: 2, color: '#667eea', mt: 0.5 }} />
+                      <PersonIcon sx={{ fontSize: 24, mr: 2, color: theme.palette.mode === 'dark' ? '#93c5fd' : '#667eea', mt: 0.5 }} />
                       <Box>
                         <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                           Created by:
@@ -1160,7 +1183,7 @@ const MeetingEngagement = () => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#333' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#333' }}>
                     Participants
                   </Typography>
                   {selectedMeeting.users && selectedMeeting.users.length > 0 ? (
@@ -1209,7 +1232,7 @@ const MeetingEngagement = () => {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      color: 'text.secondary', 
+                      color: theme.palette.mode === 'dark' ? '#cbd5e1' : 'text.secondary', 
                       textAlign: 'right', 
                       mt: 2,
                       pt: 2,

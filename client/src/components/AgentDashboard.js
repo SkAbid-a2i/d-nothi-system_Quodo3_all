@@ -405,7 +405,11 @@ const AgentDashboard = () => {
   
   // Apply user filter for all users including admins
   const finalFilteredTasks = userFilter === '' ? filteredTasks : 
-    filteredTasks.filter(task => task.userName === userFilter);
+    filteredTasks.filter(task => 
+      task.userName && userFilter && 
+      (task.userName.toLowerCase() === userFilter.toLowerCase() ||
+       task.userName.toLowerCase().includes(userFilter.toLowerCase()))
+    );
 
   // Filter leaves based on search term and user
   const filteredLeaves = leaves.filter(leave => 
@@ -415,7 +419,11 @@ const AgentDashboard = () => {
   
   // Apply user filter for all users including admins
   const finalFilteredLeaves = userFilter === '' ? filteredLeaves : 
-    filteredLeaves.filter(leave => leave.userName === userFilter);
+    filteredLeaves.filter(leave => 
+      leave.userName && userFilter && 
+      (leave.userName.toLowerCase() === userFilter.toLowerCase() ||
+       leave.userName.toLowerCase().includes(userFilter.toLowerCase()))
+    );
 
   // Handle task edit
   const handleEditTask = async (task) => {
@@ -795,7 +803,8 @@ const AgentDashboard = () => {
                     onClick={() => {
                       // Apply user filter when Apply button is clicked
                       if (selectedUser) {
-                        setUserFilter(selectedUser.username || selectedUser.email || '');
+                        // Use the value field from the processed user object for consistent matching
+                        setUserFilter(selectedUser.value || selectedUser.username || selectedUser.email || '');
                       } else {
                         setUserFilter('');
                       }
