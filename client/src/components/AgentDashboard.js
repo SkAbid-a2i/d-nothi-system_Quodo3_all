@@ -88,6 +88,9 @@ const AgentDashboard = () => {
   const [userFilter, setUserFilter] = useState(''); // Add user filter state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
+  // Check if user has admin privileges (SystemAdmin, Admin, or Supervisor)
+  const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
+  
   // Use the user filter hook
   const { users: filteredUsers, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
   
@@ -127,9 +130,6 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
-      // Check if user has admin privileges (SystemAdmin, Admin, or Supervisor)
-      const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
-      
       // If user is admin, show all tasks; otherwise, show only their own tasks
       if (!isAdmin) {
         tasksData = tasksData.filter(task => 
@@ -165,7 +165,7 @@ const AgentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]); // Add user to dependencies
+  }, [user, isAdmin]); // Add user and isAdmin to dependencies
 
   // Fetch tasks and leaves on component mount
   useEffect(() => {
