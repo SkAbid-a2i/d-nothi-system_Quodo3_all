@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notification Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Notification Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+
+    <script>
+        // Test SSE connection
+        const userId = 1; // Test user ID
+        const eventSource = new EventSource(`http://localhost:5000/api/notifications?userId=${userId}`);
+        
+        eventSource.onopen = function(event) {
+            document.getElementById('status').innerHTML = 'Connected to notification service';
+            console.log('Connected to notification service');
+        };
+        
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('Received notification:', data);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${JSON.stringify(data)}`;
+            document.getElementById('messages').appendChild(messageDiv);
+        };
+        
+        eventSource.onerror = function(error) {
+            console.error('Notification service error:', error);
+            document.getElementById('status').innerHTML = 'Error connecting to notification service';
+        };
+    </script>
+</body>
+</html>

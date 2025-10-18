@@ -28,11 +28,12 @@ class NotificationService {
 
     // Use REACT_APP_API_URL if available, otherwise default to current origin for production
     const apiUrl = process.env.REACT_APP_API_URL || 
-                  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 
-                   `${window.location.origin}/api`);
-    const url = `${apiUrl}/notifications?userId=${userId}`;
+                  (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 
+                   window.location.origin);
+    const url = `${apiUrl}/api/notifications?userId=${userId}`;
 
     try {
+      console.log('Connecting to notification service at:', url);
       this.eventSource = new EventSource(url);
       
       this.eventSource.onopen = () => {
@@ -55,11 +56,16 @@ class NotificationService {
           this.triggerAutoRefresh(data.type);
         } catch (error) {
           console.error('Error parsing notification:', error);
+          console.error('Raw data:', event.data);
         }
       };
 
       this.eventSource.onerror = (error) => {
         console.error('Notification service error:', error);
+        // Check if it's a connection error
+        if (error.target.readyState === EventSource.CLOSED) {
+          console.log('Connection closed, attempting to reconnect...');
+        }
         this.emit('error', { error });
         
         // Attempt to reconnect
@@ -332,7 +338,8 @@ class NotificationService {
       'permissionTemplateCreated', 'permissionTemplateUpdated', 'permissionTemplateDeleted',
       'meetingCreated', 'meetingUpdated', 'meetingDeleted',
       'collaborationCreated', 'collaborationUpdated', 'collaborationDeleted',
-      'errorNotification', 'warningNotification'
+      'errorNotification', 'warningNotification',
+      'connected', 'disconnected', 'error' // Connection status events
     ];
     
     allTypes.forEach(type => {

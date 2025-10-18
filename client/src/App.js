@@ -24,6 +24,7 @@ import LogMonitoring from './components/LogMonitoring';
 import MeetingEngagement from './components/MeetingEngagement';
 import ErrorMonitoring from './components/ErrorMonitoring';
 import CollaborationLink from './components/CollaborationLink';
+import NotificationTest from './components/NotificationTest'; // Add this import
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -394,6 +395,16 @@ function App() {
               }>
                 <Route index element={<CollaborationLink />} />
               </Route>
+              
+              {/* Notification Test Route */}
+              <Route path="/notification-test" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                </ProtectedRoute>
+              }>
+                <Route index element={<NotificationTest />} />
+              </Route>
+              
               {/* Fallback route for debugging */}
               <Route path="*" element={
                 <div>

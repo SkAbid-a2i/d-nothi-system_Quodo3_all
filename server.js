@@ -100,7 +100,22 @@ app.get('/', (req, res) => {
 });
 
 // SSE endpoint for real-time notifications (must be after middleware)
-app.get('/api/notifications', (req, res) => {
+app.get('/api/notifications', cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app',
+    'http://localhost:3001' // For testing
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+}), (req, res) => {
   const userId = req.query.userId;
   if (!userId) {
     return res.status(400).json({ message: 'userId is required' });
@@ -108,6 +123,36 @@ app.get('/api/notifications', (req, res) => {
   
   logger.info('User connected to notifications', { userId });
   notificationService.addClient(userId, res);
+});
+
+// Add a simple test endpoint for notifications (no auth required)
+app.get('/api/test-notification/:userId', (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Create a mock collaboration for testing
+    const mockCollaboration = {
+      id: Date.now(),
+      title: 'Test Collaboration Notification',
+      description: 'This is a test notification to verify the notification system is working',
+      availability: 'Always',
+      urgency: 'None',
+      createdBy: parseInt(userId),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Send notification about collaboration creation
+    notificationService.notifyCollaborationCreated(mockCollaboration);
+    
+    res.json({ 
+      message: 'Test notification sent successfully',
+      collaboration: mockCollaboration
+    });
+  } catch (err) {
+    console.error('Error sending test notification:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
 });
 
 // Import route files

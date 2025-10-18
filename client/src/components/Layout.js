@@ -26,7 +26,9 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
-  Button
+  Button,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -133,6 +135,12 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // Add state for snackbar
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
@@ -141,6 +149,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
     { text: t('navigation.collaboration'), icon: <CollaborationIcon />, path: '/collaboration' },
+    { text: 'Notification Test', icon: <NotificationTestIcon />, path: '/notification-test' },
     { text: t('navigation.errorMonitoring'), icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
@@ -209,8 +218,18 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Show snackbar helper function
   const showSnackbar = (message, severity = 'success') => {
-    // In a real implementation, you might want to use a global snackbar context
-    console.log(`${severity}: ${message}`);
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({
+      ...prev,
+      open: false
+    }));
   };
 
   // Fetch real notifications
@@ -240,12 +259,34 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   // Listen for real-time notifications
   useEffect(() => {
     // Only connect if we have a user
-    if (!user || !user.id) return;
+    if (!user || !user.id) {
+      console.log('No user found, skipping notification connection');
+      return;
+    }
+    
+    console.log('Connecting to notification service for user:', user.id);
     
     // Connect to notification service
     notificationService.connect(user.id);
+    
+    // Handle connection status events
+    const handleConnectionStatus = (data) => {
+      console.log('Notification connection status:', data);
+      if (data.message) {
+        showSnackbar(data.message, 'info');
+      }
+    };
+    
+    notificationService.on('connected', handleConnectionStatus);
+    notificationService.on('disconnected', handleConnectionStatus);
+    notificationService.on('error', (data) => {
+      console.error('Notification service error:', data);
+      showSnackbar('Notification service error: ' + (data.error?.message || 'Unknown error'), 'error');
+    });
+    
     // Handle all notifications through a unified handler
     const handleAllNotifications = (data) => {
+      console.log('Received notification in Layout:', data);
       const notificationType = data.type;
       let message = '';
       let displayType = 'info';
@@ -361,6 +402,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       
       setNotifications(prev => [newNotification, ...prev.slice(0, 19)]); // Keep only last 20
       setUnreadCount(prev => prev + 1);
+      
+      // Show snackbar for important notifications
+      if (displayType === 'success' || displayType === 'warning' || displayType === 'error') {
+        showSnackbar(message, displayType);
+      }
     };
 
     // Subscribe to all notifications through the unified handler
@@ -373,7 +419,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
     // Cleanup on unmount
     return () => {
+      console.log('Cleaning up notification listeners');
       // Remove all listeners
+      notificationService.off('connected', handleConnectionStatus);
+      notificationService.off('disconnected', handleConnectionStatus);
       notificationService.listeners.clear();
     };
   }, [user]);
@@ -507,7 +556,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               color="inherit"
               onClick={handleNotificationMenuOpen}
             >
-              <Badge badgeContent={notifications.length} color="error">
+              <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
               </Badge>
             </IconButton>
@@ -836,6 +885,26 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           </MenuItem>
         )}
       </Menu>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ 
+            width: '100%',
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
