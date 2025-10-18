@@ -390,6 +390,31 @@ const CollaborationLink = () => {
                   {collaboration.description || t('collaboration.noDescription')}
                 </Typography>
 
+                {/* Creator Information */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  mb: 2,
+                  p: 1,
+                  bgcolor: 'rgba(102, 126, 234, 0.1)',
+                  borderRadius: '8px'
+                }}>
+                  <PersonIcon sx={{ 
+                    fontSize: 16, 
+                    mr: 1, 
+                    color: '#667eea' 
+                  }} />
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontWeight: 500,
+                      color: '#667eea'
+                    }}
+                  >
+                    {collaboration.creator?.fullName || collaboration.creator?.username || 'Unknown Creator'}
+                  </Typography>
+                </Box>
+
                 <Box sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 

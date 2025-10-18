@@ -395,10 +395,9 @@ const AgentDashboard = () => {
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase())))
   );
   
-  // Apply user filter only for non-admin users
-  const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
-  const finalFilteredTasks = isAdmin ? filteredTasks : 
-    filteredTasks.filter(task => userFilter === '' || task.userName === userFilter);
+  // Apply user filter for all users including admins
+  const finalFilteredTasks = userFilter === '' ? filteredTasks : 
+    filteredTasks.filter(task => task.userName === userFilter);
 
   // Filter leaves based on search term and user
   const filteredLeaves = leaves.filter(leave => 
@@ -406,9 +405,9 @@ const AgentDashboard = () => {
       (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase())))
   );
   
-  // Apply user filter only for non-admin users
-  const finalFilteredLeaves = isAdmin ? filteredLeaves : 
-    filteredLeaves.filter(leave => userFilter === '' || leave.userName === userFilter);
+  // Apply user filter for all users including admins
+  const finalFilteredLeaves = userFilter === '' ? filteredLeaves : 
+    filteredLeaves.filter(leave => leave.userName === userFilter);
 
   // Handle task edit
   const handleEditTask = async (task) => {
@@ -655,7 +654,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Assignment sx={{ mr: 2, color: 'primary.main' }} />
                 <Typography variant="h5" component="div">
-                  {tasks.length}
+                  {finalFilteredTasks.length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -663,7 +662,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('tasks', tasks)}>View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('tasks', finalFilteredTasks)}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -674,7 +673,7 @@ const AgentDashboard = () => {
               <Box display="flex" alignItems="center">
                 <EventAvailable sx={{ mr: 2, color: 'secondary.main' }} />
                 <Typography variant="h5" component="div">
-                  {leaves.filter(l => l.status === 'Pending').length}
+                  {finalFilteredLeaves.filter(l => l.status === 'Pending').length}
                 </Typography>
               </Box>
               <Typography color="text.secondary">
@@ -682,7 +681,7 @@ const AgentDashboard = () => {
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('leaves', leaves.filter(l => l.status === 'Pending'))}>View Details</Button>
+              <Button size="small" onClick={() => handleViewDetails('leaves', finalFilteredLeaves.filter(l => l.status === 'Pending'))}>View Details</Button>
             </CardActions>
           </Card>
         </Grid>
@@ -1099,7 +1098,7 @@ const AgentDashboard = () => {
               {tasks.length > 0 || leaves.length > 0 ? (
                 <Box>
                   {/* Show recent tasks and leaves for the current user only */}
-                  {[...tasks.map(t => ({...t, type: 'task'})), ...leaves.map(l => ({...l, type: 'leave'}))]
+                  {[...finalFilteredTasks.map(t => ({...t, type: 'task'})), ...finalFilteredLeaves.map(l => ({...l, type: 'leave'}))]
                     .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
                     .slice(0, 10)
                     .map((item, index) => (

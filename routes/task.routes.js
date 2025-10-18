@@ -253,7 +253,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     await task.destroy();
 
     // Notify about task deletion
-    notificationService.notifyTaskUpdated({ ...task, deleted: true });
+    notificationService.notifyTaskDeleted({ ...task, deleted: true });
 
     res.json({ message: 'Task removed' });
   } catch (err) {

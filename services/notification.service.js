@@ -403,7 +403,9 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users in the same office
+    // Send to the creator and all users in the same office
+    this.sendToUser(collaboration.createdBy, notification);
+    
     if (collaboration.office) {
       this.sendToOffice(collaboration.office, notification);
     } else {
@@ -421,7 +423,9 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users in the same office
+    // Send to the creator and all users in the same office
+    this.sendToUser(collaboration.createdBy, notification);
+    
     if (collaboration.office) {
       this.sendToOffice(collaboration.office, notification);
     } else {
@@ -439,7 +443,9 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
-    // Send to all users in the same office
+    // Send to the creator and all users in the same office
+    this.sendToUser(collaboration.createdBy, notification);
+    
     if (collaboration.office) {
       this.sendToOffice(collaboration.office, notification);
     } else {
