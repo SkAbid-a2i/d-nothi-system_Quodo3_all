@@ -374,7 +374,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       // Remove all listeners
       notificationService.listeners.clear();
     };
-  }, [user]);
+  }, [user]); // This is the key fix - the dependency array should be [user]
 
   // Filter notifications based on current page
   const getFilteredNotifications = () => {
@@ -678,7 +678,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         transition: theme.transitions.create('width', {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.enteringScreen,
-        }),
+        })
       }}>
         <Toolbar />
         <Fade in={true} timeout={500}>
@@ -696,7 +696,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               ? '1px solid rgba(255, 255, 255, 0.1)' 
               : '1px solid rgba(0, 0, 0, 0.05)'
           }}>
-            {children || <Outlet />}
+            {/* Always render Outlet for nested routes */}
+            <Outlet />
           </Box>
         </Fade>
       </Box>
