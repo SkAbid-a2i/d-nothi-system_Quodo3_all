@@ -72,16 +72,14 @@ class NotificationService {
           }
           this.emit('error', { error });
           
-          // Reject the connection promise on error
-          reject(error);
-          
+          // Don't reject the promise on error to prevent hanging
           // Attempt to reconnect
           this.handleReconnect(userId);
         };
       } catch (error) {
         console.error('Error connecting to notification service:', error);
         this.emit('error', { error });
-        reject(error);
+        // Don't reject the promise to prevent hanging
       }
     });
 
