@@ -221,8 +221,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   };
 
   // Handle screen size changes
-
-  // Handle screen size changes
   useEffect(() => {
     const handleResize = () => {
       // Auto-collapse drawer on small screens
@@ -232,9 +230,15 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     };
     
     handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('resize', handleResize);
+    }
     
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      if (typeof window !== 'undefined' && window.removeEventListener) {
+        window.removeEventListener('resize', handleResize);
+      }
+    };
   }, []);
 
   // Listen for real-time notifications
@@ -399,6 +403,12 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     };
 
     notifications.forEach(notification => {
+      // Safety check to ensure notification.type exists
+      if (!notification.type) {
+        grouped.other.push(notification);
+        return;
+      }
+      
       if (notification.type.includes('meeting')) {
         grouped.meetings.push(notification);
       } else if (notification.type.includes('leave')) {
@@ -429,6 +439,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Get notification type label
   const getNotificationTypeLabel = (type) => {
+    // Safety check
+    if (!type) return 'Other';
+    
     if (type.includes('meeting')) return 'Meeting';
     if (type.includes('leave')) return 'Leave';
     if (type.includes('task')) return 'Task';
@@ -444,6 +457,9 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Get notification type color
   const getNotificationTypeColor = (type) => {
+    // Safety check
+    if (!type) return '#8ac926';
+    
     if (type.includes('meeting')) return '#667eea';
     if (type.includes('leave')) return '#967bb6';
     if (type.includes('task')) return '#764ba2';

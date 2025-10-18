@@ -419,12 +419,12 @@ const UserManagement = () => {
   // Handle hash-based navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash;
+      const hash = window.location.hash.substring(1);
       switch (hash) {
-        case '#permission-templates':
+        case 'permission-templates':
           setActiveTab(1);
           break;
-        case '#dropdowns':
+        case 'dropdowns':
           setActiveTab(2);
           break;
         default:
@@ -432,15 +432,18 @@ const UserManagement = () => {
       }
     };
 
-    // Set initial tab based on hash
     handleHashChange();
 
-    // Listen for hash changes
-    window.addEventListener('hashchange', handleHashChange);
+    // Listen for hash changes with safety check
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('hashchange', handleHashChange);
+    }
 
     // Cleanup
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
+      if (typeof window !== 'undefined' && window.removeEventListener) {
+        window.removeEventListener('hashchange', handleHashChange);
+      }
     };
   }, []);
 

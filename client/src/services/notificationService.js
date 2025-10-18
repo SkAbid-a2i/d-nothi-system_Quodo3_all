@@ -31,7 +31,14 @@ class NotificationService {
     const apiUrl = process.env.REACT_APP_API_URL || 
                   (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 
                    window.location.origin);
-    const url = `${apiUrl}/api/notifications?userId=${userId}`;
+    
+    // Fix for double /api in URL
+    let baseUrl = apiUrl;
+    if (baseUrl.endsWith('/api')) {
+      baseUrl = baseUrl.slice(0, -4); // Remove trailing /api
+    }
+    
+    const url = `${baseUrl}/api/notifications?userId=${userId}`;
 
     // Return a promise that resolves when connection is established
     this.connectionPromise = new Promise((resolve, reject) => {
