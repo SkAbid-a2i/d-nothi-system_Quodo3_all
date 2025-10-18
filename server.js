@@ -125,36 +125,6 @@ app.get('/api/notifications', cors({
   notificationService.addClient(userId, res);
 });
 
-// Add a simple test endpoint for notifications (no auth required)
-app.get('/api/test-notification/:userId', (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    // Create a mock collaboration for testing
-    const mockCollaboration = {
-      id: Date.now(),
-      title: 'Test Collaboration Notification',
-      description: 'This is a test notification to verify the notification system is working',
-      availability: 'Always',
-      urgency: 'None',
-      createdBy: parseInt(userId),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Send notification about collaboration creation
-    notificationService.notifyCollaborationCreated(mockCollaboration);
-    
-    res.json({ 
-      message: 'Test notification sent successfully',
-      collaboration: mockCollaboration
-    });
-  } catch (err) {
-    console.error('Error sending test notification:', err);
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
-
 // Import route files
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
