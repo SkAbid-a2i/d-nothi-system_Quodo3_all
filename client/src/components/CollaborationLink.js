@@ -371,7 +371,7 @@ const CollaborationLink = () => {
                       fontWeight: 700, 
                       flex: 1,
                       wordBreak: 'break-word',
-                      color: '#333'
+                      color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#333'
                     }}
                   >
                     {collaboration.title || t('collaboration.noTitle')}
@@ -396,7 +396,8 @@ const CollaborationLink = () => {
                     mb: 3, 
                     flex: 1,
                     wordBreak: 'break-word',
-                    lineHeight: 1.6
+                    lineHeight: 1.6,
+                    color: theme.palette.mode === 'dark' ? '#cbd5e1' : 'inherit'
                   }}
                 >
                   {collaboration.description || t('collaboration.noDescription')}
@@ -749,7 +750,7 @@ const CollaborationLink = () => {
                       fontWeight: 700, 
                       mb: 3,
                       wordBreak: 'break-word',
-                      color: '#333'
+                      color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#333'
                     }}
                   >
                     {selectedCollaboration.title || t('collaboration.noTitle')}
@@ -810,7 +811,7 @@ const CollaborationLink = () => {
                       wordBreak: 'break-word',
                       lineHeight: 1.8,
                       fontSize: '1.1rem',
-                      color: theme.palette.mode === 'dark' ? '#cbd5e1' : '#555'
+                      color: theme.palette.mode === 'dark' ? '#e2e8f0' : '#555'
                     }}
                   >
                     {selectedCollaboration.description || t('collaboration.noDescription')}
