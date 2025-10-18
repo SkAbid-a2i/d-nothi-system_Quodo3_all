@@ -48,8 +48,10 @@ export const AuthProvider = ({ children }) => {
         frontendLogger.setUserId(userData.id);
         frontendLogger.info('User authenticated successfully', { userId: userData.id, role: userData.role });
         
-        // Initialize notification service
-        notificationService.connect(userData.id);
+        // Initialize notification service (non-blocking)
+        notificationService.connect(userData.id).catch(error => {
+          console.error('Failed to connect to notification service:', error);
+        });
         
         // Log audit entry
         auditLog.userLogin(userData.id, userData.username);
@@ -86,8 +88,10 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       frontendLogger.setUserId(userData.id);
       
-      // Initialize notification service
-      notificationService.connect(userData.id);
+      // Initialize notification service (non-blocking)
+      notificationService.connect(userData.id).catch(error => {
+        console.error('Failed to connect to notification service:', error);
+      });
       
       // Log audit entry
       auditLog.userLogin(userData.id, userData.username);

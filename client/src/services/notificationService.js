@@ -12,13 +12,14 @@ class NotificationService {
     // Add notification history to keep track of all notifications
     this.notificationHistory = [];
     this.maxHistory = 100; // Keep last 100 notifications
+    this.connectionPromise = null; // Track connection promise
   }
 
   // Connect to the notification service
   connect(userId) {
     if (!userId) {
       console.error('User ID is required to connect to notifications');
-      return;
+      return Promise.resolve();
     }
 
     this.userId = userId;
@@ -32,49 +33,59 @@ class NotificationService {
                    window.location.origin);
     const url = `${apiUrl}/api/notifications?userId=${userId}`;
 
-    try {
-      console.log('Connecting to notification service at:', url);
-      this.eventSource = new EventSource(url);
-      
-      this.eventSource.onopen = () => {
-        console.log('Connected to notification service');
-        this.reconnectAttempts = 0;
-        this.emit('connected', { message: 'Connected to notification service' });
-      };
-
-      this.eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('Received notification:', data);
-          
-          // Add to notification history
-          this.addToHistory(data);
-          
-          this.emit(data.type, data);
-          
-          // Trigger immediate refresh for relevant data types
-          this.triggerAutoRefresh(data.type);
-        } catch (error) {
-          console.error('Error parsing notification:', error);
-          console.error('Raw data:', event.data);
-        }
-      };
-
-      this.eventSource.onerror = (error) => {
-        console.error('Notification service error:', error);
-        // Check if it's a connection error
-        if (error.target.readyState === EventSource.CLOSED) {
-          console.log('Connection closed, attempting to reconnect...');
-        }
-        this.emit('error', { error });
+    // Return a promise that resolves when connection is established
+    this.connectionPromise = new Promise((resolve, reject) => {
+      try {
+        console.log('Connecting to notification service at:', url);
+        this.eventSource = new EventSource(url);
         
-        // Attempt to reconnect
-        this.handleReconnect(userId);
-      };
-    } catch (error) {
-      console.error('Error connecting to notification service:', error);
-      this.emit('error', { error });
-    }
+        this.eventSource.onopen = () => {
+          console.log('Connected to notification service');
+          this.reconnectAttempts = 0;
+          this.emit('connected', { message: 'Connected to notification service' });
+          resolve();
+        };
+
+        this.eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('Received notification:', data);
+            
+            // Add to notification history
+            this.addToHistory(data);
+            
+            this.emit(data.type, data);
+            
+            // Trigger immediate refresh for relevant data types
+            this.triggerAutoRefresh(data.type);
+          } catch (error) {
+            console.error('Error parsing notification:', error);
+            console.error('Raw data:', event.data);
+          }
+        };
+
+        this.eventSource.onerror = (error) => {
+          console.error('Notification service error:', error);
+          // Check if it's a connection error
+          if (error.target.readyState === EventSource.CLOSED) {
+            console.log('Connection closed, attempting to reconnect...');
+          }
+          this.emit('error', { error });
+          
+          // Reject the connection promise on error
+          reject(error);
+          
+          // Attempt to reconnect
+          this.handleReconnect(userId);
+        };
+      } catch (error) {
+        console.error('Error connecting to notification service:', error);
+        this.emit('error', { error });
+        reject(error);
+      }
+    });
+
+    return this.connectionPromise;
   }
 
   // Add notification to history

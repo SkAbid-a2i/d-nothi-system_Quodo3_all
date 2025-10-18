@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -20,8 +20,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If everything is fine, render the children
-  return children;
+  // If children are provided, render them, otherwise render Outlet for nested routes
+  return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;

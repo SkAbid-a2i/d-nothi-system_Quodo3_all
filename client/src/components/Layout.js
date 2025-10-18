@@ -257,16 +257,13 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Listen for real-time notifications
   useEffect(() => {
-    // Only connect if we have a user
+    // Only connect if we have a user and notification service is not already connected
     if (!user || !user.id) {
       console.log('No user found, skipping notification connection');
       return;
     }
     
-    console.log('Connecting to notification service for user:', user.id);
-    
-    // Connect to notification service
-    notificationService.connect(user.id);
+    console.log('Setting up notification listeners for user:', user.id);
     
     // Handle connection status events
     const handleConnectionStatus = (data) => {
@@ -411,18 +408,62 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     // Subscribe to all notifications through the unified handler
     notificationService.onAllNotifications(handleAllNotifications);
           
-    // Ensure connection to notification service
-    if (user && user.id) {
-      notificationService.connect(user.id);
-    }
-
     // Cleanup on unmount
     return () => {
       console.log('Cleaning up notification listeners');
-      // Remove all listeners
+      // Remove connection status listeners
       notificationService.off('connected', handleConnectionStatus);
       notificationService.off('disconnected', handleConnectionStatus);
-      notificationService.listeners.clear();
+      notificationService.off('error', handleConnectionStatus);
+      
+      // Remove notification listener
+      // Note: We're not clearing all listeners here to avoid conflicts with AuthContext
+      // Instead, we're just removing the specific listener we added
+      if (notificationService.listeners.has('connected')) {
+        const connectedListeners = notificationService.listeners.get('connected');
+        const index = connectedListeners.indexOf(handleConnectionStatus);
+        if (index > -1) {
+          connectedListeners.splice(index, 1);
+        }
+      }
+      
+      if (notificationService.listeners.has('disconnected')) {
+        const disconnectedListeners = notificationService.listeners.get('disconnected');
+        const index = disconnectedListeners.indexOf(handleConnectionStatus);
+        if (index > -1) {
+          disconnectedListeners.splice(index, 1);
+        }
+      }
+      
+      if (notificationService.listeners.has('error')) {
+        const errorListeners = notificationService.listeners.get('error');
+        const index = errorListeners.indexOf(handleConnectionStatus);
+        if (index > -1) {
+          errorListeners.splice(index, 1);
+        }
+      }
+      
+      // Remove the specific notification listener
+      const allTypes = [
+        'taskCreated', 'taskUpdated', 'taskDeleted',
+        'leaveRequested', 'leaveApproved', 'leaveRejected',
+        'userCreated', 'userUpdated', 'userDeleted',
+        'dropdownCreated', 'dropdownUpdated', 'dropdownDeleted',
+        'permissionTemplateCreated', 'permissionTemplateUpdated', 'permissionTemplateDeleted',
+        'meetingCreated', 'meetingUpdated', 'meetingDeleted',
+        'collaborationCreated', 'collaborationUpdated', 'collaborationDeleted',
+        'errorNotification', 'warningNotification'
+      ];
+      
+      allTypes.forEach(type => {
+        if (notificationService.listeners.has(type)) {
+          const listeners = notificationService.listeners.get(type);
+          const index = listeners.indexOf(handleAllNotifications);
+          if (index > -1) {
+            listeners.splice(index, 1);
+          }
+        }
+      });
     };
   }, [user]);
 
@@ -746,7 +787,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               ? '1px solid rgba(255, 255, 255, 0.1)' 
               : '1px solid rgba(0, 0, 0, 0.05)'
           }}>
-            {children || <Outlet />}
+            {/* Always render Outlet for nested routes */}
+            <Outlet />
           </Box>
         </Fade>
       </Box>
