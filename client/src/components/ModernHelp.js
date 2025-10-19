@@ -16,7 +16,8 @@ import {
   Chip,
   Fade,
   Zoom,
-  Grid
+  Grid,
+  useTheme
 } from '@mui/material';
 import { 
   Help as HelpIcon,
@@ -31,6 +32,7 @@ import {
 } from '@mui/icons-material';
 
 const ModernHelp = () => {
+  const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [expanded, setExpanded] = useState(false);
 
@@ -91,7 +93,9 @@ const ModernHelp = () => {
             variant="h3" 
             sx={{ 
               fontWeight: 700,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
+                : 'linear-gradient(45deg, #667eea, #764ba2)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               mb: 1
@@ -133,8 +137,8 @@ const ModernHelp = () => {
                     <AccordionSummary
                       expandIcon={<ExpandMoreIcon />}
                       sx={{ 
-                        bgcolor: 'primary.main',
-                        color: 'white',
+                        bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : 'primary.main',
+                        color: theme.palette.mode === 'dark' ? 'white' : 'white',
                         borderRadius: 1,
                         '&.Mui-expanded': {
                           borderRadius: '8px 8px 0 0'
@@ -142,7 +146,7 @@ const ModernHelp = () => {
                       }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Box sx={{ mr: 2 }}>
+                        <Box sx={{ mr: 2, color: theme.palette.mode === 'dark' ? 'primary.main' : 'inherit' }}>
                           {category.icon}
                         </Box>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -150,17 +154,29 @@ const ModernHelp = () => {
                         </Typography>
                       </Box>
                     </AccordionSummary>
-                    <AccordionDetails sx={{ bgcolor: 'grey.50' }}>
+                    <AccordionDetails sx={{ 
+                      bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : 'grey.50',
+                      color: theme.palette.mode === 'dark' ? '#cbd5e1' : 'inherit'
+                    }}>
                       {category.questions.map((faq, qIndex) => (
                         <Box key={qIndex} sx={{ mb: 3 }}>
-                          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
+                          <Typography variant="h6" sx={{ 
+                            fontWeight: 600, 
+                            mb: 1, 
+                            color: theme.palette.mode === 'dark' ? '#667eea' : 'primary.main' 
+                          }}>
                             {faq.question}
                           </Typography>
-                          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                          <Typography variant="body1" sx={{ 
+                            color: theme.palette.mode === 'dark' ? '#cbd5e1' : 'text.secondary' 
+                          }}>
                             {faq.answer}
                           </Typography>
                           {qIndex < category.questions.length - 1 && (
-                            <Divider sx={{ my: 2 }} />
+                            <Divider sx={{ 
+                              my: 2,
+                              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'
+                            }} />
                           )}
                         </Box>
                       ))}
@@ -189,6 +205,16 @@ const ModernHelp = () => {
                   fullWidth
                   label="Subject"
                   sx={{ mb: 2 }}
+                  InputProps={{
+                    style: {
+                      color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                    }
+                  }}
+                  InputLabelProps={{
+                    style: {
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
+                    }
+                  }}
                 />
                 
                 <TextField
@@ -197,6 +223,16 @@ const ModernHelp = () => {
                   multiline
                   rows={4}
                   sx={{ mb: 2 }}
+                  InputProps={{
+                    style: {
+                      color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                    }
+                  }}
+                  InputLabelProps={{
+                    style: {
+                      color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
+                    }
+                  }}
                 />
                 
                 <Button
@@ -205,11 +241,18 @@ const ModernHelp = () => {
                   startIcon={<SendIcon />}
                   sx={{ 
                     py: 1.5,
-                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                    background: theme.palette.mode === 'dark' 
+                      ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
+                      : 'linear-gradient(45deg, #667eea, #764ba2)',
+                    color: theme.palette.mode === 'dark' ? '#0f172a' : 'white',
                     '&:hover': {
-                      background: 'linear-gradient(45deg, #764ba2, #667eea)',
+                      background: theme.palette.mode === 'dark' 
+                        ? 'linear-gradient(45deg, #98fb98, #967bb6)' 
+                        : 'linear-gradient(45deg, #764ba2, #667eea)',
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                      boxShadow: theme.palette.mode === 'dark' 
+                        ? '0 4px 15px rgba(150, 123, 182, 0.4)' 
+                        : '0 4px 15px rgba(102, 126, 234, 0.4)'
                     }
                   }}
                 >
@@ -225,38 +268,73 @@ const ModernHelp = () => {
                 <List>
                   <ListItem button>
                     <ListItemIcon>
-                      <TaskIcon />
+                      <TaskIcon sx={{ color: theme.palette.mode === 'dark' ? '#667eea' : 'inherit' }} />
                     </ListItemIcon>
-                    <ListItemText primary="Task Management Guide" />
+                    <ListItemText 
+                      primary="Task Management Guide" 
+                      primaryTypographyProps={{
+                        style: {
+                          color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                        }
+                      }}
+                    />
                     <Chip label="New" size="small" color="primary" />
                   </ListItem>
                   
                   <ListItem button>
                     <ListItemIcon>
-                      <LeaveIcon />
+                      <LeaveIcon sx={{ color: theme.palette.mode === 'dark' ? '#967bb6' : 'inherit' }} />
                     </ListItemIcon>
-                    <ListItemText primary="Leave Policy" />
+                    <ListItemText 
+                      primary="Leave Policy" 
+                      primaryTypographyProps={{
+                        style: {
+                          color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                        }
+                      }}
+                    />
                   </ListItem>
                   
                   <ListItem button>
                     <ListItemIcon>
-                      <PeopleIcon />
+                      <PeopleIcon sx={{ color: theme.palette.mode === 'dark' ? '#f093fb' : 'inherit' }} />
                     </ListItemIcon>
-                    <ListItemText primary="User Roles & Permissions" />
+                    <ListItemText 
+                      primary="User Roles & Permissions" 
+                      primaryTypographyProps={{
+                        style: {
+                          color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                        }
+                      }}
+                    />
                   </ListItem>
                   
                   <ListItem button>
                     <ListItemIcon>
-                      <ReportIcon />
+                      <ReportIcon sx={{ color: theme.palette.mode === 'dark' ? '#3b82f6' : 'inherit' }} />
                     </ListItemIcon>
-                    <ListItemText primary="Reporting Guide" />
+                    <ListItemText 
+                      primary="Reporting Guide" 
+                      primaryTypographyProps={{
+                        style: {
+                          color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                        }
+                      }}
+                    />
                   </ListItem>
                   
                   <ListItem button>
                     <ListItemIcon>
-                      <SettingsIcon />
+                      <SettingsIcon sx={{ color: theme.palette.mode === 'dark' ? '#10b981' : 'inherit' }} />
                     </ListItemIcon>
-                    <ListItemText primary="System Settings" />
+                    <ListItemText 
+                      primary="System Settings" 
+                      primaryTypographyProps={{
+                        style: {
+                          color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'
+                        }
+                      }}
+                    />
                   </ListItem>
                 </List>
               </Paper>

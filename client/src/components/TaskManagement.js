@@ -108,6 +108,8 @@ const TaskManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
+  const [startDate, setStartDate] = useState(''); // Add start date filter
+  const [endDate, setEndDate] = useState(''); // Add end date filter
   
   // Use the new user filter hook
   const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
@@ -116,7 +118,9 @@ const TaskManagement = () => {
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: '',
     statusFilter: '',
-    userFilter: ''
+    userFilter: '',
+    startDate: '',
+    endDate: ''
   });
 
   // Apply filters when Apply button is clicked
@@ -124,7 +128,9 @@ const TaskManagement = () => {
     setAppliedFilters({
       searchTerm,
       statusFilter,
-      userFilter: selectedUser ? selectedUser.username : ''
+      userFilter: selectedUser ? selectedUser.username : '',
+      startDate,
+      endDate
     });
     showSnackbar('Filters applied', 'info');
   };
@@ -134,10 +140,14 @@ const TaskManagement = () => {
     setSearchTerm('');
     setStatusFilter('');
     setSelectedUser(null);
+    setStartDate('');
+    setEndDate('');
     setAppliedFilters({
       searchTerm: '',
       statusFilter: '',
-      userFilter: ''
+      userFilter: '',
+      startDate: '',
+      endDate: ''
     });
     showSnackbar('Filters cleared', 'info');
   };
@@ -551,7 +561,19 @@ const TaskManagement = () => {
       matchesUser = task.userName === user?.username;
     }
     
-    return matchesSearch && matchesStatus && matchesUser;
+    // Add date range filtering
+    let matchesDateRange = true;
+    if (appliedFilters.startDate || appliedFilters.endDate) {
+      const taskDate = new Date(task.date);
+      if (appliedFilters.startDate && taskDate < new Date(appliedFilters.startDate)) {
+        matchesDateRange = false;
+      }
+      if (appliedFilters.endDate && taskDate > new Date(appliedFilters.endDate)) {
+        matchesDateRange = false;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesUser && matchesDateRange;
   });
   
   console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', appliedFilters.userFilter, 'Current user role:', user?.role);
@@ -848,20 +870,44 @@ const TaskManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
+              {/* Only show user filter for SystemAdmin role */}
+              {user && user.role === 'SystemAdmin' && (
+                <Grid item xs={12} sm={6} md={3}>
+                  <UserFilterDropdown
+                    users={users.map(u => ({
+                      ...u,
+                      label: `${u.fullName || u.username} (${u.username})`
+                    }))}
+                    selectedUser={selectedUser}
+                    onUserChange={(user) => {
+                      console.log('User filter changed:', user);
+                      setSelectedUser(user);
+                      // Don't update userFilter immediately, let Apply button handle it
+                    }}
+                    label="Filter by User"
+                    loading={userLoading}
+                  />
+                </Grid>
+              )}
+              {/* Add Time Range Filters */}
               <Grid item xs={12} sm={6} md={3}>
-                <UserFilterDropdown
-                  users={users.map(u => ({
-                    ...u,
-                    label: `${u.fullName || u.username} (${u.username})`
-                  }))}
-                  selectedUser={selectedUser}
-                  onUserChange={(user) => {
-                    console.log('User filter changed:', user);
-                    setSelectedUser(user);
-                    // Don't update userFilter immediately, let Apply button handle it
-                  }}
-                  label="Filter by User"
-                  loading={userLoading}
+                <TextField
+                  fullWidth
+                  label="Start Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label="End Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
                 />
               </Grid>
               
@@ -1408,6 +1454,29 @@ const TaskManagement = () => {
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {success}
+        </Alert>
+      )}
+      
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default TaskManagement;          {success}
         </Alert>
       )}
       
