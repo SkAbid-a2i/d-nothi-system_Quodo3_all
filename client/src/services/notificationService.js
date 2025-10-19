@@ -121,6 +121,12 @@ class NotificationService {
     this.notificationHistory = [];
   }
 
+  // Clear notification history for current session only (preserve for next session)
+  clearSessionHistory() {
+    // This method intentionally left empty to preserve notifications
+    // The history will be cleared when the service is reinitialized
+  }
+
   // Trigger auto-refresh based on notification type
   triggerAutoRefresh(notificationType) {
     switch (notificationType) {

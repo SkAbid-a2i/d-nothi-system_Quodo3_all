@@ -163,6 +163,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const handleLogout = () => {
     try {
       console.log('Logout initiated');
+      // Handle notification cleanup
+      handleLogoutNotifications();
       logout();
       console.log('Logout completed, redirecting to login');
       navigate('/');
@@ -200,6 +202,16 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     // Also clear notification history in service
     notificationService.clearNotificationHistory();
     showSnackbar('Notifications cleared', 'success');
+  };
+
+  // Handle logout - preserve notifications in service but clear local state
+  const handleLogoutNotifications = () => {
+    // Don't clear notification history on logout to preserve for next session
+    // Just clear local state
+    setNotifications([]);
+    setUnreadCount(0);
+    // Use session-specific clear method
+    notificationService.clearSessionHistory();
   };
 
   const handleMenuClose = () => {
@@ -401,10 +413,12 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
     // Cleanup on unmount
     return () => {
-      // Remove all listeners
+      // Remove all listeners for this specific user
       notificationService.listeners.clear();
+      // Disconnect from notification service
+      notificationService.disconnect();
     };
-  }, [user]); // This is the key fix - the dependency array should be [user]
+  }, [user?.id]); // Only reconnect when user ID changes
 
   // Filter notifications based on current page
   const getFilteredNotifications = () => {

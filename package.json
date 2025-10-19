@@ -24,7 +24,9 @@
     "migrate": "node scripts/migrate.js",
     "migrate:production": "node scripts/production-migration-helper.js",
     "post-deploy": "node scripts/post-deployment-check.js",
-    "check-schema": "node scripts/check-database-schema.js"
+    "check-schema": "node scripts/check-database-schema.js",
+    "verify-schema": "node scripts/verify-production-schema.js",
+    "test-realtime": "node scripts/test-realtime-operations.js"
   },
   "keywords": [],
   "author": "",
