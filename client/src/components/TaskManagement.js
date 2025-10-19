@@ -163,30 +163,8 @@ const TaskManagement = () => {
     showSnackbar('Filters cleared', 'info');
   };
 
-  // Apply filters automatically when filter values change
-  useEffect(() => {
-    // Only apply filters automatically if at least one filter has a value
-    if (searchTerm || statusFilter || (user && user.role === 'SystemAdmin' && selectedUser) || startDate || endDate) {
-      const newAppliedFilters = {
-        searchTerm,
-        statusFilter,
-        userFilter: user && user.role === 'SystemAdmin' && selectedUser ? selectedUser.username : '',
-        startDate,
-        endDate
-      };
-      
-      console.log('Auto-applying filters:', {
-        searchTerm,
-        statusFilter,
-        selectedUser,
-        startDate,
-        endDate,
-        newAppliedFilters
-      });
-      
-      setAppliedFilters(newAppliedFilters);
-    }
-  }, [searchTerm, statusFilter, selectedUser, startDate, endDate, user]);
+  // Remove the automatic filter application to make Apply button work as intended
+  // The useEffect that was automatically applying filters has been removed
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -570,7 +548,7 @@ const TaskManagement = () => {
 
   // Filter tasks based on applied filters
   const filteredTasks = tasks.filter(task => {
-    // For non-SystemAdmin users, they should only see their own tasks regardless of filters
+    // For non-SystemAdmin users, they should only see their own tasks
     if (user && user.role !== 'SystemAdmin') {
       if (task.userName !== user.username) {
         return false;
@@ -893,13 +871,13 @@ const TaskManagement = () => {
       {/* All Tasks Tab */}
       {activeTab === 0 && (
         <Box>
-          {/* Task Filters - Redesigned for Admin roles */}
+          {/* Task Filters - Redesigned for all user roles */}
           <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: 3 }}>
             <Typography variant="h6" gutterBottom>
               Filter Tasks
             </Typography>
             <Grid container spacing={2}>
-              {/* Search Field */}
+              {/* Search Field - Full width on mobile, half on larger screens */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -914,7 +892,7 @@ const TaskManagement = () => {
                 />
               </Grid>
               
-              {/* Status Filter */}
+              {/* Status Filter - Full width on mobile, half on larger screens */}
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Status</InputLabel>
@@ -932,7 +910,7 @@ const TaskManagement = () => {
                 </FormControl>
               </Grid>
               
-              {/* User Filter - Only for SystemAdmin */}
+              {/* User Filter - Only visible for SystemAdmin */}
               {user && user.role === 'SystemAdmin' && (
                 <Grid item xs={12} md={6}>
                   <UserFilterDropdown
@@ -952,7 +930,7 @@ const TaskManagement = () => {
                 </Grid>
               )}
               
-              {/* Date Range Filters */}
+              {/* Date Range Filters - Start and End Date side by side */}
               <Grid item xs={12} md={6}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -980,7 +958,7 @@ const TaskManagement = () => {
                 </Grid>
               </Grid>
               
-              {/* Action Buttons */}
+              {/* Action Buttons - Full width with proper spacing */}
               <Grid item xs={12}>
                 <Box sx={{ 
                   display: 'flex', 

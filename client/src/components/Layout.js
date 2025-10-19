@@ -210,7 +210,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     // Just clear local state
     setNotifications([]);
     setUnreadCount(0);
-    // Use session-specific clear method
+    // Use session-specific clear method that also clears stored notifications
     notificationService.clearSessionHistory();
   };
 
@@ -417,8 +417,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     return () => {
       // Remove the specific listener
       notificationService.off('notification', handleAllNotifications);
-      // Disconnect from notification service
-      notificationService.disconnect();
+      // Don't disconnect from notification service on component unmount
+      // Keep connection alive for better user experience
     };
   }, [user?.id]); // Only reconnect when user ID changes
 

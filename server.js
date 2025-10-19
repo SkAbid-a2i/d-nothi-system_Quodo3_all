@@ -140,6 +140,7 @@ const fileRoutes = require('./routes/file.routes');
 const meetingRoutes = require('./routes/meeting.routes');
 const healthRoutes = require('./routes/health.routes');
 const collaborationRoutes = require('./routes/collaboration.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 // Add debugging to check if routes are loaded
 console.log('Collaboration routes loaded:', !!collaborationRoutes);
@@ -250,6 +251,11 @@ app.use('/api/health', (req, res, next) => {
   logger.info('Health routes accessed', { endpoint: '/api/health' + req.url });
   next();
 }, healthRoutes);
+
+app.use('/api/notifications', (req, res, next) => {
+  logger.info('Notification routes accessed', { endpoint: '/api/notifications' + req.url });
+  next();
+}, notificationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

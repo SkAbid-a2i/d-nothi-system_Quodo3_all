@@ -1,5 +1,6 @@
 // Frontend service for handling real-time notifications using Server-Sent Events
 import autoRefreshService from './autoRefreshService';
+import { notificationAPI } from './api';
 
 class NotificationService {
   constructor() {
@@ -122,6 +123,17 @@ class NotificationService {
     return this.notificationHistory;
   }
 
+  // Fetch stored notifications from backend
+  async fetchStoredNotifications() {
+    try {
+      const response = await notificationAPI.getNotifications();
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching stored notifications:', error);
+      return [];
+    }
+  }
+
   // Clear notification history
   clearNotificationHistory() {
     this.notificationHistory = [];
@@ -131,6 +143,12 @@ class NotificationService {
   clearSessionHistory() {
     // Preserve notifications across sessions by not clearing the history
     // The history will be cleared only when the service is completely reinitialized
+    // But we should clear the stored notifications in the backend
+    if (this.userId) {
+      notificationAPI.clearNotifications().catch(error => {
+        console.error('Error clearing stored notifications:', error);
+      });
+    }
   }
 
   // Trigger auto-refresh based on notification type

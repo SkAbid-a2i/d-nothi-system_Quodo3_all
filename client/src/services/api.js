@@ -162,4 +162,11 @@ export const collaborationAPI = {
   deleteCollaboration: (id) => api.delete(`/collaborations/${id}`),
 };
 
+// Notification endpoints
+export const notificationAPI = {
+  getNotifications: (params) => api.get('/notifications', { params }),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  clearNotifications: () => api.delete('/notifications/clear'),
+};
+
 export default api;

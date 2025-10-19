@@ -1,4 +1,6 @@
 // Notification service for real-time updates using Server-Sent Events
+const Notification = require('../models/Notification');
+
 class NotificationService {
   constructor() {
     this.clients = new Map(); // Store connected clients
@@ -160,8 +162,99 @@ class NotificationService {
     }
   }
 
+  // Store notification in database for persistence
+  async storeNotification(notificationData) {
+    try {
+      // Create notification record in database
+      const notification = await Notification.create({
+        type: notificationData.type,
+        message: notificationData.message,
+        userId: notificationData.userId || null,
+        recipientRole: notificationData.recipientRole || null,
+        data: notificationData.data || {},
+        isRead: false
+      });
+      
+      return notification;
+    } catch (error) {
+      console.error('Error storing notification in database:', error);
+      return null;
+    }
+  }
+
+  // Get notifications for a specific user
+  async getUserNotifications(userId, limit = 50) {
+    try {
+      const notifications = await Notification.findAll({
+        where: {
+          [require('sequelize').Op.or]: [
+            { userId: userId },
+            { userId: null }, // Broadcast notifications
+            { recipientRole: require('sequelize').literal(`EXISTS (SELECT 1 FROM Users WHERE Users.id = ${userId} AND Users.role = Notification.recipientRole)`) }
+          ]
+        },
+        order: [['createdAt', 'DESC']],
+        limit: limit
+      });
+      
+      return notifications;
+    } catch (error) {
+      console.error('Error fetching user notifications:', error);
+      return [];
+    }
+  }
+
+  // Mark notification as read
+  async markNotificationAsRead(notificationId, userId) {
+    try {
+      const notification = await Notification.findOne({
+        where: {
+          id: notificationId,
+          [require('sequelize').Op.or]: [
+            { userId: userId },
+            { userId: null },
+            { recipientRole: require('sequelize').literal(`EXISTS (SELECT 1 FROM Users WHERE Users.id = ${userId} AND Users.role = Notification.recipientRole)`) }
+          ]
+        }
+      });
+      
+      if (notification) {
+        notification.isRead = true;
+        notification.readAt = new Date();
+        await notification.save();
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+  }
+
+  // Clear user notifications (soft delete)
+  async clearUserNotifications(userId) {
+    try {
+      // Instead of deleting, mark as read
+      await Notification.update(
+        { isRead: true, readAt: new Date() },
+        {
+          where: {
+            userId: userId,
+            isRead: false
+          }
+        }
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Error clearing user notifications:', error);
+      return false;
+    }
+  }
+
   // Notify about task creation
-  notifyTaskCreated(task) {
+  async notifyTaskCreated(task) {
     const notification = {
       type: 'taskCreated',
       taskId: task.id,
@@ -169,12 +262,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'taskCreated',
+      message: `New task created: ${task.description || 'No description'}`,
+      userId: null, // Broadcast to all relevant users
+      data: notification
+    });
+    
     // Send to all users
     this.broadcast(notification);
   }
 
   // Notify about task update
-  notifyTaskUpdated(task) {
+  async notifyTaskUpdated(task) {
     const notification = {
       type: 'taskUpdated',
       taskId: task.id,
@@ -182,12 +283,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'taskUpdated',
+      message: `Task updated: ${task.description || 'No description'}`,
+      userId: null, // Broadcast to all relevant users
+      data: notification
+    });
+    
     // Send to all users
     this.broadcast(notification);
   }
 
   // Notify about task deletion
-  notifyTaskDeleted(task) {
+  async notifyTaskDeleted(task) {
     const notification = {
       type: 'taskDeleted',
       taskId: task.id,
@@ -195,12 +304,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'taskDeleted',
+      message: `Task deleted: ${task.description || 'No description'}`,
+      userId: null, // Broadcast to all relevant users
+      data: notification
+    });
+    
     // Send to all users
     this.broadcast(notification);
   }
 
   // Notify about leave request
-  notifyLeaveRequested(leave) {
+  async notifyLeaveRequested(leave) {
     const notification = {
       type: 'leaveRequested',
       leaveId: leave.id,
@@ -208,12 +325,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'leaveRequested',
+      message: `New leave request from ${leave.userName || leave.userId || 'Unknown user'}`,
+      userId: null, // Broadcast to office
+      recipientRole: 'Admin', // Also send to Admin role
+      data: notification
+    });
+    
     // Send to admins/supervisors in the same office
     this.sendToOffice(leave.office, notification);
   }
 
   // Notify about leave approval
-  notifyLeaveApproved(leave) {
+  async notifyLeaveApproved(leave) {
     const notification = {
       type: 'leaveApproved',
       leaveId: leave.id,
@@ -221,12 +347,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'leaveApproved',
+      message: `Leave request approved for ${leave.userName || leave.userId || 'Unknown user'}`,
+      userId: leave.userId, // Send to specific user
+      data: notification
+    });
+    
     // Send to the employee who requested the leave
     this.sendToUser(leave.userId, notification);
   }
 
   // Notify about leave rejection
-  notifyLeaveRejected(leave) {
+  async notifyLeaveRejected(leave) {
     const notification = {
       type: 'leaveRejected',
       leaveId: leave.id,
@@ -234,12 +368,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'leaveRejected',
+      message: `Leave request rejected for ${leave.userName || leave.userId || 'Unknown user'}`,
+      userId: leave.userId, // Send to specific user
+      data: notification
+    });
+    
     // Send to the employee who requested the leave
     this.sendToUser(leave.userId, notification);
   }
 
   // Notify about user creation
-  notifyUserCreated(user) {
+  async notifyUserCreated(user) {
     const notification = {
       type: 'userCreated',
       userId: user.id,
@@ -247,12 +389,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'userCreated',
+      message: `New user created: ${user.username || user.fullName || 'Unknown user'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about user update
-  notifyUserUpdated(user) {
+  async notifyUserUpdated(user) {
     const notification = {
       type: 'userUpdated',
       userId: user.id,
@@ -260,12 +411,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'userUpdated',
+      message: `User updated: ${user.username || user.fullName || 'Unknown user'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about user deletion
-  notifyUserDeleted(user) {
+  async notifyUserDeleted(user) {
     const notification = {
       type: 'userDeleted',
       userId: user.id,
@@ -273,12 +433,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'userDeleted',
+      message: `User deleted: ${user.username || user.userId || 'Unknown user'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about dropdown creation
-  notifyDropdownCreated(dropdown) {
+  async notifyDropdownCreated(dropdown) {
     const notification = {
       type: 'dropdownCreated',
       dropdownId: dropdown.id,
@@ -286,12 +455,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'dropdownCreated',
+      message: `New dropdown value created: ${dropdown.value || 'Unknown value'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about dropdown update
-  notifyDropdownUpdated(dropdown) {
+  async notifyDropdownUpdated(dropdown) {
     const notification = {
       type: 'dropdownUpdated',
       dropdownId: dropdown.id,
@@ -299,12 +477,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'dropdownUpdated',
+      message: `Dropdown value updated: ${dropdown.value || 'Unknown value'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about dropdown deletion
-  notifyDropdownDeleted(dropdown) {
+  async notifyDropdownDeleted(dropdown) {
     const notification = {
       type: 'dropdownDeleted',
       dropdownId: dropdown.id,
@@ -312,12 +499,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'dropdownDeleted',
+      message: `Dropdown value deleted: ${dropdown.value || 'Unknown value'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about permission template creation
-  notifyPermissionTemplateCreated(template) {
+  async notifyPermissionTemplateCreated(template) {
     const notification = {
       type: 'permissionTemplateCreated',
       templateId: template.id,
@@ -325,12 +521,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'permissionTemplateCreated',
+      message: `New permission template created: ${template.name || 'Unknown template'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about permission template update
-  notifyPermissionTemplateUpdated(template) {
+  async notifyPermissionTemplateUpdated(template) {
     const notification = {
       type: 'permissionTemplateUpdated',
       templateId: template.id,
@@ -338,12 +543,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'permissionTemplateUpdated',
+      message: `Permission template updated: ${template.name || 'Unknown template'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about permission template deletion
-  notifyPermissionTemplateDeleted(template) {
+  async notifyPermissionTemplateDeleted(template) {
     const notification = {
       type: 'permissionTemplateDeleted',
       templateId: template.id,
@@ -351,12 +565,21 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'permissionTemplateDeleted',
+      message: `Permission template deleted: ${template.name || 'Unknown template'}`,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admins
     this.sendToAdminUsers(notification);
   }
 
   // Notify about meeting creation
-  notifyMeetingCreated(meeting) {
+  async notifyMeetingCreated(meeting) {
     const notification = {
       type: 'meetingCreated',
       meetingId: meeting.id,
@@ -364,12 +587,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'meetingCreated',
+      message: `New meeting scheduled: ${meeting.subject || 'No subject'}`,
+      userId: null, // Will be sent to relevant users
+      data: notification
+    });
+    
     // Send to selected users and Admin roles
     this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
   // Notify about meeting update
-  notifyMeetingUpdated(meeting) {
+  async notifyMeetingUpdated(meeting) {
     const notification = {
       type: 'meetingUpdated',
       meetingId: meeting.id,
@@ -377,12 +608,20 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'meetingUpdated',
+      message: `Meeting updated: ${meeting.subject || 'No subject'}`,
+      userId: null, // Will be sent to relevant users
+      data: notification
+    });
+    
     // Send to selected users and Admin roles
     this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
   // Notify about meeting deletion
-  notifyMeetingDeleted(meeting) {
+  async notifyMeetingDeleted(meeting) {
     const notification = {
       type: 'meetingDeleted',
       meetingId: meeting.id,
@@ -390,18 +629,34 @@ class NotificationService {
       timestamp: new Date().toISOString()
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'meetingDeleted',
+      message: `Meeting cancelled: ${meeting.subject || 'No subject'}`,
+      userId: null, // Will be sent to relevant users
+      data: notification
+    });
+    
     // Send to selected users and Admin roles
     this.sendToRelevantUsersForMeeting(meeting, notification);
   }
 
   // Notify about collaboration creation
-  notifyCollaborationCreated(collaboration) {
+  async notifyCollaborationCreated(collaboration) {
     const notification = {
       type: 'collaborationCreated',
       collaborationId: collaboration.id,
       collaboration: collaboration,
       timestamp: new Date().toISOString()
     };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'collaborationCreated',
+      message: `New collaboration link created: ${collaboration.title || 'No title'}`,
+      userId: collaboration.createdBy, // Send to creator
+      data: notification
+    });
     
     // Send to the creator and all users in the same office
     this.sendToUser(collaboration.createdBy, notification);
@@ -415,13 +670,21 @@ class NotificationService {
   }
 
   // Notify about collaboration update
-  notifyCollaborationUpdated(collaboration) {
+  async notifyCollaborationUpdated(collaboration) {
     const notification = {
       type: 'collaborationUpdated',
       collaborationId: collaboration.id,
       collaboration: collaboration,
       timestamp: new Date().toISOString()
     };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'collaborationUpdated',
+      message: `Collaboration link updated: ${collaboration.title || 'No title'}`,
+      userId: collaboration.createdBy, // Send to creator
+      data: notification
+    });
     
     // Send to the creator and all users in the same office
     this.sendToUser(collaboration.createdBy, notification);
@@ -435,13 +698,21 @@ class NotificationService {
   }
 
   // Notify about collaboration deletion
-  notifyCollaborationDeleted(collaboration) {
+  async notifyCollaborationDeleted(collaboration) {
     const notification = {
       type: 'collaborationDeleted',
       collaborationId: collaboration.id,
       collaboration: collaboration,
       timestamp: new Date().toISOString()
     };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'collaborationDeleted',
+      message: `Collaboration link deleted: ${collaboration.title || 'No title'}`,
+      userId: collaboration.createdBy, // Send to creator
+      data: notification
+    });
     
     // Send to the creator and all users in the same office
     this.sendToUser(collaboration.createdBy, notification);
@@ -455,7 +726,7 @@ class NotificationService {
   }
 
   // Notify about error
-  notifyError(errorData) {
+  async notifyError(errorData) {
     const notification = {
       type: 'errorNotification',
       message: errorData.message,
@@ -463,18 +734,36 @@ class NotificationService {
       metadata: errorData.metadata || {}
     };
     
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'errorNotification',
+      message: errorData.message,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
+    
     // Send to all admin users
     this.sendToAdminUsers(notification);
   }
 
   // Notify about warning
-  notifyWarning(warningData) {
+  async notifyWarning(warningData) {
     const notification = {
       type: 'warningNotification',
       message: warningData.message,
       timestamp: new Date().toISOString(),
       metadata: warningData.metadata || {}
     };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'warningNotification',
+      message: warningData.message,
+      userId: null,
+      recipientRole: 'SystemAdmin', // Send to SystemAdmin role
+      data: notification
+    });
     
     // Send to all admin users
     this.sendToAdminUsers(notification);
