@@ -128,7 +128,7 @@ const TaskManagement = () => {
     const newAppliedFilters = {
       searchTerm,
       statusFilter,
-      userFilter: user && user.role === 'SystemAdmin' && selectedUser ? selectedUser.username : '',
+      userFilter: '', // Always empty since we removed user filter
       startDate,
       endDate
     };
@@ -136,7 +136,6 @@ const TaskManagement = () => {
     console.log('Applying filters:', {
       searchTerm,
       statusFilter,
-      selectedUser,
       startDate,
       endDate,
       newAppliedFilters
@@ -150,7 +149,6 @@ const TaskManagement = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
-    setSelectedUser(null);
     setStartDate('');
     setEndDate('');
     setAppliedFilters({
@@ -206,16 +204,16 @@ const TaskManagement = () => {
       console.log('Raw tasks data:', tasksData);
       
       // For SystemAdmin, show all tasks
-      // For other roles, show only their own tasks
+      // For other roles (Admin, Supervisor, Agent), show only their own tasks
       if (user.role === 'SystemAdmin') {
         // SystemAdmin sees all tasks - no filtering needed
         console.log('SystemAdmin: showing all tasks');
       } else {
         // Other users only see their own tasks
         tasksData = tasksData.filter(task => 
-          task.userId === user.id || task.userName === user.username
+          task.userName === user.username
         );
-        console.log('Non-SystemAdmin: filtered to user tasks', tasksData.length);
+        console.log(`${user.role}: filtered to user tasks`, tasksData.length);
       }
       
       setTasks(tasksData);
@@ -575,11 +573,22 @@ const TaskManagement = () => {
     let matchesDateRange = true;
     if (appliedFilters.startDate || appliedFilters.endDate) {
       const taskDate = new Date(task.date);
-      if (appliedFilters.startDate && taskDate < new Date(appliedFilters.startDate)) {
-        matchesDateRange = false;
+      // Normalize the task date to remove time component for comparison
+      taskDate.setHours(0, 0, 0, 0);
+      
+      if (appliedFilters.startDate) {
+        const startDateFilter = new Date(appliedFilters.startDate);
+        startDateFilter.setHours(0, 0, 0, 0);
+        if (taskDate < startDateFilter) {
+          matchesDateRange = false;
+        }
       }
-      if (appliedFilters.endDate && taskDate > new Date(appliedFilters.endDate)) {
-        matchesDateRange = false;
+      if (appliedFilters.endDate) {
+        const endDateFilter = new Date(appliedFilters.endDate);
+        endDateFilter.setHours(23, 59, 59, 999); // End of day
+        if (taskDate > endDateFilter) {
+          matchesDateRange = false;
+        }
       }
     }
     
@@ -588,6 +597,7 @@ const TaskManagement = () => {
     if (!result) {
       console.log('Task filtered out:', {
         task: task.description,
+        taskDate: task.date,
         taskUser: task.userName,
         currentUser: user?.username,
         userRole: user?.role,
@@ -871,14 +881,14 @@ const TaskManagement = () => {
       {/* All Tasks Tab */}
       {activeTab === 0 && (
         <Box>
-          {/* Task Filters - Redesigned for all user roles */}
-          <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Filter Tasks
+          {/* Task Filters - Redesigned for all user roles - REMOVED USER FILTER FOR ALL ROLES */}
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+              Task Filters
             </Typography>
-            <Grid container spacing={2}>
-              {/* Search Field - Full width on mobile, half on larger screens */}
-              <Grid item xs={12} md={6}>
+            <Grid container spacing={3}>
+              {/* Search Field - Full width on mobile, responsive on larger screens */}
+              <Grid item xs={12} sm={6} md={4}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
@@ -889,12 +899,13 @@ const TaskManagement = () => {
                     endAdornment: <SearchIcon color="action" />
                   }}
                   variant="outlined"
+                  size="small"
                 />
               </Grid>
               
-              {/* Status Filter - Full width on mobile, half on larger screens */}
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth variant="outlined">
+              {/* Status Filter - Full width on mobile, responsive on larger screens */}
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth variant="outlined" size="small">
                   <InputLabel>Status</InputLabel>
                   <Select 
                     label="Status" 
@@ -910,88 +921,76 @@ const TaskManagement = () => {
                 </FormControl>
               </Grid>
               
-              {/* User Filter - Only visible for SystemAdmin */}
-              {user && user.role === 'SystemAdmin' && (
-                <Grid item xs={12} md={6}>
-                  <UserFilterDropdown
-                    users={users.map(u => ({
-                      ...u,
-                      label: `${u.fullName || u.username} (${u.username})`
-                    }))}
-                    selectedUser={selectedUser}
-                    onUserChange={(user) => {
-                      console.log('User filter changed:', user);
-                      setSelectedUser(user);
-                    }}
-                    label="Filter by User"
-                    loading={userLoading}
-                    gridSize={{}}
-                  />
-                </Grid>
-              )}
-              
-              {/* Date Range Filters - Start and End Date side by side */}
-              <Grid item xs={12} md={6}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Start Date"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="End Date"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      variant="outlined"
-                    />
-                  </Grid>
-                </Grid>
+              {/* Start Date Filter */}
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  fullWidth
+                  label="Start Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  variant="outlined"
+                  size="small"
+                />
               </Grid>
               
-              {/* Action Buttons - Full width with proper spacing */}
+              {/* End Date Filter */}
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  fullWidth
+                  label="End Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  variant="outlined"
+                  size="small"
+                />
+              </Grid>
+              
+              {/* Action Buttons - Responsive layout */}
               <Grid item xs={12}>
                 <Box sx={{ 
                   display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
                   justifyContent: 'space-between', 
-                  flexWrap: 'wrap',
                   gap: 2,
                   mt: 1
                 }}>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2 
+                  }}>
                     <Button 
                       variant="contained" 
                       color="primary"
                       startIcon={<FilterIcon />}
                       onClick={applyFilters}
-                      sx={{ minWidth: 120 }}
+                      sx={{ minWidth: 140, py: 1 }}
                     >
                       Apply Filters
                     </Button>
                     <Button 
                       variant="outlined"
                       onClick={clearFilters}
-                      sx={{ minWidth: 120 }}
+                      sx={{ minWidth: 140, py: 1 }}
                     >
-                      Clear Filters
+                      Clear All
                     </Button>
                   </Box>
                   
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2 
+                  }}>
                     <Button 
                       variant="outlined" 
                       startIcon={<DownloadIcon />} 
                       onClick={() => handleExport('CSV')}
-                      sx={{ minWidth: 120 }}
+                      sx={{ minWidth: 140, py: 1 }}
                     >
                       Export CSV
                     </Button>
@@ -999,7 +998,7 @@ const TaskManagement = () => {
                       variant="outlined" 
                       startIcon={<DownloadIcon />} 
                       onClick={() => handleExport('PDF')}
-                      sx={{ minWidth: 120 }}
+                      sx={{ minWidth: 140, py: 1 }}
                     >
                       Export PDF
                     </Button>
@@ -1015,7 +1014,7 @@ const TaskManagement = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <TableContainer component={Paper} id="task-list">
+            <TableContainer component={Paper} id="task-list" sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -1035,7 +1034,14 @@ const TaskManagement = () => {
                 </TableHead>
                 <TableBody>
                   {filteredTasks.map((task) => (
-                    <TableRow key={task.id}>
+                    <TableRow 
+                      key={task.id}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                        }
+                      }}
+                    >
                       <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell>{task.source || 'N/A'}</TableCell>
                       <TableCell>{task.category || 'N/A'}</TableCell>
@@ -1043,18 +1049,23 @@ const TaskManagement = () => {
                       <TableCell>{task.description || 'N/A'}</TableCell>
                       <TableCell>{task.userName || 'N/A'}</TableCell>
                       <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                      <TableCell> {/* Make status editable */}
-                        <FormControl fullWidth size="small">
-                          <Select
-                            value={task.status || 'Pending'}
-                            onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                          >
-                            <MenuItem value="Pending">Pending</MenuItem>
-                            <MenuItem value="In Progress">In Progress</MenuItem>
-                            <MenuItem value="Completed">Completed</MenuItem>
-                            <MenuItem value="Cancelled">Cancelled</MenuItem>
-                          </Select>
-                        </FormControl>
+                      <TableCell>
+                        <Chip
+                          label={task.status || 'Pending'}
+                          size="small"
+                          sx={{
+                            backgroundColor: 
+                              task.status === 'Pending' ? 'warning.light' :
+                              task.status === 'In Progress' ? 'info.light' :
+                              task.status === 'Completed' ? 'success.light' :
+                              task.status === 'Cancelled' ? 'error.light' : 'default.light',
+                            color: 
+                              task.status === 'Pending' ? 'warning.dark' :
+                              task.status === 'In Progress' ? 'info.dark' :
+                              task.status === 'Completed' ? 'success.dark' :
+                              task.status === 'Cancelled' ? 'error.dark' : 'default.dark',
+                          }}
+                        />
                       </TableCell>
                       <TableCell>
                         {task.files && task.files.length > 0 ? (
@@ -1068,7 +1079,7 @@ const TaskManagement = () => {
                             />
                           </Tooltip>
                         ) : (
-                          'N/A'
+                          <Chip label="No Files" size="small" variant="outlined" />
                         )}
                       </TableCell>
                       {/* Removed Flag cell with dropdown */}
