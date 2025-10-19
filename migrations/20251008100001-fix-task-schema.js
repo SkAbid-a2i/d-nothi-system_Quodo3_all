@@ -25,11 +25,28 @@ module.exports = {
       allowNull: true
     });
     
-    // Add userInformation column if it doesn't exist
-    await queryInterface.addColumn('tasks', 'userInformation', {
-      type: Sequelize.TEXT,
-      allowNull: true
-    });
+    // Check if userInformation column exists before adding it
+    try {
+      const tableInfo = await queryInterface.describeTable('tasks');
+      if (!tableInfo.userInformation) {
+        // Add userInformation column if it doesn't exist
+        await queryInterface.addColumn('tasks', 'userInformation', {
+          type: Sequelize.TEXT,
+          allowNull: true
+        });
+      }
+    } catch (error) {
+      // If describeTable fails, try to add the column and catch the error
+      try {
+        await queryInterface.addColumn('tasks', 'userInformation', {
+          type: Sequelize.TEXT,
+          allowNull: true
+        });
+      } catch (addColError) {
+        // Column might already exist, ignore the error
+        console.log('userInformation column might already exist, continuing...');
+      }
+    }
     
     // Change date column from datetime to date to match DATEONLY in model
     await queryInterface.changeColumn('tasks', 'date', {
@@ -61,7 +78,12 @@ module.exports = {
     });
     
     // Remove userInformation column
-    await queryInterface.removeColumn('tasks', 'userInformation');
+    try {
+      await queryInterface.removeColumn('tasks', 'userInformation');
+    } catch (error) {
+      // Column might not exist, ignore the error
+      console.log('userInformation column might not exist, continuing...');
+    }
     
     // Change date column back to datetime
     await queryInterface.changeColumn('tasks', 'date', {

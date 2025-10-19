@@ -20,7 +20,8 @@
     "check-setup": "node scripts/check-setup.js",
     "verify-deployment": "node scripts/verify-deployment.js",
     "deploy-guide": "node scripts/deploy.js",
-    "deploy": "echo 'See DEPLOYMENT.md for deployment instructions'"
+    "deploy": "echo 'See DEPLOYMENT.md for deployment instructions'",
+    "migrate": "node scripts/migrate.js"
   },
   "keywords": [],
   "author": "",
