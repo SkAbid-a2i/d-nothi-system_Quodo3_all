@@ -37,7 +37,7 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { username, email, password, fullName, role, office } = req.body;
+    const { username, email, password, fullName, role, office, bloodGroup, phoneNumber, bio } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
@@ -58,6 +58,9 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       fullName,
       role,
       office,
+      bloodGroup,
+      phoneNumber,
+      bio
     });
 
     // Create audit log for user creation
@@ -83,6 +86,8 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       fullName: user.fullName,
       role: user.role,
       office: user.office,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber
     });
 
     res.status(201).json({
@@ -92,6 +97,9 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       fullName: user.fullName,
       role: user.role,
       office: user.office,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber,
+      bio: user.bio
     });
   } catch (err) {
     console.error(err);
@@ -105,7 +113,7 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
 router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, fullName, role, office, isActive } = req.body;
+    const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio } = req.body;
 
     // Check if user exists
     const user = await User.findByPk(id);
@@ -120,6 +128,9 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
     user.role = role || user.role;
     user.office = office || user.office;
     user.isActive = isActive !== undefined ? isActive : user.isActive;
+    user.bloodGroup = bloodGroup || user.bloodGroup;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+    user.bio = bio || user.bio;
 
     await user.save();
 
@@ -147,6 +158,8 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
       role: user.role,
       office: user.office,
       isActive: user.isActive,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber
     });
 
     res.json({
@@ -157,6 +170,9 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
       role: user.role,
       office: user.office,
       isActive: user.isActive,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber,
+      bio: user.bio
     });
   } catch (err) {
     console.error(err);

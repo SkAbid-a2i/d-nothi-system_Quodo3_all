@@ -9,6 +9,9 @@ const userValidation = (data) => {
     fullName: Joi.string().min(2).max(50).required(),
     role: Joi.string().valid('SystemAdmin', 'Admin', 'Supervisor', 'Agent').required(),
     office: Joi.string().optional().allow(''),
+    bloodGroup: Joi.string().optional().allow('').max(10),
+    phoneNumber: Joi.string().optional().allow('').max(20),
+    bio: Joi.string().optional().allow('').max(500)
   });
 
   return schema.validate(data);

@@ -96,7 +96,9 @@ const AdminConsole = () => {
     username: '',
     email: '',
     password: '',
-    role: 'Agent'
+    role: 'Agent',
+    bloodGroup: '',
+    phoneNumber: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -238,7 +240,9 @@ const AdminConsole = () => {
       username: user.username,
       email: user.email,
       password: '',
-      role: user.role
+      role: user.role,
+      bloodGroup: user.bloodGroup || '',
+      phoneNumber: user.phoneNumber || ''
     });
     
     setIsEditing(true);
@@ -613,6 +617,24 @@ Office,Chittagong Office,`;
                             required
                           />
                         </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Phone Number"
+                            name="phoneNumber"
+                            value={formData.phoneNumber}
+                            onChange={handleInputChange}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Blood Group"
+                            name="bloodGroup"
+                            value={formData.bloodGroup}
+                            onChange={handleInputChange}
+                          />
+                        </Grid>
                         {!isEditing && (
                           <Grid item xs={12} sm={6}>
                             <TextField
@@ -747,6 +769,8 @@ Office,Chittagong Office,`;
                               <TableCell>Name</TableCell>
                               <TableCell>Username</TableCell>
                               <TableCell>Email</TableCell>
+                              <TableCell>Blood Group</TableCell>
+                              <TableCell>Phone</TableCell>
                               <TableCell>Role</TableCell>
                               <TableCell>Status</TableCell>
                               <TableCell>Actions</TableCell>
@@ -771,6 +795,8 @@ Office,Chittagong Office,`;
                                 </TableCell>
                                 <TableCell>{user.username}</TableCell>
                                 <TableCell>{user.email}</TableCell>
+                                <TableCell>{user.bloodGroup || 'N/A'}</TableCell>
+                                <TableCell>{user.phoneNumber || 'N/A'}</TableCell>
                                 <TableCell>
                                   <Chip 
                                     label={user.role} 

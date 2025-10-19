@@ -123,8 +123,8 @@ class NotificationService {
 
   // Clear notification history for current session only (preserve for next session)
   clearSessionHistory() {
-    // This method intentionally left empty to preserve notifications
-    // The history will be cleared when the service is reinitialized
+    // Preserve notifications across sessions by not clearing the history
+    // The history will be cleared only when the service is completely reinitialized
   }
 
   // Trigger auto-refresh based on notification type

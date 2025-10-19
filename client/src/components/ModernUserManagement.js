@@ -68,7 +68,10 @@ const ModernUserManagement = () => {
     email: '',
     password: '',
     role: 'Agent',
-    office: ''
+    office: '',
+    bloodGroup: '',
+    phoneNumber: '',
+    bio: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -180,7 +183,10 @@ const ModernUserManagement = () => {
         email: '',
         password: '',
         role: 'Agent',
-        office: ''
+        office: '',
+        bloodGroup: '',
+        phoneNumber: '',
+        bio: ''
       });
       setIsEditing(false);
       setEditingUserId(null);
@@ -200,7 +206,10 @@ const ModernUserManagement = () => {
       email: user.email,
       password: '',
       role: user.role,
-      office: user.office
+      office: user.office,
+      bloodGroup: user.bloodGroup || '',
+      phoneNumber: user.phoneNumber || '',
+      bio: user.bio || ''
     });
     setIsEditing(true);
     setEditingUserId(user.id);
@@ -350,6 +359,24 @@ const ModernUserManagement = () => {
                         required
                       />
                     </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Phone Number"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Blood Group"
+                        name="bloodGroup"
+                        value={formData.bloodGroup}
+                        onChange={handleInputChange}
+                      />
+                    </Grid>
                     {!isEditing && (
                       <Grid item xs={12} sm={6}>
                         <TextField
@@ -389,6 +416,17 @@ const ModernUserManagement = () => {
                       />
                     </Grid>
                     <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Bio"
+                        name="bio"
+                        multiline
+                        rows={3}
+                        value={formData.bio}
+                        onChange={handleInputChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
                       <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
                           type="submit"
@@ -418,7 +456,10 @@ const ModernUserManagement = () => {
                                 email: '',
                                 password: '',
                                 role: 'Agent',
-                                office: ''
+                                office: '',
+                                bloodGroup: '',
+                                phoneNumber: '',
+                                bio: ''
                               });
                             }}
                             disabled={loading}
@@ -495,6 +536,8 @@ const ModernUserManagement = () => {
                           <TableCell>Email</TableCell>
                           <TableCell>Role</TableCell>
                           <TableCell>Office</TableCell>
+                          <TableCell>Blood Group</TableCell>
+                          <TableCell>Phone</TableCell>
                           <TableCell>Status</TableCell>
                           <TableCell>Actions</TableCell>
                         </TableRow>
@@ -539,6 +582,8 @@ const ModernUserManagement = () => {
                               />
                             </TableCell>
                             <TableCell>{user.office || 'N/A'}</TableCell>
+                            <TableCell>{user.bloodGroup || 'N/A'}</TableCell>
+                            <TableCell>{user.phoneNumber || 'N/A'}</TableCell>
                             <TableCell>
                               <Chip 
                                 label={user.isActive ? 'Active' : 'Inactive'} 
