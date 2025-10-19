@@ -46,7 +46,9 @@ import {
   ShowChart as LineChartIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  VideoCall as VideoCallIcon,
+  Link as LinkIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -65,7 +67,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { taskAPI, leaveAPI, dropdownAPI } from '../services/api';
+import { taskAPI, leaveAPI, dropdownAPI, meetingAPI, collaborationAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
@@ -83,6 +85,8 @@ const AgentDashboard = () => {
   const [allTasks, setAllTasks] = useState([]); // Store all tasks for filtering
   const [leaves, setLeaves] = useState([]);
   const [allLeaves, setAllLeaves] = useState([]); // Store all leaves for filtering
+  const [meetings, setMeetings] = useState([]); // Add meetings state
+  const [collaborations, setCollaborations] = useState([]); // Add collaborations state
   const [users, setUsers] = useState([]); // Add users state for filtering
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [userFilter, setUserFilter] = useState(''); // Add user filter state
@@ -121,10 +125,13 @@ const AgentDashboard = () => {
     try {
       console.log('Fetching dashboard data...');
       
-      // Fetch tasks - filter based on user role
-      console.log('Fetching tasks for user:', user?.username);
-      const tasksResponse = await taskAPI.getAllTasks();
-      console.log('Tasks response:', tasksResponse);
+      // Fetch all data in parallel
+      const [tasksResponse, leavesResponse, meetingsResponse, collaborationsResponse] = await Promise.all([
+        taskAPI.getAllTasks(),
+        leaveAPI.getAllLeaves(),
+        meetingAPI.getAllMeetings(),
+        collaborationAPI.getAllCollaborations()
+      ]);
       
       // Filter tasks based on user role
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
@@ -143,11 +150,6 @@ const AgentDashboard = () => {
       
       setTasks(tasksData);
       
-      // Fetch leaves - filter based on user role
-      console.log('Fetching leaves for user:', user?.username);
-      const leavesResponse = await leaveAPI.getAllLeaves();
-      console.log('Leaves response:', leavesResponse);
-      
       // Filter leaves based on user role
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
@@ -164,6 +166,41 @@ const AgentDashboard = () => {
       }
       
       setLeaves(leavesData);
+      
+      // Filter meetings based on user role
+      let meetingsData = Array.isArray(meetingsResponse.data) ? meetingsResponse.data : 
+                         meetingsResponse.data?.data || meetingsResponse.data || [];
+      
+      // Filter meetings for the current user
+      if (isAdmin) {
+        // Admins see all meetings
+      } else {
+        // Regular users see meetings they're invited to or created
+        meetingsData = meetingsData.filter(meeting => 
+          meeting.createdBy === user.id || 
+          (meeting.selectedUserIds && meeting.selectedUserIds.includes(user.id)) ||
+          (meeting.selectedUsers && meeting.selectedUsers.some(u => u.id === user.id))
+        );
+      }
+      
+      setMeetings(meetingsData);
+      
+      // Filter collaborations based on user role
+      let collaborationsData = Array.isArray(collaborationsResponse.data) ? collaborationsResponse.data : 
+                               collaborationsResponse.data?.data || collaborationsResponse.data || [];
+      
+      // Filter collaborations for the current user
+      if (isAdmin) {
+        // Admins see all collaborations
+      } else {
+        // Regular users see collaborations they created or are in the same office
+        collaborationsData = collaborationsData.filter(collab => 
+          collab.createdBy === user.id || 
+          collab.office === user.office
+        );
+      }
+      
+      setCollaborations(collaborationsData);
       
       console.log('Dashboard data fetched successfully');
     } catch (error) {
@@ -1112,11 +1149,14 @@ const AgentDashboard = () => {
               Recent Activity
             </Typography>
             <Box sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
-              {tasks.length > 0 || leaves.length > 0 ? (
+              {tasks.length > 0 || leaves.length > 0 || meetings.length > 0 || collaborations.length > 0 ? (
                 <Box>
-                  {/* Show recent tasks and leaves for the current user only */}
-                  {[...finalFilteredTasks.map(t => ({...t, type: 'task'})), ...finalFilteredLeaves.map(l => ({...l, type: 'leave'}))]
-                    .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+                  {/* Show recent tasks, leaves, meetings, and collaborations for the current user */}
+                  {[...finalFilteredTasks.map(t => ({...t, type: 'task'})), 
+                    ...finalFilteredLeaves.map(l => ({...l, type: 'leave'})),
+                    ...meetings.map(m => ({...m, type: 'meeting'})),
+                    ...collaborations.map(c => ({...c, type: 'collaboration'}))]
+                    .sort((a, b) => new Date(b.createdAt || b.date || b.createdAt) - new Date(a.createdAt || a.date || a.createdAt))
                     .slice(0, 10)
                     .map((item, index) => (
                       <Box 
@@ -1130,24 +1170,33 @@ const AgentDashboard = () => {
                           borderLeftColor: item.status === 'Completed' ? 'success.main' : 
                                           item.status === 'Approved' ? 'success.main' : 
                                           item.status === 'Rejected' ? 'error.main' : 
-                                          item.status === 'In Progress' ? 'primary.main' : 'warning.main'
+                                          item.status === 'In Progress' ? 'primary.main' : 
+                                          item.type === 'meeting' ? 'info.main' :
+                                          item.type === 'collaboration' ? 'secondary.main' : 'warning.main'
                         }}
                       >
                         <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary' }}>
-                          {item.type === 'task' ? (item.description || 'New task') : (item.reason || 'New leave request')}
+                          {item.type === 'task' ? (item.description || 'New task') : 
+                           item.type === 'leave' ? (item.reason || 'New leave request') :
+                           item.type === 'meeting' ? (item.subject || 'New meeting') :
+                           item.type === 'collaboration' ? (item.title || 'New collaboration') : 'Activity'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          {item.userName ? `By ${item.userName}` : 'System'} •{' '}
+                          {item.userName ? `By ${item.userName}` : item.createdBy ? `By User ${item.createdBy}` : 'System'} •{' '}
                           {new Date(item.createdAt || item.date).toLocaleString()}
                         </Typography>
                         <Box sx={{ mt: 1 }}>
                           <Chip 
-                            label={item.status || 'Pending'} 
+                            label={item.status || 
+                                   (item.type === 'meeting' ? 'Scheduled' : 
+                                   item.type === 'collaboration' ? 'Active' : 'Pending')} 
                             size="small"
                             color={
                               item.status === 'Completed' || item.status === 'Approved' ? 'success' : 
                               item.status === 'In Progress' ? 'primary' : 
-                              item.status === 'Rejected' ? 'error' : 'default'
+                              item.status === 'Rejected' ? 'error' : 
+                              item.type === 'meeting' ? 'info' :
+                              item.type === 'collaboration' ? 'secondary' : 'default'
                             } 
                           />
                           {item.type === 'task' && item.category && (
@@ -1161,6 +1210,24 @@ const AgentDashboard = () => {
                           {item.type === 'task' && item.service && (
                             <Chip 
                               label={item.service} 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              color="secondary"
+                            />
+                          )}
+                          {item.type === 'meeting' && (
+                            <Chip 
+                              icon={<VideoCallIcon />}
+                              label="Meeting" 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              color="info"
+                            />
+                          )}
+                          {item.type === 'collaboration' && (
+                            <Chip 
+                              icon={<LinkIcon />}
+                              label="Collaboration" 
                               size="small" 
                               sx={{ ml: 1 }}
                               color="secondary"

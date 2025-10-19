@@ -90,7 +90,9 @@ const UserManagement = () => {
     password: '',
     role: 'Agent',
     office: '',
-    isActive: true
+    isActive: true,
+    bloodGroup: '',
+    phoneNumber: ''
   });
   
   // Dropdown management state
@@ -322,7 +324,10 @@ const UserManagement = () => {
         password: '',
         role: data.user.role || 'Agent',
         office: data.user.office || '',
-        isActive: data.user.isActive !== undefined ? data.user.isActive : true
+        isActive: data.user.isActive !== undefined ? data.user.isActive : true,
+        bloodGroup: data.user.bloodGroup || '',
+        phoneNumber: data.user.phoneNumber || '',
+        bio: data.user.bio || ''
       });
       
       // Find office in offices array
@@ -337,7 +342,10 @@ const UserManagement = () => {
         password: '',
         role: 'Agent',
         office: '',
-        isActive: true
+        isActive: true,
+        bloodGroup: '',
+        phoneNumber: '',
+        bio: ''
       });
       setSelectedOffice(null);
     } else if (dialogType === 'dropdownEdit' && data?.dropdown) {
@@ -508,7 +516,9 @@ const UserManagement = () => {
           email: userFormData.email,
           role: userFormData.role,
           office: userFormData.office,
-          isActive: userFormData.isActive
+          isActive: userFormData.isActive,
+          bloodGroup: userFormData.bloodGroup,
+          phoneNumber: userFormData.phoneNumber
         });
         
         showSnackbar('User updated successfully!', 'success');
@@ -521,7 +531,9 @@ const UserManagement = () => {
           password: userFormData.password,
           role: userFormData.role,
           office: userFormData.office,
-          isActive: userFormData.isActive
+          isActive: userFormData.isActive,
+          bloodGroup: userFormData.bloodGroup,
+          phoneNumber: userFormData.phoneNumber
         });
         
         showSnackbar('User created successfully!', 'success');
@@ -899,6 +911,8 @@ const UserManagement = () => {
                                 <TableCell>User</TableCell>
                                 <TableCell>Role</TableCell>
                                 <TableCell>Office</TableCell>
+                                <TableCell>Blood Group</TableCell>
+                                <TableCell>Phone</TableCell>
                                 <TableCell>Status</TableCell>
                                 <TableCell>Actions</TableCell>
                               </TableRow>
@@ -961,6 +975,8 @@ const UserManagement = () => {
                                     />
                                   </TableCell>
                                   <TableCell>{u.office || 'Not assigned'}</TableCell>
+                                  <TableCell>{u.bloodGroup || 'N/A'}</TableCell>
+                                  <TableCell>{u.phoneNumber || 'N/A'}</TableCell>
                                   <TableCell>
                                     <FormControlLabel
                                       control={
@@ -1452,6 +1468,26 @@ const UserManagement = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
+                    label="Phone Number"
+                    name="phoneNumber"
+                    value={userFormData.phoneNumber}
+                    onChange={handleUserInputChange}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Blood Group"
+                    name="bloodGroup"
+                    value={userFormData.bloodGroup}
+                    onChange={handleUserInputChange}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
                     label={dialogs.userEdit.user ? 'New Password (optional)' : 'Password'}
                     name="password"
                     type="password"
@@ -1487,6 +1523,18 @@ const UserManagement = () => {
                     renderInput={(params) => (
                       <TextField {...params} label="Office" fullWidth />
                     )}
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Bio"
+                    name="bio"
+                    multiline
+                    rows={3}
+                    value={userFormData.bio}
+                    onChange={handleUserInputChange}
                   />
                 </Grid>
                 

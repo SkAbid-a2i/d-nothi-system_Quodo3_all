@@ -32,6 +32,8 @@ class NotificationService {
                   (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 
                    window.location.origin);
     
+    console.log('API URL:', apiUrl); // Debug log
+    
     // Fix for double /api in URL
     let baseUrl = apiUrl;
     if (baseUrl.endsWith('/api')) {
@@ -39,6 +41,8 @@ class NotificationService {
     }
     
     const url = `${baseUrl}/api/notifications?userId=${userId}`;
+    
+    console.log('Final notification URL:', url); // Debug log
 
     // Return a promise that resolves when connection is established
     this.connectionPromise = new Promise((resolve, reject) => {

@@ -29,7 +29,10 @@ import {
   Notifications as NotificationsIcon,
   Security as SecurityIcon,
   Person as PersonIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  Bloodtype as BloodtypeIcon,
+  Phone as PhoneIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { authAPI } from '../services/api';
 
@@ -47,7 +50,10 @@ const Settings = ({ darkMode, setDarkMode }) => {
   const [profileData, setProfileData] = useState({
     fullName: '',
     email: '',
-    username: ''
+    username: '',
+    bloodGroup: '',
+    phoneNumber: '',
+    bio: ''
   });
   
   // Password state
@@ -63,7 +69,10 @@ const Settings = ({ darkMode, setDarkMode }) => {
       setProfileData({
         fullName: user.fullName || '',
         email: user.email || '',
-        username: user.username || ''
+        username: user.username || '',
+        bloodGroup: user.bloodGroup || '',
+        phoneNumber: user.phoneNumber || '',
+        bio: user.bio || ''
       });
     }
   }, [user]);
@@ -89,8 +98,11 @@ const Settings = ({ darkMode, setDarkMode }) => {
       // Only send fields that exist in the database
       const profileUpdateData = {
         fullName: profileData.fullName,
-        email: profileData.email
-        // Exclude office field if it doesn't exist in the database
+        email: profileData.email,
+        username: profileData.username,
+        bloodGroup: profileData.bloodGroup,
+        phoneNumber: profileData.phoneNumber,
+        bio: profileData.bio
       };
       
       const response = await authAPI.updateProfile(profileUpdateData);
@@ -226,7 +238,75 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       label="Username"
                       value={profileData.username}
                       onChange={(e) => handleProfileChange('username', e.target.value)}
-                      disabled
+                      // Removed disabled attribute to make username editable
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Phone Number"
+                      value={profileData.phoneNumber}
+                      onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Blood Group"
+                      value={profileData.bloodGroup}
+                      onChange={(e) => handleProfileChange('bloodGroup', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Bio"
+                      multiline
+                      rows={4}
+                      value={profileData.bio}
+                      onChange={(e) => handleProfileChange('bio', e.target.value)}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
@@ -491,12 +571,28 @@ const Settings = ({ darkMode, setDarkMode }) => {
                 </Typography>
                 
                 <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Member since:</strong> {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                  </Typography>
+                  {/* Removed "Member since" field as requested */}
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     <strong>Last login:</strong> Today, 09:30 AM
                   </Typography>
+                  {user?.bloodGroup && (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <BloodtypeIcon sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+                      <strong>Blood Group:</strong> {user.bloodGroup}
+                    </Typography>
+                  )}
+                  {user?.phoneNumber && (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <PhoneIcon sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+                      <strong>Phone:</strong> {user.phoneNumber}
+                    </Typography>
+                  )}
+                  {user?.bio && (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <InfoIcon sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+                      <strong>Bio:</strong> {user.bio}
+                    </Typography>
+                  )}
                   <Typography variant="body2">
                     <strong>Status:</strong> 
                     <Chip 

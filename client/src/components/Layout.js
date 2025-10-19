@@ -248,6 +248,27 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     
     // Handle all notifications through a unified handler
     const handleAllNotifications = (data) => {
+      // Handle connection messages separately
+      if (data.type === 'connected') {
+        console.log('Connected to notification service:', data.message);
+        // Don't show connection messages as notifications
+        return;
+      }
+      
+      // Handle disconnection messages
+      if (data.type === 'disconnected') {
+        console.log('Disconnected from notification service:', data.reason);
+        // Don't show disconnection messages as notifications
+        return;
+      }
+      
+      // Handle error messages
+      if (data.type === 'error') {
+        console.error('Notification service error:', data.error);
+        // Don't show error messages as notifications unless they're important
+        return;
+      }
+      
       const notificationType = data.type;
       let message = '';
       let displayType = 'info';
@@ -347,6 +368,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           displayType = 'warning';
           break;
         default:
+          // Handle undefined or unknown notification types
+          if (!data.type) {
+            console.warn('Received notification with undefined type:', data);
+            return; // Don't show notifications without a type
+          }
           message = data.message || `New notification: ${notificationType}`;
           displayType = 'info';
       }
@@ -453,7 +479,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     if (type.includes('warning')) return 'Warning';
     if (type.includes('system')) return 'System';
     return 'Other';
-  };
+  }; int 
 
   // Get notification type color
   const getNotificationTypeColor = (type) => {

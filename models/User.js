@@ -54,6 +54,19 @@ const User = sequelize.define('User', {
   office: {
     type: DataTypes.STRING(255),
     allowNull: true
+  },
+  // New fields for user profile
+  bloodGroup: {
+    type: DataTypes.STRING(10),
+    allowNull: true
+  },
+  phoneNumber: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   timestamps: true,
