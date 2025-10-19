@@ -479,7 +479,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     if (type.includes('warning')) return 'Warning';
     if (type.includes('system')) return 'System';
     return 'Other';
-  }; int 
+  };
 
   // Get notification type color
   const getNotificationTypeColor = (type) => {
