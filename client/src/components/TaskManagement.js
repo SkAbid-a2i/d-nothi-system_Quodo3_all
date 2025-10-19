@@ -125,13 +125,24 @@ const TaskManagement = () => {
 
   // Apply filters when Apply button is clicked
   const applyFilters = () => {
-    setAppliedFilters({
+    const newAppliedFilters = {
       searchTerm,
       statusFilter,
       userFilter: user && user.role === 'SystemAdmin' && selectedUser ? selectedUser.username : '',
       startDate,
       endDate
+    };
+    
+    console.log('Applying filters:', {
+      searchTerm,
+      statusFilter,
+      selectedUser,
+      startDate,
+      endDate,
+      newAppliedFilters
     });
+    
+    setAppliedFilters(newAppliedFilters);
     showSnackbar('Filters applied', 'info');
   };
 
@@ -152,7 +163,30 @@ const TaskManagement = () => {
     showSnackbar('Filters cleared', 'info');
   };
 
-  // Remove the automatic filter application to make Apply button work as intended
+  // Apply filters automatically when filter values change
+  useEffect(() => {
+    // Only apply filters automatically if at least one filter has a value
+    if (searchTerm || statusFilter || (user && user.role === 'SystemAdmin' && selectedUser) || startDate || endDate) {
+      const newAppliedFilters = {
+        searchTerm,
+        statusFilter,
+        userFilter: user && user.role === 'SystemAdmin' && selectedUser ? selectedUser.username : '',
+        startDate,
+        endDate
+      };
+      
+      console.log('Auto-applying filters:', {
+        searchTerm,
+        statusFilter,
+        selectedUser,
+        startDate,
+        endDate,
+        newAppliedFilters
+      });
+      
+      setAppliedFilters(newAppliedFilters);
+    }
+  }, [searchTerm, statusFilter, selectedUser, startDate, endDate, user]);
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -536,6 +570,13 @@ const TaskManagement = () => {
 
   // Filter tasks based on applied filters
   const filteredTasks = tasks.filter(task => {
+    // For non-SystemAdmin users, they should only see their own tasks regardless of filters
+    if (user && user.role !== 'SystemAdmin') {
+      if (task.userName !== user.username) {
+        return false;
+      }
+    }
+    
     const matchesSearch = !appliedFilters.searchTerm || 
       (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
@@ -547,18 +588,9 @@ const TaskManagement = () => {
     // For SystemAdmin:
     // - When no user is selected in filter (userFilter is empty), show all tasks
     // - When a user is selected in filter, show only that user's tasks
-    // For other users:
-    // - Always show only their own tasks (userFilter logic doesn't apply)
     let matchesUser = true;
-    if (user && user.role === 'SystemAdmin') {
-      // SystemAdmin can filter by user
-      if (appliedFilters.userFilter) {
-        matchesUser = task.userName === appliedFilters.userFilter;
-      }
-      // If no userFilter, matchesUser remains true (show all tasks)
-    } else {
-      // Other users only see their own tasks regardless of userFilter
-      matchesUser = task.userName === user?.username;
+    if (user && user.role === 'SystemAdmin' && appliedFilters.userFilter) {
+      matchesUser = task.userName === appliedFilters.userFilter;
     }
     
     // Add date range filtering
@@ -573,7 +605,23 @@ const TaskManagement = () => {
       }
     }
     
-    return matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+    // Log filter results for debugging
+    const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+    if (!result) {
+      console.log('Task filtered out:', {
+        task: task.description,
+        taskUser: task.userName,
+        currentUser: user?.username,
+        userRole: user?.role,
+        matchesSearch,
+        matchesStatus,
+        matchesUser,
+        matchesDateRange,
+        appliedFilters
+      });
+    }
+    
+    return result;
   });
   
   console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', appliedFilters.userFilter, 'Current user role:', user?.role);
@@ -847,8 +895,11 @@ const TaskManagement = () => {
         <Box>
           {/* Task Filters - Redesigned for Admin roles */}
           <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Filter Tasks
+            </Typography>
             <Grid container spacing={2}>
-              {/* Search Field - Full width on mobile, half on larger screens */}
+              {/* Search Field */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -863,7 +914,7 @@ const TaskManagement = () => {
                 />
               </Grid>
               
-              {/* Status Filter - Full width on mobile, half on larger screens */}
+              {/* Status Filter */}
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Status</InputLabel>
@@ -901,7 +952,7 @@ const TaskManagement = () => {
                 </Grid>
               )}
               
-              {/* Date Range Filters - Start and End Date side by side */}
+              {/* Date Range Filters */}
               <Grid item xs={12} md={6}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -929,7 +980,7 @@ const TaskManagement = () => {
                 </Grid>
               </Grid>
               
-              {/* Action Buttons - Full width with proper spacing */}
+              {/* Action Buttons */}
               <Grid item xs={12}>
                 <Box sx={{ 
                   display: 'flex', 

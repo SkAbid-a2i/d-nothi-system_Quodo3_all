@@ -7,7 +7,8 @@ import {
   Tab,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  useTheme
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon
@@ -16,6 +17,7 @@ import { useTranslation } from '../contexts/TranslationContext';
 
 const Help = () => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
 
   const handleTabChange = (event, newValue) => {
@@ -64,7 +66,7 @@ const Help = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: 'grey.200',
+                bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
                 borderRadius: 1,
                 mb: 2
               }}
@@ -79,7 +81,10 @@ const Help = () => {
                 allowFullScreen
               ></iframe>
             </Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color={theme.palette.mode === 'dark' ? 'text.secondary' : 'text.primary'}
+            >
               {t('help.videoTutorial')}
             </Typography>
           </Box>
@@ -96,33 +101,58 @@ const Help = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: 'grey.200',
+                bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
                 borderRadius: 1,
-                mb: 2
+                mb: 2,
+                p: 2
               }}
             >
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography variant="h6" gutterBottom>
+              <Box sx={{ textAlign: 'left', maxWidth: '100%' }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  color={theme.palette.mode === 'dark' ? 'white' : 'inherit'}
+                >
                   Getting Started with D-Nothi Task Management
                 </Typography>
-                <Typography paragraph>
+                <Typography 
+                  paragraph
+                  color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                >
                   Welcome to the D-Nothi Task Management system. This guide will help you understand how to use all the features of our comprehensive task, leave, and user management platform.
                 </Typography>
-                <Typography variant="h6" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  color={theme.palette.mode === 'dark' ? 'white' : 'inherit'}
+                >
                   Creating Tasks
                 </Typography>
-                <Typography paragraph>
+                <Typography 
+                  paragraph
+                  color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                >
                   To create a new task, navigate to the Task Logger page and fill out the form with the required information. You can select from dynamic dropdowns for Source, Category, and Service. The Service dropdown is dependent on the Category selection.
                 </Typography>
-                <Typography variant="h6" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  color={theme.palette.mode === 'dark' ? 'white' : 'inherit'}
+                >
                   Managing Leaves
                 </Typography>
-                <Typography paragraph>
+                <Typography 
+                  paragraph
+                  color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                >
                   Submit leave requests through the Leaves section. Admins and supervisors can approve or reject requests in the same interface.
                 </Typography>
               </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color={theme.palette.mode === 'dark' ? 'text.secondary' : 'text.primary'}
+            >
               {t('help.userGuide')}
             </Typography>
           </Box>
@@ -136,10 +166,16 @@ const Help = () => {
             {faqItems.map((item, index) => (
               <Accordion key={index}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography>{item.question}</Typography>
+                  <Typography 
+                    color={theme.palette.mode === 'dark' ? 'white' : 'inherit'}
+                  >
+                    {item.question}
+                  </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                  <Typography>
+                  <Typography
+                    color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                  >
                     {item.answer}
                   </Typography>
                 </AccordionDetails>
@@ -150,10 +186,17 @@ const Help = () => {
       </Paper>
 
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
+        <Typography 
+          variant="h6" 
+          gutterBottom
+          color={theme.palette.mode === 'dark' ? 'white' : 'inherit'}
+        >
           {t('help.needHelp')}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography 
+          variant="body2" 
+          color={theme.palette.mode === 'dark' ? 'text.secondary' : 'text.primary'}
+        >
           {t('help.contactSupport')}
         </Typography>
       </Paper>
