@@ -21,7 +21,10 @@
     "verify-deployment": "node scripts/verify-deployment.js",
     "deploy-guide": "node scripts/deploy.js",
     "deploy": "echo 'See DEPLOYMENT.md for deployment instructions'",
-    "migrate": "node scripts/migrate.js"
+    "migrate": "node scripts/migrate.js",
+    "migrate:production": "node scripts/production-migration-helper.js",
+    "post-deploy": "node scripts/post-deployment-check.js",
+    "check-schema": "node scripts/check-database-schema.js"
   },
   "keywords": [],
   "author": "",
