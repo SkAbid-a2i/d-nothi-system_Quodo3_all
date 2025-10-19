@@ -383,9 +383,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
           // Handle undefined or unknown notification types
           if (!data.type) {
             console.warn('Received notification with undefined type:', data);
-            return; // Don't show notifications without a type
+            // Still show notifications without a type to avoid missing important messages
+            message = data.message || 'New notification';
+          } else {
+            message = data.message || `New notification: ${notificationType}`;
           }
-          message = data.message || `New notification: ${notificationType}`;
           displayType = 'info';
       }
       
