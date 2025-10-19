@@ -128,7 +128,7 @@ const TaskManagement = () => {
     setAppliedFilters({
       searchTerm,
       statusFilter,
-      userFilter: selectedUser ? selectedUser.username : '',
+      userFilter: user && user.role === 'SystemAdmin' && selectedUser ? selectedUser.username : '',
       startDate,
       endDate
     });
@@ -615,10 +615,14 @@ const TaskManagement = () => {
         setStatusFilter('');
         setSearchTerm('');
         setSelectedUser(null);
+        setStartDate('');
+        setEndDate('');
         setAppliedFilters({
           searchTerm: '',
           statusFilter: '',
-          userFilter: ''
+          userFilter: '',
+          startDate: '',
+          endDate: ''
         });
         break;
     }
@@ -841,38 +845,45 @@ const TaskManagement = () => {
       {/* All Tasks Tab */}
       {activeTab === 0 && (
         <Box>
-          {/* Task Filters */}
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
+          {/* Task Filters - Redesigned for Admin roles */}
+          <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: 3 }}>
+            <Grid container spacing={2}>
+              {/* Search Field - Full width on mobile, half on larger screens */}
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Search Tasks"
+                  placeholder="Search by description, category, service..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   InputProps={{
-                    endAdornment: <SearchIcon />
+                    endAdornment: <SearchIcon color="action" />
                   }}
+                  variant="outlined"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth>
+              
+              {/* Status Filter - Full width on mobile, half on larger screens */}
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth variant="outlined">
                   <InputLabel>Status</InputLabel>
                   <Select 
                     label="Status" 
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
-                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value=""><em>All Statuses</em></MenuItem>
                     <MenuItem value="Pending">Pending</MenuItem>
                     <MenuItem value="In Progress">In Progress</MenuItem>
                     <MenuItem value="Completed">Completed</MenuItem>
+                    <MenuItem value="Cancelled">Cancelled</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
-              {/* Only show user filter for SystemAdmin role */}
+              
+              {/* User Filter - Only for SystemAdmin */}
               {user && user.role === 'SystemAdmin' && (
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} md={6}>
                   <UserFilterDropdown
                     users={users.map(u => ({
                       ...u,
@@ -882,67 +893,88 @@ const TaskManagement = () => {
                     onUserChange={(user) => {
                       console.log('User filter changed:', user);
                       setSelectedUser(user);
-                      // Don't update userFilter immediately, let Apply button handle it
                     }}
                     label="Filter by User"
                     loading={userLoading}
+                    gridSize={{}}
                   />
                 </Grid>
               )}
-              {/* Add Time Range Filters */}
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="Start Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="End Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+              
+              {/* Date Range Filters - Start and End Date side by side */}
+              <Grid item xs={12} md={6}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Start Date"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="End Date"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      variant="outlined"
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
               
-              <Grid item xs={12} sm={6} md={3}>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="outlined" 
-                    startIcon={<FilterIcon />}
-                    onClick={applyFilters}
-                  >
-                    Apply
-                  </Button>
-                  <Button 
-                    variant="outlined"
-                    onClick={clearFilters}
-                  >
-                    Clear
-                  </Button>
-                </Box>
-              </Grid>
-              
+              {/* Action Buttons - Full width with proper spacing */}
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('CSV')}
-                  >
-                    Export CSV
-                  </Button>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('PDF')}
-                  >
-                    Export PDF
-                  </Button>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  flexWrap: 'wrap',
+                  gap: 2,
+                  mt: 1
+                }}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button 
+                      variant="contained" 
+                      color="primary"
+                      startIcon={<FilterIcon />}
+                      onClick={applyFilters}
+                      sx={{ minWidth: 120 }}
+                    >
+                      Apply Filters
+                    </Button>
+                    <Button 
+                      variant="outlined"
+                      onClick={clearFilters}
+                      sx={{ minWidth: 120 }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<DownloadIcon />} 
+                      onClick={() => handleExport('CSV')}
+                      sx={{ minWidth: 120 }}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<DownloadIcon />} 
+                      onClick={() => handleExport('PDF')}
+                      sx={{ minWidth: 120 }}
+                    >
+                      Export PDF
+                    </Button>
+                  </Box>
                 </Box>
               </Grid>
             </Grid>
