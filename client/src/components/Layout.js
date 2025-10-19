@@ -406,7 +406,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     };
 
     // Subscribe to all notifications through the unified handler
-    notificationService.onAllNotifications(handleAllNotifications);
+    notificationService.on('notification', handleAllNotifications);
           
     // Ensure connection to notification service (non-blocking)
     notificationService.connect(user.id).catch(error => {
@@ -415,8 +415,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
     // Cleanup on unmount
     return () => {
-      // Remove all listeners for this specific user
-      notificationService.listeners.clear();
+      // Remove the specific listener
+      notificationService.off('notification', handleAllNotifications);
       // Disconnect from notification service
       notificationService.disconnect();
     };

@@ -61,6 +61,9 @@ router.post('/login', async (req, res) => {
         fullName: user.fullName,
         role: user.role,
         office: user.office,
+        bloodGroup: user.bloodGroup,
+        phoneNumber: user.phoneNumber,
+        bio: user.bio
       },
     });
   } catch (err) {
@@ -125,7 +128,7 @@ router.put('/change-password', authenticate, async (req, res) => {
 // @access  Private
 router.put('/profile', authenticate, async (req, res) => {
   try {
-    const { fullName, email, office } = req.body;
+    const { fullName, email, office, bloodGroup, phoneNumber, bio } = req.body;
     const userId = req.user.id;
 
     // Check if user exists
@@ -138,8 +141,24 @@ router.put('/profile', authenticate, async (req, res) => {
     user.fullName = fullName || user.fullName;
     user.email = email || user.email;
     user.office = office || user.office;
+    user.bloodGroup = bloodGroup || user.bloodGroup;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+    user.bio = bio || user.bio;
 
     await user.save();
+
+    // Log the updated user data for debugging
+    console.log('Updated user data:', {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      office: user.office,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber,
+      bio: user.bio
+    });
 
     // Return updated user data (excluding password)
     const updatedUser = {
@@ -149,6 +168,9 @@ router.put('/profile', authenticate, async (req, res) => {
       fullName: user.fullName,
       role: user.role,
       office: user.office,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber,
+      bio: user.bio
     };
 
     res.json(updatedUser);

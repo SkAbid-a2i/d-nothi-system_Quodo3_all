@@ -65,7 +65,13 @@ class NotificationService {
             // Add to notification history
             this.addToHistory(data);
             
-            this.emit(data.type, data);
+            // Emit the notification to all listeners
+            this.emit('notification', data);
+            
+            // Also emit to specific type listeners
+            if (data.type) {
+              this.emit(data.type, data);
+            }
             
             // Trigger immediate refresh for relevant data types
             this.triggerAutoRefresh(data.type);
@@ -355,22 +361,7 @@ class NotificationService {
 
   // Listen for all notifications (new unified listener)
   onAllNotifications(callback) {
-    // Listen for all known notification types
-    const allTypes = [
-      'taskCreated', 'taskUpdated', 'taskDeleted',
-      'leaveRequested', 'leaveApproved', 'leaveRejected',
-      'userCreated', 'userUpdated', 'userDeleted',
-      'dropdownCreated', 'dropdownUpdated', 'dropdownDeleted',
-      'permissionTemplateCreated', 'permissionTemplateUpdated', 'permissionTemplateDeleted',
-      'meetingCreated', 'meetingUpdated', 'meetingDeleted',
-      'collaborationCreated', 'collaborationUpdated', 'collaborationDeleted',
-      'errorNotification', 'warningNotification',
-      'connected', 'disconnected', 'error' // Connection status events
-    ];
-    
-    allTypes.forEach(type => {
-      this.on(type, callback);
-    });
+    this.on('notification', callback);
   }
 }
 
