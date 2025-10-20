@@ -521,7 +521,7 @@ const TaskManagement = () => {
       
       return finalResult;
     });
-  }, [tasks, user, appliedFiltersMemo.searchTerm, appliedFiltersMemo.statusFilter, appliedFiltersMemo.userFilter, appliedFiltersMemo.startDate, appliedFiltersMemo.endDate]);
+  }, [tasks, user, appliedFilters.searchTerm, appliedFilters.statusFilter, appliedFilters.userFilter, appliedFilters.startDate, appliedFilters.endDate]);
 
   // Add a useEffect to monitor when filteredTasks change
   useEffect(() => {
