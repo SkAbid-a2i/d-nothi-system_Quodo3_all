@@ -118,6 +118,10 @@ const TaskManagement = () => {
   // Add state for filtered tasks
   const [filteredTasks, setFilteredTasks] = useState([]);
 
+  const showSnackbar = useCallback((message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
   // Use the new user filter hook
   const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
 
@@ -129,6 +133,41 @@ const TaskManagement = () => {
     startDate: '',
     endDate: ''
   });
+
+  // Fetch dropdown values on component mount
+  const fetchDropdownValues = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('Fetching dropdown values...');
+      // Fetch all dropdown values in parallel
+      const fetchPromises = [
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Office')
+      ];
+      
+      const responses = await Promise.all(fetchPromises);
+    
+      console.log('All responses:', responses);
+    
+      // Extract responses
+      const [sourcesRes, categoriesRes, officesRes] = responses;
+    
+      console.log('Sources response:', sourcesRes);
+      console.log('Categories response:', categoriesRes);
+      console.log('Offices response:', officesRes);
+    
+      setSources(sourcesRes?.data || []);
+      setCategories(categoriesRes?.data || []);
+      setOffices(officesRes?.data || []);
+    } catch (error) {
+      console.error('Error fetching dropdown values:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showSnackbar]);
 
   // Apply filters when Apply button is clicked
   const applyFilters = () => {
@@ -183,9 +222,6 @@ const TaskManagement = () => {
     });
     showSnackbar('View reset to default', 'info');
   };
-
-  // Remove the automatic filter application to make Apply button work as intended
-  // The useEffect that was automatically applying filters has been removed
 
   // Add a useEffect to ensure proper initialization
   useEffect(() => {
@@ -311,6 +347,10 @@ const TaskManagement = () => {
     }
   };
 
+  const handleCloseSnackbar = useCallback(() => {
+    setSnackbar({ ...snackbar, open: false });
+  }, [snackbar]);
+
   // Fetch tasks on component mount - Simplified version
   useEffect(() => {
     // Only fetch data if user is available
@@ -351,25 +391,9 @@ const TaskManagement = () => {
     });
   }, [tasks]);
 
-  // Memoize the appliedFilters values to prevent unnecessary re-renders
-  const appliedFiltersMemo = useMemo(() => ({
-    searchTerm: appliedFilters.searchTerm,
-    statusFilter: appliedFilters.statusFilter,
-    userFilter: appliedFilters.userFilter,
-    startDate: appliedFilters.startDate,
-    endDate: appliedFilters.endDate
-  }), [
-    appliedFilters.searchTerm,
-    appliedFilters.statusFilter,
-    appliedFilters.userFilter,
-    appliedFilters.startDate,
-    appliedFilters.endDate
-  ]);
-
-  // Move filteredTasks definition before any useEffect that uses it
-  // Filter tasks based on applied filters
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
+  // Update filteredTasks when tasks or appliedFilters change
+  useEffect(() => {
+    const filtered = tasks.filter(task => {
       // Log the task and user info for debugging
       console.log('Filtering task:', {
         taskId: task.id,
@@ -523,19 +547,17 @@ const TaskManagement = () => {
       
       return finalResult;
     });
-  }, [tasks, user, appliedFilters.searchTerm, appliedFilters.statusFilter, appliedFilters.userFilter, appliedFilters.startDate, appliedFilters.endDate]);
-
-  // Add a useEffect to monitor when filteredTasks change
-  useEffect(() => {
+    
+    setFilteredTasks(filtered);
     console.log('Filtered tasks updated:', {
-      filteredTasksCount: filteredTasks.length,
-      firstFewFilteredTasks: filteredTasks.slice(0, 3).map(t => ({
+      filteredTasksCount: filtered.length,
+      firstFewFilteredTasks: filtered.slice(0, 3).map(t => ({
         id: t.id,
         description: t.description,
         userName: t.userName
       }))
     });
-  }, [filteredTasks]);
+  }, [tasks, user, appliedFilters]);
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -596,49 +618,6 @@ const TaskManagement = () => {
       }
     }
   }, [user]);
-
-  const showSnackbar = useCallback((message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  }, []);
-
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar({ ...snackbar, open: false });
-  }, [snackbar]);
-
-  // Fetch dropdown values on component mount
-  const fetchDropdownValues = useCallback(async () => {
-    setLoading(true);
-    try {
-      console.log('Fetching dropdown values...');
-      // Fetch all dropdown values in parallel
-      const fetchPromises = [
-        dropdownAPI.getDropdownValues('Source'),
-        dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office')
-      ];
-      
-      const responses = await Promise.all(fetchPromises);
-    
-      console.log('All responses:', responses);
-    
-      // Extract responses
-      const [sourcesRes, categoriesRes, officesRes] = responses;
-    
-      console.log('Sources response:', sourcesRes);
-      console.log('Categories response:', categoriesRes);
-      console.log('Offices response:', officesRes);
-    
-      setSources(sourcesRes?.data || []);
-      setCategories(categoriesRes?.data || []);
-      setOffices(officesRes?.data || []);
-    } catch (error) {
-      console.error('Error fetching dropdown values:', error);
-      console.error('Error response:', error.response);
-      showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [showSnackbar]);
 
   const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
     try {
