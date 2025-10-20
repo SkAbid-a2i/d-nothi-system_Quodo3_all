@@ -60,6 +60,10 @@ import UserFilterDropdown from './UserFilterDropdown';
 
 const TaskManagement = () => {
   const { user } = useAuth();
+  
+  // Add debugging to ensure we can see the user context
+  console.log('TaskManagement component rendered with user:', user);
+  
   const [tasks, setTasks] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -304,7 +308,7 @@ const TaskManagement = () => {
     }
   };
 
-  // Fetch tasks on component mount
+  // Fetch tasks on component mount - Simplified version
   useEffect(() => {
     // Only fetch data if user is available
     if (user) {
@@ -316,11 +320,8 @@ const TaskManagement = () => {
         fullName: user.fullName
       });
       
-      // Add a small delay to ensure auth context is fully loaded
-      const timer = setTimeout(() => {
-        fetchTasks();
-        fetchDropdownValues();
-      }, 100);
+      fetchTasks();
+      fetchDropdownValues();
       
       // Subscribe to auto-refresh service
       autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
@@ -329,12 +330,11 @@ const TaskManagement = () => {
       return () => {
         console.log('Cleaning up auto-refresh subscription');
         autoRefreshService.unsubscribe('TaskManagement');
-        clearTimeout(timer);
       };
     } else {
       console.log('User not available yet');
     }
-  }, [user, fetchTasks]); // Add fetchTasks to dependencies
+  }, [user, fetchTasks, fetchDropdownValues]); // Include fetchDropdownValues in dependencies
 
   // Add a useEffect to monitor when tasks change
   useEffect(() => {
@@ -420,37 +420,6 @@ const TaskManagement = () => {
     }
   }, [user]);
 
-  // Add a useEffect to handle user changes and ensure proper task loading
-  useEffect(() => {
-    if (user) {
-      console.log('User changed, ensuring tasks are loaded');
-      
-      // Check if user has proper identification
-      if (!user.username) {
-        console.warn('User object missing username:', user);
-      }
-      
-      // Small delay to ensure auth context is fully loaded
-      const timer = setTimeout(() => {
-        fetchTasks();
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, fetchTasks]);
-
-  // Add a useEffect to ensure agents see their tasks by default
-  useEffect(() => {
-    if (user && user.role !== 'SystemAdmin') {
-      // Ensure we have the latest tasks for agents
-      const timer = setTimeout(() => {
-        fetchTasks();
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, fetchTasks]);
-
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   }, []);
@@ -492,7 +461,7 @@ const TaskManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showSnackbar]);
 
   const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
     try {
@@ -713,7 +682,11 @@ const TaskManagement = () => {
       const isUserMatch = taskUserIdentifier === currentUserIdentifier ||
                          (taskUserIdentifier && currentUserIdentifier && 
                           (taskUserIdentifier.includes(currentUserIdentifier) || 
-                           currentUserIdentifier.includes(taskUserIdentifier)));
+                           currentUserIdentifier.includes(taskUserIdentifier))) ||
+                         // Fallback for cases where we might have partial matches
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                           currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
       
       console.log('User matching check:', {
         taskUser: taskUserIdentifier,
@@ -722,6 +695,9 @@ const TaskManagement = () => {
         flexibleMatch: (taskUserIdentifier && currentUserIdentifier && 
                        (taskUserIdentifier.includes(currentUserIdentifier) || 
                         currentUserIdentifier.includes(taskUserIdentifier))),
+        caseInsensitiveMatch: (taskUserIdentifier && currentUserIdentifier && 
+                              (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                               currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase()))),
         isMatch: isUserMatch
       });
       
@@ -839,27 +815,29 @@ const TaskManagement = () => {
   });
   
   // Add additional logging to help debug agent task visibility
-  console.log('Task filtering debug info:', {
-    userRole: user?.role,
-    currentUser: user?.username,
-    currentUserFullName: user?.fullName,
-    totalTasks: tasks.length,
-    filteredTasksCount: filteredTasks.length,
-    appliedFilters,
-    tasksSample: tasks.slice(0, 3).map(t => ({
-      id: t.id,
-      description: t.description,
-      userName: t.userName
-    })),
-    filteredTasksSample: filteredTasks.slice(0, 3).map(t => ({
-      id: t.id,
-      description: t.description,
-      userName: t.userName
-    }))
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Task filtering debug info:', {
+      userRole: user?.role,
+      currentUser: user?.username,
+      currentUserFullName: user?.fullName,
+      totalTasks: tasks.length,
+      filteredTasksCount: filteredTasks.length,
+      appliedFilters,
+      tasksSample: tasks.slice(0, 3).map(t => ({
+        id: t.id,
+        description: t.description,
+        userName: t.userName
+      })),
+      filteredTasksSample: filteredTasks.slice(0, 3).map(t => ({
+        id: t.id,
+        description: t.description,
+        userName: t.userName
+      }))
+    });
+  }
   
-  // Add a check to ensure we're not filtering out all tasks incorrectly
-  if (tasks.length > 0 && filteredTasks.length === 0 && user && user.role !== 'SystemAdmin') {
+  // Add a check to ensure we're not filtering out all tasks incorrectly - but only in development
+  if (process.env.NODE_ENV === 'development' && tasks.length > 0 && filteredTasks.length === 0 && user && user.role !== 'SystemAdmin') {
     console.warn('Warning: All tasks filtered out for non-SystemAdmin user. This might indicate a filtering issue.');
     console.log('Debug info:', {
       user: user.username,
@@ -1055,781 +1033,791 @@ const TaskManagement = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <Typography variant="h4" gutterBottom>
-        Task Modification & Activity
-      </Typography>
-      
-      {/* Task Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <AssignmentIcon sx={{ mr: 2, color: 'primary.main' }} />
-                <Typography variant="h5" component="div">
-                  {taskStats.total}
-                </Typography>
-              </Box>
-              <Typography color="text.secondary">
-                Total Tasks
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('total')}>View Details</Button>
-            </CardActions>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <HourglassEmptyIcon sx={{ mr: 2, color: 'warning.main' }} />
-                <Typography variant="h5" component="div">
-                  {taskStats.pending}
-                </Typography>
-              </Box>
-              <Typography color="text.secondary">
-                Pending
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('pending')}>View Details</Button>
-            </CardActions>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <HourglassEmptyIcon sx={{ mr: 2, color: 'info.main' }} />
-                <Typography variant="h5" component="div">
-                  {taskStats.inProgress}
-                </Typography>
-              </Box>
-              <Typography color="text.secondary">
-                In Progress
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('inProgress')}>View Details</Button>
-            </CardActions>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <CheckCircleIcon sx={{ mr: 2, color: 'success.main' }} />
-                <Typography variant="h5" component="div">
-                  {taskStats.completed}
-                </Typography>
-              </Box>
-              <Typography color="text.secondary">
-                Completed
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button size="small" onClick={() => handleViewDetails('completed')}>View Details</Button>
-            </CardActions>
-          </Card>
-        </Grid>
-      </Grid>
-      
-      {/* Task Tabs */}
-      <Paper sx={{ width: '100%', borderRadius: 3, overflow: 'hidden', mb: 3 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          indicatorColor="primary"
-          textColor="primary"
-          variant="fullWidth"
-          sx={{
-            '& .MuiTab-root': {
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              textTransform: 'none',
-              minHeight: 48
-            },
-            '& .MuiTabs-indicator': {
-              height: 3,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)'
-            }
-          }}
-        >
-          <Tab label="All Tasks" icon={<AssignmentIcon />} />
-          <Tab label="Create Task" icon={<AddIcon />} />
-        </Tabs>
-      </Paper>
-      
-      {/* All Tasks Tab */}
-      {activeTab === 0 && (
-        <Box>
-          {/* Task Filters - Redesigned for all user roles - REMOVED USER FILTER FOR ALL ROLES */}
-          <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
-              Task Filters
-            </Typography>
-            <Grid container spacing={3}>
-              {/* Search Field - Full width on mobile, responsive on larger screens */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  fullWidth
-                  label="Search Tasks"
-                  placeholder="Search by description, category, service..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    endAdornment: <SearchIcon color="action" />
-                  }}
-                  variant="outlined"
-                  size="small"
-                />
-              </Grid>
-              
-              {/* Status Filter - Full width on mobile, responsive on larger screens */}
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel>Status</InputLabel>
-                  <Select 
-                    label="Status" 
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <MenuItem value=""><em>All Statuses</em></MenuItem>
-                    <MenuItem value="Pending">Pending</MenuItem>
-                    <MenuItem value="In Progress">In Progress</MenuItem>
-                    <MenuItem value="Completed">Completed</MenuItem>
-                    <MenuItem value="Cancelled">Cancelled</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              {/* Start Date Filter */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  fullWidth
-                  label="Start Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  variant="outlined"
-                  size="small"
-                />
-              </Grid>
-              
-              {/* End Date Filter */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  fullWidth
-                  label="End Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  variant="outlined"
-                  size="small"
-                />
-              </Grid>
-              
-              {/* Action Buttons - Responsive layout */}
-              <Grid item xs={12}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'space-between', 
-                  gap: 2,
-                  mt: 1
-                }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: 2 
-                  }}>
-                    <Button 
-                      variant="contained" 
-                      color="primary"
-                      startIcon={<FilterIcon />}
-                      onClick={applyFilters}
-                      sx={{ minWidth: 140, py: 1 }}
-                    >
-                      Apply Filters
-                    </Button>
-                    <Button 
-                      variant="outlined"
-                      onClick={clearFilters}
-                      sx={{ minWidth: 140, py: 1 }}
-                    >
-                      Clear All
-                    </Button>
+      {!user ? (
+        // Show loading state while user context is loading
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>Loading user context...</Typography>
+        </Box>
+      ) : (
+        <>
+          <Typography variant="h4" gutterBottom>
+            Task Modification & Activity
+          </Typography>
+          
+          {/* Task Statistics Cards */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <AssignmentIcon sx={{ mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h5" component="div">
+                      {taskStats.total}
+                    </Typography>
                   </Box>
-                  
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: 2 
-                  }}>
-                    <Button 
-                      variant="outlined" 
-                      startIcon={<DownloadIcon />} 
-                      onClick={() => handleExport('CSV')}
-                      sx={{ minWidth: 140, py: 1 }}
-                    >
-                      Export CSV
-                    </Button>
-                    <Button 
-                      variant="outlined" 
-                      startIcon={<DownloadIcon />} 
-                      onClick={() => handleExport('PDF')}
-                      sx={{ minWidth: 140, py: 1 }}
-                    >
-                      Export PDF
-                    </Button>
-                  </Box>
-                </Box>
-              </Grid>
+                  <Typography color="text.secondary">
+                    Total Tasks
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleViewDetails('total')}>View Details</Button>
+                </CardActions>
+              </Card>
             </Grid>
+            
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <HourglassEmptyIcon sx={{ mr: 2, color: 'warning.main' }} />
+                    <Typography variant="h5" component="div">
+                      {taskStats.pending}
+                    </Typography>
+                  </Box>
+                  <Typography color="text.secondary">
+                    Pending
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleViewDetails('pending')}>View Details</Button>
+                </CardActions>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <HourglassEmptyIcon sx={{ mr: 2, color: 'info.main' }} />
+                    <Typography variant="h5" component="div">
+                      {taskStats.inProgress}
+                    </Typography>
+                  </Box>
+                  <Typography color="text.secondary">
+                    In Progress
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleViewDetails('inProgress')}>View Details</Button>
+                </CardActions>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <CheckCircleIcon sx={{ mr: 2, color: 'success.main' }} />
+                    <Typography variant="h5" component="div">
+                      {taskStats.completed}
+                    </Typography>
+                  </Box>
+                  <Typography color="text.secondary">
+                    Completed
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleViewDetails('completed')}>View Details</Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          </Grid>
+          
+          {/* Task Tabs */}
+          <Paper sx={{ width: '100%', borderRadius: 3, overflow: 'hidden', mb: 3 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(e, newValue) => setActiveTab(newValue)}
+              indicatorColor="primary"
+              textColor="primary"
+              variant="fullWidth"
+              sx={{
+                '& .MuiTab-root': {
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  textTransform: 'none',
+                  minHeight: 48
+                },
+                '& .MuiTabs-indicator': {
+                  height: 3,
+                  background: 'linear-gradient(45deg, #667eea, #764ba2)'
+                }
+              }}
+            >
+              <Tab label="All Tasks" icon={<AssignmentIcon />} />
+              <Tab label="Create Task" icon={<AddIcon />} />
+            </Tabs>
           </Paper>
           
-          {/* Task List */}
-          {dataLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer component={Paper} id="task-list" sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Source</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Service</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell>User</TableCell>
-                    <TableCell>User Info</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Files</TableCell>
-                    {/* Removed Flag column */}
-                    {/* Removed Assigned To column */}
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredTasks.map((task) => (
-                    <TableRow 
-                      key={task.id}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                        }
+          {/* All Tasks Tab */}
+          {activeTab === 0 && (
+            <Box>
+              {/* Task Filters - Redesigned for all user roles - REMOVED USER FILTER FOR ALL ROLES */}
+              <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+                  Task Filters
+                </Typography>
+                <Grid container spacing={3}>
+                  {/* Search Field - Full width on mobile, responsive on larger screens */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Search Tasks"
+                      placeholder="Search by description, category, service..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      InputProps={{
+                        endAdornment: <SearchIcon color="action" />
                       }}
-                    >
-                      <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
-                      <TableCell>{task.source || 'N/A'}</TableCell>
-                      <TableCell>{task.category || 'N/A'}</TableCell>
-                      <TableCell>{task.service || 'N/A'}</TableCell>
-                      <TableCell>{task.description || 'N/A'}</TableCell>
-                      <TableCell>{task.userName || 'N/A'}</TableCell>
-                      <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={task.status || 'Pending'}
-                          size="small"
-                          sx={{
-                            backgroundColor: 
-                              task.status === 'Pending' ? 'warning.light' :
-                              task.status === 'In Progress' ? 'info.light' :
-                              task.status === 'Completed' ? 'success.light' :
-                              task.status === 'Cancelled' ? 'error.light' : 'default.light',
-                            color: 
-                              task.status === 'Pending' ? 'warning.dark' :
-                              task.status === 'In Progress' ? 'info.dark' :
-                              task.status === 'Completed' ? 'success.dark' :
-                              task.status === 'Cancelled' ? 'error.dark' : 'default.dark',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {task.files && task.files.length > 0 ? (
-                          <Tooltip title={task.files.length + ' file(s)'}>
-                            <Chip 
-                              icon={<DescriptionIcon />} 
-                              label={task.files.length} 
-                              size="small" 
-                              color="primary" 
-                              variant="outlined" 
-                            />
-                          </Tooltip>
-                        ) : (
-                          <Chip label="No Files" size="small" variant="outlined" />
-                        )}
-                      </TableCell>
-                      {/* Removed Flag cell with dropdown */}
-                      {/* Removed Assigned To cell */}
-                      <TableCell>
-                        <IconButton 
-                          size="small" 
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+                  
+                  {/* Status Filter - Full width on mobile, responsive on larger screens */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <FormControl fullWidth variant="outlined" size="small">
+                      <InputLabel>Status</InputLabel>
+                      <Select 
+                        label="Status" 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                      >
+                        <MenuItem value=""><em>All Statuses</em></MenuItem>
+                        <MenuItem value="Pending">Pending</MenuItem>
+                        <MenuItem value="In Progress">In Progress</MenuItem>
+                        <MenuItem value="Completed">Completed</MenuItem>
+                        <MenuItem value="Cancelled">Cancelled</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  {/* Start Date Filter */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Start Date"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+                  
+                  {/* End Date Filter */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      label="End Date"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+                  
+                  {/* Action Buttons - Responsive layout */}
+                  <Grid item xs={12}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      justifyContent: 'space-between', 
+                      gap: 2,
+                      mt: 1
+                    }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 2 
+                      }}>
+                        <Button 
+                          variant="contained" 
                           color="primary"
-                          onClick={() => handleEditTask(task)}
+                          startIcon={<FilterIcon />}
+                          onClick={applyFilters}
+                          sx={{ minWidth: 140, py: 1 }}
                         >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => handleDeleteTask(task.id)}
+                          Apply Filters
+                        </Button>
+                        <Button 
+                          variant="outlined"
+                          onClick={clearFilters}
+                          sx={{ minWidth: 140, py: 1 }}
                         >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                          Clear All
+                        </Button>
+                      </Box>
+                      
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 2 
+                      }}>
+                        <Button 
+                          variant="outlined" 
+                          startIcon={<DownloadIcon />} 
+                          onClick={() => handleExport('CSV')}
+                          sx={{ minWidth: 140, py: 1 }}
+                        >
+                          Export CSV
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          startIcon={<DownloadIcon />} 
+                          onClick={() => handleExport('PDF')}
+                          sx={{ minWidth: 140, py: 1 }}
+                        >
+                          Export PDF
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Paper>
+              
+              {/* Task List */}
+              {dataLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <TableContainer component={Paper} id="task-list" sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Source</TableCell>
+                        <TableCell>Category</TableCell>
+                        <TableCell>Service</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell>User</TableCell>
+                        <TableCell>User Info</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Files</TableCell>
+                        {/* Removed Flag column */}
+                        {/* Removed Assigned To column */}
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredTasks.map((task) => (
+                        <TableRow 
+                          key={task.id}
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                            }
+                          }}
+                        >
+                          <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell>{task.source || 'N/A'}</TableCell>
+                          <TableCell>{task.category || 'N/A'}</TableCell>
+                          <TableCell>{task.service || 'N/A'}</TableCell>
+                          <TableCell>{task.description || 'N/A'}</TableCell>
+                          <TableCell>{task.userName || 'N/A'}</TableCell>
+                          <TableCell>{task.userInformation || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={task.status || 'Pending'}
+                              size="small"
+                              sx={{
+                                backgroundColor: 
+                                  task.status === 'Pending' ? 'warning.light' :
+                                  task.status === 'In Progress' ? 'info.light' :
+                                  task.status === 'Completed' ? 'success.light' :
+                                  task.status === 'Cancelled' ? 'error.light' : 'default.light',
+                                color: 
+                                  task.status === 'Pending' ? 'warning.dark' :
+                                  task.status === 'In Progress' ? 'info.dark' :
+                                  task.status === 'Completed' ? 'success.dark' :
+                                  task.status === 'Cancelled' ? 'error.dark' : 'default.dark',
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {task.files && task.files.length > 0 ? (
+                              <Tooltip title={task.files.length + ' file(s)'}>
+                                <Chip 
+                                  icon={<DescriptionIcon />} 
+                                  label={task.files.length} 
+                                  size="small" 
+                                  color="primary" 
+                                  variant="outlined" 
+                                />
+                              </Tooltip>
+                            ) : (
+                              <Chip label="No Files" size="small" variant="outlined" />
+                            )}
+                          </TableCell>
+                          {/* Removed Flag cell with dropdown */}
+                          {/* Removed Assigned To cell */}
+                          <TableCell>
+                            <IconButton 
+                              size="small" 
+                              color="primary"
+                              onClick={() => handleEditTask(task)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton 
+                              size="small" 
+                              color="error"
+                              onClick={() => handleDeleteTask(task.id)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
           )}
-        </Box>
-      )}
-      
-      {/* Create Task Tab */}
-      {activeTab === 1 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Create New Task
-          </Typography>
-          <Grid container spacing={2} component="form" onSubmit={handleSubmitTask}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={sources}
-                  getOptionLabel={(option) => option.value}
-                  value={selectedSource}
-                  onChange={(event, newValue) => setSelectedSource(newValue)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Source" fullWidth />
+          
+          {/* Create Task Tab */}
+          {activeTab === 1 && (
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Create New Task
+              </Typography>
+              <Grid container spacing={2} component="form" onSubmit={handleSubmitTask}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={sources}
+                      getOptionLabel={(option) => option.value}
+                      value={selectedSource}
+                      onChange={(event, newValue) => setSelectedSource(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Source" fullWidth />
+                      )}
+                    />
                   )}
-                />
-              )}
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={categories}
-                  getOptionLabel={(option) => option.value}
-                  value={selectedCategory}
-                  onChange={(event, newValue) => setSelectedCategory(newValue)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Category" fullWidth />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={categories}
+                      getOptionLabel={(option) => option.value}
+                      value={selectedCategory}
+                      onChange={(event, newValue) => setSelectedCategory(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Category" fullWidth />
+                      )}
+                    />
                   )}
-                />
-              )}
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={services}
-                  getOptionLabel={(option) => option.value}
-                  value={selectedService}
-                  onChange={(event, newValue) => setSelectedService(newValue)}
-                  disabled={!selectedCategory}
-                  renderInput={(params) => (
-                    <TextField 
-                      {...params} 
-                      label="Service" 
-                      fullWidth 
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={services}
+                      getOptionLabel={(option) => option.value}
+                      value={selectedService}
+                      onChange={(event, newValue) => setSelectedService(newValue)}
                       disabled={!selectedCategory}
+                      renderInput={(params) => (
+                        <TextField 
+                          {...params} 
+                          label="Service" 
+                          fullWidth 
+                          disabled={!selectedCategory}
+                        />
+                      )}
                     />
                   )}
-                />
-              )}
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={offices}
-                  getOptionLabel={(option) => option.value}
-                  value={selectedOffice}
-                  onChange={(event, newValue) => setSelectedOffice(newValue)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Office" fullWidth />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={offices}
+                      getOptionLabel={(option) => option.value}
+                      value={selectedOffice}
+                      onChange={(event, newValue) => setSelectedOffice(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Office" fullWidth />
+                      )}
+                    />
                   )}
-                />
-              )}
-            </Grid>
-            
-            {/* User Information Text Field */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="User Information"
-                value={userInformation}
-                onChange={(e) => setUserInformation(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select 
-                  label="Status" 
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="In Progress">In Progress</MenuItem>
-                  <MenuItem value="Completed">Completed</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Remove Flag Dropdown */}
-            {/* 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Flag</InputLabel>
-                <Select 
-                  label="Flag" 
-                  value={flag}
-                  onChange={(e) => setFlag(e.target.value)}
-                >
-                  <MenuItem value="None">None</MenuItem>
-                  <MenuItem value="Low">Low</MenuItem>
-                  <MenuItem value="Medium">Medium</MenuItem>
-                  <MenuItem value="High">High</MenuItem>
-                  <MenuItem value="Urgent">Urgent</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            */}
-            
-            {/* File Upload Field */}
-            <Grid item xs={12}>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<UploadIcon />}
-                fullWidth
-              >
-                Upload Files
-                <input
-                  type="file"
-                  hidden
-                  onChange={handleFileChange}
-                  multiple
-                />
-              </Button>
-              
-              {/* Display selected files */}
-              {files.length > 0 && (
-                <Paper sx={{ mt: 2, p: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Selected Files:
-                  </Typography>
-                  <List dense>
-                    {files.map((file, index) => (
-                      <ListItem key={index}>
-                        <ListItemText
-                          primary={file.name}
-                          secondary={(file.size / 1024).toFixed(2) + ' KB - ' + file.type}
-                        />
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            aria-label="delete"
-                            onClick={() => removeFile(index)}
-                          >
-                            <CloseIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Button 
-                variant="contained" 
-                startIcon={<AddIcon />} 
-                type="submit"
-                sx={{ mr: 2 }}
-              >
-                Create Task
-              </Button>
-              <Button 
-                variant="outlined"
-                onClick={() => setActiveTab(0)}
-              >
-                Cancel
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
-      
-      {/* Create Task Dialog */}
-      <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create New Task</DialogTitle>
-        <DialogContent>
-          {/* Dialog content would go here if needed */}
-        </DialogContent>
-        <DialogActions>
-          {/* Dialog actions would go here if needed */}
-        </DialogActions>
-      </Dialog>
-      
-      {/* Edit Task Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Task</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={sources}
-                  getOptionLabel={(option) => option.value}
-                  value={editSelectedSource}
-                  onChange={(event, newValue) => setEditSelectedSource(newValue)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Source" fullWidth />
+                </Grid>
+                
+                {/* User Information Text Field */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="User Information"
+                    value={userInformation}
+                    onChange={(e) => setUserInformation(e.target.value)}
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Description"
+                    multiline
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Status</InputLabel>
+                    <Select 
+                      label="Status" 
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                    >
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="In Progress">In Progress</MenuItem>
+                      <MenuItem value="Completed">Completed</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                {/* Remove Flag Dropdown */}
+                {/* 
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Flag</InputLabel>
+                    <Select 
+                      label="Flag" 
+                      value={flag}
+                      onChange={(e) => setFlag(e.target.value)}
+                    >
+                      <MenuItem value="None">None</MenuItem>
+                      <MenuItem value="Low">Low</MenuItem>
+                      <MenuItem value="Medium">Medium</MenuItem>
+                      <MenuItem value="High">High</MenuItem>
+                      <MenuItem value="Urgent">Urgent</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                */}
+                
+                {/* File Upload Field */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<UploadIcon />}
+                    fullWidth
+                  >
+                    Upload Files
+                    <input
+                      type="file"
+                      hidden
+                      onChange={handleFileChange}
+                      multiple
+                    />
+                  </Button>
+                  
+                  {/* Display selected files */}
+                  {files.length > 0 && (
+                    <Paper sx={{ mt: 2, p: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Selected Files:
+                      </Typography>
+                      <List dense>
+                        {files.map((file, index) => (
+                          <ListItem key={index}>
+                            <ListItemText
+                              primary={file.name}
+                              secondary={(file.size / 1024).toFixed(2) + ' KB - ' + file.type}
+                            />
+                            <ListItemSecondaryAction>
+                              <IconButton 
+                                edge="end" 
+                                aria-label="delete"
+                                onClick={() => removeFile(index)}
+                              >
+                                <CloseIcon />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
                   )}
-                />
-              )}
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={categories}
-                  getOptionLabel={(option) => option.value}
-                  value={editSelectedCategory}
-                  onChange={(event, newValue) => setEditSelectedCategory(newValue)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Category" fullWidth />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <Button 
+                    variant="contained" 
+                    startIcon={<AddIcon />} 
+                    type="submit"
+                    sx={{ mr: 2 }}
+                  >
+                    Create Task
+                  </Button>
+                  <Button 
+                    variant="outlined"
+                    onClick={() => setActiveTab(0)}
+                  >
+                    Cancel
+                  </Button>
+                </Grid>
+              </Grid>
+            </Paper>
+          )}
+          
+          {/* Create Task Dialog */}
+          <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="md" fullWidth>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogContent>
+              {/* Dialog content would go here if needed */}
+            </DialogContent>
+            <DialogActions>
+              {/* Dialog actions would go here if needed */}
+            </DialogActions>
+          </Dialog>
+          
+          {/* Edit Task Dialog */}
+          <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
+            <DialogTitle>Edit Task</DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={sources}
+                      getOptionLabel={(option) => option.value}
+                      value={editSelectedSource}
+                      onChange={(event, newValue) => setEditSelectedSource(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Source" fullWidth />
+                      )}
+                    />
                   )}
-                />
-              )}
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={services}
-                  getOptionLabel={(option) => option.value}
-                  value={editSelectedService}
-                  onChange={(event, newValue) => setEditSelectedService(newValue)}
-                  disabled={!editSelectedCategory}
-                  renderInput={(params) => (
-                    <TextField 
-                      {...params} 
-                      label="Service" 
-                      fullWidth 
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={categories}
+                      getOptionLabel={(option) => option.value}
+                      value={editSelectedCategory}
+                      onChange={(event, newValue) => setEditSelectedCategory(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Category" fullWidth />
+                      )}
+                    />
+                  )}
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={services}
+                      getOptionLabel={(option) => option.value}
+                      value={editSelectedService}
+                      onChange={(event, newValue) => setEditSelectedService(newValue)}
                       disabled={!editSelectedCategory}
+                      renderInput={(params) => (
+                        <TextField 
+                          {...params} 
+                          label="Service" 
+                          fullWidth 
+                          disabled={!editSelectedCategory}
+                        />
+                      )}
                     />
                   )}
-                />
-              )}
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              {loading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Autocomplete
-                  options={offices}
-                  getOptionLabel={(option) => option.value}
-                  value={editSelectedOffice}
-                  onChange={(event, newValue) => setEditSelectedOffice(newValue)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Office" fullWidth />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={offices}
+                      getOptionLabel={(option) => option.value}
+                      value={editSelectedOffice}
+                      onChange={(event, newValue) => setEditSelectedOffice(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Office" fullWidth />
+                      )}
+                    />
                   )}
-                />
-              )}
-            </Grid>
-            
-            {/* Add User Information field in Edit form */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="User Information"
-                value={editUserInformation}
-                onChange={(e) => setEditUserInformation(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                rows={4}
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select 
-                  label="Status" 
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="In Progress">In Progress</MenuItem>
-                  <MenuItem value="Completed">Completed</MenuItem>
-                  <MenuItem value="Cancelled">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* File Upload Field for Edit */}
-            <Grid item xs={12}>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<UploadIcon />}
-                fullWidth
-              >
-                Add More Files
-                <input
-                  type="file"
-                  hidden
-                  onChange={handleEditFileChange}
-                  multiple
-                />
+                </Grid>
+                
+                {/* Add User Information field in Edit form */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="User Information"
+                    value={editUserInformation}
+                    onChange={(e) => setEditUserInformation(e.target.value)}
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Description"
+                    multiline
+                    rows={4}
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Status</InputLabel>
+                    <Select 
+                      label="Status" 
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value)}
+                    >
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="In Progress">In Progress</MenuItem>
+                      <MenuItem value="Completed">Completed</MenuItem>
+                      <MenuItem value="Cancelled">Cancelled</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                {/* File Upload Field for Edit */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<UploadIcon />}
+                    fullWidth
+                  >
+                    Add More Files
+                    <input
+                      type="file"
+                      hidden
+                      onChange={handleEditFileChange}
+                      multiple
+                    />
+                  </Button>
+                  
+                  {/* Display existing and selected files */}
+                  {(editFiles.length > 0 || files.length > 0) && (
+                    <Paper sx={{ mt: 2, p: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Files:
+                      </Typography>
+                      <List dense>
+                        {editFiles.map((file, index) => (
+                          <ListItem key={'edit-' + index}>
+                            <ListItemText
+                              primary={typeof file === 'string' ? file : file.name}
+                              secondary={typeof file === 'string' ? 'Existing file' : (file.size / 1024).toFixed(2) + ' KB - ' + file.type}
+                            />
+                            <ListItemSecondaryAction>
+                              <IconButton 
+                                edge="end" 
+                                aria-label="delete"
+                                onClick={() => removeEditFile(index)}
+                              >
+                                <CloseIcon />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  )}
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+              <Button onClick={handleUpdateTask} variant="contained" color="primary">
+                Update Task
               </Button>
-              
-              {/* Display existing and selected files */}
-              {(editFiles.length > 0 || files.length > 0) && (
-                <Paper sx={{ mt: 2, p: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Files:
-                  </Typography>
-                  <List dense>
-                    {editFiles.map((file, index) => (
-                      <ListItem key={'edit-' + index}>
-                        <ListItemText
-                          primary={typeof file === 'string' ? file : file.name}
-                          secondary={typeof file === 'string' ? 'Existing file' : (file.size / 1024).toFixed(2) + ' KB - ' + file.type}
-                        />
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            aria-label="delete"
-                            onClick={() => removeEditFile(index)}
-                          >
-                            <CloseIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-          <Button onClick={handleUpdateTask} variant="contained" color="primary">
-            Update Task
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Messages */}
-      {dataLoading && (
-        <Typography>Loading tasks...</Typography>
+            </DialogActions>
+          </Dialog>
+          
+          {/* Messages */}
+          {dataLoading && (
+            <Typography>Loading tasks...</Typography>
+          )}
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+            </Alert>
+          )}
+          
+          {/* Snackbar for notifications */}
+          <Snackbar 
+            open={snackbar.open} 
+            autoHideDuration={6000} 
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <Alert 
+              onClose={handleCloseSnackbar} 
+              severity={snackbar.severity} 
+              sx={{ width: '100%' }}
+            >
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
+        </>
       )}
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-      
-      {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
