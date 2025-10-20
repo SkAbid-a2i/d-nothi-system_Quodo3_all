@@ -263,9 +263,18 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       return;
     }
     
+    console.log('Layout: User role:', user.role);
+    console.log('Layout: User info:', {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role
+    });
+    
     // Handle all notifications through a unified handler
     const handleAllNotifications = (data) => {
       console.log('Layout: Received notification data:', data);
+      console.log('Layout: Current user role:', user.role);
       
       // Handle connection messages separately
       if (data.type === 'connected') {

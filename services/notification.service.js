@@ -185,12 +185,25 @@ class NotificationService {
   // Get notifications for a specific user
   async getUserNotifications(userId, limit = 50) {
     try {
+      // First, get the user's role
+      const User = require('../models/User');
+      const user = await User.findByPk(userId, {
+        attributes: ['id', 'role', 'office']
+      });
+      
+      if (!user) {
+        console.error('User not found for notification retrieval:', userId);
+        return [];
+      }
+      
       const notifications = await Notification.findAll({
         where: {
           [require('sequelize').Op.or]: [
-            { userId: userId },
-            { userId: null }, // Broadcast notifications
-            { recipientRole: require('sequelize').literal(`EXISTS (SELECT 1 FROM Users WHERE Users.id = ${userId} AND Users.role = Notification.recipientRole)`) }
+            { userId: userId }, // Direct notifications to this user
+            { userId: null }, // Broadcast notifications (null userId means broadcast)
+            // Role-based notifications
+            { recipientRole: user.role },
+            // For office-based notifications, we can add this later if needed
           ]
         },
         order: [['createdAt', 'DESC']],
@@ -270,7 +283,7 @@ class NotificationService {
       data: notification
     });
     
-    // Send to all users
+    // Send to all users (broadcast)
     this.broadcast(notification);
   }
 
@@ -291,7 +304,7 @@ class NotificationService {
       data: notification
     });
     
-    // Send to all users
+    // Send to all users (broadcast)
     this.broadcast(notification);
   }
 
@@ -312,7 +325,7 @@ class NotificationService {
       data: notification
     });
     
-    // Send to all users
+    // Send to all users (broadcast)
     this.broadcast(notification);
   }
 
