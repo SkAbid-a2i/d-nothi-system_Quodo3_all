@@ -255,29 +255,48 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Listen for real-time notifications
   useEffect(() => {
+    console.log('Layout: Setting up notification listeners, user:', user);
+    
     // Only connect if we have a user
-    if (!user || !user.id) return;
+    if (!user || !user.id) {
+      console.log('Layout: No user or user ID, skipping notification setup');
+      return;
+    }
     
     // Handle all notifications through a unified handler
     const handleAllNotifications = (data) => {
+      console.log('Layout: Received notification data:', data);
+      
       // Handle connection messages separately
       if (data.type === 'connected') {
-        console.log('Connected to notification service:', data.message);
+        console.log('Layout: Connected to notification service:', data.message);
         // Don't show connection messages as notifications
         return;
       }
       
       // Handle disconnection messages
       if (data.type === 'disconnected') {
-        console.log('Disconnected from notification service:', data.reason);
+        console.log('Layout: Disconnected from notification service:', data.reason);
         // Don't show disconnection messages as notifications
         return;
       }
       
       // Handle error messages
       if (data.type === 'error') {
-        console.error('Notification service error:', data.error);
-        // Don't show error messages as notifications unless they're important
+        console.error('Layout: Notification service error:', data.error);
+        // Show error messages as notifications for debugging
+        const newNotification = {
+          id: Date.now() + Math.random(),
+          message: `Notification service error: ${data.message || 'Connection failed'}`,
+          time: new Date().toLocaleString(),
+          type: 'errorNotification',
+          displayType: 'error',
+          read: false,
+          data: data
+        };
+        
+        setNotifications(prev => [newNotification, ...prev.slice(0, 19)]); // Keep only last 20
+        setUnreadCount(prev => prev + 1);
         return;
       }
       
@@ -382,7 +401,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         default:
           // Handle undefined or unknown notification types
           if (!data.type) {
-            console.warn('Received notification with undefined type:', data);
+            console.warn('Layout: Received notification with undefined type:', data);
             // Still show notifications without a type to avoid missing important messages
             message = data.message || 'New notification';
           } else {
@@ -401,20 +420,24 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         data: data // Store original data for potential future use
       };
       
+      console.log('Layout: Adding new notification to state:', newNotification);
       setNotifications(prev => [newNotification, ...prev.slice(0, 19)]); // Keep only last 20
       setUnreadCount(prev => prev + 1);
     };
 
     // Subscribe to all notifications through the unified handler
+    console.log('Layout: Subscribing to notification service');
     notificationService.on('notification', handleAllNotifications);
           
     // Ensure connection to notification service (non-blocking)
+    console.log('Layout: Connecting to notification service with user ID:', user.id);
     notificationService.connect(user.id).catch(error => {
-      console.error('Failed to connect to notification service from Layout:', error);
+      console.error('Layout: Failed to connect to notification service:', error);
     });
 
     // Cleanup on unmount
     return () => {
+      console.log('Layout: Cleaning up notification listeners');
       // Remove the specific listener
       notificationService.off('notification', handleAllNotifications);
       // Don't disconnect from notification service on component unmount

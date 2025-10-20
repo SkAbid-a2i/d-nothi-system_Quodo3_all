@@ -66,9 +66,10 @@ const Help = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.200',
                 borderRadius: 1,
-                mb: 2
+                mb: 2,
+                border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
               }}
             >
               <iframe
@@ -101,10 +102,11 @@ const Help = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.200',
                 borderRadius: 1,
                 mb: 2,
-                p: 2
+                p: 2,
+                border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
               }}
             >
               <Box sx={{ textAlign: 'left', maxWidth: '100%' }}>
@@ -117,7 +119,7 @@ const Help = () => {
                 </Typography>
                 <Typography 
                   paragraph
-                  color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                  color={theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit'}
                 >
                   Welcome to the D-Nothi Task Management system. This guide will help you understand how to use all the features of our comprehensive task, leave, and user management platform.
                 </Typography>
@@ -130,7 +132,7 @@ const Help = () => {
                 </Typography>
                 <Typography 
                   paragraph
-                  color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                  color={theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit'}
                 >
                   To create a new task, navigate to the Task Logger page and fill out the form with the required information. You can select from dynamic dropdowns for Source, Category, and Service. The Service dropdown is dependent on the Category selection.
                 </Typography>
@@ -143,7 +145,7 @@ const Help = () => {
                 </Typography>
                 <Typography 
                   paragraph
-                  color={theme.palette.mode === 'dark' ? 'grey.300' : 'inherit'}
+                  color={theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit'}
                 >
                   Submit leave requests through the Leaves section. Admins and supervisors can approve or reject requests in the same interface.
                 </Typography>

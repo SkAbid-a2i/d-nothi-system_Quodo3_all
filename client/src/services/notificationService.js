@@ -14,10 +14,13 @@ class NotificationService {
     this.notificationHistory = [];
     this.maxHistory = 100; // Keep last 100 notifications
     this.connectionPromise = null; // Track connection promise
+    this.isConnected = false; // Track connection status
   }
 
   // Connect to the notification service
   connect(userId) {
+    console.log('NotificationService: Attempting to connect with userId:', userId);
+    
     if (!userId) {
       console.error('User ID is required to connect to notifications');
       return Promise.resolve();
@@ -33,7 +36,7 @@ class NotificationService {
                   (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 
                    window.location.origin);
     
-    console.log('API URL:', apiUrl); // Debug log
+    console.log('NotificationService: API URL:', apiUrl);
     
     // Fix for double /api in URL
     let baseUrl = apiUrl;
@@ -43,25 +46,27 @@ class NotificationService {
     
     const url = `${baseUrl}/api/notifications?userId=${userId}`;
     
-    console.log('Final notification URL:', url); // Debug log
+    console.log('NotificationService: Final notification URL:', url);
 
     // Return a promise that resolves when connection is established
     this.connectionPromise = new Promise((resolve, reject) => {
       try {
-        console.log('Connecting to notification service at:', url);
+        console.log('NotificationService: Connecting to notification service at:', url);
         this.eventSource = new EventSource(url);
         
-        this.eventSource.onopen = () => {
-          console.log('Connected to notification service');
+        this.eventSource.onopen = (event) => {
+          console.log('NotificationService: Connected to notification service', event);
+          this.isConnected = true;
           this.reconnectAttempts = 0;
-          this.emit('connected', { message: 'Connected to notification service' });
+          this.emit('connected', { message: 'Connected to notification service', event });
           resolve();
         };
 
         this.eventSource.onmessage = (event) => {
           try {
+            console.log('NotificationService: Received raw message:', event.data);
             const data = JSON.parse(event.data);
-            console.log('Received notification:', data);
+            console.log('NotificationService: Parsed notification:', data);
             
             // Add to notification history
             this.addToHistory(data);
@@ -77,26 +82,30 @@ class NotificationService {
             // Trigger immediate refresh for relevant data types
             this.triggerAutoRefresh(data.type);
           } catch (error) {
-            console.error('Error parsing notification:', error);
-            console.error('Raw data:', event.data);
+            console.error('NotificationService: Error parsing notification:', error);
+            console.error('NotificationService: Raw data:', event.data);
           }
         };
 
         this.eventSource.onerror = (error) => {
-          console.error('Notification service error:', error);
+          console.error('NotificationService: Error occurred:', error);
+          this.isConnected = false;
+          
           // Check if it's a connection error
-          if (error.target.readyState === EventSource.CLOSED) {
-            console.log('Connection closed, attempting to reconnect...');
+          if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
+            console.log('NotificationService: Connection closed, attempting to reconnect...');
           }
-          this.emit('error', { error });
+          
+          this.emit('error', { error, message: 'Notification service error' });
           
           // Don't reject the promise on error to prevent hanging
           // Attempt to reconnect
           this.handleReconnect(userId);
         };
       } catch (error) {
-        console.error('Error connecting to notification service:', error);
-        this.emit('error', { error });
+        console.error('NotificationService: Error connecting to notification service:', error);
+        this.isConnected = false;
+        this.emit('error', { error, message: 'Error connecting to notification service' });
         // Don't reject the promise to prevent hanging
       }
     });
@@ -116,6 +125,8 @@ class NotificationService {
     if (this.notificationHistory.length > this.maxHistory) {
       this.notificationHistory = this.notificationHistory.slice(0, this.maxHistory);
     }
+    
+    console.log('NotificationService: Added to history, total notifications:', this.notificationHistory.length);
   }
 
   // Get notification history
@@ -126,10 +137,12 @@ class NotificationService {
   // Fetch stored notifications from backend
   async fetchStoredNotifications() {
     try {
+      console.log('NotificationService: Fetching stored notifications');
       const response = await notificationAPI.getNotifications();
+      console.log('NotificationService: Fetched stored notifications:', response.data);
       return response.data || [];
     } catch (error) {
-      console.error('Error fetching stored notifications:', error);
+      console.error('NotificationService: Error fetching stored notifications:', error);
       return [];
     }
   }
@@ -137,22 +150,24 @@ class NotificationService {
   // Clear notification history
   clearNotificationHistory() {
     this.notificationHistory = [];
+    console.log('NotificationService: Notification history cleared');
   }
 
   // Clear notification history for current session only (preserve for next session)
   clearSessionHistory() {
     // Preserve notifications across sessions by not clearing the history
-    // The history will be cleared only when the service is completely reinitialized
     // But we should clear the stored notifications in the backend
     if (this.userId) {
       notificationAPI.clearNotifications().catch(error => {
-        console.error('Error clearing stored notifications:', error);
+        console.error('NotificationService: Error clearing stored notifications:', error);
       });
     }
+    console.log('NotificationService: Session history cleared');
   }
 
   // Trigger auto-refresh based on notification type
   triggerAutoRefresh(notificationType) {
+    console.log('NotificationService: Triggering auto-refresh for type:', notificationType);
     switch (notificationType) {
       case 'taskCreated':
       case 'taskUpdated':
@@ -202,7 +217,7 @@ class NotificationService {
   handleReconnect(userId) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+      console.log(`NotificationService: Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
       
       // Clear previous event source
       if (this.eventSource) {
@@ -215,7 +230,7 @@ class NotificationService {
         this.connect(userId);
       }, this.reconnectDelay * this.reconnectAttempts); // Exponential backoff
     } else {
-      console.error('Max reconnection attempts reached');
+      console.error('NotificationService: Max reconnection attempts reached');
       this.emit('disconnected', { reason: 'Max reconnection attempts reached' });
     }
   }
@@ -225,7 +240,8 @@ class NotificationService {
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
-      console.log('Disconnected from notification service');
+      this.isConnected = false;
+      console.log('NotificationService: Disconnected from notification service');
       this.emit('disconnected', { reason: 'Manual disconnect' });
     }
   }
@@ -236,6 +252,7 @@ class NotificationService {
       this.listeners.set(eventType, []);
     }
     this.listeners.get(eventType).push(callback);
+    console.log('NotificationService: Added listener for', eventType, 'Total listeners:', this.listeners.get(eventType).length);
   }
 
   // Remove event listener
@@ -245,18 +262,20 @@ class NotificationService {
       const index = callbacks.indexOf(callback);
       if (index > -1) {
         callbacks.splice(index, 1);
+        console.log('NotificationService: Removed listener for', eventType);
       }
     }
   }
 
   // Emit event to all listeners
   emit(eventType, data) {
+    console.log('NotificationService: Emitting event', eventType, 'with data:', data);
     if (this.listeners.has(eventType)) {
       this.listeners.get(eventType).forEach(callback => {
         try {
           callback(data);
         } catch (error) {
-          console.error('Error in notification callback:', error);
+          console.error('NotificationService: Error in notification callback:', error);
         }
       });
     }
