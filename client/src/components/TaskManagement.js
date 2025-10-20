@@ -274,42 +274,35 @@ const TaskManagement = () => {
         fullName: user.fullName
       });
       
-      // For SystemAdmin, show all tasks
-      // For other roles (Admin, Supervisor, Agent), show only their own tasks
-      if (user.role === 'SystemAdmin') {
-        // SystemAdmin sees all tasks - no filtering needed
-        console.log('SystemAdmin: showing all tasks');
-      } else {
-        // Other users only see their own tasks
-        // Use both username and fullName for matching to ensure compatibility
-        const currentUserIdentifier = user.fullName || user.username;
-        console.log('Filtering tasks for user:', currentUserIdentifier);
-        
-        tasksData = tasksData.filter(task => {
-          const taskUserIdentifier = task.userName;
-          const isMatch = taskUserIdentifier === currentUserIdentifier;
-          console.log('Task user matching:', {
-            taskUser: taskUserIdentifier,
-            currentUser: currentUserIdentifier,
-            isMatch: isMatch
-          });
-          return isMatch;
+      // ALL users should only see their own tasks
+      // Use both username and fullName for matching to ensure compatibility
+      const currentUserIdentifier = user.fullName || user.username;
+      console.log('Filtering tasks for user:', currentUserIdentifier);
+      
+      tasksData = tasksData.filter(task => {
+        const taskUserIdentifier = task.userName;
+        const isMatch = taskUserIdentifier === currentUserIdentifier;
+        console.log('Task user matching:', {
+          taskUser: taskUserIdentifier,
+          currentUser: currentUserIdentifier,
+          isMatch: isMatch
         });
-        
-        console.log(`${user.role}: filtered to user tasks`, tasksData.length);
-        // Log the filtered tasks for debugging
-        console.log('Filtered tasks:', tasksData.map(t => ({
-          id: t.id,
-          description: t.description,
-          userName: t.userName
-        })));
-        
-        // Additional check for agents
-        if (user.role === 'Agent' && tasksData.length === 0) {
-          console.warn('Agent has no tasks. This might be expected or could indicate an issue.');
-          console.log('All tasks from API:', Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || []);
-        }
+        return isMatch;
+      });
+      
+      console.log(`${user.role}: filtered to user tasks`, tasksData.length);
+      // Log the filtered tasks for debugging
+      console.log('Filtered tasks:', tasksData.map(t => ({
+        id: t.id,
+        description: t.description,
+        userName: t.userName
+      })));
+      
+      // Additional check for agents
+      if (user.role === 'Agent' && tasksData.length === 0) {
+        console.warn('Agent has no tasks. This might be expected or could indicate an issue.');
+        console.log('All tasks from API:', Array.isArray(response.data) ? response.data : 
+                     response.data?.data || response.data || []);
       }
       
       setTasks(tasksData);
@@ -404,43 +397,6 @@ const TaskManagement = () => {
         userRole: user?.role
       });
       
-      // Ensure agents and other non-SystemAdmin users only see their own tasks
-      // This is a critical fix for the agent task visibility issue
-      if (user && user.role !== 'SystemAdmin') {
-        // Double-check that we're properly filtering for the current user
-        // Use both username and fullName for matching to ensure compatibility
-        const currentUserIdentifier = user.fullName || user.username;
-        const taskUserIdentifier = task.userName;
-        
-        // Add more flexible matching to handle potential formatting differences
-        const isUserMatch = taskUserIdentifier === currentUserIdentifier ||
-                           (taskUserIdentifier && currentUserIdentifier && 
-                            (taskUserIdentifier.includes(currentUserIdentifier) || 
-                             currentUserIdentifier.includes(taskUserIdentifier))) ||
-                           // Fallback for cases where we might have partial matches
-                           (taskUserIdentifier && currentUserIdentifier && 
-                            (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                             currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
-        
-        console.log('User matching check:', {
-          taskUser: taskUserIdentifier,
-          currentUser: currentUserIdentifier,
-          exactMatch: taskUserIdentifier === currentUserIdentifier,
-          flexibleMatch: (taskUserIdentifier && currentUserIdentifier && 
-                         (taskUserIdentifier.includes(currentUserIdentifier) || 
-                          currentUserIdentifier.includes(taskUserIdentifier))),
-          caseInsensitiveMatch: (taskUserIdentifier && currentUserIdentifier && 
-                                (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                                 currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase()))),
-          isMatch: isUserMatch
-        });
-        
-        if (!isUserMatch) {
-          console.log('Task filtered out due to user mismatch');
-          return false;
-        }
-      }
-      
       // Apply search filter
       const matchesSearch = !appliedFilters.searchTerm || 
         (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
@@ -450,14 +406,6 @@ const TaskManagement = () => {
       
       // Apply status filter
       const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
-      
-      // For SystemAdmin:
-      // - When no user is selected in filter (userFilter is empty), show all tasks
-      // - When a user is selected in filter, show only that user's tasks
-      let matchesUser = true;
-      if (user && user.role === 'SystemAdmin' && appliedFilters.userFilter) {
-        matchesUser = task.userName === appliedFilters.userFilter;
-      }
       
       // Apply date range filtering
       let matchesDateRange = true;
@@ -517,7 +465,7 @@ const TaskManagement = () => {
       
       // Log filter results for debugging - but only in development
       if (process.env.NODE_ENV === 'development') {
-        const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+        const result = matchesSearch && matchesStatus && matchesDateRange;
         if (!result) {
           console.log('Task filtered out:', {
             task: task.description,
@@ -527,21 +475,19 @@ const TaskManagement = () => {
             userRole: user?.role,
             matchesSearch,
             matchesStatus,
-            matchesUser,
             matchesDateRange,
             appliedFilters
           });
         }
       }
       
-      const finalResult = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+      const finalResult = matchesSearch && matchesStatus && matchesDateRange;
       console.log('Task filtering result:', {
         taskId: task.id,
         taskDescription: task.description,
         finalResult,
         matchesSearch,
         matchesStatus,
-        matchesUser,
         matchesDateRange
       });
       
