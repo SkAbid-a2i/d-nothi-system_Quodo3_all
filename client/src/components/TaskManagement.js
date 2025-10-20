@@ -98,7 +98,7 @@ const TaskManagement = () => {
   const [editSelectedOffice, setEditSelectedOffice] = useState(null); // Add edit selected office state
   const [editUserInformation, setEditUserInformation] = useState(''); // Add edit user information state
   const [editDescription, setEditDescription] = useState('');
-  const [editStatus, setEditStatus] = useState('');
+  const [editStatus, setEditStatus] = useState('Pending');
   const [editFiles, setEditFiles] = useState([]); // Edit file upload state
   // Removed editAssignedTo state as requested
   // Removed editFlag state as requested
@@ -114,11 +114,11 @@ const TaskManagement = () => {
   // Use the new user filter hook
   const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
 
-  // State for applied filters
+  // State for applied filters - Initialize with default values that don't filter out agent tasks
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: '',
     statusFilter: '',
-    userFilter: '',
+    userFilter: '', // This should always be empty for non-SystemAdmin users
     startDate: '',
     endDate: ''
   });
@@ -161,8 +161,31 @@ const TaskManagement = () => {
     showSnackbar('Filters cleared', 'info');
   };
 
+  // Add a function to reset to default view (show all user's tasks)
+  const resetToDefaultView = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setStartDate('');
+    setEndDate('');
+    setAppliedFilters({
+      searchTerm: '',
+      statusFilter: '',
+      userFilter: '',
+      startDate: '',
+      endDate: ''
+    });
+    showSnackbar('View reset to default', 'info');
+  };
+
   // Remove the automatic filter application to make Apply button work as intended
   // The useEffect that was automatically applying filters has been removed
+
+  // Add a useEffect to ensure proper initialization
+  useEffect(() => {
+    console.log('TaskManagement component initialized');
+    // Ensure we start with a clean state
+    resetToDefaultView();
+  }, []);
 
   // Filter services when category changes (for create form)
   useEffect(() => {
@@ -202,6 +225,11 @@ const TaskManagement = () => {
                        response.data?.data || response.data || [];
       
       console.log('Raw tasks data:', tasksData);
+      console.log('User info for filtering:', {
+        role: user.role,
+        username: user.username,
+        fullName: user.fullName
+      });
       
       // For SystemAdmin, show all tasks
       // For other roles (Admin, Supervisor, Agent), show only their own tasks
@@ -210,10 +238,35 @@ const TaskManagement = () => {
         console.log('SystemAdmin: showing all tasks');
       } else {
         // Other users only see their own tasks
-        tasksData = tasksData.filter(task => 
-          task.userName === user.username
-        );
+        // Use both username and fullName for matching to ensure compatibility
+        const currentUserIdentifier = user.fullName || user.username;
+        console.log('Filtering tasks for user:', currentUserIdentifier);
+        
+        tasksData = tasksData.filter(task => {
+          const taskUserIdentifier = task.userName;
+          const isMatch = taskUserIdentifier === currentUserIdentifier;
+          console.log('Task user matching:', {
+            taskUser: taskUserIdentifier,
+            currentUser: currentUserIdentifier,
+            isMatch: isMatch
+          });
+          return isMatch;
+        });
+        
         console.log(`${user.role}: filtered to user tasks`, tasksData.length);
+        // Log the filtered tasks for debugging
+        console.log('Filtered tasks:', tasksData.map(t => ({
+          id: t.id,
+          description: t.description,
+          userName: t.userName
+        })));
+        
+        // Additional check for agents
+        if (user.role === 'Agent' && tasksData.length === 0) {
+          console.warn('Agent has no tasks. This might be expected or could indicate an issue.');
+          console.log('All tasks from API:', Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || []);
+        }
       }
       
       setTasks(tasksData);
@@ -255,32 +308,76 @@ const TaskManagement = () => {
   useEffect(() => {
     // Only fetch data if user is available
     if (user) {
-      fetchTasks();
-      fetchDropdownValues();
+      console.log('User available, fetching tasks and dropdown values');
+      console.log('User info:', {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName
+      });
+      
+      // Add a small delay to ensure auth context is fully loaded
+      const timer = setTimeout(() => {
+        fetchTasks();
+        fetchDropdownValues();
+      }, 100);
       
       // Subscribe to auto-refresh service
       autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
       
       // Clean up subscription on component unmount
       return () => {
+        console.log('Cleaning up auto-refresh subscription');
         autoRefreshService.unsubscribe('TaskManagement');
+        clearTimeout(timer);
       };
+    } else {
+      console.log('User not available yet');
     }
-  }, []); // Remove dependencies since these are stable functions
+  }, [user, fetchTasks]); // Add fetchTasks to dependencies
+
+  // Add a useEffect to monitor when tasks change
+  useEffect(() => {
+    console.log('Tasks state updated:', {
+      totalTasks: tasks.length,
+      firstFewTasks: tasks.slice(0, 3).map(t => ({
+        id: t.id,
+        description: t.description,
+        userName: t.userName
+      }))
+    });
+  }, [tasks]);
+
+  // Add a useEffect to monitor when filteredTasks change
+  useEffect(() => {
+    console.log('Filtered tasks updated:', {
+      filteredTasksCount: filteredTasks.length,
+      firstFewFilteredTasks: filteredTasks.slice(0, 3).map(t => ({
+        id: t.id,
+        description: t.description,
+        userName: t.userName
+      }))
+    });
+  }, [filteredTasks]);
 
   // Listen for real-time notifications
   useEffect(() => {
     // Only set up notifications if user is available
     if (!user) {
+      console.log('Notification useEffect: User not available yet');
       return;
     }
     
+    console.log('Setting up notifications for user:', user.username);
+    
     const handleTaskCreated = (data) => {
+      console.log('Task created notification received:', data);
       showSnackbar('New task created: ' + data.task.description, 'info');
       fetchTasks(); // Refresh data
     };
 
     const handleTaskUpdated = (data) => {
+      console.log('Task updated notification received:', data);
       if (data.deleted) {
         showSnackbar('Task deleted: ' + data.description, 'warning');
       } else {
@@ -295,16 +392,64 @@ const TaskManagement = () => {
 
     // Cleanup on unmount
     return () => {
+      console.log('Cleaning up notifications');
       notificationService.off('taskCreated', handleTaskCreated);
       notificationService.off('taskUpdated', handleTaskUpdated);
     };
-  }, []); // Remove fetchTasks dependency since it's stable
+  }, [user, fetchTasks]); // Add fetchTasks to dependencies
 
     // Additional debug for user role
   useEffect(() => {
     console.log('Current user:', user);
     console.log('User role:', user?.role);
+    
+    // Additional check to ensure we're handling user roles correctly
+    if (user) {
+      console.log('User authentication status:', {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        isAuthenticated: !!user.id
+      });
+      
+      // Check if this is the first time we're seeing this user
+      if (!user.id) {
+        console.warn('User object exists but ID is missing - this might indicate an auth issue');
+      }
+    }
   }, [user]);
+
+  // Add a useEffect to handle user changes and ensure proper task loading
+  useEffect(() => {
+    if (user) {
+      console.log('User changed, ensuring tasks are loaded');
+      
+      // Check if user has proper identification
+      if (!user.username) {
+        console.warn('User object missing username:', user);
+      }
+      
+      // Small delay to ensure auth context is fully loaded
+      const timer = setTimeout(() => {
+        fetchTasks();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, fetchTasks]);
+
+  // Add a useEffect to ensure agents see their tasks by default
+  useEffect(() => {
+    if (user && user.role !== 'SystemAdmin') {
+      // Ensure we have the latest tasks for agents
+      const timer = setTimeout(() => {
+        fetchTasks();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, fetchTasks]);
 
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -546,19 +691,54 @@ const TaskManagement = () => {
 
   // Filter tasks based on applied filters
   const filteredTasks = tasks.filter(task => {
-    // For non-SystemAdmin users, they should only see their own tasks
+    // Log the task and user info for debugging
+    console.log('Filtering task:', {
+      taskId: task.id,
+      taskDescription: task.description,
+      taskUser: task.userName,
+      currentUser: user?.username,
+      currentUserFullName: user?.fullName,
+      userRole: user?.role
+    });
+    
+    // Ensure agents and other non-SystemAdmin users only see their own tasks
+    // This is a critical fix for the agent task visibility issue
     if (user && user.role !== 'SystemAdmin') {
-      if (task.userName !== user.username) {
+      // Double-check that we're properly filtering for the current user
+      // Use both username and fullName for matching to ensure compatibility
+      const currentUserIdentifier = user.fullName || user.username;
+      const taskUserIdentifier = task.userName;
+      
+      // Add more flexible matching to handle potential formatting differences
+      const isUserMatch = taskUserIdentifier === currentUserIdentifier ||
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.includes(currentUserIdentifier) || 
+                           currentUserIdentifier.includes(taskUserIdentifier)));
+      
+      console.log('User matching check:', {
+        taskUser: taskUserIdentifier,
+        currentUser: currentUserIdentifier,
+        exactMatch: taskUserIdentifier === currentUserIdentifier,
+        flexibleMatch: (taskUserIdentifier && currentUserIdentifier && 
+                       (taskUserIdentifier.includes(currentUserIdentifier) || 
+                        currentUserIdentifier.includes(taskUserIdentifier))),
+        isMatch: isUserMatch
+      });
+      
+      if (!isUserMatch) {
+        console.log('Task filtered out due to user mismatch');
         return false;
       }
     }
     
+    // Apply search filter
     const matchesSearch = !appliedFilters.searchTerm || 
       (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
       (task.service && task.service.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
       (task.userName && task.userName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()));
     
+    // Apply status filter
     const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
     
     // For SystemAdmin:
@@ -569,50 +749,156 @@ const TaskManagement = () => {
       matchesUser = task.userName === appliedFilters.userFilter;
     }
     
-    // Add date range filtering
+    // Apply date range filtering
     let matchesDateRange = true;
     if (appliedFilters.startDate || appliedFilters.endDate) {
-      const taskDate = new Date(task.date);
-      // Normalize the task date to remove time component for comparison
-      taskDate.setHours(0, 0, 0, 0);
-      
-      if (appliedFilters.startDate) {
-        const startDateFilter = new Date(appliedFilters.startDate);
-        startDateFilter.setHours(0, 0, 0, 0);
-        if (taskDate < startDateFilter) {
+      // Handle case where task.date might be null or undefined
+      if (!task.date) {
+        matchesDateRange = false;
+      } else {
+        const taskDate = new Date(task.date);
+        // Check if taskDate is valid
+        if (isNaN(taskDate.getTime())) {
+          console.log('Invalid task date:', task.date);
           matchesDateRange = false;
+        } else {
+          // Normalize the task date to remove time component for comparison
+          taskDate.setHours(0, 0, 0, 0);
+          
+          if (appliedFilters.startDate) {
+            const startDateFilter = new Date(appliedFilters.startDate);
+            // Check if startDateFilter is valid
+            if (isNaN(startDateFilter.getTime())) {
+              console.log('Invalid start date filter:', appliedFilters.startDate);
+            } else {
+              startDateFilter.setHours(0, 0, 0, 0);
+              if (taskDate < startDateFilter) {
+                matchesDateRange = false;
+                console.log('Task date is before start date filter:', {
+                  taskDate,
+                  startDateFilter
+                });
+              }
+            }
+          }
+          if (appliedFilters.endDate) {
+            const endDateFilter = new Date(appliedFilters.endDate);
+            // Check if endDateFilter is valid
+            if (isNaN(endDateFilter.getTime())) {
+              console.log('Invalid end date filter:', appliedFilters.endDate);
+            } else {
+              endDateFilter.setHours(23, 59, 59, 999); // End of day
+              if (taskDate > endDateFilter) {
+                matchesDateRange = false;
+                console.log('Task date is after end date filter:', {
+                  taskDate,
+                  endDateFilter
+                });
+              }
+            }
+          }
         }
       }
-      if (appliedFilters.endDate) {
-        const endDateFilter = new Date(appliedFilters.endDate);
-        endDateFilter.setHours(23, 59, 59, 999); // End of day
-        if (taskDate > endDateFilter) {
-          matchesDateRange = false;
-        }
+    } else {
+      // No date filters applied, so all tasks should match
+      matchesDateRange = true;
+      console.log('No date filters applied, task passes date filter');
+    }
+    
+    // Log filter results for debugging - but only in development
+    if (process.env.NODE_ENV === 'development') {
+      const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+      if (!result) {
+        console.log('Task filtered out:', {
+          task: task.description,
+          taskDate: task.date,
+          taskUser: task.userName,
+          currentUser: user?.username,
+          userRole: user?.role,
+          matchesSearch,
+          matchesStatus,
+          matchesUser,
+          matchesDateRange,
+          appliedFilters
+        });
       }
     }
     
-    // Log filter results for debugging
-    const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
-    if (!result) {
-      console.log('Task filtered out:', {
-        task: task.description,
-        taskDate: task.date,
-        taskUser: task.userName,
-        currentUser: user?.username,
-        userRole: user?.role,
-        matchesSearch,
-        matchesStatus,
-        matchesUser,
-        matchesDateRange,
-        appliedFilters
-      });
-    }
+    const finalResult = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+    console.log('Task filtering result:', {
+      taskId: task.id,
+      taskDescription: task.description,
+      finalResult,
+      matchesSearch,
+      matchesStatus,
+      matchesUser,
+      matchesDateRange
+    });
     
-    return result;
+    return finalResult;
   });
   
-  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', appliedFilters.userFilter, 'Current user role:', user?.role);
+  // Add additional logging to help debug agent task visibility
+  console.log('Task filtering debug info:', {
+    userRole: user?.role,
+    currentUser: user?.username,
+    currentUserFullName: user?.fullName,
+    totalTasks: tasks.length,
+    filteredTasksCount: filteredTasks.length,
+    appliedFilters,
+    tasksSample: tasks.slice(0, 3).map(t => ({
+      id: t.id,
+      description: t.description,
+      userName: t.userName
+    })),
+    filteredTasksSample: filteredTasks.slice(0, 3).map(t => ({
+      id: t.id,
+      description: t.description,
+      userName: t.userName
+    }))
+  });
+  
+  // Add a check to ensure we're not filtering out all tasks incorrectly
+  if (tasks.length > 0 && filteredTasks.length === 0 && user && user.role !== 'SystemAdmin') {
+    console.warn('Warning: All tasks filtered out for non-SystemAdmin user. This might indicate a filtering issue.');
+    console.log('Debug info:', {
+      user: user.username,
+      userFullName: user.fullName,
+      totalTasks: tasks.length,
+      tasksUsernames: [...new Set(tasks.map(t => t.userName))],
+      currentUserIdentifier: user.fullName || user.username,
+      appliedFilters
+    });
+    
+    // Additional check for agents with no tasks
+    if (user.role === 'Agent') {
+      console.log('Agent has no visible tasks. Checking if this is due to filtering or actual lack of tasks.');
+      
+      // Check if there are tasks that belong to this user but are being filtered out
+      const currentUserIdentifier = user.fullName || user.username;
+      const userTasks = tasks.filter(task => task.userName === currentUserIdentifier);
+      
+      if (userTasks.length > 0) {
+        console.log('Agent has tasks but they are being filtered out. Current filters:', appliedFilters);
+        
+        // Check each filter individually
+        console.log('Checking individual filters:');
+        tasks.forEach(task => {
+          if (task.userName === currentUserIdentifier) {
+            console.log('Task that should be visible:', {
+              id: task.id,
+              description: task.description,
+              userName: task.userName,
+              date: task.date,
+              status: task.status
+            });
+          }
+        });
+      } else {
+        console.log('Agent truly has no tasks assigned.');
+      }
+    }
+  }
 
   // Get task statistics based on filtered tasks
   const getTaskStats = () => {
