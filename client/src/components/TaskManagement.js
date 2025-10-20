@@ -348,6 +348,21 @@ const TaskManagement = () => {
     });
   }, [tasks]);
 
+  // Memoize the appliedFilters values to prevent unnecessary re-renders
+  const appliedFiltersMemo = useMemo(() => ({
+    searchTerm: appliedFilters.searchTerm,
+    statusFilter: appliedFilters.statusFilter,
+    userFilter: appliedFilters.userFilter,
+    startDate: appliedFilters.startDate,
+    endDate: appliedFilters.endDate
+  }), [
+    appliedFilters.searchTerm,
+    appliedFilters.statusFilter,
+    appliedFilters.userFilter,
+    appliedFilters.startDate,
+    appliedFilters.endDate
+  ]);
+
   // Move filteredTasks definition before any useEffect that uses it
   // Filter tasks based on applied filters
   const filteredTasks = useMemo(() => {
@@ -505,7 +520,7 @@ const TaskManagement = () => {
       
       return finalResult;
     });
-  }, [tasks, user, appliedFilters]);
+  }, [tasks, user, appliedFiltersMemo.searchTerm, appliedFiltersMemo.statusFilter, appliedFiltersMemo.userFilter, appliedFiltersMemo.startDate, appliedFiltersMemo.endDate]);
 
   // Add a useEffect to monitor when filteredTasks change
   useEffect(() => {
