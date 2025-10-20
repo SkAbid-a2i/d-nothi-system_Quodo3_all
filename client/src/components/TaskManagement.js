@@ -281,10 +281,37 @@ const TaskManagement = () => {
       
       tasksData = tasksData.filter(task => {
         const taskUserIdentifier = task.userName;
-        const isMatch = taskUserIdentifier === currentUserIdentifier;
+        
+        // More flexible matching to handle potential formatting differences
+        // This will match if either name contains the other or they match when trimmed
+        const isMatch = taskUserIdentifier === currentUserIdentifier ||
+                       (taskUserIdentifier && currentUserIdentifier && 
+                        (taskUserIdentifier.includes(currentUserIdentifier) || 
+                         currentUserIdentifier.includes(taskUserIdentifier))) ||
+                       // Fallback for cases where we might have partial matches
+                       (taskUserIdentifier && currentUserIdentifier && 
+                        (taskUserIdentifier.trim() === currentUserIdentifier.trim() ||
+                         taskUserIdentifier.trim().includes(currentUserIdentifier.trim()) || 
+                         currentUserIdentifier.trim().includes(taskUserIdentifier.trim()))) ||
+                       // Case insensitive matching as final fallback
+                       (taskUserIdentifier && currentUserIdentifier && 
+                        (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                         currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
+        
         console.log('Task user matching:', {
           taskUser: taskUserIdentifier,
           currentUser: currentUserIdentifier,
+          exactMatch: taskUserIdentifier === currentUserIdentifier,
+          containsMatch: (taskUserIdentifier && currentUserIdentifier && 
+                         (taskUserIdentifier.includes(currentUserIdentifier) || 
+                          currentUserIdentifier.includes(taskUserIdentifier))),
+          trimmedMatch: (taskUserIdentifier && currentUserIdentifier && 
+                        (taskUserIdentifier.trim() === currentUserIdentifier.trim() ||
+                         taskUserIdentifier.trim().includes(currentUserIdentifier.trim()) || 
+                         currentUserIdentifier.trim().includes(taskUserIdentifier.trim()))),
+          caseInsensitiveMatch: (taskUserIdentifier && currentUserIdentifier && 
+                                (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                                 currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase()))),
           isMatch: isMatch
         });
         return isMatch;
