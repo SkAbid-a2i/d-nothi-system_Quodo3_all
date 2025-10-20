@@ -115,6 +115,8 @@ const TaskManagement = () => {
   const [startDate, setStartDate] = useState(''); // Add start date filter
   const [endDate, setEndDate] = useState(''); // Add end date filter
   
+  // Add state for filtered tasks
+  const [filteredTasks, setFilteredTasks] = useState([]);
 
   // Use the new user filter hook
   const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
