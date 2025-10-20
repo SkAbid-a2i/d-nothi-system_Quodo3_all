@@ -53,10 +53,8 @@ import {
 } from '@mui/icons-material';
 import { dropdownAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 import useUserFilter from '../hooks/useUserFilter';
-import UserFilterDropdown from './UserFilterDropdown';
 
 const TaskManagement = () => {
   const { user } = useAuth();
@@ -66,11 +64,6 @@ const TaskManagement = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  
-  // Debug user state
-  useEffect(() => {
-    console.log('Auth context user state changed:', user);
-  }, [user]);
   
   // UI state
   const [activeTab, setActiveTab] = useState(0);
@@ -87,7 +80,6 @@ const TaskManagement = () => {
   const [offices, setOffices] = useState([]); // Add offices state
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
   const [userInformation, setUserInformation] = useState(''); // Add user information state
-  const [selectedUser, setSelectedUser] = useState(null); // Add selected user state
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
@@ -112,13 +104,9 @@ const TaskManagement = () => {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [userFilter, setUserFilter] = useState('');
   const [startDate, setStartDate] = useState(''); // Add start date filter
   const [endDate, setEndDate] = useState(''); // Add end date filter
   
-  // Use the new user filter hook
-  const { users, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
-
   // State for applied filters
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: '',
@@ -127,433 +115,6 @@ const TaskManagement = () => {
     startDate: '',
     endDate: ''
   });
-  
-  // Debug applied filters
-  useEffect(() => {
-    console.log('Applied filters updated:', appliedFilters);
-  }, [appliedFilters]);
-  
-  // Early return if user is not loaded yet - REMOVED to prevent issues
-  // The component will handle the loading state internally
-  
-  // Apply filters when Apply button is clicked
-  const applyFilters = () => {
-    const newAppliedFilters = {
-      searchTerm,
-      statusFilter,
-      userFilter: '', // Always empty since we removed user filter
-      startDate,
-      endDate
-    };
-    
-    console.log('Applying filters:', {
-      searchTerm,
-      statusFilter,
-      startDate,
-      endDate,
-      newAppliedFilters
-    });
-    
-    setAppliedFilters(newAppliedFilters);
-    showSnackbar('Filters applied', 'info');
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
-    setStartDate('');
-    setEndDate('');
-    setAppliedFilters({
-      searchTerm: '',
-      statusFilter: '',
-      userFilter: '',
-      startDate: '',
-      endDate: ''
-    });
-    showSnackbar('Filters cleared', 'info');
-  };
-
-  // Remove the automatic filter application to make Apply button work as intended
-  // The useEffect that was automatically applying filters has been removed
-
-  // Filter services when category changes (for create form)
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchServicesForCategory(selectedCategory.value);
-    } else {
-      setServices([]);
-      setSelectedService(null);
-    }
-  }, [selectedCategory]);
-
-  // Filter services when category changes (for edit form)
-  useEffect(() => {
-    if (editSelectedCategory) {
-      fetchServicesForCategory(editSelectedCategory.value, true);
-    } else {
-      setServices([]);
-      setEditSelectedService(null);
-    }
-  }, [editSelectedCategory]);
-
-  const fetchTasks = useCallback(async () => {
-    // Don't fetch tasks if user is not available yet
-    if (!user) {
-      return;
-    }
-    
-    setDataLoading(true);
-    try {
-      const response = await taskAPI.getAllTasks();
-      
-      // The backend already filters tasks based on user role:
-      // - Agents: only their own tasks (filtered by userId)
-      // - Admins/Supervisors: tasks from their office (filtered by office)
-      // - SystemAdmins: all tasks (no filter)
-      // So we don't need additional frontend filtering here
-      let tasksData = Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || [];
-      
-      setTasks(tasksData);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to fetch tasks';
-      setError('Failed to fetch tasks: ' + errorMessage);
-      showSnackbar('Failed to fetch tasks: ' + errorMessage, 'error');
-    } finally {
-      setDataLoading(false);
-    }
-  }, [user]); // Add user to dependencies
-
-  // Add function to directly update status in database
-  const updateTaskStatus = async (taskId, newStatus) => {
-    try {
-      // Update status directly in database
-      const response = await taskAPI.updateTask(taskId, { status: newStatus });
-      
-      // Update local state
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
-      );
-      
-      showSnackbar('Task status updated successfully!', 'success');
-      return response.data;
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task status';
-      showSnackbar('Failed to update task status: ' + errorMessage, 'error');
-      throw error;
-    }
-  };
-
-  // Fetch tasks on component mount and when user changes
-  useEffect(() => {
-    // Only fetch data if user is available
-    if (user) {
-      console.log('User changed, fetching tasks:', user);
-      fetchTasks();
-      fetchDropdownValues();
-      
-      // Subscribe to auto-refresh service
-      autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
-      
-      // Clean up subscription on component unmount
-      return () => {
-        autoRefreshService.unsubscribe('TaskManagement');
-      };
-    }
-  }, [user, fetchTasks, fetchDropdownValues]); // Add dependencies
-  
-  // Debug when component mounts
-  useEffect(() => {
-    console.log('TaskManagement component mounted');
-    return () => {
-      console.log('TaskManagement component unmounted');
-    };
-  }, []);
-  
-  // Additional debug for user role
-  useEffect(() => {
-    console.log('Current user:', user);
-    console.log('User role:', user?.role);
-    if (user) {
-      console.log('User details:', {
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName,
-        role: user.role,
-        office: user.office
-      });
-    }
-  }, [user]);
-  
-  // Debug task state changes
-  useEffect(() => {
-    console.log('Tasks state updated:', { 
-      taskCount: tasks.length, 
-      firstFewTasks: tasks.slice(0, 3),
-      allTaskIds: tasks.map(t => t.id)
-    });
-  }, [tasks]);
-  
-  // Debug filtered tasks
-  useEffect(() => {
-    console.log('Filtered tasks updated:', { 
-      filteredCount: filteredTasks.length,
-      appliedFilters,
-      firstFewFilteredTasks: filteredTasks.slice(0, 3)
-    });
-  }, [filteredTasks, appliedFilters]);
-  
-  // Show loading state while user is being fetched
-  if (!user) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
-        <Typography sx={{ ml: 2 }}>Loading user data...</Typography>
-      </Box>
-    );
-  }
-
-  const showSnackbar = useCallback((message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  }, []);
-
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar({ ...snackbar, open: false });
-  }, [snackbar]);
-
-  // Fetch dropdown values on component mount
-  const fetchDropdownValues = useCallback(async () => {
-    setLoading(true);
-    try {
-      console.log('Fetching dropdown values...');
-      // Fetch all dropdown values in parallel
-      const fetchPromises = [
-        dropdownAPI.getDropdownValues('Source'),
-        dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office')
-      ];
-      
-      const responses = await Promise.all(fetchPromises);
-    
-      console.log('All responses:', responses);
-    
-      // Extract responses
-      const [sourcesRes, categoriesRes, officesRes] = responses;
-    
-      console.log('Sources response:', sourcesRes);
-      console.log('Categories response:', categoriesRes);
-      console.log('Offices response:', officesRes);
-    
-      setSources(sourcesRes?.data || []);
-      setCategories(categoriesRes?.data || []);
-      setOffices(officesRes?.data || []);
-    } catch (error) {
-      console.error('Error fetching dropdown values:', error);
-      console.error('Error response:', error.response);
-      showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
-    try {
-      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
-      if (isEdit) {
-        setEditSelectedService(response.data);
-      } else {
-        setServices(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching services:', error);
-    }
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await taskAPI.deleteTask(taskId);
-      
-      setTasks(tasks.filter(task => task.id !== taskId));
-      
-      // Log audit entry
-      // Removed auditLog call that was causing issues
-      
-      setSuccess('Task deleted successfully!');
-      showSnackbar('Task deleted successfully!', 'success');
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
-      setError('Failed to delete task: ' + errorMessage);
-      showSnackbar('Failed to delete task: ' + errorMessage, 'error');
-    }
-  };
-  
-  // Handle file selection
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
-  };
-  
-  // Handle edit file selection
-  const handleEditFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setEditFiles(prevFiles => [...prevFiles, ...selectedFiles]);
-  };
-  
-  // Remove file from create form
-  const removeFile = (index) => {
-    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
-  };
-  
-  // Remove file from edit form
-  const removeEditFile = (index) => {
-    setEditFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
-  };
-  
-  const handleSubmitTask = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    
-    // Validation
-    if (!date || !description) {
-      setError('Date and description are required');
-      showSnackbar('Date and description are required', 'error');
-      return;
-    }
-    
-    try {
-      // Prepare task data
-      const taskData = {
-        date,
-        source: selectedSource?.value || '',
-        category: selectedCategory?.value || '',
-        service: selectedService?.value || '',
-        office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
-        userInformation, // Add user information
-        description,
-        status,
-        userId: user?.id, // Automatically add user ID
-        userName: user?.fullName || user?.username // Automatically add user name
-      };
-    
-      console.log('Creating task with data:', taskData);
-    
-      // For now, we'll store file names in the files array
-      // In a real implementation, you would upload files to a storage service
-      const fileData = files.map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      }));
-    
-      taskData.files = fileData;
-    
-      const response = await taskAPI.createTask(taskData);
-    
-      console.log('Task creation response:', response);
-    
-      // Add new task to list
-      const newTask = {
-        id: response.data.id,
-        ...taskData,
-        userId: user?.id,
-        userName: user?.fullName || user?.username
-      };
-      setTasks([...tasks, newTask]);
-    
-      // Reset form
-      setDate(new Date().toISOString().split('T')[0]);
-      setSelectedSource(null);
-      setSelectedCategory(null);
-      setSelectedService(null);
-      setSelectedOffice(null); // Reset selected office
-      setUserInformation(''); // Reset user information
-      setDescription('');
-      setStatus('Pending');
-      setFiles([]); // Reset files
-      
-      setOpenCreateDialog(false);
-      setSuccess('Task created successfully!');
-      showSnackbar('Task created successfully!', 'success');
-      fetchTasks(); // Refresh task list
-    } catch (error) {
-      console.error('Error creating task:', error);
-      console.error('Error response:', error.response);
-      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to create task';
-      setError('Failed to create task: ' + errorMessage);
-      showSnackbar('Failed to create task: ' + errorMessage, 'error');
-    }
-  };
-
-  const handleEditTask = (task) => {
-    setEditingTask(task);
-    setEditDate(task.date || '');
-    setEditSelectedSource(sources.find(s => s.value === task.source) || null);
-    setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
-    setEditSelectedService(services.find(s => s.value === task.service) || null);
-    setEditSelectedOffice(offices.find(o => o.value === task.office) || null); // Set edit selected office
-    setEditUserInformation(task.userInformation || ''); // Set edit user information
-    setEditDescription(task.description || '');
-    setEditStatus(task.status || 'Pending');
-    setEditFiles(task.files || []); // Set existing files
-    // Removed editAssignedTo assignment
-    // Removed editFlag assignment
-    setOpenEditDialog(true);
-  };
-
-  const handleUpdateTask = async () => {
-    try {
-      const taskData = {
-        date: editDate,
-        source: editSelectedSource?.value || '',
-        category: editSelectedCategory?.value || '',
-        service: editSelectedService?.value || '',
-        office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
-        userInformation: editUserInformation, // Add user information
-        description: editDescription,
-        status: editStatus,
-        userId: user?.id, // Automatically add user ID
-        userName: user?.fullName || user?.username // Automatically add user name
-      };
-    
-      // For now, we'll store file names in the files array
-      // In a real implementation, you would upload files to a storage service
-      const fileData = editFiles.map(file => 
-        typeof file === 'string' ? file : {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        }
-      );
-    
-      taskData.files = fileData;
-    
-      const response = await taskAPI.updateTask(editingTask.id, taskData);
-    
-      // Update task in list
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id ? { ...task, ...response.data } : task
-      ));
-    
-      setOpenEditDialog(false);
-      setEditingTask(null);
-      setSuccess('Task updated successfully!');
-      showSnackbar('Task updated successfully!', 'success');
-      fetchTasks(); // Refresh task list
-    } catch (error) {
-      console.error('Error updating task:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to update task';
-      setError('Failed to update task: ' + errorMessage);
-      showSnackbar('Failed to update task: ' + errorMessage, 'error');
-    }
-  };
 
   // Filter tasks based on applied filters
   const filteredTasks = tasks.filter(task => {
@@ -576,7 +137,6 @@ const TaskManagement = () => {
       
       // Check if taskDate is valid
       if (isNaN(taskDate.getTime())) {
-        console.warn('Invalid task date:', task.date);
         matchesDateRange = false;
       } else {
         // Normalize the task date to remove time component for comparison
@@ -587,7 +147,7 @@ const TaskManagement = () => {
           startDateFilter.setHours(0, 0, 0, 0);
           // Check if startDateFilter is valid
           if (isNaN(startDateFilter.getTime())) {
-            console.warn('Invalid start date filter:', appliedFilters.startDate);
+            matchesDateRange = false;
           } else if (taskDate < startDateFilter) {
             matchesDateRange = false;
           }
@@ -598,7 +158,7 @@ const TaskManagement = () => {
           endDateFilter.setHours(23, 59, 59, 999); // End of day
           // Check if endDateFilter is valid
           if (isNaN(endDateFilter.getTime())) {
-            console.warn('Invalid end date filter:', appliedFilters.endDate);
+            matchesDateRange = false;
           } else if (taskDate > endDateFilter) {
             matchesDateRange = false;
           }
@@ -606,29 +166,8 @@ const TaskManagement = () => {
       }
     }
     
-    // Log filter results for debugging
-    const result = matchesSearch && matchesStatus && matchesDateRange;
-    if (!result) {
-      console.log('Task filtered out:', {
-        task: task.description,
-        taskDate: task.date,
-        taskUser: task.userName,
-        currentUser: user?.username,
-        userRole: user?.role,
-        matchesSearch,
-        matchesStatus,
-        matchesDateRange,
-        appliedFilters
-      });
-    }
-    
-    return result;
+    return matchesSearch && matchesStatus && matchesDateRange;
   });
-  
-  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'Current user role:', user?.role);
-  console.log('Applied filters:', appliedFilters);
-  console.log('All tasks:', tasks);
-  console.log('Filtered tasks:', filteredTasks);
 
   // Get task statistics based on filtered tasks
   const getTaskStats = () => {
@@ -782,6 +321,364 @@ const TaskManagement = () => {
     
     return pdf;
   };
+  
+  // Show loading state while user is being fetched
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading user data...</Typography>
+      </Box>
+    );
+  }
+
+  const showSnackbar = useCallback((message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
+  const handleCloseSnackbar = useCallback(() => {
+    setSnackbar({ ...snackbar, open: false });
+  }, [snackbar]);
+
+  // Fetch dropdown values on component mount
+  const fetchDropdownValues = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch all dropdown values in parallel
+      const fetchPromises = [
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Office')
+      ];
+      
+      const responses = await Promise.all(fetchPromises);
+    
+      // Extract responses
+      const [sourcesRes, categoriesRes, officesRes] = responses;
+    
+      setSources(sourcesRes?.data || []);
+      setCategories(categoriesRes?.data || []);
+      setOffices(officesRes?.data || []);
+    } catch (error) {
+      console.error('Error fetching dropdown values:', error);
+      console.error('Error response:', error.response);
+      showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showSnackbar]);
+
+  const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
+    try {
+      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
+      if (isEdit) {
+        setEditSelectedService(response.data);
+      } else {
+        setServices(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await taskAPI.deleteTask(taskId);
+      
+      setTasks(tasks.filter(task => task.id !== taskId));
+      
+      // Log audit entry
+      // Removed auditLog call that was causing issues
+      
+      setSuccess('Task deleted successfully!');
+      showSnackbar('Task deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
+      setError('Failed to delete task: ' + errorMessage);
+      showSnackbar('Failed to delete task: ' + errorMessage, 'error');
+    }
+  };
+  
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+  };
+  
+  // Handle edit file selection
+  const handleEditFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setEditFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+  };
+  
+  // Remove file from create form
+  const removeFile = (index) => {
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+  
+  // Remove file from edit form
+  const removeEditFile = (index) => {
+    setEditFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+  
+  const handleSubmitTask = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    
+    // Validation
+    if (!date || !description) {
+      setError('Date and description are required');
+      showSnackbar('Date and description are required', 'error');
+      return;
+    }
+    
+    try {
+      // Prepare task data
+      const taskData = {
+        date,
+        source: selectedSource?.value || '',
+        category: selectedCategory?.value || '',
+        service: selectedService?.value || '',
+        office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
+        userInformation, // Add user information
+        description,
+        status,
+        userId: user?.id, // Automatically add user ID
+        userName: user?.fullName || user?.username // Automatically add user name
+      };
+    
+      // For now, we'll store file names in the files array
+      // In a real implementation, you would upload files to a storage service
+      const fileData = files.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      }));
+    
+      taskData.files = fileData;
+    
+      const response = await taskAPI.createTask(taskData);
+    
+      // Add new task to list
+      const newTask = {
+        id: response.data.id,
+        ...taskData,
+        userId: user?.id,
+        userName: user?.fullName || user?.username
+      };
+      setTasks([...tasks, newTask]);
+    
+      // Reset form
+      setDate(new Date().toISOString().split('T')[0]);
+      setSelectedSource(null);
+      setSelectedCategory(null);
+      setSelectedService(null);
+      setSelectedOffice(null); // Reset selected office
+      setUserInformation(''); // Reset user information
+      setDescription('');
+      setStatus('Pending');
+      setFiles([]); // Reset files
+      
+      setOpenCreateDialog(false);
+      setSuccess('Task created successfully!');
+      showSnackbar('Task created successfully!', 'success');
+      fetchTasks(); // Refresh task list
+    } catch (error) {
+      console.error('Error creating task:', error);
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to create task';
+      setError('Failed to create task: ' + errorMessage);
+      showSnackbar('Failed to create task: ' + errorMessage, 'error');
+    }
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditDate(task.date || '');
+    setEditSelectedSource(sources.find(s => s.value === task.source) || null);
+    setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
+    setEditSelectedService(services.find(s => s.value === task.service) || null);
+    setEditSelectedOffice(offices.find(o => o.value === task.office) || null); // Set edit selected office
+    setEditUserInformation(task.userInformation || ''); // Set edit user information
+    setEditDescription(task.description || '');
+    setEditStatus(task.status || 'Pending');
+    setEditFiles(task.files || []); // Set existing files
+    // Removed editAssignedTo assignment
+    // Removed editFlag assignment
+    setOpenEditDialog(true);
+  };
+
+  const handleUpdateTask = async () => {
+    try {
+      const taskData = {
+        date: editDate,
+        source: editSelectedSource?.value || '',
+        category: editSelectedCategory?.value || '',
+        service: editSelectedService?.value || '',
+        office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
+        userInformation: editUserInformation, // Add user information
+        description: editDescription,
+        status: editStatus,
+        userId: user?.id, // Automatically add user ID
+        userName: user?.fullName || user?.username // Automatically add user name
+      };
+    
+      // For now, we'll store file names in the files array
+      // In a real implementation, you would upload files to a storage service
+      const fileData = editFiles.map(file => 
+        typeof file === 'string' ? file : {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        }
+      );
+    
+      taskData.files = fileData;
+    
+      const response = await taskAPI.updateTask(editingTask.id, taskData);
+    
+      // Update task in list
+      setTasks(tasks.map(task => 
+        task.id === editingTask.id ? { ...task, ...response.data } : task
+      ));
+    
+      setOpenEditDialog(false);
+      setEditingTask(null);
+      setSuccess('Task updated successfully!');
+      showSnackbar('Task updated successfully!', 'success');
+      fetchTasks(); // Refresh task list
+    } catch (error) {
+      console.error('Error updating task:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to update task';
+      setError('Failed to update task: ' + errorMessage);
+      showSnackbar('Failed to update task: ' + errorMessage, 'error');
+    }
+  };
+  
+  const fetchTasks = useCallback(async () => {
+    // Don't fetch tasks if user is not available yet
+    if (!user) {
+      return;
+    }
+    
+    setDataLoading(true);
+    try {
+      const response = await taskAPI.getAllTasks();
+      
+      // The backend already filters tasks based on user role:
+      // - Agents: only their own tasks (filtered by userId)
+      // - Admins/Supervisors: tasks from their office (filtered by office)
+      // - SystemAdmins: all tasks (no filter)
+      // So we don't need additional frontend filtering here
+      let tasksData = Array.isArray(response.data) ? response.data : 
+                       response.data?.data || response.data || [];
+      
+      setTasks(tasksData);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to fetch tasks';
+      setError('Failed to fetch tasks: ' + errorMessage);
+      showSnackbar('Failed to fetch tasks: ' + errorMessage, 'error');
+    } finally {
+      setDataLoading(false);
+    }
+  }, [user, showSnackbar]);
+  
+  // Add function to directly update status in database
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      // Update status directly in database
+      const response = await taskAPI.updateTask(taskId, { status: newStatus });
+      
+      // Update local state
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, status: newStatus } : task
+        )
+      );
+      
+      showSnackbar('Task status updated successfully!', 'success');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update task status';
+      showSnackbar('Failed to update task status: ' + errorMessage, 'error');
+      throw error;
+    }
+  };
+
+  // Fetch tasks on component mount and when user changes
+  useEffect(() => {
+    // Only fetch data if user is available
+    if (user) {
+      fetchTasks();
+      fetchDropdownValues();
+      
+      // Subscribe to auto-refresh service
+      autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
+      
+      // Clean up subscription on component unmount
+      return () => {
+        autoRefreshService.unsubscribe('TaskManagement');
+      };
+    }
+  }, [user, fetchTasks, fetchDropdownValues]); // Add dependencies
+
+  // Apply filters when Apply button is clicked
+  const applyFilters = () => {
+    const newAppliedFilters = {
+      searchTerm,
+      statusFilter,
+      userFilter: '', // Always empty since we removed user filter
+      startDate,
+      endDate
+    };
+    
+    setAppliedFilters(newAppliedFilters);
+    showSnackbar('Filters applied', 'info');
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setStartDate('');
+    setEndDate('');
+    setAppliedFilters({
+      searchTerm: '',
+      statusFilter: '',
+      userFilter: '',
+      startDate: '',
+      endDate: ''
+    });
+    showSnackbar('Filters cleared', 'info');
+  };
+
+  // Remove the automatic filter application to make Apply button work as intended
+  // The useEffect that was automatically applying filters has been removed
+
+  // Filter services when category changes (for create form)
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchServicesForCategory(selectedCategory.value);
+    } else {
+      setServices([]);
+      setSelectedService(null);
+    }
+  }, [selectedCategory]);
+
+  // Filter services when category changes (for edit form)
+  useEffect(() => {
+    if (editSelectedCategory) {
+      fetchServicesForCategory(editSelectedCategory.value, true);
+    } else {
+      setServices([]);
+      setEditSelectedService(null);
+    }
+  }, [editSelectedCategory]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
