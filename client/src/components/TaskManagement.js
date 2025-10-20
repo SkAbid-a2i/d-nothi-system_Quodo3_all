@@ -67,6 +67,11 @@ const TaskManagement = () => {
   const [success, setSuccess] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
+  // Debug user state
+  useEffect(() => {
+    console.log('Auth context user state changed:', user);
+  }, [user]);
+  
   // UI state
   const [activeTab, setActiveTab] = useState(0);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -122,7 +127,15 @@ const TaskManagement = () => {
     startDate: '',
     endDate: ''
   });
-
+  
+  // Debug applied filters
+  useEffect(() => {
+    console.log('Applied filters updated:', appliedFilters);
+  }, [appliedFilters]);
+  
+  // Early return if user is not loaded yet - REMOVED to prevent issues
+  // The component will handle the loading state internally
+  
   // Apply filters when Apply button is clicked
   const applyFilters = () => {
     const newAppliedFilters = {
@@ -187,39 +200,23 @@ const TaskManagement = () => {
   const fetchTasks = useCallback(async () => {
     // Don't fetch tasks if user is not available yet
     if (!user) {
-      console.log('User not available yet, skipping task fetch');
       return;
     }
     
     setDataLoading(true);
     try {
-      console.log('Fetching tasks for user:', user);
       const response = await taskAPI.getAllTasks();
-      console.log('Tasks response:', response);
       
-      // Filter tasks based on user role
+      // The backend already filters tasks based on user role:
+      // - Agents: only their own tasks (filtered by userId)
+      // - Admins/Supervisors: tasks from their office (filtered by office)
+      // - SystemAdmins: all tasks (no filter)
+      // So we don't need additional frontend filtering here
       let tasksData = Array.isArray(response.data) ? response.data : 
                        response.data?.data || response.data || [];
       
-      console.log('Raw tasks data:', tasksData);
-      
-      // For SystemAdmin, show all tasks
-      // For other roles (Admin, Supervisor, Agent), show only their own tasks
-      if (user.role === 'SystemAdmin') {
-        // SystemAdmin sees all tasks - no filtering needed
-        console.log('SystemAdmin: showing all tasks');
-      } else {
-        // Other users only see their own tasks
-        tasksData = tasksData.filter(task => 
-          task.userName === user.username
-        );
-        console.log(`${user.role}: filtered to user tasks`, tasksData.length);
-      }
-      
       setTasks(tasksData);
     } catch (error) {
-      console.error('Error fetching tasks:', error);
-      console.error('Error response:', error.response);
       const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to fetch tasks';
       setError('Failed to fetch tasks: ' + errorMessage);
       showSnackbar('Failed to fetch tasks: ' + errorMessage, 'error');
@@ -251,10 +248,11 @@ const TaskManagement = () => {
     }
   };
 
-  // Fetch tasks on component mount
+  // Fetch tasks on component mount and when user changes
   useEffect(() => {
     // Only fetch data if user is available
     if (user) {
+      console.log('User changed, fetching tasks:', user);
       fetchTasks();
       fetchDropdownValues();
       
@@ -266,45 +264,58 @@ const TaskManagement = () => {
         autoRefreshService.unsubscribe('TaskManagement');
       };
     }
-  }, []); // Remove dependencies since these are stable functions
-
-  // Listen for real-time notifications
+  }, [user, fetchTasks, fetchDropdownValues]); // Add dependencies
+  
+  // Debug when component mounts
   useEffect(() => {
-    // Only set up notifications if user is available
-    if (!user) {
-      return;
-    }
-    
-    const handleTaskCreated = (data) => {
-      showSnackbar('New task created: ' + data.task.description, 'info');
-      fetchTasks(); // Refresh data
-    };
-
-    const handleTaskUpdated = (data) => {
-      if (data.deleted) {
-        showSnackbar('Task deleted: ' + data.description, 'warning');
-      } else {
-        showSnackbar('Task updated: ' + data.task.description, 'info');
-      }
-      fetchTasks(); // Refresh data
-    };
-
-    // Subscribe to notifications
-    notificationService.onTaskCreated(handleTaskCreated);
-    notificationService.onTaskUpdated(handleTaskUpdated);
-
-    // Cleanup on unmount
+    console.log('TaskManagement component mounted');
     return () => {
-      notificationService.off('taskCreated', handleTaskCreated);
-      notificationService.off('taskUpdated', handleTaskUpdated);
+      console.log('TaskManagement component unmounted');
     };
-  }, []); // Remove fetchTasks dependency since it's stable
-
-    // Additional debug for user role
+  }, []);
+  
+  // Additional debug for user role
   useEffect(() => {
     console.log('Current user:', user);
     console.log('User role:', user?.role);
+    if (user) {
+      console.log('User details:', {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        office: user.office
+      });
+    }
   }, [user]);
+  
+  // Debug task state changes
+  useEffect(() => {
+    console.log('Tasks state updated:', { 
+      taskCount: tasks.length, 
+      firstFewTasks: tasks.slice(0, 3),
+      allTaskIds: tasks.map(t => t.id)
+    });
+  }, [tasks]);
+  
+  // Debug filtered tasks
+  useEffect(() => {
+    console.log('Filtered tasks updated:', { 
+      filteredCount: filteredTasks.length,
+      appliedFilters,
+      firstFewFilteredTasks: filteredTasks.slice(0, 3)
+    });
+  }, [filteredTasks, appliedFilters]);
+  
+  // Show loading state while user is being fetched
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading user data...</Typography>
+      </Box>
+    );
+  }
 
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -546,12 +557,8 @@ const TaskManagement = () => {
 
   // Filter tasks based on applied filters
   const filteredTasks = tasks.filter(task => {
-    // For non-SystemAdmin users, they should only see their own tasks
-    if (user && user.role !== 'SystemAdmin') {
-      if (task.userName !== user.username) {
-        return false;
-      }
-    }
+    // Since the backend already filters tasks appropriately for each role,
+    // we don't need to filter by user role here anymore
     
     const matchesSearch = !appliedFilters.searchTerm || 
       (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
@@ -561,39 +568,46 @@ const TaskManagement = () => {
     
     const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
     
-    // For SystemAdmin:
-    // - When no user is selected in filter (userFilter is empty), show all tasks
-    // - When a user is selected in filter, show only that user's tasks
-    let matchesUser = true;
-    if (user && user.role === 'SystemAdmin' && appliedFilters.userFilter) {
-      matchesUser = task.userName === appliedFilters.userFilter;
-    }
-    
     // Add date range filtering
     let matchesDateRange = true;
     if (appliedFilters.startDate || appliedFilters.endDate) {
+      // Ensure task.date is a valid date string
       const taskDate = new Date(task.date);
-      // Normalize the task date to remove time component for comparison
-      taskDate.setHours(0, 0, 0, 0);
       
-      if (appliedFilters.startDate) {
-        const startDateFilter = new Date(appliedFilters.startDate);
-        startDateFilter.setHours(0, 0, 0, 0);
-        if (taskDate < startDateFilter) {
-          matchesDateRange = false;
+      // Check if taskDate is valid
+      if (isNaN(taskDate.getTime())) {
+        console.warn('Invalid task date:', task.date);
+        matchesDateRange = false;
+      } else {
+        // Normalize the task date to remove time component for comparison
+        taskDate.setHours(0, 0, 0, 0);
+        
+        if (appliedFilters.startDate) {
+          const startDateFilter = new Date(appliedFilters.startDate);
+          startDateFilter.setHours(0, 0, 0, 0);
+          // Check if startDateFilter is valid
+          if (isNaN(startDateFilter.getTime())) {
+            console.warn('Invalid start date filter:', appliedFilters.startDate);
+          } else if (taskDate < startDateFilter) {
+            matchesDateRange = false;
+          }
         }
-      }
-      if (appliedFilters.endDate) {
-        const endDateFilter = new Date(appliedFilters.endDate);
-        endDateFilter.setHours(23, 59, 59, 999); // End of day
-        if (taskDate > endDateFilter) {
-          matchesDateRange = false;
+        
+        if (appliedFilters.endDate) {
+          const endDateFilter = new Date(appliedFilters.endDate);
+          endDateFilter.setHours(23, 59, 59, 999); // End of day
+          // Check if endDateFilter is valid
+          if (isNaN(endDateFilter.getTime())) {
+            console.warn('Invalid end date filter:', appliedFilters.endDate);
+          } else if (taskDate > endDateFilter) {
+            matchesDateRange = false;
+          }
         }
       }
     }
     
     // Log filter results for debugging
-    const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+    const result = matchesSearch && matchesStatus && matchesDateRange;
     if (!result) {
       console.log('Task filtered out:', {
         task: task.description,
@@ -603,7 +617,6 @@ const TaskManagement = () => {
         userRole: user?.role,
         matchesSearch,
         matchesStatus,
-        matchesUser,
         matchesDateRange,
         appliedFilters
       });
@@ -612,7 +625,10 @@ const TaskManagement = () => {
     return result;
   });
   
-  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'User filter:', appliedFilters.userFilter, 'Current user role:', user?.role);
+  console.log('Filtered tasks count:', filteredTasks.length, 'Total tasks:', tasks.length, 'Current user role:', user?.role);
+  console.log('Applied filters:', appliedFilters);
+  console.log('All tasks:', tasks);
+  console.log('Filtered tasks:', filteredTasks);
 
   // Get task statistics based on filtered tasks
   const getTaskStats = () => {
@@ -1014,97 +1030,125 @@ const TaskManagement = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <TableContainer component={Paper} id="task-list" sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Source</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Service</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell>User</TableCell>
-                    <TableCell>User Info</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Files</TableCell>
-                    {/* Removed Flag column */}
-                    {/* Removed Assigned To column */}
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredTasks.map((task) => (
-                    <TableRow 
-                      key={task.id}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                        }
-                      }}
-                    >
-                      <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
-                      <TableCell>{task.source || 'N/A'}</TableCell>
-                      <TableCell>{task.category || 'N/A'}</TableCell>
-                      <TableCell>{task.service || 'N/A'}</TableCell>
-                      <TableCell>{task.description || 'N/A'}</TableCell>
-                      <TableCell>{task.userName || 'N/A'}</TableCell>
-                      <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={task.status || 'Pending'}
-                          size="small"
-                          sx={{
-                            backgroundColor: 
-                              task.status === 'Pending' ? 'warning.light' :
-                              task.status === 'In Progress' ? 'info.light' :
-                              task.status === 'Completed' ? 'success.light' :
-                              task.status === 'Cancelled' ? 'error.light' : 'default.light',
-                            color: 
-                              task.status === 'Pending' ? 'warning.dark' :
-                              task.status === 'In Progress' ? 'info.dark' :
-                              task.status === 'Completed' ? 'success.dark' :
-                              task.status === 'Cancelled' ? 'error.dark' : 'default.dark',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {task.files && task.files.length > 0 ? (
-                          <Tooltip title={task.files.length + ' file(s)'}>
-                            <Chip 
-                              icon={<DescriptionIcon />} 
-                              label={task.files.length} 
-                              size="small" 
-                              color="primary" 
-                              variant="outlined" 
-                            />
-                          </Tooltip>
-                        ) : (
-                          <Chip label="No Files" size="small" variant="outlined" />
-                        )}
-                      </TableCell>
-                      {/* Removed Flag cell with dropdown */}
-                      {/* Removed Assigned To cell */}
-                      <TableCell>
-                        <IconButton 
-                          size="small" 
-                          color="primary"
-                          onClick={() => handleEditTask(task)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => handleDeleteTask(task.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
+            <>
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2">
+                  Showing {filteredTasks.length} of {tasks.length} tasks
+                </Typography>
+              </Box>
+              <TableContainer component={Paper} id="task-list" sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Source</TableCell>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Service</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>User</TableCell>
+                      <TableCell>User Info</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Files</TableCell>
+                      {/* Removed Flag column */}
+                      {/* Removed Assigned To column */}
+                      <TableCell>Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {tasks.length === 0 && !dataLoading ? (
+                      // No tasks have been loaded and we're not loading
+                      <TableRow>
+                        <TableCell colSpan={10} align="center">
+                          <Typography variant="body1" color="textSecondary">
+                            No tasks found. Create a new task to get started.
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredTasks.length === 0 ? (
+                      // Tasks have been loaded but none match the filters
+                      <TableRow>
+                        <TableCell colSpan={10} align="center">
+                          <Typography variant="body1" color="textSecondary">
+                            No tasks found matching the current filters
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      // Display the filtered tasks
+                      filteredTasks.map((task) => (
+                        <TableRow 
+                          key={task.id}
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                            }
+                          }}
+                        >
+                          <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                          <TableCell>{task.source || 'N/A'}</TableCell>
+                          <TableCell>{task.category || 'N/A'}</TableCell>
+                          <TableCell>{task.service || 'N/A'}</TableCell>
+                          <TableCell>{task.description || 'N/A'}</TableCell>
+                          <TableCell>{task.userName || 'N/A'}</TableCell>
+                          <TableCell>{task.userInformation || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={task.status || 'Pending'}
+                              size="small"
+                              sx={{
+                                backgroundColor: 
+                                  task.status === 'Pending' ? 'warning.light' :
+                                  task.status === 'In Progress' ? 'info.light' :
+                                  task.status === 'Completed' ? 'success.light' :
+                                  task.status === 'Cancelled' ? 'error.light' : 'default.light',
+                                color: 
+                                  task.status === 'Pending' ? 'warning.dark' :
+                                  task.status === 'In Progress' ? 'info.dark' :
+                                  task.status === 'Completed' ? 'success.dark' :
+                                  task.status === 'Cancelled' ? 'error.dark' : 'default.dark',
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {task.files && task.files.length > 0 ? (
+                              <Tooltip title={task.files.length + ' file(s)'}>
+                                <Chip 
+                                  icon={<DescriptionIcon />} 
+                                  label={task.files.length} 
+                                  size="small" 
+                                  color="primary" 
+                                  variant="outlined" 
+                                />
+                              </Tooltip>
+                            ) : (
+                              <Chip label="No Files" size="small" variant="outlined" />
+                            )}
+                          </TableCell>
+                          {/* Removed Flag cell with dropdown */}
+                          {/* Removed Assigned To cell */}
+                          <TableCell>
+                            <IconButton 
+                              size="small" 
+                              color="primary"
+                              onClick={() => handleEditTask(task)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton 
+                              size="small" 
+                              color="error"
+                              onClick={() => handleDeleteTask(task.id)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
           )}
         </Box>
       )}
