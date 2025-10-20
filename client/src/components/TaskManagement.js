@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Box, 
   Typography, 
@@ -348,6 +348,163 @@ const TaskManagement = () => {
     });
   }, [tasks]);
 
+  // Move filteredTasks definition before any useEffect that uses it
+  // Filter tasks based on applied filters
+  const filteredTasks = tasks.filter(task => {
+    // Log the task and user info for debugging
+    console.log('Filtering task:', {
+      taskId: task.id,
+      taskDescription: task.description,
+      taskUser: task.userName,
+      currentUser: user?.username,
+      currentUserFullName: user?.fullName,
+      userRole: user?.role
+    });
+    
+    // Ensure agents and other non-SystemAdmin users only see their own tasks
+    // This is a critical fix for the agent task visibility issue
+    if (user && user.role !== 'SystemAdmin') {
+      // Double-check that we're properly filtering for the current user
+      // Use both username and fullName for matching to ensure compatibility
+      const currentUserIdentifier = user.fullName || user.username;
+      const taskUserIdentifier = task.userName;
+      
+      // Add more flexible matching to handle potential formatting differences
+      const isUserMatch = taskUserIdentifier === currentUserIdentifier ||
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.includes(currentUserIdentifier) || 
+                           currentUserIdentifier.includes(taskUserIdentifier))) ||
+                         // Fallback for cases where we might have partial matches
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                           currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
+      
+      console.log('User matching check:', {
+        taskUser: taskUserIdentifier,
+        currentUser: currentUserIdentifier,
+        exactMatch: taskUserIdentifier === currentUserIdentifier,
+        flexibleMatch: (taskUserIdentifier && currentUserIdentifier && 
+                       (taskUserIdentifier.includes(currentUserIdentifier) || 
+                        currentUserIdentifier.includes(taskUserIdentifier))),
+        caseInsensitiveMatch: (taskUserIdentifier && currentUserIdentifier && 
+                              (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                               currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase()))),
+        isMatch: isUserMatch
+      });
+      
+      if (!isUserMatch) {
+        console.log('Task filtered out due to user mismatch');
+        return false;
+      }
+    }
+    
+    // Apply search filter
+    const matchesSearch = !appliedFilters.searchTerm || 
+      (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+      (task.service && task.service.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()));
+    
+    // Apply status filter
+    const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
+    
+    // For SystemAdmin:
+    // - When no user is selected in filter (userFilter is empty), show all tasks
+    // - When a user is selected in filter, show only that user's tasks
+    let matchesUser = true;
+    if (user && user.role === 'SystemAdmin' && appliedFilters.userFilter) {
+      matchesUser = task.userName === appliedFilters.userFilter;
+    }
+    
+    // Apply date range filtering
+    let matchesDateRange = true;
+    if (appliedFilters.startDate || appliedFilters.endDate) {
+      // Handle case where task.date might be null or undefined
+      if (!task.date) {
+        matchesDateRange = false;
+      } else {
+        const taskDate = new Date(task.date);
+        // Check if taskDate is valid
+        if (isNaN(taskDate.getTime())) {
+          console.log('Invalid task date:', task.date);
+          matchesDateRange = false;
+        } else {
+          // Normalize the task date to remove time component for comparison
+          taskDate.setHours(0, 0, 0, 0);
+          
+          if (appliedFilters.startDate) {
+            const startDateFilter = new Date(appliedFilters.startDate);
+            // Check if startDateFilter is valid
+            if (isNaN(startDateFilter.getTime())) {
+              console.log('Invalid start date filter:', appliedFilters.startDate);
+            } else {
+              startDateFilter.setHours(0, 0, 0, 0);
+              if (taskDate < startDateFilter) {
+                matchesDateRange = false;
+                console.log('Task date is before start date filter:', {
+                  taskDate,
+                  startDateFilter
+                });
+              }
+            }
+          }
+          if (appliedFilters.endDate) {
+            const endDateFilter = new Date(appliedFilters.endDate);
+            // Check if endDateFilter is valid
+            if (isNaN(endDateFilter.getTime())) {
+              console.log('Invalid end date filter:', appliedFilters.endDate);
+            } else {
+              endDateFilter.setHours(23, 59, 59, 999); // End of day
+              if (taskDate > endDateFilter) {
+                matchesDateRange = false;
+                console.log('Task date is after end date filter:', {
+                  taskDate,
+                  endDateFilter
+                });
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // No date filters applied, so all tasks should match
+      matchesDateRange = true;
+      console.log('No date filters applied, task passes date filter');
+    }
+    
+    // Log filter results for debugging - but only in development
+    if (process.env.NODE_ENV === 'development') {
+      const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+      if (!result) {
+        console.log('Task filtered out:', {
+          task: task.description,
+          taskDate: task.date,
+          taskUser: task.userName,
+          currentUser: user?.username,
+          userRole: user?.role,
+          matchesSearch,
+          matchesStatus,
+          matchesUser,
+          matchesDateRange,
+          appliedFilters
+        });
+      }
+    }
+    
+    const finalResult = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
+    console.log('Task filtering result:', {
+      taskId: task.id,
+      taskDescription: task.description,
+      finalResult,
+      matchesSearch,
+      matchesStatus,
+      matchesUser,
+      matchesDateRange
+    });
+    
+    return finalResult;
+  });
+
   // Add a useEffect to monitor when filteredTasks change
   useEffect(() => {
     console.log('Filtered tasks updated:', {
@@ -657,162 +814,6 @@ const TaskManagement = () => {
       showSnackbar('Failed to update task: ' + errorMessage, 'error');
     }
   };
-
-  // Filter tasks based on applied filters
-  const filteredTasks = tasks.filter(task => {
-    // Log the task and user info for debugging
-    console.log('Filtering task:', {
-      taskId: task.id,
-      taskDescription: task.description,
-      taskUser: task.userName,
-      currentUser: user?.username,
-      currentUserFullName: user?.fullName,
-      userRole: user?.role
-    });
-    
-    // Ensure agents and other non-SystemAdmin users only see their own tasks
-    // This is a critical fix for the agent task visibility issue
-    if (user && user.role !== 'SystemAdmin') {
-      // Double-check that we're properly filtering for the current user
-      // Use both username and fullName for matching to ensure compatibility
-      const currentUserIdentifier = user.fullName || user.username;
-      const taskUserIdentifier = task.userName;
-      
-      // Add more flexible matching to handle potential formatting differences
-      const isUserMatch = taskUserIdentifier === currentUserIdentifier ||
-                         (taskUserIdentifier && currentUserIdentifier && 
-                          (taskUserIdentifier.includes(currentUserIdentifier) || 
-                           currentUserIdentifier.includes(taskUserIdentifier))) ||
-                         // Fallback for cases where we might have partial matches
-                         (taskUserIdentifier && currentUserIdentifier && 
-                          (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                           currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
-      
-      console.log('User matching check:', {
-        taskUser: taskUserIdentifier,
-        currentUser: currentUserIdentifier,
-        exactMatch: taskUserIdentifier === currentUserIdentifier,
-        flexibleMatch: (taskUserIdentifier && currentUserIdentifier && 
-                       (taskUserIdentifier.includes(currentUserIdentifier) || 
-                        currentUserIdentifier.includes(taskUserIdentifier))),
-        caseInsensitiveMatch: (taskUserIdentifier && currentUserIdentifier && 
-                              (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                               currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase()))),
-        isMatch: isUserMatch
-      });
-      
-      if (!isUserMatch) {
-        console.log('Task filtered out due to user mismatch');
-        return false;
-      }
-    }
-    
-    // Apply search filter
-    const matchesSearch = !appliedFilters.searchTerm || 
-      (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
-      (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
-      (task.service && task.service.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
-      (task.userName && task.userName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()));
-    
-    // Apply status filter
-    const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
-    
-    // For SystemAdmin:
-    // - When no user is selected in filter (userFilter is empty), show all tasks
-    // - When a user is selected in filter, show only that user's tasks
-    let matchesUser = true;
-    if (user && user.role === 'SystemAdmin' && appliedFilters.userFilter) {
-      matchesUser = task.userName === appliedFilters.userFilter;
-    }
-    
-    // Apply date range filtering
-    let matchesDateRange = true;
-    if (appliedFilters.startDate || appliedFilters.endDate) {
-      // Handle case where task.date might be null or undefined
-      if (!task.date) {
-        matchesDateRange = false;
-      } else {
-        const taskDate = new Date(task.date);
-        // Check if taskDate is valid
-        if (isNaN(taskDate.getTime())) {
-          console.log('Invalid task date:', task.date);
-          matchesDateRange = false;
-        } else {
-          // Normalize the task date to remove time component for comparison
-          taskDate.setHours(0, 0, 0, 0);
-          
-          if (appliedFilters.startDate) {
-            const startDateFilter = new Date(appliedFilters.startDate);
-            // Check if startDateFilter is valid
-            if (isNaN(startDateFilter.getTime())) {
-              console.log('Invalid start date filter:', appliedFilters.startDate);
-            } else {
-              startDateFilter.setHours(0, 0, 0, 0);
-              if (taskDate < startDateFilter) {
-                matchesDateRange = false;
-                console.log('Task date is before start date filter:', {
-                  taskDate,
-                  startDateFilter
-                });
-              }
-            }
-          }
-          if (appliedFilters.endDate) {
-            const endDateFilter = new Date(appliedFilters.endDate);
-            // Check if endDateFilter is valid
-            if (isNaN(endDateFilter.getTime())) {
-              console.log('Invalid end date filter:', appliedFilters.endDate);
-            } else {
-              endDateFilter.setHours(23, 59, 59, 999); // End of day
-              if (taskDate > endDateFilter) {
-                matchesDateRange = false;
-                console.log('Task date is after end date filter:', {
-                  taskDate,
-                  endDateFilter
-                });
-              }
-            }
-          }
-        }
-      }
-    } else {
-      // No date filters applied, so all tasks should match
-      matchesDateRange = true;
-      console.log('No date filters applied, task passes date filter');
-    }
-    
-    // Log filter results for debugging - but only in development
-    if (process.env.NODE_ENV === 'development') {
-      const result = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
-      if (!result) {
-        console.log('Task filtered out:', {
-          task: task.description,
-          taskDate: task.date,
-          taskUser: task.userName,
-          currentUser: user?.username,
-          userRole: user?.role,
-          matchesSearch,
-          matchesStatus,
-          matchesUser,
-          matchesDateRange,
-          appliedFilters
-        });
-      }
-    }
-    
-    const finalResult = matchesSearch && matchesStatus && matchesUser && matchesDateRange;
-    console.log('Task filtering result:', {
-      taskId: task.id,
-      taskDescription: task.description,
-      finalResult,
-      matchesSearch,
-      matchesStatus,
-      matchesUser,
-      matchesDateRange
-    });
-    
-    return finalResult;
-  });
   
   // Add additional logging to help debug agent task visibility
   if (process.env.NODE_ENV === 'development') {
