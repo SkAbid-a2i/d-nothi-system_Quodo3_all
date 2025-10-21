@@ -30,7 +30,7 @@ router.get('/:type', authenticate, async (req, res) => {
     const { parentValue } = req.query;
 
     // Validate type
-    if (!['Source', 'Category', 'Service', 'Office'].includes(type)) {
+    if (!['Source', 'Category', 'Service', 'Office', 'Obligation'].includes(type)) {
       return res.status(400).json({ message: 'Invalid dropdown type' });
     }
 
@@ -58,7 +58,7 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
     const { type, value, parentType, parentValue } = req.body;
 
     // Validate type
-    if (!['Source', 'Category', 'Service', 'Office'].includes(type)) {
+    if (!['Source', 'Category', 'Service', 'Office', 'Obligation'].includes(type)) {
       return res.status(400).json({ message: 'Invalid dropdown type' });
     }
 

@@ -50,7 +50,7 @@ router.get('/', authenticate, async (req, res) => {
 // @access  Private (Agent, Admin, Supervisor)
 router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
-    const { date, source, category, service, userInformation, description, status = 'Pending', files = [] } = req.body;
+    const { date, source, category, service, userInformation, description, status = 'Pending', files = [], obligation } = req.body;
 
     // Validate required fields
     if (!date || !description) {
@@ -66,6 +66,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       userInformation: userInformation || '',
       description: description || '',
       status: status || 'Pending',
+      obligation: obligation || '', // Add obligation field
       files: Array.isArray(files) ? files : [],
       userId: req.user.id,
       userName: req.user.fullName || req.user.username,
@@ -122,7 +123,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, source, category, service, userInformation, description, status, comments = [], attachments = [], files = [] } = req.body;
+    const { date, source, category, service, userInformation, description, status, comments = [], attachments = [], files = [], obligation } = req.body;
 
     // Check if task exists
     const task = await Task.findByPk(id);
@@ -154,6 +155,7 @@ router.put('/:id', authenticate, async (req, res) => {
       userInformation: userInformation !== undefined ? userInformation : task.userInformation,
       description: description || task.description,
       status: status || task.status,
+      obligation: obligation !== undefined ? obligation : task.obligation, // Add obligation field
       comments: Array.isArray(comments) ? comments : task.comments,
       attachments: Array.isArray(attachments) ? attachments : task.attachments,
       files: Array.isArray(files) ? files : task.files,

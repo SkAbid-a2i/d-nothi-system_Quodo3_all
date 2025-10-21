@@ -90,6 +90,9 @@ const TaskManagement = () => {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
   const [files, setFiles] = useState([]); // File upload state
+  // Add obligation state
+  const [obligations, setObligations] = useState([]);
+  const [selectedObligation, setSelectedObligation] = useState(null);
   // Removed assignedTo state as requested
   // Removed flag state as requested
   
@@ -104,6 +107,8 @@ const TaskManagement = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('Pending');
   const [editFiles, setEditFiles] = useState([]); // Edit file upload state
+  // Add edit obligation state
+  const [editSelectedObligation, setEditSelectedObligation] = useState(null);
   // Removed editAssignedTo state as requested
   // Removed editFlag state as requested
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -143,7 +148,8 @@ const TaskManagement = () => {
       const fetchPromises = [
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office')
+        dropdownAPI.getDropdownValues('Office'),
+        dropdownAPI.getDropdownValues('Obligation') // Add obligation dropdown values
       ];
       
       const responses = await Promise.all(fetchPromises);
@@ -151,15 +157,17 @@ const TaskManagement = () => {
       console.log('All responses:', responses);
     
       // Extract responses
-      const [sourcesRes, categoriesRes, officesRes] = responses;
+      const [sourcesRes, categoriesRes, officesRes, obligationsRes] = responses;
     
       console.log('Sources response:', sourcesRes);
       console.log('Categories response:', categoriesRes);
       console.log('Offices response:', officesRes);
+      console.log('Obligations response:', obligationsRes);
     
       setSources(sourcesRes?.data || []);
       setCategories(categoriesRes?.data || []);
       setOffices(officesRes?.data || []);
+      setObligations(obligationsRes?.data || []); // Set obligations
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
       console.error('Error response:', error.response);
@@ -592,201 +600,190 @@ const TaskManagement = () => {
     }
   }, [user]);
 
-  const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
-    try {
-      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
-      if (isEdit) {
-        setEditSelectedService(response.data);
-      } else {
-        setServices(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching services:', error);
-    }
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await taskAPI.deleteTask(taskId);
-      
-      setTasks(tasks.filter(task => task.id !== taskId));
-      
-      // Log audit entry
-      // Removed auditLog call that was causing issues
-      
-      setSuccess('Task deleted successfully!');
-      showSnackbar('Task deleted successfully!', 'success');
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
-      setError('Failed to delete task: ' + errorMessage);
-      showSnackbar('Failed to delete task: ' + errorMessage, 'error');
-    }
-  };
-  
-  // Handle file selection
+  // Handle file change for create form
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
   };
-  
-  // Handle edit file selection
-  const handleEditFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setEditFiles(prevFiles => [...prevFiles, ...selectedFiles]);
-  };
-  
+
   // Remove file from create form
   const removeFile = (index) => {
     setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
-  
+
+  // Handle file change for edit form
+  const handleEditFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setEditFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+  };
+
   // Remove file from edit form
   const removeEditFile = (index) => {
     setEditFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
-  
-  const handleSubmitTask = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    
-    // Validation
-    if (!date || !description) {
-      setError('Date and description are required');
-      showSnackbar('Date and description are required', 'error');
-      return;
-    }
-    
+
+  // Fetch services for a specific category
+  const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
     try {
+      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
+      if (isEdit) {
+        setEditSelectedService(null);
+      } else {
+        setSelectedService(null);
+      }
+      setServices(response.data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      showSnackbar('Failed to load services', 'error');
+      setServices([]);
+    }
+  };
+
+  // Create new task
+  const handleCreateTask = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Validate required fields
+      if (!date || !description.trim()) {
+        throw new Error('Date and description are required');
+      }
+
       // Prepare task data
       const taskData = {
         date,
         source: selectedSource?.value || '',
         category: selectedCategory?.value || '',
         service: selectedService?.value || '',
-        office: selectedOffice?.value || user?.office || '', // Use selected office or user's office
-        userInformation, // Add user information
-        description,
+        office: selectedOffice?.value || '',
+        userInformation,
+        description: description.trim(),
         status,
-        userId: user?.id, // Automatically add user ID
-        userName: user?.fullName || user?.username // Automatically add user name
+        obligation: selectedObligation?.value || '', // Add obligation field
+        files: files.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }))
       };
-    
+
       console.log('Creating task with data:', taskData);
-    
-      // For now, we'll store file names in the files array
-      // In a real implementation, you would upload files to a storage service
-      const fileData = files.map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      }));
-    
-      taskData.files = fileData;
-    
+
       const response = await taskAPI.createTask(taskData);
-    
-      console.log('Task creation response:', response);
-    
-      // Add new task to list
-      const newTask = {
-        id: response.data.id,
-        ...taskData,
-        userId: user?.id,
-        userName: user?.fullName || user?.username
-      };
-      setTasks([...tasks, newTask]);
-    
+      console.log('Task created:', response.data);
+
       // Reset form
       setDate(new Date().toISOString().split('T')[0]);
       setSelectedSource(null);
       setSelectedCategory(null);
       setSelectedService(null);
-      setSelectedOffice(null); // Reset selected office
-      setUserInformation(''); // Reset user information
+      setSelectedOffice(null);
+      setUserInformation('');
       setDescription('');
       setStatus('Pending');
-      setFiles([]); // Reset files
-      
-      setOpenCreateDialog(false);
-      setSuccess('Task created successfully!');
+      setSelectedObligation(null); // Reset obligation
+      setFiles([]);
+
+      // Close dialog and refresh tasks
+      setActiveTab(0);
+      await fetchTasks();
       showSnackbar('Task created successfully!', 'success');
-      fetchTasks(); // Refresh task list
     } catch (error) {
       console.error('Error creating task:', error);
       console.error('Error response:', error.response);
-      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to create task';
+      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to create task';
       setError('Failed to create task: ' + errorMessage);
       showSnackbar('Failed to create task: ' + errorMessage, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Open edit dialog
   const handleEditTask = (task) => {
+    console.log('Editing task:', task);
     setEditingTask(task);
-    setEditDate(task.date || '');
+    setEditDate(task.date ? task.date.split('T')[0] : '');
     setEditSelectedSource(sources.find(s => s.value === task.source) || null);
     setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
     setEditSelectedService(services.find(s => s.value === task.service) || null);
-    setEditSelectedOffice(offices.find(o => o.value === task.office) || null); // Set edit selected office
-    setEditUserInformation(task.userInformation || ''); // Set edit user information
+    setEditSelectedOffice(offices.find(o => o.value === task.office) || null);
+    setEditUserInformation(task.userInformation || '');
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
-    setEditFiles(task.files || []); // Set existing files
-    // Removed editAssignedTo assignment
-    // Removed editFlag assignment
+    setEditSelectedObligation(obligations.find(o => o.value === task.obligation) || null); // Set obligation
+    setEditFiles(task.files || []);
     setOpenEditDialog(true);
   };
 
-  const handleUpdateTask = async () => {
+  // Update task
+  const handleUpdateTask = async (e) => {
+    e.preventDefault();
+    if (!editingTask) return;
+
+    setLoading(true);
+    setError('');
+
     try {
-      const taskData = {
+      // Prepare update data
+      const updateData = {
         date: editDate,
         source: editSelectedSource?.value || '',
         category: editSelectedCategory?.value || '',
         service: editSelectedService?.value || '',
-        office: editSelectedOffice?.value || user?.office || '', // Use selected office or user's office
-        userInformation: editUserInformation, // Add user information
-        description: editDescription,
+        office: editSelectedOffice?.value || '',
+        userInformation: editUserInformation,
+        description: editDescription.trim(),
         status: editStatus,
-        userId: user?.id, // Automatically add user ID
-        userName: user?.fullName || user?.username // Automatically add user name
-      };
-    
-      // For now, we'll store file names in the files array
-      // In a real implementation, you would upload files to a storage service
-      const fileData = editFiles.map(file => 
-        typeof file === 'string' ? file : {
+        obligation: editSelectedObligation?.value || '', // Add obligation field
+        files: editFiles.map(file => ({
           name: file.name,
           size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        }
-      );
-    
-      taskData.files = fileData;
-    
-      const response = await taskAPI.updateTask(editingTask.id, taskData);
-    
-      // Update task in list
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id ? { ...task, ...response.data } : task
-      ));
-    
+          type: file.type
+        }))
+      };
+
+      console.log('Updating task with data:', updateData);
+
+      const response = await taskAPI.updateTask(editingTask.id, updateData);
+      console.log('Task updated:', response.data);
+
+      // Close dialog and refresh tasks
       setOpenEditDialog(false);
       setEditingTask(null);
-      setSuccess('Task updated successfully!');
+      await fetchTasks();
       showSnackbar('Task updated successfully!', 'success');
-      fetchTasks(); // Refresh task list
     } catch (error) {
       console.error('Error updating task:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.join(', ') || error.message || 'Failed to update task';
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || error.response?.data || error.message || 'Failed to update task';
       setError('Failed to update task: ' + errorMessage);
       showSnackbar('Failed to update task: ' + errorMessage, 'error');
+    } finally {
+      setLoading(false);
     }
   };
-  
+
+  // Delete task
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
+
+    setLoading(true);
+    try {
+      await taskAPI.deleteTask(taskId);
+      await fetchTasks();
+      showSnackbar('Task deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task';
+      showSnackbar('Failed to delete task: ' + errorMessage, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Add additional logging to help debug agent task visibility
   if (process.env.NODE_ENV === 'development') {
     console.log('Task filtering debug info:', {
@@ -912,7 +909,8 @@ const TaskManagement = () => {
   const handleExport = async (format) => {
     try {
       // Show loading state
-      showSnackbar('Exporting as ' + format.toUpperCase() + '...', 'info');
+      setLoading(true);
+      showSnackbar(`Exporting data as ${format.toUpperCase()}...`, 'info');
       
       // Prepare data for export
       const exportData = {
@@ -1267,6 +1265,7 @@ const TaskManagement = () => {
                         <TableCell>Source</TableCell>
                         <TableCell>Category</TableCell>
                         <TableCell>Service</TableCell>
+                        <TableCell>Obligation</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell>User</TableCell>
                         <TableCell>User Info</TableCell>
@@ -1291,6 +1290,7 @@ const TaskManagement = () => {
                           <TableCell>{task.source || 'N/A'}</TableCell>
                           <TableCell>{task.category || 'N/A'}</TableCell>
                           <TableCell>{task.service || 'N/A'}</TableCell>
+                          <TableCell>{task.obligation || 'N/A'}</TableCell>
                           <TableCell>{task.description || 'N/A'}</TableCell>
                           <TableCell>{task.userName || 'N/A'}</TableCell>
                           <TableCell>{task.userInformation || 'N/A'}</TableCell>
@@ -1451,6 +1451,23 @@ const TaskManagement = () => {
                     value={userInformation}
                     onChange={(e) => setUserInformation(e.target.value)}
                   />
+                </Grid>
+                
+                {/* Obligation Dropdown */}
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={obligations}
+                      getOptionLabel={(option) => option.value}
+                      value={selectedObligation}
+                      onChange={(event, newValue) => setSelectedObligation(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Obligation" fullWidth />
+                      )}
+                    />
+                  )}
                 </Grid>
                 
                 <Grid item xs={12}>
@@ -1672,6 +1689,23 @@ const TaskManagement = () => {
                     value={editUserInformation}
                     onChange={(e) => setEditUserInformation(e.target.value)}
                   />
+                </Grid>
+                
+                {/* Obligation Dropdown in Edit form */}
+                <Grid item xs={12} sm={6}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Autocomplete
+                      options={obligations}
+                      getOptionLabel={(option) => option.value}
+                      value={editSelectedObligation}
+                      onChange={(event, newValue) => setEditSelectedObligation(newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Obligation" fullWidth />
+                      )}
+                    />
+                  )}
                 </Grid>
                 
                 <Grid item xs={12}>

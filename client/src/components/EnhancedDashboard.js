@@ -102,6 +102,7 @@ const EnhancedDashboard = () => {
   const [sourceData, setSourceData] = useState([]);
   const [taskTrendData, setTaskTrendData] = useState([]);
   const [performanceData, setPerformanceData] = useState([]);
+  const [obligationData, setObligationData] = useState([]);
   
   // Date range states for custom filtering
   const [startDate, setStartDate] = useState('');
@@ -238,6 +239,17 @@ const EnhancedDashboard = () => {
     setPerformanceData(Object.keys(statusCount).map(status => ({
       name: status,
       value: statusCount[status]
+    })));
+    
+    // Obligation distribution data
+    const obligationCount = {};
+    tasksData.forEach(task => {
+      const obligation = task.obligation || 'Unknown';
+      obligationCount[obligation] = (obligationCount[obligation] || 0) + 1;
+    });
+    setObligationData(Object.keys(obligationCount).map(obligation => ({
+      name: obligation,
+      value: obligationCount[obligation]
     })));
     
     // Task trend data (based on time range)
@@ -1182,6 +1194,136 @@ const EnhancedDashboard = () => {
     }
   };
 
+  // Render different chart types for obligation classification
+  const renderObligationChart = () => {
+    switch (serviceChartType) {
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={obligationData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {obligationData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'donut':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={obligationData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                fill="#8884d8"
+                paddingAngle={2}
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {obligationData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'radial':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart 
+              innerRadius="10%" 
+              outerRadius="80%" 
+              barSize={10} 
+              data={obligationData.map((entry, index) => ({
+                ...entry,
+                fill: COLORS[index % COLORS.length]
+              }))}
+            >
+              <RadialBar
+                minAngle={15}
+                label={{ position: 'insideStart', fill: '#fff' }}
+                background
+                dataKey="value"
+              />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend iconSize={10} width={120} height={140} layout='vertical' verticalAlign='middle' align="right" />
+            </RadialBarChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={obligationData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {obligationData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #ccc',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
   // Helper function to convert dashboard data to CSV
   const convertToCSV = (data) => {
     let csv = 'D-Nothi Task Management Dashboard Report\n';
@@ -1192,11 +1334,11 @@ const EnhancedDashboard = () => {
     // Tasks section
     if (data.tasks && data.tasks.length > 0) {
       csv += 'TASKS\n';
-      csv += 'Date,Source,Category,Service,User,Office,Status\n';
+      csv += 'Date,Source,Category,Service,Obligation,User,Office,Status\n';
       
       data.tasks.forEach((task, index) => {
         const taskData = task.toJSON ? task.toJSON() : task;
-        csv += `"${taskData.date || 'N/A'}","${taskData.source || 'N/A'}","${taskData.category || 'N/A'}","${taskData.service || 'N/A'}","${taskData.userName || 'N/A'}","${taskData.office || 'N/A'}","${taskData.status || 'N/A'}"\n`;
+        csv += `"${taskData.date || 'N/A'}","${taskData.source || 'N/A'}","${taskData.category || 'N/A'}","${taskData.service || 'N/A'}","${taskData.obligation || 'N/A'}","${taskData.userName || 'N/A'}","${taskData.office || 'N/A'}","${taskData.status || 'N/A'}"\n`;
       });
       csv += '\n';
     }
@@ -1230,9 +1372,9 @@ const EnhancedDashboard = () => {
       pdf += '='.repeat(80) + '\n\n';
       
       // Create a table-like format for tasks
-      pdf += '+------------+------------+------------+------------+------------+------------+------------+\n';
-      pdf += '| Date       | Source     | Category   | Service    | User       | Office     | Status     |\n';
-      pdf += '+------------+------------+------------+------------+------------+------------+------------+\n';
+      pdf += '+------------+------------+------------+------------+------------+------------+------------+------------+\n';
+      pdf += '| Date       | Source     | Category   | Service    | Obligation | User       | Office     | Status     |\n';
+      pdf += '+------------+------------+------------+------------+------------+------------+------------+------------+\n';
       
       data.tasks.forEach((task, index) => {
         const taskData = task.toJSON ? task.toJSON() : task;
@@ -1240,6 +1382,7 @@ const EnhancedDashboard = () => {
         const source = taskData.source || 'N/A';
         const category = taskData.category || 'N/A';
         const service = taskData.service || 'N/A';
+        const obligation = taskData.obligation || 'N/A';
         const userName = taskData.userName || 'N/A';
         const office = taskData.office || 'N/A';
         const status = taskData.status || 'N/A';
@@ -1249,14 +1392,15 @@ const EnhancedDashboard = () => {
         const formatSource = source.length > 10 ? source.substring(0, 10) : source;
         const formatCategory = category.length > 10 ? category.substring(0, 10) : category;
         const formatService = service.length > 10 ? service.substring(0, 10) : service;
+        const formatObligation = obligation.length > 10 ? obligation.substring(0, 10) : obligation;
         const formatUser = userName.length > 10 ? userName.substring(0, 10) : userName;
         const formatOffice = office.length > 10 ? office.substring(0, 10) : office;
         const formatStatus = status.length > 10 ? status.substring(0, 10) : status;
         
-        pdf += `| ${formatDate.padEnd(10)} | ${formatSource.padEnd(10)} | ${formatCategory.padEnd(10)} | ${formatService.padEnd(10)} | ${formatUser.padEnd(10)} | ${formatOffice.padEnd(10)} | ${formatStatus.padEnd(10)} |\n`;
+        pdf += `| ${formatDate.padEnd(10)} | ${formatSource.padEnd(10)} | ${formatCategory.padEnd(10)} | ${formatService.padEnd(10)} | ${formatObligation.padEnd(10)} | ${formatUser.padEnd(10)} | ${formatOffice.padEnd(10)} | ${formatStatus.padEnd(10)} |\n`;
       });
       
-      pdf += '+------------+------------+------------+------------+------------+------------+------------+\n\n';
+      pdf += '+------------+------------+------------+------------+------------+------------+------------+------------+\n\n';
     }
     
     // Leaves section
@@ -2044,6 +2188,75 @@ const EnhancedDashboard = () => {
             
             <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
               {renderServiceChart()}
+            </Box>
+          </Paper>
+        </Grid>
+        
+        {/* Obligation Classification Chart */}
+        <Grid item xs={12} lg={6}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, height: '100%', borderRadius: 2, boxShadow: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <BuildIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Obligation Classification
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Tooltip title="Pie Chart">
+                  <IconButton 
+                    color={serviceChartType === 'pie' ? 'primary' : 'default'}
+                    onClick={() => setServiceChartType('pie')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: serviceChartType === 'pie' ? '2px solid' : '1px solid',
+                      borderColor: serviceChartType === 'pie' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <PieChartIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Donut Chart">
+                  <IconButton 
+                    color={serviceChartType === 'donut' ? 'primary' : 'default'}
+                    onClick={() => setServiceChartType('donut')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: serviceChartType === 'donut' ? '2px solid' : '1px solid',
+                      borderColor: serviceChartType === 'donut' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <DonutIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Radial Chart">
+                  <IconButton 
+                    color={serviceChartType === 'radial' ? 'primary' : 'default'}
+                    onClick={() => setServiceChartType('radial')}
+                    size="small"
+                    sx={{ 
+                      borderRadius: 2,
+                      border: serviceChartType === 'radial' ? '2px solid' : '1px solid',
+                      borderColor: serviceChartType === 'radial' ? 'primary.main' : 'divider',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <RadarIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+            
+            <Box sx={{ height: { xs: 350, sm: 400, md: 450 } }}>
+              {renderObligationChart()}
             </Box>
           </Paper>
         </Grid>

@@ -73,6 +73,12 @@ const Task = sequelize.define('Task', {
     type: DataTypes.ENUM('Pending', 'In Progress', 'Completed', 'Cancelled'),
     defaultValue: 'Pending'
   },
+  // Add obligation field
+  obligation: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    defaultValue: ''
+  },
   // Removed flag field as requested
   comments: {
     type: DataTypes.JSON, // Store comments as JSON array
