@@ -436,7 +436,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
     // Subscribe to all notifications through the unified handler
     console.log('Layout: Subscribing to notification service');
-    notificationService.on('notification', handleAllNotifications);
+    notificationService.onAllNotifications(handleAllNotifications);
           
     // Ensure connection to notification service (non-blocking)
     console.log('Layout: Connecting to notification service with user ID:', user.id);
