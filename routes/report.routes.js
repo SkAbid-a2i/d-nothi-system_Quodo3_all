@@ -3,13 +3,34 @@ const Task = require('../models/Task');
 const Leave = require('../models/Leave');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { Op } = require('sequelize');
+const cors = require('cors');
+
+// CORS configuration for reports
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   GET /api/reports/tasks
 // @desc    Get task report
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.get('/tasks', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.get('/tasks', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     let where = {};
     
@@ -53,7 +74,7 @@ router.get('/tasks', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin
 // @route   GET /api/reports/leaves
 // @desc    Get leave report
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.get('/leaves', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.get('/leaves', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     let where = {};
     
@@ -97,7 +118,7 @@ router.get('/leaves', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmi
 // @route   GET /api/reports/summary
 // @desc    Get summary report
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.get('/summary', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.get('/summary', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     let taskWhere = {};
     let leaveWhere = {};

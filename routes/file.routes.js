@@ -5,6 +5,27 @@ const fs = require('fs').promises;
 const File = require('../models/File');
 const { authenticate } = require('../middleware/auth.middleware');
 const logger = require('../services/logger.service');
+const cors = require('cors');
+
+// CORS configuration for files
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
@@ -37,7 +58,7 @@ const upload = multer({
 // @route   GET /api/files
 // @desc    Get all files for the authenticated user
 // @access  Private
-router.get('/', authenticate, async (req, res) => {
+router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     logger.info('Fetching files for user', { userId: req.user.id });
     
@@ -61,7 +82,7 @@ router.get('/', authenticate, async (req, res) => {
 // @route   POST /api/files/upload
 // @desc    Upload a new file
 // @access  Private
-router.post('/upload', authenticate, upload.single('file'), async (req, res) => {
+router.post('/upload', cors(corsOptions), authenticate, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -122,7 +143,7 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
 // @route   GET /api/files/:id/download
 // @desc    Download a file
 // @access  Private
-router.get('/:id/download', authenticate, async (req, res) => {
+router.get('/:id/download', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -187,7 +208,7 @@ router.get('/:id/download', authenticate, async (req, res) => {
 // @route   DELETE /api/files/:id
 // @desc    Delete a file
 // @access  Private
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     

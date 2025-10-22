@@ -3,13 +3,34 @@ const Meeting = require('../models/Meeting');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const notificationService = require('../services/notification.service');
+const cors = require('cors');
+
+// CORS configuration for meetings
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   GET /api/meetings
 // @desc    Get all meetings
 // @access  Private
-router.get('/', authenticate, async (req, res) => {
+router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     let where = {};
     
@@ -61,7 +82,7 @@ router.get('/', authenticate, async (req, res) => {
 // @route   POST /api/meetings
 // @desc    Create new meeting
 // @access  Private
-router.post('/', authenticate, async (req, res) => {
+router.post('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { subject, platform, location, date, time, duration, selectedUserIds } = req.body;
 
@@ -127,7 +148,7 @@ router.post('/', authenticate, async (req, res) => {
 // @route   PUT /api/meetings/:id
 // @desc    Update meeting
 // @access  Private (Owner only)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { subject, platform, location, date, time, duration, selectedUserIds } = req.body;
@@ -201,7 +222,7 @@ router.put('/:id', authenticate, async (req, res) => {
 // @route   DELETE /api/meetings/:id
 // @desc    Delete meeting
 // @access  Private (Owner only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 

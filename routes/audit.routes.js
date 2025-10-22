@@ -2,9 +2,30 @@ const express = require('express');
 const router = express.Router();
 const AuditLog = require('../models/AuditLog');
 const { authenticate: authenticateToken, authorize: authorizeRole } = require('../middleware/auth.middleware');
+const cors = require('cors');
+
+// CORS configuration for audit logs
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 // Get all audit logs (Admin, SystemAdmin, and Supervisor can access)
-router.get('/', authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
+router.get('/', cors(corsOptions), authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
   try {
     const { page = 1, limit = 20, userId, action, resourceType } = req.query;
     
@@ -36,7 +57,7 @@ router.get('/', authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Super
 });
 
 // Create audit log entry
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', cors(corsOptions), authenticateToken, async (req, res) => {
   try {
     const { action, resourceType, resourceId, description, ipAddress, userAgent } = req.body;
     
@@ -59,7 +80,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Get recent audit logs (Admin, SystemAdmin, and Supervisor can access)
-router.get('/recent', authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
+router.get('/recent', cors(corsOptions), authenticateToken, authorizeRole(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
   try {
     // Get last 50 audit logs ordered by creation time
     const logs = await AuditLog.findAll({

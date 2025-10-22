@@ -2,13 +2,34 @@ const express = require('express');
 const PermissionTemplate = require('../models/PermissionTemplate');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const notificationService = require('../services/notification.service');
+const cors = require('cors');
+
+// CORS configuration for permissions
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   GET /api/permissions/templates
 // @desc    Get all permission templates
 // @access  Private (SystemAdmin only)
-router.get('/templates', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.get('/templates', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const templates = await PermissionTemplate.findAll({
       order: [['createdAt', 'DESC']]
@@ -23,7 +44,7 @@ router.get('/templates', authenticate, authorize('SystemAdmin'), async (req, res
 // @route   POST /api/permissions/templates
 // @desc    Create new permission template
 // @access  Private (SystemAdmin only)
-router.post('/templates', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.post('/templates', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { name, permissions } = req.body;
 
@@ -62,7 +83,7 @@ router.post('/templates', authenticate, authorize('SystemAdmin'), async (req, re
 // @route   PUT /api/permissions/templates/:id
 // @desc    Update permission template
 // @access  Private (SystemAdmin only)
-router.put('/templates/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.put('/templates/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, permissions } = req.body;
@@ -110,7 +131,7 @@ router.put('/templates/:id', authenticate, authorize('SystemAdmin'), async (req,
 // @route   DELETE /api/permissions/templates/:id
 // @desc    Delete permission template
 // @access  Private (SystemAdmin only)
-router.delete('/templates/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.delete('/templates/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
 

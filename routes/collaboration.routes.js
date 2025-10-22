@@ -3,6 +3,27 @@ const Collaboration = require('../models/Collaboration');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const notificationService = require('../services/notification.service');
+const cors = require('cors');
+
+// CORS configuration for collaborations
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 console.log('Collaboration routes module loaded');
 
@@ -23,7 +44,7 @@ router.get('/test', (req, res) => {
 // @route   GET /api/collaborations
 // @desc    Get all collaborations
 // @access  Private
-router.get('/', authenticate, async (req, res) => {
+router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     console.log('Fetching collaborations for user:', req.user);
     let where = {};
@@ -68,7 +89,7 @@ router.get('/', authenticate, async (req, res) => {
 // @route   POST /api/collaborations
 // @desc    Create new collaboration
 // @access  Private
-router.post('/', authenticate, async (req, res) => {
+router.post('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     console.log('Creating collaboration for user:', req.user);
     console.log('Request body:', req.body);
@@ -111,7 +132,7 @@ router.post('/', authenticate, async (req, res) => {
 // @route   PUT /api/collaborations/:id
 // @desc    Update collaboration
 // @access  Private (Owner only)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     console.log('Updating collaboration:', req.params.id, 'for user:', req.user);
     const { id } = req.params;
@@ -173,7 +194,7 @@ router.put('/:id', authenticate, async (req, res) => {
 // @route   DELETE /api/collaborations/:id
 // @desc    Delete collaboration
 // @access  Private (Owner only)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     console.log('Deleting collaboration:', req.params.id, 'for user:', req.user);
     const { id } = req.params;

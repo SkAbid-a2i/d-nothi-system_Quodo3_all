@@ -1,13 +1,34 @@
 const express = require('express');
 const sequelize = require('../config/database');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const cors = require('cors');
+
+// CORS configuration for health
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   GET /api/health
 // @desc    Health check endpoint
 // @access  Public
-router.get('/', (req, res) => {
+router.get('/', cors(corsOptions), (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
@@ -18,7 +39,7 @@ router.get('/', (req, res) => {
 // @route   GET /api/health/database
 // @desc    Database health check endpoint
 // @access  Private (SystemAdmin only)
-router.get('/database', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.get('/database', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     // Test database connection
     await sequelize.authenticate();
@@ -55,7 +76,7 @@ router.get('/database', authenticate, authorize('SystemAdmin'), async (req, res)
 // @route   GET /api/health/tasks
 // @desc    Tasks table health check endpoint
 // @access  Private (SystemAdmin only)
-router.get('/tasks', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.get('/tasks', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     // Import Task model
     const Task = require('../models/Task');

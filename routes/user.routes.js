@@ -4,13 +4,34 @@ const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { userValidation } = require('../validators/user.validator');
 const sequelize = require('sequelize');
 const notificationService = require('../services/notification.service');
+const cors = require('cors');
+
+// CORS configuration for users
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   GET /api/users
 // @desc    Get all users (SystemAdmin, Admin, Supervisor, Agent)
 // @access  Private
-router.get('/', authenticate, async (req, res) => {
+router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     // Agents can only see active users
     const where = req.user.role === 'Agent' ? { isActive: true } : {};
@@ -29,7 +50,7 @@ router.get('/', authenticate, async (req, res) => {
 // @route   POST /api/users
 // @desc    Create new user (SystemAdmin only)
 // @access  Private (SystemAdmin)
-router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.post('/', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     // Validate request body
     const { error } = userValidation(req.body);
@@ -110,7 +131,7 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
 // @route   PUT /api/users/:id
 // @desc    Update user (SystemAdmin only)
 // @access  Private (SystemAdmin)
-router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio } = req.body;
@@ -183,7 +204,7 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
 // @route   DELETE /api/users/:id
 // @desc    Delete user (SystemAdmin only)
 // @access  Private (SystemAdmin)
-router.delete('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.delete('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
 

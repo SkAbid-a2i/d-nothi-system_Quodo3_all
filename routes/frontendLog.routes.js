@@ -2,9 +2,30 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../services/logger.service');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const cors = require('cors');
+
+// CORS configuration for frontend logs
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 // Receive frontend logs
-router.post('/frontend', (req, res) => {
+router.post('/frontend', cors(corsOptions), (req, res) => {
   try {
     const logData = req.body;
     
@@ -24,7 +45,7 @@ router.post('/frontend', (req, res) => {
 });
 
 // Get frontend logs (SystemAdmin only)
-router.get('/frontend', authenticate, authorize('SystemAdmin'), (req, res) => {
+router.get('/frontend', cors(corsOptions), authenticate, authorize('SystemAdmin'), (req, res) => {
   try {
     const { date } = req.query;
     const logs = logger.getFrontendLogs(date);
@@ -40,7 +61,7 @@ router.get('/frontend', authenticate, authorize('SystemAdmin'), (req, res) => {
 });
 
 // Get all logs (backend + frontend) (SystemAdmin only)
-router.get('/all', authenticate, authorize('SystemAdmin'), (req, res) => {
+router.get('/all', cors(corsOptions), authenticate, authorize('SystemAdmin'), (req, res) => {
   try {
     const { date } = req.query;
     const logs = logger.getAllLogs(date);

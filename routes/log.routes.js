@@ -2,9 +2,30 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../services/logger.service');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const cors = require('cors');
+
+// CORS configuration for logs
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 // Get logs (SystemAdmin only)
-router.get('/', authenticate, authorize('SystemAdmin'), (req, res) => {
+router.get('/', cors(corsOptions), authenticate, authorize('SystemAdmin'), (req, res) => {
   try {
     const { date, level, source } = req.query;
     let logs = [];
@@ -35,7 +56,7 @@ router.get('/', authenticate, authorize('SystemAdmin'), (req, res) => {
 });
 
 // Receive frontend logs
-router.post('/frontend', (req, res) => {
+router.post('/frontend', cors(corsOptions), (req, res) => {
   try {
     const logData = req.body;
     
@@ -55,7 +76,7 @@ router.post('/frontend', (req, res) => {
 });
 
 // Analyze logs (SystemAdmin only)
-router.get('/analyze', authenticate, authorize('SystemAdmin'), (req, res) => {
+router.get('/analyze', cors(corsOptions), authenticate, authorize('SystemAdmin'), (req, res) => {
   try {
     const { hours } = req.query;
     const analysis = logger.analyzeLogs(hours ? parseInt(hours) : 24);
@@ -67,7 +88,7 @@ router.get('/analyze', authenticate, authorize('SystemAdmin'), (req, res) => {
 });
 
 // Get recent logs (Admin, SystemAdmin, and Supervisor can access)
-router.get('/recent', authenticate, authorize(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
+router.get('/recent', cors(corsOptions), authenticate, authorize(['SystemAdmin', 'Admin', 'Supervisor']), async (req, res) => {
   try {
     const AuditLog = require('../models/AuditLog');
     

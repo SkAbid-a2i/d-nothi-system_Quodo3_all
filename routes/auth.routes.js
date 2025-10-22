@@ -3,13 +3,34 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { loginValidation } = require('../validators/auth.validator');
 const { authenticate } = require('../middleware/auth.middleware');
+const cors = require('cors');
+
+// CORS configuration for auth
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', async (req, res) => {
+router.post('/login', cors(corsOptions), async (req, res) => {
   try {
     // Validate request body
     const { error } = loginValidation(req.body);
@@ -75,7 +96,7 @@ router.post('/login', async (req, res) => {
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
@@ -95,7 +116,7 @@ router.get('/me', authenticate, async (req, res) => {
 // @route   PUT /api/auth/change-password
 // @desc    Change user password
 // @access  Private
-router.put('/change-password', authenticate, async (req, res) => {
+router.put('/change-password', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
@@ -126,7 +147,7 @@ router.put('/change-password', authenticate, async (req, res) => {
 // @route   PUT /api/auth/profile
 // @desc    Update user profile
 // @access  Private
-router.put('/profile', authenticate, async (req, res) => {
+router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { fullName, email, office, bloodGroup, phoneNumber, bio } = req.body;
     const userId = req.user.id;
