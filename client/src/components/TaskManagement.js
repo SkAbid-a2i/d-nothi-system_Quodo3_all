@@ -1360,7 +1360,7 @@ const TaskManagement = () => {
               <Typography variant="h6" gutterBottom>
                 Create New Task
               </Typography>
-              <Grid container spacing={2} component="form" onSubmit={handleSubmitTask}>
+              <Grid container spacing={2} component="form" onSubmit={handleCreateTask}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
