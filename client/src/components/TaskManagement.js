@@ -1463,41 +1463,46 @@ const TaskManagement = () => {
                   
                   {/* Obligation Dropdown - Ensuring visibility */}
                   <Grid item xs={12} sm={6}>
-                    {loading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      <Autocomplete
-                        options={obligations}
-                        getOptionLabel={(option) => {
-                          // Handle both string and object options
-                          if (typeof option === 'string') {
-                            return option;
-                          }
-                          return option?.value || '';
-                        }}
-                        value={selectedObligation || null}
-                        onChange={(event, newValue) => {
-                          console.log('Obligation selected:', newValue);
-                          setSelectedObligation(newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField {...params} label="Obligation" fullWidth />
-                        )}
-                        isOptionEqualToValue={(option, value) => {
-                          // Handle comparison for both string and object values
-                          if (!option && !value) return true;
-                          if (!option || !value) return false;
-                          
-                          const optionValue = typeof option === 'string' ? option : option?.value;
-                          const valueValue = typeof value === 'string' ? value : value?.value;
-                          
-                          const result = optionValue === valueValue;
-                          console.log('Comparing obligation options:', option, value, result);
-                          return result;
-                        }}
-                        noOptionsText="No obligation options available"
-                      />
-                    )}
+                    <Box sx={{ border: '1px solid red', p: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'red' }}>
+                        DEBUG: Obligation Dropdown - Options: {obligations.length}
+                      </Typography>
+                      {loading ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        <Autocomplete
+                          options={obligations}
+                          getOptionLabel={(option) => {
+                            // Handle both string and object options
+                            if (typeof option === 'string') {
+                              return option;
+                            }
+                            return option?.value || '';
+                          }}
+                          value={selectedObligation || null}
+                          onChange={(event, newValue) => {
+                            console.log('Obligation selected:', newValue);
+                            setSelectedObligation(newValue);
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} label="Obligation" fullWidth />
+                          )}
+                          isOptionEqualToValue={(option, value) => {
+                            // Handle comparison for both string and object values
+                            if (!option && !value) return true;
+                            if (!option || !value) return false;
+                            
+                            const optionValue = typeof option === 'string' ? option : option?.value;
+                            const valueValue = typeof value === 'string' ? value : value?.value;
+                            
+                            const result = optionValue === valueValue;
+                            console.log('Comparing obligation options:', option, value, result);
+                            return result;
+                          }}
+                          noOptionsText="No obligation options available"
+                        />
+                      )}
+                    </Box>
                   </Grid>
                   
                   <Grid item xs={12}>
@@ -1706,41 +1711,46 @@ const TaskManagement = () => {
                   
                   {/* Obligation Dropdown in Edit form - Ensuring visibility */}
                   <Grid item xs={12} sm={6}>
-                    {loading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      <Autocomplete
-                        options={obligations}
-                        getOptionLabel={(option) => {
-                          // Handle both string and object options
-                          if (typeof option === 'string') {
-                            return option;
-                          }
-                          return option?.value || '';
-                        }}
-                        value={editSelectedObligation || null}
-                        onChange={(event, newValue) => {
-                          console.log('Edit Obligation selected:', newValue);
-                          setEditSelectedObligation(newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField {...params} label="Obligation" fullWidth />
-                        )}
-                        isOptionEqualToValue={(option, value) => {
-                          // Handle comparison for both string and object values
-                          if (!option && !value) return true;
-                          if (!option || !value) return false;
-                          
-                          const optionValue = typeof option === 'string' ? option : option?.value;
-                          const valueValue = typeof value === 'string' ? value : value?.value;
-                          
-                          const result = optionValue === valueValue;
-                          console.log('Comparing edit obligation options:', option, value, result);
-                          return result;
-                        }}
-                        noOptionsText="No obligation options available"
-                      />
-                    )}
+                    <Box sx={{ border: '1px solid red', p: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'red' }}>
+                        DEBUG: Edit Obligation Dropdown - Options: {obligations.length}
+                      </Typography>
+                      {loading ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        <Autocomplete
+                          options={obligations}
+                          getOptionLabel={(option) => {
+                            // Handle both string and object options
+                            if (typeof option === 'string') {
+                              return option;
+                            }
+                            return option?.value || '';
+                          }}
+                          value={editSelectedObligation || null}
+                          onChange={(event, newValue) => {
+                            console.log('Edit Obligation selected:', newValue);
+                            setEditSelectedObligation(newValue);
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} label="Obligation" fullWidth />
+                          )}
+                          isOptionEqualToValue={(option, value) => {
+                            // Handle comparison for both string and object values
+                            if (!option && !value) return true;
+                            if (!option || !value) return false;
+                            
+                            const optionValue = typeof option === 'string' ? option : option?.value;
+                            const valueValue = typeof value === 'string' ? value : value?.value;
+                            
+                            const result = optionValue === valueValue;
+                            console.log('Comparing edit obligation options:', option, value, result);
+                            return result;
+                          }}
+                          noOptionsText="No obligation options available"
+                        />
+                      )}
+                    </Box>
                   </Grid>
                   
                   <Grid item xs={12}>

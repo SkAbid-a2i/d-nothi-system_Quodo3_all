@@ -1557,20 +1557,25 @@ const AgentDashboard = () => {
               
               {/* Add Obligation Dropdown - Ensuring visibility */}
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Obligation</InputLabel>
-                  <Select
-                    value={editObligation}
-                    onChange={(e) => setEditObligation(e.target.value)}
-                    label="Obligation"
-                  >
-                    {editObligations.map((obligation) => (
-                      <MenuItem key={obligation.id || obligation.value || obligation} value={obligation.value || obligation}>
-                        {obligation.value || obligation}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box sx={{ border: '1px solid red', p: 1 }}>
+                  <Typography variant="caption" sx={{ color: 'red' }}>
+                    DEBUG: Agent Obligation Dropdown - Options: {editObligations.length}
+                  </Typography>
+                  <FormControl fullWidth>
+                    <InputLabel>Obligation</InputLabel>
+                    <Select
+                      value={editObligation}
+                      onChange={(e) => setEditObligation(e.target.value)}
+                      label="Obligation"
+                    >
+                      {editObligations.map((obligation) => (
+                        <MenuItem key={obligation.id || obligation.value || obligation} value={obligation.value || obligation}>
+                          {obligation.value || obligation}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
               </Grid>
               
               {/* Add User Information Field */}
