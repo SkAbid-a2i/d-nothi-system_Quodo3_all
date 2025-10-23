@@ -66,6 +66,14 @@ async function seedDatabase() {
       { type: 'Office', value: 'Dhaka Branch' },
       { type: 'Office', value: 'Chittagong Branch' },
       { type: 'Office', value: 'Sylhet Branch' },
+      
+      // Obligations
+      { type: 'Obligation', value: 'Compliance' },
+      { type: 'Obligation', value: 'Legal' },
+      { type: 'Obligation', value: 'Financial' },
+      { type: 'Obligation', value: 'Operational' },
+      { type: 'Obligation', value: 'Regulatory' },
+      { type: 'Obligation', value: 'Contractual' },
     ];
 
     for (const dropdownData of defaultDropdowns) {
