@@ -1738,7 +1738,7 @@ const TaskManagement = () => {
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ border: '2px solid red', p: 1 }}>
                       <Typography variant="caption" sx={{ color: 'red', fontWeight: 'bold' }}>
-                        DEBUG: Obligation Dropdown - Options Count: {obligations.length}
+                        DEBUG: Edit Obligation Dropdown - Options Count: {obligations.length}
                       </Typography>
                       {loading ? (
                         <CircularProgress size={24} />
@@ -1752,10 +1752,10 @@ const TaskManagement = () => {
                             }
                             return option?.value || '';
                           }}
-                          value={selectedObligation || null}
+                          value={editSelectedObligation || null}
                           onChange={(event, newValue) => {
-                            console.log('Obligation selected:', newValue);
-                            setSelectedObligation(newValue);
+                            console.log('Edit Obligation selected:', newValue);
+                            setEditSelectedObligation(newValue);
                           }}
                           renderInput={(params) => (
                             <TextField {...params} label="Obligation" fullWidth />
