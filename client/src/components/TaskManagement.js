@@ -1324,7 +1324,13 @@ const TaskManagement = () => {
                                 >
                                   <EditIcon />
                                 </IconButton>
-                                {/* Removed Delete button */}
+                                <IconButton 
+                                  size="small" 
+                                  color="error"
+                                  onClick={() => handleDeleteTask(task.id)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
                               </TableCell>
                             </TableRow>
                           ))
