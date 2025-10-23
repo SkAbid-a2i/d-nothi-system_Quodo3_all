@@ -305,6 +305,12 @@ const DropdownManagement = () => {
     return matchesSearch && matchesType;
   });
 
+  // Debug: Log dropdown types and filter
+  console.log('Dropdown types available:', dropdownTypes);
+  console.log('Current type filter:', typeFilter);
+  console.log('All dropdowns:', dropdowns);
+  console.log('Filtered dropdowns:', filteredDropdowns);
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Box sx={{ mb: 4 }}>

@@ -540,6 +540,16 @@ const AgentDashboard = () => {
       setEditOffices(officesRes.data || []); // Set offices dropdown options
       setEditObligations(obligationsRes.data || []); // Set obligations dropdown options
       console.log('Agent Dashboard - Edit Obligations set to:', obligationsRes.data || []);
+      
+      // Additional debugging to check obligation data structure
+      if (obligationsRes?.data) {
+        console.log('Agent Dashboard - Obligation data structure:', obligationsRes.data.map(o => ({
+          id: o.id,
+          value: o.value,
+          type: o.type,
+          isActive: o.isActive
+        })));
+      }
     } catch (error) {
       console.error('Error fetching dropdown values for edit:', error);
       console.error('Error response:', error.response);
@@ -1583,14 +1593,14 @@ const AgentDashboard = () => {
               
               {/* Add Obligation Dropdown - Ensuring visibility */}
               <Grid item xs={12} sm={6}>
-                <Box sx={{ border: '1px solid red', p: 1 }}>
-                  <Typography variant="caption" sx={{ color: 'red' }}>
-                    DEBUG: Agent Obligation Dropdown - Options: {editObligations.length}
+                <Box sx={{ border: '2px solid red', p: 1 }}>
+                  <Typography variant="caption" sx={{ color: 'red', fontWeight: 'bold' }}>
+                    DEBUG: Edit Obligation Dropdown - Options Count: {editObligations.length}
                   </Typography>
                   <FormControl fullWidth>
                     <InputLabel>Obligation</InputLabel>
                     <Select
-                      value={editObligation}
+                      value={editObligation || ''}
                       onChange={(e) => setEditObligation(e.target.value)}
                       label="Obligation"
                     >

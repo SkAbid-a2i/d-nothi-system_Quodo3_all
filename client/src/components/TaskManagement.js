@@ -199,6 +199,16 @@ const TaskManagement = () => {
       setOffices(officesRes?.data || []);
       setObligations(obligationsRes?.data || []); // Set obligations
       console.log('Obligations state set to:', obligationsRes?.data || []);
+      
+      // Additional debugging to check obligation data structure
+      if (obligationsRes?.data) {
+        console.log('Obligation data structure:', obligationsRes.data.map(o => ({
+          id: o.id,
+          value: o.value,
+          type: o.type,
+          isActive: o.isActive
+        })));
+      }
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
       console.error('Error response:', error.response);
@@ -1724,11 +1734,11 @@ const TaskManagement = () => {
                     />
                   </Grid>
                   
-                  {/* Obligation Dropdown in Edit form - Ensuring visibility */}
+                  {/* Obligation Dropdown - Ensuring visibility */}
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ border: '1px solid red', p: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'red' }}>
-                        DEBUG: Edit Obligation Dropdown - Options: {obligations.length}
+                    <Box sx={{ border: '2px solid red', p: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'red', fontWeight: 'bold' }}>
+                        DEBUG: Obligation Dropdown - Options Count: {obligations.length}
                       </Typography>
                       {loading ? (
                         <CircularProgress size={24} />
@@ -1742,25 +1752,23 @@ const TaskManagement = () => {
                             }
                             return option?.value || '';
                           }}
-                          value={editSelectedObligation || null}
+                          value={selectedObligation || null}
                           onChange={(event, newValue) => {
-                            console.log('Edit Obligation selected:', newValue);
-                            setEditSelectedObligation(newValue);
+                            console.log('Obligation selected:', newValue);
+                            setSelectedObligation(newValue);
                           }}
                           renderInput={(params) => (
                             <TextField {...params} label="Obligation" fullWidth />
                           )}
                           isOptionEqualToValue={(option, value) => {
-                            // Handle comparison for both string and object values
+                            // More robust comparison
                             if (!option && !value) return true;
                             if (!option || !value) return false;
                             
                             const optionValue = typeof option === 'string' ? option : option?.value;
                             const valueValue = typeof value === 'string' ? value : value?.value;
                             
-                            const result = optionValue === valueValue;
-                            console.log('Comparing edit obligation options:', option, value, result);
-                            return result;
+                            return optionValue === valueValue;
                           }}
                           noOptionsText="No obligation options available"
                         />
