@@ -57,6 +57,7 @@ const ModernTaskLogger = () => {
     source: '',
     category: '',
     service: '',
+    obligation: '', // Add obligation field
     userInformation: '',
     description: '',
     status: 'Pending'
@@ -78,6 +79,7 @@ const ModernTaskLogger = () => {
   const [sources, setSources] = useState([]);
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
+  const [obligations, setObligations] = useState([]); // Add obligations state
   const [statuses] = useState(['Pending', 'In Progress', 'Completed', 'Cancelled']);
   const [dropdownLoading, setDropdownLoading] = useState(false);
 
@@ -170,15 +172,17 @@ const ModernTaskLogger = () => {
     try {
       // Fetch all dropdown types
       console.log('Fetching dropdown values...');
-      const [sourcesRes, categoriesRes, servicesRes] = await Promise.all([
+      const [sourcesRes, categoriesRes, servicesRes, obligationsRes] = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Service')
+        dropdownAPI.getDropdownValues('Service'),
+        dropdownAPI.getDropdownValues('Obligation') // Add obligation fetch
       ]);
 
       console.log('Sources response:', sourcesRes);
       console.log('Categories response:', categoriesRes);
       console.log('Services response:', servicesRes);
+      console.log('Obligations response:', obligationsRes); // Add obligation logging
 
       const sourcesData = Array.isArray(sourcesRes.data) ? sourcesRes.data : 
                          sourcesRes.data?.data || sourcesRes.data || [];
@@ -186,12 +190,15 @@ const ModernTaskLogger = () => {
                             categoriesRes.data?.data || categoriesRes.data || [];
       const servicesData = Array.isArray(servicesRes.data) ? servicesRes.data : 
                           servicesRes.data?.data || servicesRes.data || [];
+      const obligationsData = Array.isArray(obligationsRes.data) ? obligationsRes.data : 
+                            obligationsRes.data?.data || obligationsRes.data || []; // Add obligation data processing
 
-      console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData });
+      console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData, obligationsData }); // Add obligation data logging
 
       setSources(sourcesData);
       setCategories(categoriesData);
       setServices(servicesData);
+      setObligations(obligationsData); // Set obligations
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
       console.error('Error response:', error.response);
@@ -303,6 +310,7 @@ const ModernTaskLogger = () => {
         source: '',
         category: '',
         service: '',
+        obligation: '', // Reset obligation field
         userInformation: '',
         description: '',
         status: 'Pending'
@@ -325,6 +333,7 @@ const ModernTaskLogger = () => {
       source: task.source,
       category: task.category,
       service: task.service,
+      obligation: task.obligation || '', // Add obligation field
       userInformation: task.userInformation || '',
       description: task.description,
       status: task.status
@@ -518,6 +527,26 @@ const ModernTaskLogger = () => {
                       </FormControl>
                     </Grid>
                     
+                    {/* Add Obligation Dropdown */}
+                    <Grid item xs={12}>
+                      <FormControl fullWidth>
+                        <InputLabel>Obligation</InputLabel>
+                        <Select
+                          name="obligation"
+                          value={formData.obligation || ''} // Add obligation field
+                          onChange={handleInputChange}
+                          label="Obligation"
+                          disabled={dropdownLoading}
+                        >
+                          {obligations.map(obligation => ( // Use obligations data
+                            <MenuItem key={obligation.id || obligation.value} value={obligation.value}>
+                              {obligation.value}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    
                     <Grid item xs={12}>
                       <TextField
                         fullWidth
@@ -672,6 +701,7 @@ const ModernTaskLogger = () => {
                               <TableCell align="center">Source</TableCell>
                               <TableCell align="center">Category</TableCell>
                               <TableCell align="center">Service</TableCell>
+                              <TableCell align="center">Obligation</TableCell> {/* Add Obligation column */}
                               <TableCell align="center">Description</TableCell>
                               <TableCell align="center">User</TableCell>
                               <TableCell align="center">User Info</TableCell>
@@ -696,6 +726,7 @@ const ModernTaskLogger = () => {
                                 <TableCell align="center">{task.source}</TableCell>
                                 <TableCell align="center">{task.category}</TableCell>
                                 <TableCell align="center">{task.service}</TableCell>
+                                <TableCell align="center">{task.obligation || 'N/A'}</TableCell> {/* Add Obligation cell */}
                                 <TableCell align="center">{task.description}</TableCell>
                                 <TableCell align="center">{task.userName}</TableCell>
                                 <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
@@ -899,6 +930,26 @@ const ModernTaskLogger = () => {
                   >
                     {services.map(service => (
                       <MenuItem key={service.id || service.value} value={service.value}>{service.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              {/* Add Obligation Dropdown */}
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Obligation</InputLabel>
+                  <Select
+                    name="obligation"
+                    value={formData.obligation || ''} // Add obligation field
+                    onChange={handleInputChange}
+                    label="Obligation"
+                    disabled={dropdownLoading}
+                  >
+                    {obligations.map(obligation => ( // Use obligations data
+                      <MenuItem key={obligation.id || obligation.value} value={obligation.value}>
+                        {obligation.value}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
