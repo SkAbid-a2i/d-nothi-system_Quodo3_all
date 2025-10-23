@@ -485,49 +485,6 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Start server
-const server = app.listen(PORT, async () => {
-  logger.info(`Server is running on port ${PORT}`);
-  
-  // Sync database models
-  try {
-    // For TiDB, we'll sync without altering existing tables to avoid constraint issues
-    await sequelize.sync({ alter: false });
-    logger.info('Database synced successfully with TiDB');
-  } catch (error) {
-    logger.error('Error syncing database with TiDB', { error: error.message, stack: error.stack });
-  }
-  
-  // Test email service
-  try {
-    const emailService = require('./services/email.service');
-    if (emailService.isConfigured()) {
-      logger.info('Email service initialized and configured');
-    } else {
-      logger.info('Email service initialized but not configured (emails will be skipped)');
-    }
-  } catch (error) {
-    logger.error('Failed to initialize email service', { error: error.message, stack: error.stack });
-  }
-});
-
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  dbMonitor.stopMonitoring(); // Stop database monitoring
-  server.close(() => {
-    logger.info('Process terminated');
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  dbMonitor.stopMonitoring(); // Stop database monitoring
-  server.close(() => {
-    logger.info('Process terminated');
-  });
-});
-
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   logger.error('Unhandled Promise Rejection', { error: err.message, stack: err.stack });
@@ -538,6 +495,22 @@ process.on('unhandledRejection', (err) => {
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
   // Don't exit process, just log the error
+});
+
+// Start the server
+const server = app.listen(PORT, () => {
+  logger.info(`Server running on port ${PORT}`, {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Process terminated');
+  });
 });
 
 module.exports = app;
