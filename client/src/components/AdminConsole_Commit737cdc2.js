@@ -51,7 +51,7 @@ const AdminConsole = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = '';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -61,7 +61,7 @@ const AdminConsole = () => {
 
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);
-  const [dropdownTypes] = useState(['Source', 'Category', 'Service', 'Office']);
+  const [dropdownTypes] = useState(['Source', 'Category', 'Service', 'Office', 'Obligation']);
   const [selectedDropdownType, setSelectedDropdownType] = useState('Source');
   const [dropdownValue, setDropdownValue] = useState('');
   const [parentCategory, setParentCategory] = useState('');
@@ -1193,11 +1193,13 @@ Office,Chittagong Office,`;
                                       bgcolor: dropdown.type === 'Category' ? '#10b98120' : 
                                                dropdown.type === 'Service' ? '#8b5cf620' : 
                                                dropdown.type === 'Source' ? '#f59e0b20' : 
-                                               dropdown.type === 'Office' ? '#ef444420' : '#667eea20',
+                                               dropdown.type === 'Office' ? '#ef444420' : 
+                                               dropdown.type === 'Obligation' ? '#967bb620' : '#667eea20',
                                       color: dropdown.type === 'Category' ? '#10b981' : 
                                              dropdown.type === 'Service' ? '#8b5cf6' : 
                                              dropdown.type === 'Source' ? '#f59e0b' : 
-                                             dropdown.type === 'Office' ? '#ef4444' : '#667eea',
+                                             dropdown.type === 'Office' ? '#ef4444' : 
+                                             dropdown.type === 'Obligation' ? '#967bb6' : '#667eea',
                                       fontWeight: 600
                                     }} 
                                   />
