@@ -163,11 +163,13 @@ const TaskManagement = () => {
       console.log('Categories response:', categoriesRes);
       console.log('Offices response:', officesRes);
       console.log('Obligations response:', obligationsRes);
+      console.log('Obligations data:', obligationsRes?.data);
     
       setSources(sourcesRes?.data || []);
       setCategories(categoriesRes?.data || []);
       setOffices(officesRes?.data || []);
       setObligations(obligationsRes?.data || []); // Set obligations
+      console.log('Obligations state set to:', obligationsRes?.data || []);
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
       console.error('Error response:', error.response);
@@ -1450,15 +1452,23 @@ const TaskManagement = () => {
                     ) : (
                       <Autocomplete
                         options={obligations}
-                        getOptionLabel={(option) => option.value || option}
+                        getOptionLabel={(option) => {
+                          console.log('Obligation option:', option);
+                          return option.value || option;
+                        }}
                         value={selectedObligation}
-                        onChange={(event, newValue) => setSelectedObligation(newValue)}
+                        onChange={(event, newValue) => {
+                          console.log('Obligation selected:', newValue);
+                          setSelectedObligation(newValue);
+                        }}
                         renderInput={(params) => (
                           <TextField {...params} label="Obligation" fullWidth />
                         )}
-                        isOptionEqualToValue={(option, value) => 
-                          (option && option.value ? option.value : option) === (value && value.value ? value.value : value)
-                        }
+                        isOptionEqualToValue={(option, value) => {
+                          const result = (option && option.value ? option.value : option) === (value && value.value ? value.value : value);
+                          console.log('Comparing obligation options:', option, value, result);
+                          return result;
+                        }}
                       />
                     )}
                   </Grid>
@@ -1674,15 +1684,23 @@ const TaskManagement = () => {
                     ) : (
                       <Autocomplete
                         options={obligations}
-                        getOptionLabel={(option) => option.value || option}
+                        getOptionLabel={(option) => {
+                          console.log('Edit Obligation option:', option);
+                          return option.value || option;
+                        }}
                         value={editSelectedObligation}
-                        onChange={(event, newValue) => setEditSelectedObligation(newValue)}
+                        onChange={(event, newValue) => {
+                          console.log('Edit Obligation selected:', newValue);
+                          setEditSelectedObligation(newValue);
+                        }}
                         renderInput={(params) => (
                           <TextField {...params} label="Obligation" fullWidth />
                         )}
-                        isOptionEqualToValue={(option, value) => 
-                          (option && option.value ? option.value : option) === (value && value.value ? value.value : value)
-                        }
+                        isOptionEqualToValue={(option, value) => {
+                          const result = (option && option.value ? option.value : option) === (value && value.value ? value.value : value);
+                          console.log('Comparing edit obligation options:', option, value, result);
+                          return result;
+                        }}
                       />
                     )}
                   </Grid>
