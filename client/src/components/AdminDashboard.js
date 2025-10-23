@@ -805,6 +805,7 @@ const AdminDashboard = () => {
                         <TableCell>Source</TableCell>
                         <TableCell>Category</TableCell>
                         <TableCell>Service</TableCell>
+                        <TableCell>Obligation</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell>Status</TableCell>
                       </TableRow>
@@ -817,6 +818,7 @@ const AdminDashboard = () => {
                           <TableCell>{task.source || 'N/A'}</TableCell>
                           <TableCell>{task.category || 'N/A'}</TableCell>
                           <TableCell>{task.service || 'N/A'}</TableCell>
+                          <TableCell>{task.obligation || 'N/A'}</TableCell>
                           <TableCell>{task.description || 'N/A'}</TableCell>
                           <TableCell>
                             <Chip 
