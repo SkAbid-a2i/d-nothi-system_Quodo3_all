@@ -485,11 +485,18 @@ const AgentDashboard = () => {
         dropdownAPI.getDropdownValues('Obligation')
       ]);
       
+      console.log('Agent Dashboard - Sources response:', sourcesRes);
+      console.log('Agent Dashboard - Categories response:', categoriesRes);
+      console.log('Agent Dashboard - Services response:', servicesRes);
+      console.log('Agent Dashboard - Offices response:', officesRes);
+      console.log('Agent Dashboard - Obligations response:', obligationsRes);
+      
       setEditSources(sourcesRes.data || []);
       setEditCategories(categoriesRes.data || []);
       setEditServices(servicesRes.data || []);
       setEditOffices(officesRes.data || []); // Set offices dropdown options
       setEditObligations(obligationsRes.data || []); // Set obligations dropdown options
+      console.log('Agent Dashboard - Edit Obligations set to:', obligationsRes.data || []);
     } catch (error) {
       console.error('Error fetching dropdown values for edit:', error);
       showSnackbar('Error fetching dropdown values: ' + (error.response?.data?.message || error.message), 'error');
