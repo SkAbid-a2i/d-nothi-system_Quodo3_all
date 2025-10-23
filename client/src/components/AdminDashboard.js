@@ -796,7 +796,7 @@ const AdminDashboard = () => {
             
             <Box sx={{ mt: 2 }}>
               {activeTab === 0 && (
-                <TableContainer>
+                <TableContainer sx={{ overflowX: 'auto' }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>

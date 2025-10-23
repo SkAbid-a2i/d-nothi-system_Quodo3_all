@@ -1080,72 +1080,74 @@ const AgentDashboard = () => {
             </Tabs>
             
             {activeTab === 0 && (
-              <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto' }}>
-                <TableContainer sx={{ overflowX: 'auto' }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Source</TableCell>
-                        <TableCell>Category</TableCell>
-                        <TableCell>Service</TableCell>
-                        <TableCell>Obligation</TableCell>
-                        <TableCell>User</TableCell>
-                        <TableCell>Office</TableCell>
-                        <TableCell>User Info</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Files</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {finalFilteredTasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
-                          <TableCell>{task.source || 'N/A'}</TableCell>
-                          <TableCell>{task.category || 'N/A'}</TableCell>
-                          <TableCell>{task.service || 'N/A'}</TableCell>
-                          <TableCell>{task.obligation || 'N/A'}</TableCell>
-                          <TableCell>{task.userName || 'N/A'}</TableCell>
-                          <TableCell>{task.office || 'N/A'}</TableCell>
-                          <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                          <TableCell>{task.description || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={task.status || 'Pending'} 
-                              color={
-                                task.status === 'Completed' ? 'success' : 
-                                task.status === 'In Progress' ? 'primary' : 
-                                task.status === 'Cancelled' ? 'error' : 'default'
-                              } 
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {task.files && task.files.length > 0 ? (
-                              <Chip 
-                                label={task.files.length} 
-                                size="small" 
-                                color="primary" 
-                                variant="outlined" 
-                              />
-                            ) : (
-                              <Chip label="No Files" size="small" variant="outlined" />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <IconButton size="small" color="primary" onClick={() => handleEditTask(task)}>
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleDeleteTask(task.id)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
+              <Box sx={{ mt: 2 }}>
+                <Box sx={{ overflowX: 'auto' }}>
+                  <TableContainer sx={{ overflowX: 'auto', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Source</TableCell>
+                          <TableCell>Category</TableCell>
+                          <TableCell>Service</TableCell>
+                          <TableCell>Obligation</TableCell>
+                          <TableCell>User</TableCell>
+                          <TableCell>Office</TableCell>
+                          <TableCell>User Info</TableCell>
+                          <TableCell>Description</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Files</TableCell>
+                          <TableCell>Actions</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {finalFilteredTasks.map((task) => (
+                          <TableRow key={task.id}>
+                            <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                            <TableCell>{task.source || 'N/A'}</TableCell>
+                            <TableCell>{task.category || 'N/A'}</TableCell>
+                            <TableCell>{task.service || 'N/A'}</TableCell>
+                            <TableCell>{task.obligation || 'N/A'}</TableCell>
+                            <TableCell>{task.userName || 'N/A'}</TableCell>
+                            <TableCell>{task.office || 'N/A'}</TableCell>
+                            <TableCell>{task.userInformation || 'N/A'}</TableCell>
+                            <TableCell>{task.description || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={task.status || 'Pending'} 
+                                color={
+                                  task.status === 'Completed' ? 'success' : 
+                                  task.status === 'In Progress' ? 'primary' : 
+                                  task.status === 'Cancelled' ? 'error' : 'default'
+                                } 
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {task.files && task.files.length > 0 ? (
+                                <Chip 
+                                  label={task.files.length} 
+                                  size="small" 
+                                  color="primary" 
+                                  variant="outlined" 
+                                />
+                              ) : (
+                                <Chip label="No Files" size="small" variant="outlined" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <IconButton size="small" color="primary" onClick={() => handleEditTask(task)}>
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteTask(task.id)}>
+                                <DeleteIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
               </Box>
             )}
             
@@ -1439,198 +1441,205 @@ const AgentDashboard = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Edit Task Dialog */}
+      {/* Edit Task Dialog - Improved layout */}
       <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Edit Task</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Source</InputLabel>
-                <Select
-                  value={editSource}
-                  onChange={(e) => setEditSource(e.target.value)}
-                  label="Source"
-                >
-                  {editSources.map((src) => (
-                    <MenuItem key={src.id || src.value} value={src.value || src}>
-                      {src.value || src}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  label="Category"
-                >
-                  {editCategories.map((cat) => (
-                    <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
-                      {cat.value || cat}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Service</InputLabel>
-                <Select
-                  value={editService}
-                  onChange={(e) => setEditService(e.target.value)}
-                  label="Service"
-                >
-                  {filteredEditServices.map((svc) => (
-                    <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
-                      {svc.value || svc}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Add Office Dropdown */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Office</InputLabel>
-                <Select
-                  value={editOffice}
-                  onChange={(e) => setEditOffice(e.target.value)}
-                  label="Office"
-                >
-                  {editOffices.map((office) => (
-                    <MenuItem key={office.id || office.value} value={office.value || office}>
-                      {office.value || office}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Add Obligation Dropdown */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Obligation</InputLabel>
-                <Select
-                  value={editObligation}
-                  onChange={(e) => setEditObligation(e.target.value)}
-                  label="Obligation"
-                >
-                  {editObligations.map((obligation) => (
-                    <MenuItem key={obligation.id || obligation.value} value={obligation.value || obligation}>
-                      {obligation.value || obligation}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Add User Information Field */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="User Information"
-                value={editUserInformation}
-                onChange={(e) => setEditUserInformation(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                rows={4}
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  label="Status"
-                >
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="In Progress">In Progress</MenuItem>
-                  <MenuItem value="Completed">Completed</MenuItem>
-                  <MenuItem value="Cancelled">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {/* Add File Upload Field */}
-            <Grid item xs={12}>
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-              >
-                Upload Files
-                <input
-                  type="file"
-                  hidden
-                  onChange={handleEditFileChange}
-                  multiple
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  required
                 />
-              </Button>
+              </Grid>
               
-              {/* Display selected files */}
-              {editFiles.length > 0 && (
-                <Paper sx={{ mt: 2, p: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Selected Files:
-                  </Typography>
-                  <List dense>
-                    {editFiles.map((file, index) => (
-                      <ListItem key={index}>
-                        <ListItemText
-                          primary={file.name}
-                          secondary={`${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
-                        />
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            aria-label="delete"
-                            onClick={() => removeEditFile(index)}
-                          >
-                            <CloseIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Source</InputLabel>
+                  <Select
+                    value={editSource}
+                    onChange={(e) => setEditSource(e.target.value)}
+                    label="Source"
+                  >
+                    {editSources.map((src) => (
+                      <MenuItem key={src.id || src.value} value={src.value || src}>
+                        {src.value || src}
+                      </MenuItem>
                     ))}
-                  </List>
-                </Paper>
-              )}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    label="Category"
+                  >
+                    {editCategories.map((cat) => (
+                      <MenuItem key={cat.id || cat.value} value={cat.value || cat}>
+                        {cat.value || cat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Service</InputLabel>
+                  <Select
+                    value={editService}
+                    onChange={(e) => setEditService(e.target.value)}
+                    label="Service"
+                  >
+                    {filteredEditServices.map((svc) => (
+                      <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
+                        {svc.value || svc}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              {/* Add Office Dropdown */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Office</InputLabel>
+                  <Select
+                    value={editOffice}
+                    onChange={(e) => setEditOffice(e.target.value)}
+                    label="Office"
+                  >
+                    {editOffices.map((office) => (
+                      <MenuItem key={office.id || office.value} value={office.value || office}>
+                        {office.value || office}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              {/* Add Obligation Dropdown - Ensuring visibility */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Obligation</InputLabel>
+                  <Select
+                    value={editObligation}
+                    onChange={(e) => setEditObligation(e.target.value)}
+                    label="Obligation"
+                  >
+                    {editObligations.map((obligation) => (
+                      <MenuItem key={obligation.id || obligation.value} value={obligation.value || obligation}>
+                        {obligation.value || obligation}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              {/* Add User Information Field */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="User Information"
+                  value={editUserInformation}
+                  onChange={(e) => setEditUserInformation(e.target.value)}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  multiline
+                  rows={4}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  required
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    label="Status"
+                  >
+                    <MenuItem value="Pending">Pending</MenuItem>
+                    <MenuItem value="In Progress">In Progress</MenuItem>
+                    <MenuItem value="Completed">Completed</MenuItem>
+                    <MenuItem value="Cancelled">Cancelled</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              {/* Add File Upload Field */}
+              <Grid item xs={12}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                >
+                  Upload Files
+                  <input
+                    type="file"
+                    hidden
+                    onChange={handleEditFileChange}
+                    multiple
+                  />
+                </Button>
+                
+                {/* Display selected files */}
+                {editFiles.length > 0 && (
+                  <Paper sx={{ mt: 2, p: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Selected Files:
+                    </Typography>
+                    <List dense>
+                      {editFiles.map((file, index) => (
+                        <ListItem key={index}>
+                          <ListItemText
+                            primary={file.name}
+                            secondary={`${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton 
+                              edge="end" 
+                              aria-label="delete"
+                              onClick={() => removeEditFile(index)}
+                            >
+                              <CloseIcon />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Paper>
+                )}
+              </Grid>
             </Grid>
-          </Grid>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-          <Button onClick={handleUpdateTask} variant="contained" color="primary">
-            Update Task
+          <Button 
+            onClick={handleUpdateTask} 
+            variant="contained" 
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Update Task'}
           </Button>
         </DialogActions>
       </Dialog>
