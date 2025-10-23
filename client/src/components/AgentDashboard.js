@@ -477,12 +477,38 @@ const AgentDashboard = () => {
   const handleEditTask = async (task) => {
     // Fetch dropdown values for edit dialog
     try {
+      // Fetch all dropdown values individually to better handle errors
+      const sourcesPromise = dropdownAPI.getDropdownValues('Source').catch(error => {
+        console.error('Agent Dashboard - Error fetching sources:', error);
+        return { data: [], error };
+      });
+      
+      const categoriesPromise = dropdownAPI.getDropdownValues('Category').catch(error => {
+        console.error('Agent Dashboard - Error fetching categories:', error);
+        return { data: [], error };
+      });
+      
+      const servicesPromise = dropdownAPI.getDropdownValues('Service').catch(error => {
+        console.error('Agent Dashboard - Error fetching services:', error);
+        return { data: [], error };
+      });
+      
+      const officesPromise = dropdownAPI.getDropdownValues('Office').catch(error => {
+        console.error('Agent Dashboard - Error fetching offices:', error);
+        return { data: [], error };
+      });
+      
+      const obligationsPromise = dropdownAPI.getDropdownValues('Obligation').catch(error => {
+        console.error('Agent Dashboard - Error fetching obligations:', error);
+        return { data: [], error };
+      });
+      
       const [sourcesRes, categoriesRes, servicesRes, officesRes, obligationsRes] = await Promise.all([
-        dropdownAPI.getDropdownValues('Source'),
-        dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Service'),
-        dropdownAPI.getDropdownValues('Office'),
-        dropdownAPI.getDropdownValues('Obligation')
+        sourcesPromise,
+        categoriesPromise,
+        servicesPromise,
+        officesPromise,
+        obligationsPromise
       ]);
       
       console.log('Agent Dashboard - Sources response:', sourcesRes);

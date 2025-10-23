@@ -144,20 +144,35 @@ const TaskManagement = () => {
     setLoading(true);
     try {
       console.log('Fetching dropdown values...');
-      // Fetch all dropdown values in parallel
-      const fetchPromises = [
-        dropdownAPI.getDropdownValues('Source'),
-        dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Office'),
-        dropdownAPI.getDropdownValues('Obligation') // Add obligation dropdown values
-      ];
       
-      const responses = await Promise.all(fetchPromises);
-    
-      console.log('All responses:', responses);
-    
-      // Extract responses
-      const [sourcesRes, categoriesRes, officesRes, obligationsRes] = responses;
+      // Fetch all dropdown values individually to better handle errors
+      const sourcesPromise = dropdownAPI.getDropdownValues('Source').catch(error => {
+        console.error('Error fetching sources:', error);
+        return { data: [], error };
+      });
+      
+      const categoriesPromise = dropdownAPI.getDropdownValues('Category').catch(error => {
+        console.error('Error fetching categories:', error);
+        return { data: [], error };
+      });
+      
+      const officesPromise = dropdownAPI.getDropdownValues('Office').catch(error => {
+        console.error('Error fetching offices:', error);
+        return { data: [], error };
+      });
+      
+      const obligationsPromise = dropdownAPI.getDropdownValues('Obligation').catch(error => {
+        console.error('Error fetching obligations:', error);
+        return { data: [], error };
+      });
+      
+      // Wait for all promises
+      const [sourcesRes, categoriesRes, officesRes, obligationsRes] = await Promise.all([
+        sourcesPromise,
+        categoriesPromise,
+        officesPromise,
+        obligationsPromise
+      ]);
     
       console.log('Sources response:', sourcesRes);
       console.log('Categories response:', categoriesRes);
