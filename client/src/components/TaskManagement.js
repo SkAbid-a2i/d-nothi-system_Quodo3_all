@@ -1473,9 +1473,9 @@ const TaskManagement = () => {
                           if (typeof option === 'string') {
                             return option;
                           }
-                          return option.value || '';
+                          return option?.value || '';
                         }}
-                        value={selectedObligation}
+                        value={selectedObligation || null}
                         onChange={(event, newValue) => {
                           console.log('Obligation selected:', newValue);
                           setSelectedObligation(newValue);
@@ -1485,15 +1485,17 @@ const TaskManagement = () => {
                         )}
                         isOptionEqualToValue={(option, value) => {
                           // Handle comparison for both string and object values
-                          if (!option || !value) return option === value;
+                          if (!option && !value) return true;
+                          if (!option || !value) return false;
                           
-                          const optionValue = typeof option === 'string' ? option : option.value;
-                          const valueValue = typeof value === 'string' ? value : value.value;
+                          const optionValue = typeof option === 'string' ? option : option?.value;
+                          const valueValue = typeof value === 'string' ? value : value?.value;
                           
                           const result = optionValue === valueValue;
                           console.log('Comparing obligation options:', option, value, result);
                           return result;
                         }}
+                        noOptionsText="No obligation options available"
                       />
                     )}
                   </Grid>
@@ -1714,9 +1716,9 @@ const TaskManagement = () => {
                           if (typeof option === 'string') {
                             return option;
                           }
-                          return option.value || '';
+                          return option?.value || '';
                         }}
-                        value={editSelectedObligation}
+                        value={editSelectedObligation || null}
                         onChange={(event, newValue) => {
                           console.log('Edit Obligation selected:', newValue);
                           setEditSelectedObligation(newValue);
@@ -1726,15 +1728,17 @@ const TaskManagement = () => {
                         )}
                         isOptionEqualToValue={(option, value) => {
                           // Handle comparison for both string and object values
-                          if (!option || !value) return option === value;
+                          if (!option && !value) return true;
+                          if (!option || !value) return false;
                           
-                          const optionValue = typeof option === 'string' ? option : option.value;
-                          const valueValue = typeof value === 'string' ? value : value.value;
+                          const optionValue = typeof option === 'string' ? option : option?.value;
+                          const valueValue = typeof value === 'string' ? value : value?.value;
                           
                           const result = optionValue === valueValue;
                           console.log('Comparing edit obligation options:', option, value, result);
                           return result;
                         }}
+                        noOptionsText="No obligation options available"
                       />
                     )}
                   </Grid>
