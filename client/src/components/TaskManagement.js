@@ -165,6 +165,20 @@ const TaskManagement = () => {
       console.log('Obligations response:', obligationsRes);
       console.log('Obligations data:', obligationsRes?.data);
     
+      // Check if any responses have errors
+      if (sourcesRes?.error) {
+        console.error('Error fetching sources:', sourcesRes.error);
+      }
+      if (categoriesRes?.error) {
+        console.error('Error fetching categories:', categoriesRes.error);
+      }
+      if (officesRes?.error) {
+        console.error('Error fetching offices:', officesRes.error);
+      }
+      if (obligationsRes?.error) {
+        console.error('Error fetching obligations:', obligationsRes.error);
+      }
+    
       setSources(sourcesRes?.data || []);
       setCategories(categoriesRes?.data || []);
       setOffices(officesRes?.data || []);
@@ -173,6 +187,8 @@ const TaskManagement = () => {
     } catch (error) {
       console.error('Error fetching dropdown values:', error);
       console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       showSnackbar('Failed to load dropdown values. Please refresh the page.', 'error');
     } finally {
       setLoading(false);

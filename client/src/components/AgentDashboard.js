@@ -491,6 +491,23 @@ const AgentDashboard = () => {
       console.log('Agent Dashboard - Offices response:', officesRes);
       console.log('Agent Dashboard - Obligations response:', obligationsRes);
       
+      // Check if any responses have errors
+      if (sourcesRes?.error) {
+        console.error('Agent Dashboard - Error fetching sources:', sourcesRes.error);
+      }
+      if (categoriesRes?.error) {
+        console.error('Agent Dashboard - Error fetching categories:', categoriesRes.error);
+      }
+      if (servicesRes?.error) {
+        console.error('Agent Dashboard - Error fetching services:', servicesRes.error);
+      }
+      if (officesRes?.error) {
+        console.error('Agent Dashboard - Error fetching offices:', officesRes.error);
+      }
+      if (obligationsRes?.error) {
+        console.error('Agent Dashboard - Error fetching obligations:', obligationsRes.error);
+      }
+      
       setEditSources(sourcesRes.data || []);
       setEditCategories(categoriesRes.data || []);
       setEditServices(servicesRes.data || []);
@@ -499,6 +516,9 @@ const AgentDashboard = () => {
       console.log('Agent Dashboard - Edit Obligations set to:', obligationsRes.data || []);
     } catch (error) {
       console.error('Error fetching dropdown values for edit:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       showSnackbar('Error fetching dropdown values: ' + (error.response?.data?.message || error.message), 'error');
       // Set default values if API fails
       setEditSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
