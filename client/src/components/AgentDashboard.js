@@ -36,7 +36,6 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Close as CloseIcon
 } from '@mui/material';
 import { 
   Assignment, 
@@ -53,7 +52,8 @@ import {
   Delete as DeleteIcon,
   Info as InfoIcon,
   VideoCall as VideoCallIcon,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -492,6 +492,8 @@ const AgentDashboard = () => {
       setEditObligations(obligationsRes.data || []); // Set obligations dropdown options
     } catch (error) {
       console.error('Error fetching dropdown values for edit:', error);
+      showSnackbar('Error fetching dropdown values: ' + (error.response?.data?.message || error.message), 'error');
+      // Set default values if API fails
       setEditSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
       setEditCategories(['IT Support', 'HR', 'Finance', 'Administration', 'Other']);
       setEditServices(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
@@ -1079,7 +1081,7 @@ const AgentDashboard = () => {
             
             {activeTab === 0 && (
               <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto' }}>
-                <TableContainer>
+                <TableContainer sx={{ overflowX: 'auto' }}>
                   <Table>
                     <TableHead>
                       <TableRow>
