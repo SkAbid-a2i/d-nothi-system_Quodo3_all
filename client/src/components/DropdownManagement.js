@@ -39,7 +39,8 @@ import {
   Category as CategoryIcon,
   Business as BusinessIcon,
   Source as SourceIcon,
-  Build as BuildIcon
+  Build as BuildIcon,
+  Gavel as GavelIcon
 } from '@mui/icons-material';
 import { dropdownAPI } from '../services/api';
 import notificationService from '../services/notificationService';
@@ -76,7 +77,8 @@ const DropdownManagement = () => {
     { value: 'Category', label: 'Category', icon: <CategoryIcon /> },
     { value: 'Service', label: 'Service', icon: <BuildIcon /> },
     { value: 'Source', label: 'Source', icon: <SourceIcon /> },
-    { value: 'Office', label: 'Office', icon: <BusinessIcon /> }
+    { value: 'Office', label: 'Office', icon: <BusinessIcon /> },
+    { value: 'Obligation', label: 'Obligation', icon: <GavelIcon /> }
   ];
 
   const fetchDropdowns = useCallback(async () => {
@@ -319,7 +321,7 @@ const DropdownManagement = () => {
           Dropdown Management
         </Typography>
         <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
-          Manage dropdown values for categories, services, sources, and offices
+          Manage dropdown values for categories, services, sources, offices, and obligations
         </Typography>
       </Box>
 
@@ -425,10 +427,12 @@ const DropdownManagement = () => {
                               bgcolor: dropdown.type === 'Category' ? '#f093fb20' : 
                                       dropdown.type === 'Service' ? '#667eea20' : 
                                       dropdown.type === 'Source' ? '#f59e0b20' : 
+                                      dropdown.type === 'Obligation' ? '#8b5cf620' : 
                                       '#3b82f620',
                               color: dropdown.type === 'Category' ? '#f093fb' : 
                                     dropdown.type === 'Service' ? '#667eea' : 
                                     dropdown.type === 'Source' ? '#f59e0b' : 
+                                    dropdown.type === 'Obligation' ? '#8b5cf6' : 
                                     '#3b82f6',
                               fontWeight: 600
                             }} 
