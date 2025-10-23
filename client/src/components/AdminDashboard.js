@@ -806,8 +806,11 @@ const AdminDashboard = () => {
                         <TableCell>Category</TableCell>
                         <TableCell>Service</TableCell>
                         <TableCell>Obligation</TableCell>
+                        <TableCell>Office</TableCell>
+                        <TableCell>User Info</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell>Status</TableCell>
+                        <TableCell>Files</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -819,6 +822,8 @@ const AdminDashboard = () => {
                           <TableCell>{task.category || 'N/A'}</TableCell>
                           <TableCell>{task.service || 'N/A'}</TableCell>
                           <TableCell>{task.obligation || 'N/A'}</TableCell>
+                          <TableCell>{task.office || 'N/A'}</TableCell>
+                          <TableCell>{task.userInformation || 'N/A'}</TableCell>
                           <TableCell>{task.description || 'N/A'}</TableCell>
                           <TableCell>
                             <Chip 
@@ -830,6 +835,18 @@ const AdminDashboard = () => {
                                 task.status === 'Cancelled' ? 'error' : 'default'
                               } 
                             />
+                          </TableCell>
+                          <TableCell>
+                            {task.files && task.files.length > 0 ? (
+                              <Chip 
+                                label={task.files.length} 
+                                size="small" 
+                                color="primary" 
+                                variant="outlined" 
+                              />
+                            ) : (
+                              <Chip label="No Files" size="small" variant="outlined" />
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}

@@ -31,7 +31,12 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
-  Autocomplete
+  Autocomplete,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Close as CloseIcon
 } from '@mui/material';
 import { 
   Assignment, 
@@ -108,13 +113,19 @@ const AgentDashboard = () => {
   const [editSource, setEditSource] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editService, setEditService] = useState('');
+  const [editOffice, setEditOffice] = useState(''); // Add office state
+  const [editObligation, setEditObligation] = useState(''); // Add obligation state
+  const [editUserInformation, setEditUserInformation] = useState(''); // Add user information state
   const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('');
+  const [editFiles, setEditFiles] = useState([]); // Add files state
   
   // Dropdown options for edit dialog
   const [editSources, setEditSources] = useState([]);
   const [editCategories, setEditCategories] = useState([]);
   const [editServices, setEditServices] = useState([]);
+  const [editOffices, setEditOffices] = useState([]); // Add offices dropdown options
+  const [editObligations, setEditObligations] = useState([]); // Add obligations dropdown options
   
   // Service filtering based on category for edit dialog
   const [filteredEditServices, setFilteredEditServices] = useState([]);
@@ -466,20 +477,26 @@ const AgentDashboard = () => {
   const handleEditTask = async (task) => {
     // Fetch dropdown values for edit dialog
     try {
-      const [sourcesRes, categoriesRes, servicesRes] = await Promise.all([
+      const [sourcesRes, categoriesRes, servicesRes, officesRes, obligationsRes] = await Promise.all([
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
-        dropdownAPI.getDropdownValues('Service')
+        dropdownAPI.getDropdownValues('Service'),
+        dropdownAPI.getDropdownValues('Office'),
+        dropdownAPI.getDropdownValues('Obligation')
       ]);
       
       setEditSources(sourcesRes.data || []);
       setEditCategories(categoriesRes.data || []);
       setEditServices(servicesRes.data || []);
+      setEditOffices(officesRes.data || []); // Set offices dropdown options
+      setEditObligations(obligationsRes.data || []); // Set obligations dropdown options
     } catch (error) {
       console.error('Error fetching dropdown values for edit:', error);
       setEditSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
       setEditCategories(['IT Support', 'HR', 'Finance', 'Administration', 'Other']);
       setEditServices(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
+      setEditOffices(['Head Office', 'Branch Office', 'Remote']); // Default offices
+      setEditObligations(['Compliance', 'Legal', 'Financial', 'Operational']); // Default obligations
     }
     
     // Set editing task data
@@ -488,8 +505,12 @@ const AgentDashboard = () => {
     setEditSource(task.source || '');
     setEditCategory(task.category || '');
     setEditService(task.service || '');
+    setEditOffice(task.office || ''); // Set office
+    setEditObligation(task.obligation || ''); // Set obligation
+    setEditUserInformation(task.userInformation || ''); // Set user information
     setEditDescription(task.description || '');
     setEditStatus(task.status || 'Pending');
+    setEditFiles(task.files || []); // Set files
     
     setOpenEditDialog(true);
   };
@@ -502,8 +523,12 @@ const AgentDashboard = () => {
         source: editSource,
         category: editCategory,
         service: editService,
+        office: editOffice,
+        obligation: editObligation,
+        userInformation: editUserInformation,
         description: editDescription,
-        status: editStatus
+        status: editStatus,
+        files: editFiles
       };
       
       await taskAPI.updateTask(editingTask.id, updatedTaskData);
@@ -528,6 +553,17 @@ const AgentDashboard = () => {
       console.error('Error deleting task:', error);
       showSnackbar('Error deleting task: ' + (error.response?.data?.message || error.message), 'error');
     }
+  };
+
+  // Handle file change for edit form
+  const handleEditFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setEditFiles(prevFiles => [...prevFiles, ...selectedFiles]);
+  };
+
+  // Remove file from edit form
+  const removeEditFile = (index) => {
+    setEditFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
 
   // Get task distribution data for charts - use filtered tasks instead of all tasks
@@ -1057,6 +1093,7 @@ const AgentDashboard = () => {
                         <TableCell>User Info</TableCell>
                         <TableCell>Description</TableCell>
                         <TableCell>Status</TableCell>
+                        <TableCell>Files</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
@@ -1081,6 +1118,18 @@ const AgentDashboard = () => {
                                 task.status === 'Cancelled' ? 'error' : 'default'
                               } 
                             />
+                          </TableCell>
+                          <TableCell>
+                            {task.files && task.files.length > 0 ? (
+                              <Chip 
+                                label={task.files.length} 
+                                size="small" 
+                                color="primary" 
+                                variant="outlined" 
+                              />
+                            ) : (
+                              <Chip label="No Files" size="small" variant="outlined" />
+                            )}
                           </TableCell>
                           <TableCell>
                             <IconButton size="small" color="primary" onClick={() => handleEditTask(task)}>
@@ -1456,6 +1505,52 @@ const AgentDashboard = () => {
               </FormControl>
             </Grid>
             
+            {/* Add Office Dropdown */}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Office</InputLabel>
+                <Select
+                  value={editOffice}
+                  onChange={(e) => setEditOffice(e.target.value)}
+                  label="Office"
+                >
+                  {editOffices.map((office) => (
+                    <MenuItem key={office.id || office.value} value={office.value || office}>
+                      {office.value || office}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {/* Add Obligation Dropdown */}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Obligation</InputLabel>
+                <Select
+                  value={editObligation}
+                  onChange={(e) => setEditObligation(e.target.value)}
+                  label="Obligation"
+                >
+                  {editObligations.map((obligation) => (
+                    <MenuItem key={obligation.id || obligation.value} value={obligation.value || obligation}>
+                      {obligation.value || obligation}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {/* Add User Information Field */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="User Information"
+                value={editUserInformation}
+                onChange={(e) => setEditUserInformation(e.target.value)}
+              />
+            </Grid>
+            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -1482,6 +1577,51 @@ const AgentDashboard = () => {
                   <MenuItem value="Cancelled">Cancelled</MenuItem>
                 </Select>
               </FormControl>
+            </Grid>
+            
+            {/* Add File Upload Field */}
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+              >
+                Upload Files
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleEditFileChange}
+                  multiple
+                />
+              </Button>
+              
+              {/* Display selected files */}
+              {editFiles.length > 0 && (
+                <Paper sx={{ mt: 2, p: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Selected Files:
+                  </Typography>
+                  <List dense>
+                    {editFiles.map((file, index) => (
+                      <ListItem key={index}>
+                        <ListItemText
+                          primary={file.name}
+                          secondary={`${(file.size / 1024).toFixed(2)} KB - ${file.type}`}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton 
+                            edge="end" 
+                            aria-label="delete"
+                            onClick={() => removeEditFile(index)}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              )}
             </Grid>
           </Grid>
         </DialogContent>
