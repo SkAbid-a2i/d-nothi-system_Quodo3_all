@@ -1453,8 +1453,11 @@ const TaskManagement = () => {
                       <Autocomplete
                         options={obligations}
                         getOptionLabel={(option) => {
-                          console.log('Obligation option:', option);
-                          return option.value || option;
+                          // Handle both string and object options
+                          if (typeof option === 'string') {
+                            return option;
+                          }
+                          return option.value || '';
                         }}
                         value={selectedObligation}
                         onChange={(event, newValue) => {
@@ -1465,7 +1468,13 @@ const TaskManagement = () => {
                           <TextField {...params} label="Obligation" fullWidth />
                         )}
                         isOptionEqualToValue={(option, value) => {
-                          const result = (option && option.value ? option.value : option) === (value && value.value ? value.value : value);
+                          // Handle comparison for both string and object values
+                          if (!option || !value) return option === value;
+                          
+                          const optionValue = typeof option === 'string' ? option : option.value;
+                          const valueValue = typeof value === 'string' ? value : value.value;
+                          
+                          const result = optionValue === valueValue;
                           console.log('Comparing obligation options:', option, value, result);
                           return result;
                         }}
@@ -1685,8 +1694,11 @@ const TaskManagement = () => {
                       <Autocomplete
                         options={obligations}
                         getOptionLabel={(option) => {
-                          console.log('Edit Obligation option:', option);
-                          return option.value || option;
+                          // Handle both string and object options
+                          if (typeof option === 'string') {
+                            return option;
+                          }
+                          return option.value || '';
                         }}
                         value={editSelectedObligation}
                         onChange={(event, newValue) => {
@@ -1697,7 +1709,13 @@ const TaskManagement = () => {
                           <TextField {...params} label="Obligation" fullWidth />
                         )}
                         isOptionEqualToValue={(option, value) => {
-                          const result = (option && option.value ? option.value : option) === (value && value.value ? value.value : value);
+                          // Handle comparison for both string and object values
+                          if (!option || !value) return option === value;
+                          
+                          const optionValue = typeof option === 'string' ? option : option.value;
+                          const valueValue = typeof value === 'string' ? value : value.value;
+                          
+                          const result = optionValue === valueValue;
                           console.log('Comparing edit obligation options:', option, value, result);
                           return result;
                         }}
