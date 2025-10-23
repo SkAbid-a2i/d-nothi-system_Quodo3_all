@@ -1538,7 +1538,7 @@ const AgentDashboard = () => {
                     label="Obligation"
                   >
                     {editObligations.map((obligation) => (
-                      <MenuItem key={obligation.id || obligation.value} value={obligation.value || obligation}>
+                      <MenuItem key={obligation.id || obligation.value || obligation} value={obligation.value || obligation}>
                         {obligation.value || obligation}
                       </MenuItem>
                     ))}

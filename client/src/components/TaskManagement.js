@@ -1444,12 +1444,15 @@ const TaskManagement = () => {
                     ) : (
                       <Autocomplete
                         options={obligations}
-                        getOptionLabel={(option) => option.value}
+                        getOptionLabel={(option) => option.value || option}
                         value={selectedObligation}
                         onChange={(event, newValue) => setSelectedObligation(newValue)}
                         renderInput={(params) => (
                           <TextField {...params} label="Obligation" fullWidth />
                         )}
+                        isOptionEqualToValue={(option, value) => 
+                          (option && option.value ? option.value : option) === (value && value.value ? value.value : value)
+                        }
                       />
                     )}
                   </Grid>
@@ -1665,12 +1668,15 @@ const TaskManagement = () => {
                     ) : (
                       <Autocomplete
                         options={obligations}
-                        getOptionLabel={(option) => option.value}
+                        getOptionLabel={(option) => option.value || option}
                         value={editSelectedObligation}
                         onChange={(event, newValue) => setEditSelectedObligation(newValue)}
                         renderInput={(params) => (
                           <TextField {...params} label="Obligation" fullWidth />
                         )}
+                        isOptionEqualToValue={(option, value) => 
+                          (option && option.value ? option.value : option) === (value && value.value ? value.value : value)
+                        }
                       />
                     )}
                   </Grid>
