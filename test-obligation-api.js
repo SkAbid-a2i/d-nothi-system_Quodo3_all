@@ -1,57 +1,45 @@
-// Simple test to check if the Obligation API endpoint is working
-const http = require('http');
+const axios = require('axios');
 
-// Test the Obligation dropdown API endpoint
-function testObligationAPI() {
-  console.log('Testing Obligation dropdown API endpoint...\n');
-  
-  const options = {
-    hostname: 'localhost',
-    port: 5000,
-    path: '/api/dropdowns/Obligation',
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
+// Test the dropdown API endpoint for Obligation values
+async function testObligationAPI() {
+  try {
+    console.log('Testing Obligation API endpoint...');
+    
+    // Test getting all dropdown values
+    const response = await axios.get('http://localhost:5000/api/dropdowns');
+    console.log('All dropdowns response status:', response.status);
+    console.log('Total dropdowns count:', response.data.data?.length || response.data.length);
+    
+    // Test getting Obligation values specifically
+    const obligationResponse = await axios.get('http://localhost:5000/api/dropdowns/Obligation');
+    console.log('Obligation dropdowns response status:', obligationResponse.status);
+    console.log('Obligation dropdowns count:', obligationResponse.data.data?.length || obligationResponse.data.length);
+    console.log('Obligation dropdowns data:', obligationResponse.data);
+    
+    // Test creating a new Obligation value
+    const newObligation = {
+      type: 'Obligation',
+      value: 'Test Obligation ' + Date.now()
+    };
+    
+    console.log('Testing creation of new Obligation value:', newObligation);
+    const createResponse = await axios.post('http://localhost:5000/api/dropdowns', newObligation);
+    console.log('Create Obligation response status:', createResponse.status);
+    console.log('Created Obligation data:', createResponse.data);
+    
+    // Clean up - delete the test Obligation
+    if (createResponse.data && createResponse.data.id) {
+      const deleteResponse = await axios.delete(`http://localhost:5000/api/dropdowns/${createResponse.data.id}`);
+      console.log('Delete test Obligation response status:', deleteResponse.status);
     }
-  };
-  
-  const req = http.request(options, (res) => {
-    let data = '';
     
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-    
-    res.on('end', () => {
-      console.log('✅ API Response Status:', res.statusCode);
-      console.log('✅ API Response Headers:', res.headers);
-      
-      try {
-        const jsonData = JSON.parse(data);
-        console.log('✅ API Response Data:', JSON.stringify(jsonData, null, 2));
-        console.log('\n📊 Total Obligation values from API:', jsonData.length);
-        
-        if (jsonData.length > 0) {
-          console.log('\n📋 Obligation values from API:');
-          jsonData.forEach((obligation, index) => {
-            console.log(`${index + 1}. ${obligation.value} (ID: ${obligation.id})`);
-          });
-        } else {
-          console.log('No Obligation values returned from API.');
-        }
-      } catch (parseError) {
-        console.error('❌ Error parsing JSON:', parseError.message);
-        console.log('Raw response:', data);
-      }
-    });
-  });
-  
-  req.on('error', (error) => {
-    console.error('❌ API Request Error:', error.message);
-  });
-  
-  req.end();
+  } catch (error) {
+    console.error('Error testing Obligation API:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    }
+  }
 }
 
-// Run the test
 testObligationAPI();
