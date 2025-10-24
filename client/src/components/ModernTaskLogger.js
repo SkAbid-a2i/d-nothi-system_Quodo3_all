@@ -527,18 +527,17 @@ const ModernTaskLogger = () => {
                       </FormControl>
                     </Grid>
                     
-                    {/* Add Obligation Dropdown */}
                     <Grid item xs={12}>
                       <FormControl fullWidth>
                         <InputLabel>Obligation</InputLabel>
                         <Select
                           name="obligation"
-                          value={formData.obligation || ''} // Add obligation field
+                          value={formData.obligation || ''}
                           onChange={handleInputChange}
                           label="Obligation"
                           disabled={dropdownLoading}
                         >
-                          {obligations.map(obligation => ( // Use obligations data
+                          {obligations.map(obligation => (
                             <MenuItem key={obligation.id || obligation.value} value={obligation.value}>
                               {obligation.value}
                             </MenuItem>
@@ -935,18 +934,17 @@ const ModernTaskLogger = () => {
                 </FormControl>
               </Grid>
               
-              {/* Add Obligation Dropdown */}
               <Grid item xs={12}>
                 <FormControl fullWidth>
                   <InputLabel>Obligation</InputLabel>
                   <Select
                     name="obligation"
-                    value={formData.obligation || ''} // Add obligation field
+                    value={formData.obligation || ''}
                     onChange={handleInputChange}
                     label="Obligation"
                     disabled={dropdownLoading}
                   >
-                    {obligations.map(obligation => ( // Use obligations data
+                    {obligations.map(obligation => (
                       <MenuItem key={obligation.id || obligation.value} value={obligation.value}>
                         {obligation.value}
                       </MenuItem>

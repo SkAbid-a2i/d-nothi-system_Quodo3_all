@@ -1486,48 +1486,43 @@ const TaskManagement = () => {
                     />
                   </Grid>
                   
-                  {/* Obligation Dropdown - Ensuring visibility */}
+                  {/* Obligation Dropdown */}
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ border: '1px solid red', p: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'red' }}>
-                        DEBUG: Obligation Dropdown - Options: {obligations.length}
-                      </Typography>
-                      {loading ? (
-                        <CircularProgress size={24} />
-                      ) : (
-                        <Autocomplete
-                          options={obligations}
-                          getOptionLabel={(option) => {
-                            // Handle both string and object options
-                            if (typeof option === 'string') {
-                              return option;
-                            }
-                            return option?.value || '';
-                          }}
-                          value={selectedObligation || null}
-                          onChange={(event, newValue) => {
-                            console.log('Obligation selected:', newValue);
-                            setSelectedObligation(newValue);
-                          }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Obligation" fullWidth />
-                          )}
-                          isOptionEqualToValue={(option, value) => {
-                            // Handle comparison for both string and object values
-                            if (!option && !value) return true;
-                            if (!option || !value) return false;
-                            
-                            const optionValue = typeof option === 'string' ? option : option?.value;
-                            const valueValue = typeof value === 'string' ? value : value?.value;
-                            
-                            const result = optionValue === valueValue;
-                            console.log('Comparing obligation options:', option, value, result);
-                            return result;
-                          }}
-                          noOptionsText="No obligation options available"
-                        />
-                      )}
-                    </Box>
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      <Autocomplete
+                        options={obligations}
+                        getOptionLabel={(option) => {
+                          // Handle both string and object options
+                          if (typeof option === 'string') {
+                            return option;
+                          }
+                          return option?.value || '';
+                        }}
+                        value={selectedObligation || null}
+                        onChange={(event, newValue) => {
+                          console.log('Obligation selected:', newValue);
+                          setSelectedObligation(newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField {...params} label="Obligation" fullWidth />
+                        )}
+                        isOptionEqualToValue={(option, value) => {
+                          // Handle comparison for both string and object values
+                          if (!option && !value) return true;
+                          if (!option || !value) return false;
+                          
+                          const optionValue = typeof option === 'string' ? option : option?.value;
+                          const valueValue = typeof value === 'string' ? value : value?.value;
+                          
+                          const result = optionValue === valueValue;
+                          console.log('Comparing obligation options:', option, value, result);
+                          return result;
+                        }}
+                        noOptionsText="No obligation options available"
+                      />
+                    )}
                   </Grid>
                   
                   <Grid item xs={12}>
@@ -1734,46 +1729,41 @@ const TaskManagement = () => {
                     />
                   </Grid>
                   
-                  {/* Obligation Dropdown - Ensuring visibility */}
+                  {/* Obligation Dropdown */}
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ border: '2px solid red', p: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'red', fontWeight: 'bold' }}>
-                        DEBUG: Edit Obligation Dropdown - Options Count: {obligations.length}
-                      </Typography>
-                      {loading ? (
-                        <CircularProgress size={24} />
-                      ) : (
-                        <Autocomplete
-                          options={obligations}
-                          getOptionLabel={(option) => {
-                            // Handle both string and object options
-                            if (typeof option === 'string') {
-                              return option;
-                            }
-                            return option?.value || '';
-                          }}
-                          value={editSelectedObligation || null}
-                          onChange={(event, newValue) => {
-                            console.log('Edit Obligation selected:', newValue);
-                            setEditSelectedObligation(newValue);
-                          }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Obligation" fullWidth />
-                          )}
-                          isOptionEqualToValue={(option, value) => {
-                            // More robust comparison
-                            if (!option && !value) return true;
-                            if (!option || !value) return false;
-                            
-                            const optionValue = typeof option === 'string' ? option : option?.value;
-                            const valueValue = typeof value === 'string' ? value : value?.value;
-                            
-                            return optionValue === valueValue;
-                          }}
-                          noOptionsText="No obligation options available"
-                        />
-                      )}
-                    </Box>
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      <Autocomplete
+                        options={obligations}
+                        getOptionLabel={(option) => {
+                          // Handle both string and object options
+                          if (typeof option === 'string') {
+                            return option;
+                          }
+                          return option?.value || '';
+                        }}
+                        value={editSelectedObligation || null}
+                        onChange={(event, newValue) => {
+                          console.log('Edit Obligation selected:', newValue);
+                          setEditSelectedObligation(newValue);
+                        }}
+                        renderInput={(params) => (
+                          <TextField {...params} label="Obligation" fullWidth />
+                        )}
+                        isOptionEqualToValue={(option, value) => {
+                          // More robust comparison
+                          if (!option && !value) return true;
+                          if (!option || !value) return false;
+                          
+                          const optionValue = typeof option === 'string' ? option : option?.value;
+                          const valueValue = typeof value === 'string' ? value : value?.value;
+                          
+                          return optionValue === valueValue;
+                        }}
+                        noOptionsText="No obligation options available"
+                      />
+                    )}
                   </Grid>
                   
                   <Grid item xs={12}>
@@ -1787,21 +1777,6 @@ const TaskManagement = () => {
                       required
                     />
                   </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Status</InputLabel>
-                      <Select 
-                        label="Status" 
-                        value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value)}
-                      >
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="In Progress">In Progress</MenuItem>
-                        <MenuItem value="Completed">Completed</MenuItem>
-                        <MenuItem value="Cancelled">Cancelled</MenuItem>
-                      </Select>
-                    </FormControl>
                   </Grid>
                   
                   {/* File Upload Field for Edit */}
@@ -1885,6 +1860,25 @@ const TaskManagement = () => {
           {/* Snackbar for notifications */}
           <Snackbar 
             open={snackbar.open} 
+            autoHideDuration={6000} 
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <Alert 
+              onClose={handleCloseSnackbar} 
+              severity={snackbar.severity} 
+              sx={{ width: '100%' }}
+            >
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
+        </>
+      )}
+    </Box>
+  );
+};
+
+export default TaskManagement;
             autoHideDuration={6000} 
             onClose={handleCloseSnackbar}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
