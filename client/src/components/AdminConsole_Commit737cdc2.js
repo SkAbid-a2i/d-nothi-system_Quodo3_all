@@ -307,7 +307,7 @@ const AdminConsole = () => {
         setSuccess('Dropdown value updated successfully!');
       } else {
         await dropdownAPI.createDropdownValue(dropdownData);
-        setSuccess('Dropdown value added successfully!');
+        setSuccess(`Dropdown value "${dropdownValue}" added successfully!`);
       }
 
       // Reset form
@@ -321,7 +321,12 @@ const AdminConsole = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error saving dropdown value:', error);
-      setError('Failed to save dropdown value: ' + (error.response?.data?.message || error.message));
+      // Handle specific error cases
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('already exists')) {
+        setError(`Dropdown value "${dropdownValue}" already exists for type "${selectedDropdownType}"`);
+      } else {
+        setError('Failed to save dropdown value: ' + (error.response?.data?.message || error.message));
+      }
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -1221,6 +1226,7 @@ Office,Chittagong Office,`;
                                   <IconButton
                                     size="small"
                                     onClick={() => handleEditDropdown(dropdown)}
+                                    sx={{ mr: 1 }}
                                   >
                                     <EditIcon />
                                   </IconButton>
@@ -1283,9 +1289,12 @@ Office,Chittagong Office,`;
                 Required Columns:
               </Typography>
               <Typography variant="body2">
-                <strong>Type</strong> - One of: Source, Category, Service, Office<br />
+                <strong>Type</strong> - One of: Source, Category, Service, Office, Obligation<br />
                 <strong>Value</strong> - The dropdown value<br />
                 <strong>Parent</strong> - Required only for Service type (should match a Category value)
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'text.secondary' }}>
+                Note: Obligation values can be edited or deleted using the action buttons in the table below.
               </Typography>
             </Paper>
             
