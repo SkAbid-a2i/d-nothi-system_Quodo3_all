@@ -62,7 +62,7 @@ const AdminConsole = () => {
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);
   const [dropdownTypes] = useState(['Source', 'Category', 'Service', 'Office', 'Obligation']);
-  const [selectedDropdownType, setSelectedDropdownType] = useState('Source');
+  const [selectedDropdownType, setSelectedDropdownType] = useState('All');
   const [dropdownValue, setDropdownValue] = useState('');
   const [parentCategory, setParentCategory] = useState('');
   const [categories, setCategories] = useState([]);
@@ -512,10 +512,20 @@ Office,Chittagong Office,`;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Filter dropdowns based on type
-  const filteredDropdowns = dropdowns.filter(dropdown => 
-    dropdown.type === selectedDropdownType
-  );
+  // Filter dropdowns based on type - add 'All' option
+  const filteredDropdowns = selectedDropdownType === 'All' 
+    ? dropdowns 
+    : dropdowns.filter(dropdown => dropdown.type === selectedDropdownType);
+  
+  // Add debugging to help identify issues
+  console.log('Dropdowns data:', dropdowns);
+  console.log('Selected dropdown type:', selectedDropdownType);
+  console.log('Filtered dropdowns:', filteredDropdowns);
+  
+  // Add debugging to help identify issues
+  console.log('Dropdowns data:', dropdowns);
+  console.log('Selected dropdown type:', selectedDropdownType);
+  console.log('Filtered dropdowns:', filteredDropdowns);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -1151,6 +1161,7 @@ Office,Chittagong Office,`;
                           onChange={handleDropdownTypeChange}
                           label="Type"
                         >
+                          <MenuItem value="All">All</MenuItem>
                           {dropdownTypes.map(type => (
                             <MenuItem key={type} value={type}>{type}</MenuItem>
                           ))}
@@ -1293,7 +1304,9 @@ Office,Chittagong Office,`;
                 Service,Hardware Repair,IT{'\n'}
                 Service,Recruitment,HR{'\n'}
                 Office,Dhaka Office,{'\n'}
-                Office,Chittagong Office,
+                Office,Chittagong Office,{'\n'}
+                Obligation,Compliance,{'\n'}
+                Obligation,Legal,
               </Typography>
             </Paper>
             
