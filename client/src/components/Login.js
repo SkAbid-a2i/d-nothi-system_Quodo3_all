@@ -216,7 +216,7 @@ const Login = () => {
                       display: 'inline-block'
                     }}
                   >
-                    Zenith Awaits
+                    Zenith
                   </Typography>
                   <Typography 
                     component="span" 
@@ -229,7 +229,20 @@ const Login = () => {
                       mx: 1
                     }}
                   >
-                    :
+                    @waits
+                  </Typography>
+                  <Typography 
+                    component="span" 
+                    sx={{ 
+                      fontWeight: 800,
+                      color: darkMode ? '#fbbf24' : '#f59e0b',
+                      fontSize: '2.0rem',
+                      fontFamily: 'Arial, sans-serif',
+                      display: 'inline-block',
+                      mx: 0.5
+                    }}
+                  >
+                    ⚡
                   </Typography>
                   <Typography 
                     component="span" 
@@ -245,7 +258,7 @@ const Login = () => {
                       display: 'inline-block'
                     }}
                   >
-                    Power Your Teamwork
+                    Your Teamwork
                   </Typography>
                 </Box>
                 
