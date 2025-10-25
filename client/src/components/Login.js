@@ -203,7 +203,7 @@ const Login = () => {
                 
                 <Typography 
                   component="h1" 
-                  variant="h3" 
+                  variant="h2" 
                   align="center"
                   sx={{ 
                     fontWeight: 800,
@@ -213,21 +213,26 @@ const Login = () => {
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     mb: 3,
-                    lineHeight: 1.2,
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.5px',
                     textShadow: darkMode 
-                      ? '0 2px 4px rgba(0, 0, 0, 0.3)' 
-                      : '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      ? '0 4px 8px rgba(0, 0, 0, 0.4)' 
+                      : '0 4px 8px rgba(0, 0, 0, 0.2)',
+                    fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
                   }}
                 >
                   {t('login.title')}
                 </Typography>
                 
                 <Typography 
-                  variant="body2" 
+                  variant="body1" 
                   sx={{ 
-                    color: darkMode ? 'text.secondary' : 'rgba(0, 0, 0, 0.6)',
-                    mb: 3,
-                    textAlign: 'center'
+                    color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                    mb: 4,
+                    textAlign: 'center',
+                    fontWeight: 500,
+                    fontSize: '1.1rem',
+                    letterSpacing: '0.5px'
                   }}
                 >
                   Sign in to access your dashboard
@@ -268,28 +273,36 @@ const Login = () => {
                       ),
                     }}
                     sx={{
-                      mb: 2,
+                      mb: 3,
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
+                        borderRadius: 3,
                         '& fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                          transition: 'all 0.3s ease',
                         },
                         '&:hover fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                          boxShadow: darkMode ? '0 0 0 2px rgba(102, 126, 234, 0.1)' : '0 0 0 2px rgba(102, 126, 234, 0.1)'
                         },
                         '&.Mui-focused fieldset': {
                           borderColor: darkMode ? '#667eea' : '#667eea',
-                          borderWidth: '2px'
+                          borderWidth: '2px',
+                          boxShadow: darkMode ? '0 0 0 3px rgba(102, 126, 234, 0.2)' : '0 0 0 3px rgba(102, 126, 234, 0.2)'
                         }
                       },
                       '& .MuiInputLabel-root': {
                         color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                        fontWeight: 500,
                       },
                       '& .MuiInputLabel-root.Mui-focused': {
                         color: darkMode ? '#667eea' : '#667eea',
+                        fontWeight: 600,
                       },
                       '& .MuiInputBase-input': {
                         color: darkMode ? '#f1f5f9' : '#1e293b',
+                        py: 1.5,
+                        px: 1.5,
+                        fontSize: '1rem'
                       }
                     }}
                   />
@@ -316,6 +329,12 @@ const Login = () => {
                             aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             edge="end"
+                            sx={{
+                              color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                              '&:hover': {
+                                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                              }
+                            }}
                           >
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
@@ -323,28 +342,36 @@ const Login = () => {
                       ),
                     }}
                     sx={{
-                      mb: 2,
+                      mb: 3,
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
+                        borderRadius: 3,
                         '& fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                          transition: 'all 0.3s ease',
                         },
                         '&:hover fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                          boxShadow: darkMode ? '0 0 0 2px rgba(102, 126, 234, 0.1)' : '0 0 0 2px rgba(102, 126, 234, 0.1)'
                         },
                         '&.Mui-focused fieldset': {
                           borderColor: darkMode ? '#667eea' : '#667eea',
-                          borderWidth: '2px'
+                          borderWidth: '2px',
+                          boxShadow: darkMode ? '0 0 0 3px rgba(102, 126, 234, 0.2)' : '0 0 0 3px rgba(102, 126, 234, 0.2)'
                         }
                       },
                       '& .MuiInputLabel-root': {
                         color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                        fontWeight: 500,
                       },
                       '& .MuiInputLabel-root.Mui-focused': {
                         color: darkMode ? '#667eea' : '#667eea',
+                        fontWeight: 600,
                       },
                       '& .MuiInputBase-input': {
                         color: darkMode ? '#f1f5f9' : '#1e293b',
+                        py: 1.5,
+                        px: 1.5,
+                        fontSize: '1rem'
                       }
                     }}
                   />
