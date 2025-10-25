@@ -82,7 +82,7 @@ const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   background: theme.palette.mode === 'dark' 
     ? 'rgba(30, 30, 46, 0.9)' 
-    : 'rgba(255, 255, 255, 0.9)',
+    : 'rgba(102, 126, 234, 0.9)', // Changed to blue for light mode
   backdropFilter: 'blur(10px)',
   boxShadow: theme.palette.mode === 'dark' 
     ? '0 2px 20px rgba(0, 0, 0, 0.3)' 
@@ -585,7 +585,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               fontWeight: 700
             }}
           >
-            D-Nothi Task Management
+            D-Nothi Team & Activity Management
           </Typography>
           
           <Tooltip title="Notifications">
@@ -595,7 +595,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               color="inherit"
               onClick={handleNotificationMenuOpen}
             >
-              <Badge badgeContent={notifications.length} color="error">
+              <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon sx={{ color: darkMode ? 'white' : 'black' }} />
               </Badge>
             </IconButton>

@@ -180,8 +180,9 @@ router.put('/:id', cors(corsOptions), authenticate, async (req, res) => {
       comments: Array.isArray(comments) ? comments : task.comments,
       attachments: Array.isArray(attachments) ? attachments : task.attachments,
       files: Array.isArray(files) ? files : task.files,
-      userId: req.user.id, // Ensure userId is maintained
-      userName: req.user.fullName || req.user.username, // Ensure userName is maintained
+      // Preserve original owner information - don't change userId and userName
+      userId: task.userId, // Keep original userId
+      userName: task.userName, // Keep original userName
       office: req.user.office || task.office // Ensure office is maintained
     };
 

@@ -594,6 +594,7 @@ const AgentDashboard = () => {
         description: editDescription,
         status: editStatus,
         files: editFiles
+        // Don't include userId or userName to preserve original owner
       };
       
       await taskAPI.updateTask(editingTask.id, updatedTaskData);

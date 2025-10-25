@@ -62,7 +62,7 @@ const translations = {
   
   // Login
   login: {
-    title: 'Sign in to D-Nothi System',
+    title: 'Sign in to Zenith',
     username: 'Username or Email',
     password: 'Password',
     rememberMe: 'Remember me',
