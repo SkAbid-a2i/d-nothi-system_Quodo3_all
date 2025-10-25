@@ -201,38 +201,60 @@ const Login = () => {
                   />
                 </Box>
                 
-                <Typography 
-                  component="h1" 
-                  variant="h2" 
-                  align="center"
-                  sx={{ 
-                    fontWeight: 800,
-                    background: darkMode 
-                      ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
-                      : 'linear-gradient(45deg, #667eea, #764ba2)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    mb: 3,
-                    lineHeight: 1.1,
-                    letterSpacing: '-0.5px',
-                    textShadow: darkMode 
-                      ? '0 4px 8px rgba(0, 0, 0, 0.4)' 
-                      : '0 4px 8px rgba(0, 0, 0, 0.2)',
-                    fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
-                  }}
-                >
-                  {t('login.title')}
-                </Typography>
+                <Box sx={{ mb: 2, textAlign: 'center' }}>
+                  <Typography 
+                    component="span" 
+                    sx={{ 
+                      fontWeight: 800,
+                      background: darkMode 
+                        ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
+                        : 'linear-gradient(45deg, #667eea, #764ba2)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontSize: '2.2rem',
+                      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+                      display: 'inline-block'
+                    }}
+                  >
+                    Zenith Awaits
+                  </Typography>
+                  <Typography 
+                    component="span" 
+                    sx={{ 
+                      fontWeight: 600,
+                      color: darkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
+                      fontSize: '1.8rem',
+                      fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                      display: 'inline-block',
+                      mx: 1
+                    }}
+                  >
+                    :
+                  </Typography>
+                  <Typography 
+                    component="span" 
+                    sx={{ 
+                      fontWeight: 700,
+                      background: darkMode 
+                        ? 'linear-gradient(45deg, #98fb98, #764ba2)' 
+                        : 'linear-gradient(45deg, #764ba2, #967bb6)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontSize: '1.9rem',
+                      fontFamily: 'Montserrat, system-ui, -apple-system, sans-serif',
+                      display: 'inline-block'
+                    }}
+                  >
+                    Power Your Teamwork
+                  </Typography>
+                </Box>
                 
                 <Typography 
-                  variant="body1" 
+                  variant="body2" 
                   sx={{ 
-                    color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
-                    mb: 4,
-                    textAlign: 'center',
-                    fontWeight: 500,
-                    fontSize: '1.1rem',
-                    letterSpacing: '0.5px'
+                    color: darkMode ? 'text.secondary' : 'rgba(0, 0, 0, 0.6)',
+                    mb: 3,
+                    textAlign: 'center'
                   }}
                 >
                   Sign in to access your dashboard
@@ -273,36 +295,28 @@ const Login = () => {
                       ),
                     }}
                     sx={{
-                      mb: 3,
+                      mb: 2,
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 3,
+                        borderRadius: 2,
                         '& fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
-                          transition: 'all 0.3s ease',
                         },
                         '&:hover fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
-                          boxShadow: darkMode ? '0 0 0 2px rgba(102, 126, 234, 0.1)' : '0 0 0 2px rgba(102, 126, 234, 0.1)'
                         },
                         '&.Mui-focused fieldset': {
                           borderColor: darkMode ? '#667eea' : '#667eea',
-                          borderWidth: '2px',
-                          boxShadow: darkMode ? '0 0 0 3px rgba(102, 126, 234, 0.2)' : '0 0 0 3px rgba(102, 126, 234, 0.2)'
+                          borderWidth: '2px'
                         }
                       },
                       '& .MuiInputLabel-root': {
                         color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
-                        fontWeight: 500,
                       },
                       '& .MuiInputLabel-root.Mui-focused': {
                         color: darkMode ? '#667eea' : '#667eea',
-                        fontWeight: 600,
                       },
                       '& .MuiInputBase-input': {
                         color: darkMode ? '#f1f5f9' : '#1e293b',
-                        py: 1.5,
-                        px: 1.5,
-                        fontSize: '1rem'
                       }
                     }}
                   />
@@ -329,12 +343,6 @@ const Login = () => {
                             aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             edge="end"
-                            sx={{
-                              color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
-                              '&:hover': {
-                                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
-                              }
-                            }}
                           >
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
@@ -342,36 +350,28 @@ const Login = () => {
                       ),
                     }}
                     sx={{
-                      mb: 3,
+                      mb: 2,
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 3,
+                        borderRadius: 2,
                         '& fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
-                          transition: 'all 0.3s ease',
                         },
                         '&:hover fieldset': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
-                          boxShadow: darkMode ? '0 0 0 2px rgba(102, 126, 234, 0.1)' : '0 0 0 2px rgba(102, 126, 234, 0.1)'
                         },
                         '&.Mui-focused fieldset': {
                           borderColor: darkMode ? '#667eea' : '#667eea',
-                          borderWidth: '2px',
-                          boxShadow: darkMode ? '0 0 0 3px rgba(102, 126, 234, 0.2)' : '0 0 0 3px rgba(102, 126, 234, 0.2)'
+                          borderWidth: '2px'
                         }
                       },
                       '& .MuiInputLabel-root': {
                         color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
-                        fontWeight: 500,
                       },
                       '& .MuiInputLabel-root.Mui-focused': {
                         color: darkMode ? '#667eea' : '#667eea',
-                        fontWeight: 600,
                       },
                       '& .MuiInputBase-input': {
                         color: darkMode ? '#f1f5f9' : '#1e293b',
-                        py: 1.5,
-                        px: 1.5,
-                        fontSize: '1rem'
                       }
                     }}
                   />
