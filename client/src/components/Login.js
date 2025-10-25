@@ -221,19 +221,6 @@ const Login = () => {
                   <Typography 
                     component="span" 
                     sx={{ 
-                      fontWeight: 600,
-                      color: darkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
-                      fontSize: '1.8rem',
-                      fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                      display: 'inline-block',
-                      mx: 1
-                    }}
-                  >
-                    @waits
-                  </Typography>
-                  <Typography 
-                    component="span" 
-                    sx={{ 
                       fontWeight: 800,
                       color: darkMode ? '#fbbf24' : '#f59e0b',
                       fontSize: '2.0rem',

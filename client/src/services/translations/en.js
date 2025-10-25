@@ -62,7 +62,7 @@ const translations = {
   
   // Login
   login: {
-    title: 'Zenith @waits ⚡ Your Teamwork',
+    title: 'Zenith⚡Your Teamwork',
     username: 'Username or Email',
     password: 'Password',
     rememberMe: 'Remember me',
