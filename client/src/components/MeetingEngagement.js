@@ -967,7 +967,9 @@ const MeetingEngagement = () => {
                               alignItems: 'center',
                               p: 1,
                               borderRadius: 1,
-                              bgcolor: formData.selectedUsers.includes(user.id) ? 'rgba(102, 126, 234, 0.1)' : 'transparent',
+                              bgcolor: formData.selectedUsers.includes(user.id) ? 
+                                (theme.palette.mode === 'dark' ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.1)') : 
+                                'transparent',
                               transition: 'background-color 0.2s ease',
                               width: '100%'
                             }}>
@@ -997,7 +999,7 @@ const MeetingEngagement = () => {
                             width: '100%',
                             mr: 0,
                             '&:hover': {
-                              bgcolor: 'rgba(102, 126, 234, 0.05)'
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.05)'
                             }
                           }}
                         />

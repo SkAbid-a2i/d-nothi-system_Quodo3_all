@@ -203,15 +203,20 @@ const Login = () => {
                 
                 <Typography 
                   component="h1" 
-                  variant="h4" 
+                  variant="h3" 
+                  align="center"
                   sx={{ 
-                    fontWeight: 700,
+                    fontWeight: 800,
                     background: darkMode 
                       ? 'linear-gradient(45deg, #967bb6, #98fb98)' 
                       : 'linear-gradient(45deg, #667eea, #764ba2)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    mb: 2
+                    mb: 3,
+                    lineHeight: 1.2,
+                    textShadow: darkMode 
+                      ? '0 2px 4px rgba(0, 0, 0, 0.3)' 
+                      : '0 2px 4px rgba(0, 0, 0, 0.1)'
                   }}
                 >
                   {t('login.title')}
