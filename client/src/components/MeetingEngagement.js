@@ -944,7 +944,7 @@ const MeetingEngagement = () => {
                 <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                   Select Participants
                 </Typography>
-                <Paper sx={{ maxHeight: 300, overflow: 'auto', p: 2, bgcolor: 'background.paper' }}>
+                <Paper sx={{ maxHeight: 300, overflow: 'auto', p: 2, bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : 'background.paper' }}>
                   <Grid container spacing={1}>
                     {users.map((user) => (
                       <Grid item xs={12} sm={6} md={4} key={user.id}>

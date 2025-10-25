@@ -62,7 +62,7 @@ const translations = {
   
   // Login
   login: {
-    title: 'Sign in to Zenith',
+    title: 'Zenith Awaits: Power Your Teamwork',
     username: 'Username or Email',
     password: 'Password',
     rememberMe: 'Remember me',

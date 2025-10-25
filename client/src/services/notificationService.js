@@ -44,7 +44,9 @@ class NotificationService {
       baseUrl = baseUrl.slice(0, -4); // Remove trailing /api
     }
     
-    const url = `${baseUrl}/api/notifications?userId=${userId}`;
+    // Ensure we don't have double slashes in the URL
+    const normalizedBaseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+    const url = `${normalizedBaseUrl}/api/notifications?userId=${userId}`;
     
     console.log('NotificationService: Final notification URL:', url);
 

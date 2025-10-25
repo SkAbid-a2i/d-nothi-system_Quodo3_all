@@ -82,7 +82,7 @@ const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   background: theme.palette.mode === 'dark' 
     ? 'rgba(30, 30, 46, 0.9)' 
-    : 'rgba(102, 126, 234, 0.9)', // Changed to blue for light mode
+    : 'rgba(255, 255, 255, 0.9)',
   backdropFilter: 'blur(10px)',
   boxShadow: theme.palette.mode === 'dark' 
     ? '0 2px 20px rgba(0, 0, 0, 0.3)' 
