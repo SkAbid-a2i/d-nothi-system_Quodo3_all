@@ -1,7 +1,7 @@
-# D-Nothi Task Management System - Implementation Summary
+# D-Nothi Team & Activity Management System - Implementation Summary
 
 ## Overview
-This document summarizes all the enhancements and implementations made to the D-Nothi Task Management System to meet the specified requirements.
+This document summarizes all the enhancements and implementations made to the D-Nothi Team & Activity Management System to meet the specified requirements.
 
 ## Completed Features
 
@@ -112,7 +112,7 @@ This document summarizes all the enhancements and implementations made to the D-
 7. Advanced analytics and insights
 
 ## Conclusion
-The D-Nothi Task Management System has been successfully enhanced to meet all specified requirements with a focus on:
+The D-Nothi Team & Activity Management System has been successfully enhanced to meet all specified requirements with a focus on:
 - User experience
 - Security
 - Performance

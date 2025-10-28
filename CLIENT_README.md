@@ -1,8 +1,8 @@
-# D-Nothi Task Management System - Frontend
+# D-Nothi Team & Activity Management System - Frontend
 
 ## Overview
 
-This is the frontend implementation of the D-Nothi Task Management System, built with React and Material-UI. The system provides role-based access control with different dashboards and functionalities for Agents, Admins, Supervisors, and SystemAdmins.
+This is the frontend implementation of the D-Nothi Team & Activity Management System, built with React and Material-UI. The system provides role-based access control with different dashboards and functionalities for Agents, Admins, Supervisors, and SystemAdmins.
 
 ## Features Implemented
 

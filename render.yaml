@@ -42,7 +42,7 @@ services:
       # - key: EMAIL_PASS
       #   sync: false
       # - key: EMAIL_FROM
-      #   value: "D-Nothi Task Management <no-reply@d-nothi.com>"
+      #   value: "D-Nothi Team & Activity Management <no-reply@d-nothi.com>"
 
   - type: web
     name: quodo3-frontend

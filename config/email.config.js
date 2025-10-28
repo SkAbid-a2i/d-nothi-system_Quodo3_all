@@ -12,7 +12,7 @@ module.exports = {
   },
   
   // Default sender
-  from: process.env.EMAIL_FROM || 'D-Nothi Task Management <no-reply@d-nothi.com>',
+  from: process.env.EMAIL_FROM || 'D-Nothi Team & Activity Management <no-reply@d-nothi.com>',
   
   // Email templates
   templates: {

@@ -130,7 +130,7 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
-EMAIL_FROM=D-Nothi Task Management <no-reply@d-nothi.com>
+EMAIL_FROM=D-Nothi Team & Activity Management <no-reply@d-nothi.com>
 
 # Server Configuration
 NODE_ENV=development

@@ -1,7 +1,7 @@
 # System Update Summary
 
 ## Overview
-This update resolves critical database schema issues and implements a comprehensive notification system for the D-Nothi Task Management System. All components have been verified to work correctly with the TiDB database in production.
+This update resolves critical database schema issues and implements a comprehensive notification system for the D-Nothi Team & Activity Management System. All components have been verified to work correctly with the TiDB database in production.
 
 ## Key Fixes and Improvements
 

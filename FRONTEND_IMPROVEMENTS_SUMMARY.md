@@ -1,7 +1,7 @@
 # Frontend Improvements Summary
 
 ## Overview
-This document summarizes the improvements made to the frontend of the D-Nothi Task Management System, focusing on field labeling, notification messages, and dark mode implementation.
+This document summarizes the improvements made to the frontend of the D-Nothi Team & Activity Management System, focusing on field labeling, notification messages, and dark mode implementation.
 
 ## Improvements Made
 

@@ -62,7 +62,7 @@ const translations = {
   
   // Login
   login: {
-    title: 'D-Nothi সিস্টেমে সাইন ইন করুন',
+    title: 'Zenith⚡Your Teamwork',
     username: 'ব্যবহারকারীর নাম বা ইমেল',
     password: 'পাসওয়ার্ড',
     rememberMe: 'আমাকে মনে রাখুন',

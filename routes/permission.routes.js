@@ -9,6 +9,7 @@ const corsOptions = {
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',

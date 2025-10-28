@@ -1,7 +1,7 @@
 # Email Notification Setup Guide
 
 ## Overview
-This guide explains how to configure email notifications for the D-Nothi Task Management System.
+This guide explains how to configure email notifications for the D-Nothi Team & Activity Management System.
 
 ## Prerequisites
 - SMTP server credentials (Gmail, Outlook, etc.)
@@ -20,7 +20,7 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
-EMAIL_FROM=D-Nothi Task Management <no-reply@d-nothi.com>
+EMAIL_FROM=D-Nothi Team & Activity Management <no-reply@d-nothi.com>
 ```
 
 ### Gmail Setup (Recommended)

@@ -192,12 +192,12 @@ async function runVerification() {
   if (allValid) {
     console.log('\n🎉 ALL CHECKS PASSED! The Obligation implementation should be working correctly.');
     console.log('\n📋 To verify in the application:');
-    console.log('   1. Navigate to https://d-nothi-system-quodo3-all.vercel.app/tasks');
+    console.log('   1. Navigate to https://d-nothi-zenith.vercel.app/tasks');
     console.log('   2. Go to the "Create Task" tab and check for Obligation dropdown');
     console.log('   3. Edit an existing task and check for Obligation dropdown');
-    console.log('   4. Navigate to https://d-nothi-system-quodo3-all.vercel.app/my-tasks');
+    console.log('   4. Navigate to https://d-nothi-zenith.vercel.app/my-tasks');
     console.log('   5. Edit a task and check for Obligation dropdown');
-    console.log('   6. Navigate to https://d-nothi-system-quodo3-all.vercel.app/admin');
+    console.log('   6. Navigate to https://d-nothi-zenith.vercel.app/admin');
     console.log('   7. Go to Dropdown Management and verify "Obligation" is in the Type dropdown');
   } else {
     console.log('\n❌ SOME CHECKS FAILED! Please review the output above for specific issues.');

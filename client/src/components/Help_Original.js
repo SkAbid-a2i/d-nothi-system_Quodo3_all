@@ -76,7 +76,7 @@ const Help = () => {
                 width="100%"
                 height="315"
                 src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="D-Nothi Task Management Tutorial"
+                title="D-Nothi Team & Activity Management Tutorial"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -115,13 +115,13 @@ const Help = () => {
                   gutterBottom
                   color={theme.palette.mode === 'dark' ? 'white' : 'inherit'}
                 >
-                  Getting Started with D-Nothi Task Management
+                  Getting Started with D-Nothi Team & Activity Management
                 </Typography>
                 <Typography 
                   paragraph
                   color={theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit'}
                 >
-                  Welcome to the D-Nothi Task Management system. This guide will help you understand how to use all the features of our comprehensive task, leave, and user management platform.
+                  Welcome to the D-Nothi Team & Activity Management system. This guide will help you understand how to use all the features of our comprehensive task, leave, and user management platform.
                 </Typography>
                 <Typography 
                   variant="h6" 
