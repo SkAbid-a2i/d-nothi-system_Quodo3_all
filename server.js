@@ -100,27 +100,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Test endpoint to check environment variables
-app.get('/api/debug/env', (req, res) => {
-  res.json({
-    FRONTEND_URL: process.env.FRONTEND_URL,
-    FRONTEND_URL_2: process.env.FRONTEND_URL_2,
-    FRONTEND_URL_3: process.env.FRONTEND_URL_3,
-    corsOrigins: [
-      process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-      process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-      process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-      'https://quodo3-frontend.onrender.com',
-      'https://quodo3-backend.onrender.com',
-      'https://d-nothi-system-quodo3-all.vercel.app',
-      'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-    ]
-  });
-});
-
 // SSE endpoint for real-time notifications (must be after middleware)
 app.get('/api/notifications', cors({
   origin: [
