@@ -24,11 +24,13 @@ const MeetingUsers = require('./models/MeetingUsers');
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
+
+// Fix CORS configuration to handle comma-separated values in environment variables
+function parseCorsOrigins() {
+  const origins = [
+    'https://quodo3-frontend.netlify.app',
+    'http://localhost:3000',
+    'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -36,7 +38,30 @@ app.use(cors({
     'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
     'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
     'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-  ],
+  ];
+
+  // Handle FRONTEND_URL (might contain comma-separated values)
+  if (process.env.FRONTEND_URL) {
+    const frontendUrls = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+    origins.push(...frontendUrls);
+  }
+
+  // Handle FRONTEND_URL_2
+  if (process.env.FRONTEND_URL_2) {
+    origins.push(process.env.FRONTEND_URL_2);
+  }
+
+  // Handle FRONTEND_URL_3
+  if (process.env.FRONTEND_URL_3) {
+    origins.push(process.env.FRONTEND_URL_3);
+  }
+
+  // Remove duplicates and empty values
+  return [...new Set(origins)].filter(origin => origin && origin.length > 0);
+}
+
+app.use(cors({
+  origin: parseCorsOrigins(),
   credentials: true,
   optionsSuccessStatus: 200,
   exposedHeaders: ['Authorization'],
