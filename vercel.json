@@ -16,26 +16,6 @@
       "destination": "/index.html"
     }
   ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://d-nothi-system-quodo3-all.vercel.app"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://d-nothi-zenith.vercel.app"
-        }
-      ]
-    }
-  ],
   "env": {
     "REACT_APP_API_URL": "https://quodo3-backend.onrender.com/api"
   }
