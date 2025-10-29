@@ -28,6 +28,7 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -157,6 +158,7 @@ app.use('/api/users', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -179,6 +181,7 @@ app.use('/api/tasks', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -201,6 +204,7 @@ app.use('/api/leaves', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -223,6 +227,7 @@ app.use('/api/dropdowns', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -245,6 +250,7 @@ app.use('/api/reports', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -267,6 +273,7 @@ app.use('/api/audit', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -289,6 +296,7 @@ app.use('/api/logs', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -311,6 +319,7 @@ app.use('/api/frontend-logs', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -333,6 +342,7 @@ app.use('/api/permissions', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -355,6 +365,7 @@ app.use('/api/files', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -377,6 +388,7 @@ app.use('/api/meetings', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -400,6 +412,7 @@ app.use('/api/collaborations', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -422,6 +435,7 @@ app.use('/api/health', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
@@ -444,6 +458,7 @@ app.use('/api/notifications', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
     process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
     'https://quodo3-frontend.onrender.com',
     'https://quodo3-backend.onrender.com',
     'https://d-nothi-system-quodo3-all.vercel.app',
