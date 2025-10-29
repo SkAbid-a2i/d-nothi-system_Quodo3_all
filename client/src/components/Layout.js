@@ -166,8 +166,11 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       // Handle notification cleanup
       handleLogoutNotifications();
       logout();
-      console.log('Logout completed, redirecting to login');
-      navigate('/');
+      console.log('Logout completed, redirecting to root path');
+      // Add a small delay to ensure the logout process completes
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
     } catch (error) {
       console.error('Error during logout:', error);
       // Even if there's an error, still try to navigate to login
