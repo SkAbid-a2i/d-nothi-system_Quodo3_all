@@ -16,13 +16,6 @@
       "destination": "/index.html"
     }
   ],
-  "redirects": [
-    {
-      "source": "/login",
-      "destination": "/",
-      "permanent": true
-    }
-  ],
   "env": {
     "REACT_APP_API_URL": "https://quodo3-backend.onrender.com/api"
   }
