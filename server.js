@@ -315,29 +315,6 @@ app.use('/api/logs', cors({
   next();
 }, logRoutes);
 
-app.use('/api/frontend-logs', cors({
-  origin: [
-    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-    'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com',
-    'https://d-nothi-system-quodo3-all.vercel.app',
-    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}), (req, res, next) => {
-  logger.info('Frontend log routes accessed', { endpoint: '/api/frontend-logs' + req.url });
-  next();
-}, frontendLogRoutes);
-
 app.use('/api/permissions', cors({
   origin: [
     process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
