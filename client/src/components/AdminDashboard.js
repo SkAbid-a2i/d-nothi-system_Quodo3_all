@@ -605,43 +605,45 @@ const AdminDashboard = () => {
                 </Typography>
                 <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                   {tasks.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="60%">
-                      <PieChart>
-                        <Pie
-                          data={getTeamPerformanceData()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={true}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="tasks"
-                          nameKey="name"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {getTeamPerformanceData().map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            border: '1px solid #ccc',
-                            borderRadius: 4
-                          }}
-                        />
-                        <Legend 
-                          layout="horizontal" 
-                          verticalAlign="bottom" 
-                          align="center"
-                          wrapperStyle={{ paddingTop: 20 }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <Box sx={{ flexGrow: 1, minHeight: { xs: 250, sm: 300, md: 350 } }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={getTeamPerformanceData()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={true}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="tasks"
+                            nameKey="name"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {getTeamPerformanceData().map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              border: '1px solid #ccc',
+                              borderRadius: 4
+                            }}
+                          />
+                          <Legend 
+                            layout="horizontal" 
+                            verticalAlign="bottom" 
+                            align="center"
+                            wrapperStyle={{ paddingTop: 20 }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Box>
                   ) : (
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1, minHeight: { xs: 250, sm: 300, md: 350 } }}>
                       <Typography color="text.secondary">No data available</Typography>
                     </Box>
                   )}
@@ -661,6 +663,9 @@ const AdminDashboard = () => {
                               {users.length}
                             </Typography>
                           </CardContent>
+                          <CardActions>
+                            <Button size="small" fullWidth>View Details</Button>
+                          </CardActions>
                         </Card>
                       </Grid>
                       <Grid item xs={6}>
@@ -673,6 +678,9 @@ const AdminDashboard = () => {
                               {tasks.filter(t => t.status !== 'Completed').length}
                             </Typography>
                           </CardContent>
+                          <CardActions>
+                            <Button size="small" fullWidth>View Details</Button>
+                          </CardActions>
                         </Card>
                       </Grid>
                       <Grid item xs={6}>
@@ -685,6 +693,9 @@ const AdminDashboard = () => {
                               {tasks.filter(t => t.status === 'Completed').length}
                             </Typography>
                           </CardContent>
+                          <CardActions>
+                            <Button size="small" fullWidth>View Details</Button>
+                          </CardActions>
                         </Card>
                       </Grid>
                       <Grid item xs={6}>
@@ -697,6 +708,9 @@ const AdminDashboard = () => {
                               {leaves.filter(l => l.status === 'Pending').length}
                             </Typography>
                           </CardContent>
+                          <CardActions>
+                            <Button size="small" fullWidth>View Details</Button>
+                          </CardActions>
                         </Card>
                       </Grid>
                     </Grid>
