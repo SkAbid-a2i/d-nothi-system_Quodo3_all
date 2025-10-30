@@ -432,274 +432,279 @@ const AdminDashboard = () => {
           </Grid>
         </Grid>
         
-        {/* Charts Section */}
-        <Grid item xs={12} lg={8}>
-          <Paper sx={{ p: 2, height: '100%', boxShadow: 3, borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: { xs: 1, sm: 0 } }}>
-                Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
-              </Typography>
-              <Box>
-                <IconButton 
-                  color={chartType === 'bar' ? 'primary' : 'default'}
-                  onClick={() => setChartType('bar')}
-                  size="small"
-                  sx={{ mx: 0.5, border: chartType === 'bar' ? 1 : 0, borderColor: 'primary.main' }}
-                >
-                  <BarChartIcon />
-                </IconButton>
-                <IconButton 
-                  color={chartType === 'pie' ? 'primary' : 'default'}
-                  onClick={() => setChartType('pie')}
-                  size="small"
-                  sx={{ mx: 0.5, border: chartType === 'pie' ? 1 : 0, borderColor: 'primary.main' }}
-                >
-                  <PieChartIcon />
-                </IconButton>
-                <IconButton 
-                  color={chartType === 'line' ? 'primary' : 'default'}
-                  onClick={() => setChartType('line')}
-                  size="small"
-                  sx={{ mx: 0.5, border: chartType === 'line' ? 1 : 0, borderColor: 'primary.main' }}
-                >
-                  <LineChartIcon />
-                </IconButton>
-              </Box>
-            </Box>
-            
-            <Box sx={{ height: { xs: 300, sm: 350, md: 400 }, mt: 2 }}>
-              {chartType === 'bar' && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={getTaskDistributionData()}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 60,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={60}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid #ccc',
-                        borderRadius: 4
-                      }}
-                    />
-                    <Legend />
-                    <Bar 
-                      dataKey="count" 
-                      fill="#8884d8" 
-                      name="Task Count"
-                      radius={[4, 4, 0, 0]}
+        {/* Charts and Team Performance */}
+        <Grid item xs={12}>
+          <Grid container spacing={3}>
+            {/* Charts Section */}
+            <Grid item xs={12} lg={8}>
+              <Paper sx={{ p: 2, height: '100%', boxShadow: 3, borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: { xs: 1, sm: 0 } }}>
+                    Task Distribution - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+                  </Typography>
+                  <Box>
+                    <IconButton 
+                      color={chartType === 'bar' ? 'primary' : 'default'}
+                      onClick={() => setChartType('bar')}
+                      size="small"
+                      sx={{ mx: 0.5, border: chartType === 'bar' ? 1 : 0, borderColor: 'primary.main' }}
                     >
-                      {getTaskDistributionData().map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-              
-              {chartType === 'pie' && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={getTaskDistributionData()}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="count"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      <BarChartIcon />
+                    </IconButton>
+                    <IconButton 
+                      color={chartType === 'pie' ? 'primary' : 'default'}
+                      onClick={() => setChartType('pie')}
+                      size="small"
+                      sx={{ mx: 0.5, border: chartType === 'pie' ? 1 : 0, borderColor: 'primary.main' }}
                     >
-                      {getTaskDistributionData().map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid #ccc',
-                        borderRadius: 4
-                      }}
-                    />
-                    <Legend 
-                      layout="vertical" 
-                      verticalAlign="middle" 
-                      align="right"
-                      wrapperStyle={{ paddingLeft: 20 }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-              
-              {chartType === 'line' && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={getTaskDistributionData()}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 60,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={60}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid #ccc',
-                        borderRadius: 4
-                      }}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="#8884d8" 
-                      activeDot={{ r: 8 }} 
-                      name="Task Count"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </Box>
-          </Paper>
-        </Grid>
-        
-        {/* Team Performance Section */}
-        <Grid item xs={12} lg={4}>
-          <Paper sx={{ p: 2, height: '100%', boxShadow: 3, borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-              Team Performance
-            </Typography>
-            <Box sx={{ height: 'calc(100% - 40px)' }}>
-              {tasks.length > 0 ? (
-                <ResponsiveContainer width="100%" height="60%">
-                  <PieChart>
-                    <Pie
-                      data={getTeamPerformanceData()}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="tasks"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      <PieChartIcon />
+                    </IconButton>
+                    <IconButton 
+                      color={chartType === 'line' ? 'primary' : 'default'}
+                      onClick={() => setChartType('line')}
+                      size="small"
+                      sx={{ mx: 0.5, border: chartType === 'line' ? 1 : 0, borderColor: 'primary.main' }}
                     >
-                      {getTeamPerformanceData().map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid #ccc',
-                        borderRadius: 4
-                      }}
-                    />
-                    <Legend 
-                      layout="horizontal" 
-                      verticalAlign="bottom" 
-                      align="center"
-                      wrapperStyle={{ paddingTop: 20 }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60%' }}>
-                  <Typography color="text.secondary">No data available</Typography>
+                      <LineChartIcon />
+                    </IconButton>
+                  </Box>
                 </Box>
-              )}
-              <Divider sx={{ my: 2 }} />
-              <Box>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Performance Summary:
+                
+                <Box sx={{ height: 'auto', minHeight: { xs: 300, sm: 350, md: 400 }, mt: 2 }}>
+                  {chartType === 'bar' && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={getTaskDistributionData()}
+                        margin={{
+                          top: 20,
+                          right: 30,
+                          left: 20,
+                          bottom: 60,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45} 
+                          textAnchor="end" 
+                          height={60}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            border: '1px solid #ccc',
+                            borderRadius: 4
+                          }}
+                        />
+                        <Legend />
+                        <Bar 
+                          dataKey="count" 
+                          fill="#8884d8" 
+                          name="Task Count"
+                          radius={[4, 4, 0, 0]}
+                        >
+                          {getTaskDistributionData().map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                  
+                  {chartType === 'pie' && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={getTaskDistributionData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="count"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {getTaskDistributionData().map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            border: '1px solid #ccc',
+                            borderRadius: 4
+                          }}
+                        />
+                        <Legend 
+                          layout="vertical" 
+                          verticalAlign="middle" 
+                          align="right"
+                          wrapperStyle={{ paddingLeft: 20 }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                  
+                  {chartType === 'line' && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={getTaskDistributionData()}
+                        margin={{
+                          top: 20,
+                          right: 30,
+                          left: 20,
+                          bottom: 60,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45} 
+                          textAnchor="end" 
+                          height={60}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            border: '1px solid #ccc',
+                            borderRadius: 4
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="count" 
+                          stroke="#8884d8" 
+                          activeDot={{ r: 8 }} 
+                          name="Task Count"
+                          strokeWidth={2}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+            
+            {/* Team Performance Section */}
+            <Grid item xs={12} lg={4}>
+              <Paper sx={{ p: 2, height: '100%', boxShadow: 3, borderRadius: 2, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
+                  Team Performance
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Card sx={{ height: '100%', boxShadow: 1 }}>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary" align="center">
-                          Total Users
-                        </Typography>
-                        <Typography variant="h5" align="center" color="primary">
-                          {users.length}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Card sx={{ height: '100%', boxShadow: 1 }}>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary" align="center">
-                          Active Tasks
-                        </Typography>
-                        <Typography variant="h5" align="center" color="secondary">
-                          {tasks.filter(t => t.status !== 'Completed').length}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Card sx={{ height: '100%', boxShadow: 1 }}>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary" align="center">
-                          Completed
-                        </Typography>
-                        <Typography variant="h5" align="center" color="success.main">
-                          {tasks.filter(t => t.status === 'Completed').length}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Card sx={{ height: '100%', boxShadow: 1 }}>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary" align="center">
-                          Pending Leaves
-                        </Typography>
-                        <Typography variant="h5" align="center" color="warning.main">
-                          {leaves.filter(l => l.status === 'Pending').length}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Box>
-          </Paper>
+                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  {tasks.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="60%">
+                      <PieChart>
+                        <Pie
+                          data={getTeamPerformanceData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="tasks"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {getTeamPerformanceData().map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe'][index % 5]} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            border: '1px solid #ccc',
+                            borderRadius: 4
+                          }}
+                        />
+                        <Legend 
+                          layout="horizontal" 
+                          verticalAlign="bottom" 
+                          align="center"
+                          wrapperStyle={{ paddingTop: 20 }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60%' }}>
+                      <Typography color="text.secondary">No data available</Typography>
+                    </Box>
+                  )}
+                  <Divider sx={{ my: 2 }} />
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Performance Summary:
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Card sx={{ height: '100%', boxShadow: 1 }}>
+                          <CardContent>
+                            <Typography variant="body2" color="text.secondary" align="center">
+                              Total Users
+                            </Typography>
+                            <Typography variant="h5" align="center" color="primary">
+                              {users.length}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ height: '100%', boxShadow: 1 }}>
+                          <CardContent>
+                            <Typography variant="body2" color="text.secondary" align="center">
+                              Active Tasks
+                            </Typography>
+                            <Typography variant="h5" align="center" color="secondary">
+                              {tasks.filter(t => t.status !== 'Completed').length}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ height: '100%', boxShadow: 1 }}>
+                          <CardContent>
+                            <Typography variant="body2" color="text.secondary" align="center">
+                              Completed
+                            </Typography>
+                            <Typography variant="h5" align="center" color="success.main">
+                              {tasks.filter(t => t.status === 'Completed').length}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ height: '100%', boxShadow: 1 }}>
+                          <CardContent>
+                            <Typography variant="body2" color="text.secondary" align="center">
+                              Pending Leaves
+                            </Typography>
+                            <Typography variant="h5" align="center" color="warning.main">
+                              {leaves.filter(l => l.status === 'Pending').length}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
         </Grid>
         
         {/* Filters and Controls */}
