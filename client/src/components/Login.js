@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
+import LogoZ from './icons/LogoZ';
 import { 
   Container, 
   Paper, 
@@ -189,16 +190,7 @@ const Login = () => {
                     justifyContent: 'center'
                   }}
                 >
-                  <img 
-                    src="/D-nothi logo-01.png" 
-                    alt="D-nothi Logo" 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'contain',
-                      borderRadius: '50%'
-                    }} 
-                  />
+                  <LogoZ size={80} />
                 </Box>
                 
                 <Box sx={{ mb: 2, textAlign: 'center' }}>
