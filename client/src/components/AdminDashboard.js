@@ -61,6 +61,7 @@ import {
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import notificationService from '../services/notificationService';
+import UserFilterDropdown from './UserFilterDropdown';
 
 // Styled Tab component for better design
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -466,7 +467,7 @@ const AdminDashboard = () => {
               </Box>
             </Box>
             
-            <Box sx={{ height: { xs: 300, sm: 350 }, mt: 2 }}>
+            <Box sx={{ height: { xs: 300, sm: 350, md: 400 }, mt: 2 }}>
               {chartType === 'bar' && (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -722,12 +723,14 @@ const AdminDashboard = () => {
               </Grid>
               
               <Grid item xs={12} sm={2}>
-                <TextField
-                  fullWidth
-                  size="small"
+                <UserFilterDropdown
+                  users={users}
+                  selectedUser={users.find(u => u.username === userFilter) || null}
+                  onUserChange={(newValue) => {
+                    setUserFilter(newValue ? newValue.username : '');
+                  }}
                   label="Filter by User"
-                  value={userFilter}
-                  onChange={(e) => setUserFilter(e.target.value)}
+                  gridSize={{ xs: 12, sm: 12 }}
                 />
               </Grid>
               

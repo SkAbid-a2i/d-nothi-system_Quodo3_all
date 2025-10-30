@@ -147,8 +147,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },
   ];
 
-  // Add team tasks for Admin/Supervisor
-  if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
+  // Add team tasks for Admin/Supervisor/SystemAdmin
+  if (user && (user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin')) {
     menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TaskIcon />, path: '/team-tasks' });
   }
 

@@ -1224,6 +1224,7 @@ const AgentDashboard = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
+                        <TableCell>User</TableCell>
                         <TableCell>Start Date</TableCell>
                         <TableCell>End Date</TableCell>
                         <TableCell>Reason</TableCell>
@@ -1234,6 +1235,7 @@ const AgentDashboard = () => {
                     <TableBody>
                       {finalFilteredLeaves.map((leave) => (
                         <TableRow key={leave.id}>
+                          <TableCell>{leave.userName || 'N/A'}</TableCell>
                           <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell>{leave.reason || 'N/A'}</TableCell>

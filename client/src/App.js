@@ -325,7 +325,7 @@ function App() {
                 <Route index element={<AgentDashboard />} />
               </Route>
               <Route path="/team-tasks" element={
-                <ProtectedRoute allowedRoles={['Admin', 'Supervisor']}>
+                <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
                   <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
                 </ProtectedRoute>
               }>
