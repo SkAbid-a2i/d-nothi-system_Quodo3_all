@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
-import LogoZ from './icons/LogoZ';
 import { 
   AppBar, 
   Toolbar, 
@@ -586,13 +585,10 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
                 : 'linear-gradient(45deg, #667eea, #764ba2)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center'
+              fontWeight: 700
             }}
           >
-            <LogoZ size={32} style={{ marginRight: 10 }} />
-            Zenith
+            D-Nothi Team & Activity Management
           </Typography>
           
           <Tooltip title="Notifications">
