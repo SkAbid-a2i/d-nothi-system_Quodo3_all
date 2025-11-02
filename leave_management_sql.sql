@@ -63,26 +63,3 @@ ORDER BY l.createdAt DESC;
 
 -- 5. Sample DELETE statement for removing a leave record
 DELETE FROM leaves WHERE id = 1 AND status = 'Pending';
-
--- SQL commands for adding columns to existing leave table in TiDB
-
--- 1. Add office column to leaves table (if not exists)
-ALTER TABLE leaves ADD COLUMN IF NOT EXISTS office VARCHAR(255);
-
--- 2. Add approvedBy column to leaves table (if not exists)
-ALTER TABLE leaves ADD COLUMN IF NOT EXISTS approvedBy INT;
-
--- 3. Add approvedByName column to leaves table (if not exists)
-ALTER TABLE leaves ADD COLUMN IF NOT EXISTS approvedByName VARCHAR(255);
-
--- 4. Add approvedAt column to leaves table (if not exists)
-ALTER TABLE leaves ADD COLUMN IF NOT EXISTS approvedAt DATETIME;
-
--- 5. Add rejectionReason column to leaves table (if not exists)
-ALTER TABLE leaves ADD COLUMN IF NOT EXISTS rejectionReason TEXT;
-
--- 6. Ensure status column has the correct ENUM values
-ALTER TABLE leaves MODIFY COLUMN status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending';
-
--- 7. Verify the table structure
-DESCRIBE leaves;

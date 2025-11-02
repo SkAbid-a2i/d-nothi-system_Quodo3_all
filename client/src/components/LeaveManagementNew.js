@@ -763,6 +763,30 @@ const LeaveManagement = () => {
             </Typography>
             <form onSubmit={handleSubmitLeave}>
               <Grid container spacing={2}>
+                {/* Show user dropdown only for System Admins */}
+                {user.role === 'SystemAdmin' && (
+                  <Grid item xs={12}>
+                    <Autocomplete
+                      options={users}
+                      getOptionLabel={(option) => 
+                        option ? (option.fullName || option.username) + ' (' + (option.username || option.email) + ')' : ''
+                      }
+                      value={selectedUserForLeave}
+                      onChange={(event, newValue) => {
+                        setSelectedUserForLeave(newValue);
+                      }}
+                      renderInput={(params) => (
+                        <TextField 
+                          {...params} 
+                          label="Assign Leave To" 
+                          fullWidth 
+                          required
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.id === value?.id}
+                    />
+                  </Grid>
+                )}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
