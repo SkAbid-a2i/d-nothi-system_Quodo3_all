@@ -1,44 +1,47 @@
-#!/usr/bin/env node
-
-/**
- * Database Connection Test Script
- * Tests the database connection and task operations
- */
-
+// Test database connection and schema
+require('dotenv').config();
 const sequelize = require('../config/database');
+const Leave = require('../models/Leave');
 
-async function testDatabaseConnection() {
-  console.log('🔍 Testing database connection...\n');
-  
+async function testDbConnection() {
   try {
-    // Test connection
+    console.log('Testing database connection...');
     await sequelize.authenticate();
-    console.log('✅ Database connection successful!');
-    console.log('   📊 Database type:', sequelize.getDialect());
-    console.log('   📍 Host:', sequelize.config.host || 'localhost (SQLite)');
-    console.log('   🚪 Port:', sequelize.config.port || 'default');
-    console.log('   📁 Database:', sequelize.config.database || 'default');
+    console.log('✅ Database connection successful');
     
-    // Test a simple query
-    const result = await sequelize.query('SELECT 1+1 AS result', { type: sequelize.QueryTypes.SELECT });
-    console.log('   🔍 Simple query test:', result[0].result === 2 ? 'PASSED' : 'FAILED');
+    // Test if the Leave model can be synchronized
+    console.log('Testing Leave model synchronization...');
+    await Leave.sync({ alter: true });
+    console.log('✅ Leave model synchronized successfully');
     
-    // Close connection
+    // Check table structure
+    console.log('Checking leaves table structure...');
+    const tableInfo = await sequelize.getQueryInterface().describeTable('leaves');
+    console.log('Leaves table columns:');
+    Object.keys(tableInfo).forEach(column => {
+      console.log(`  - ${column}: ${tableInfo[column].type}`);
+    });
+    
+    // Check if requestedBy column exists
+    if (tableInfo.requestedBy) {
+      console.log('✅ requestedBy column exists');
+    } else {
+      console.log('❌ requestedBy column is missing');
+    }
+    
+    if (tableInfo.requestedByName) {
+      console.log('✅ requestedByName column exists');
+    } else {
+      console.log('❌ requestedByName column is missing');
+    }
+    
     await sequelize.close();
-    console.log('\n✅ All database tests passed!');
-    
+    console.log('✅ Database connection test completed');
   } catch (error) {
     console.error('❌ Database connection test failed:', error.message);
-    if (error.parent) {
-      console.error('   🔧 Parent error:', error.parent.message);
-    }
+    console.error('Stack:', error.stack);
     process.exit(1);
   }
 }
 
-// Run the test if this script is executed directly
-if (require.main === module) {
-  testDatabaseConnection();
-}
-
-module.exports = testDatabaseConnection;
+testDbConnection();

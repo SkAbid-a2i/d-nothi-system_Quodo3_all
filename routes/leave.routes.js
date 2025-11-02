@@ -64,18 +64,42 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
 // @access  Private (Agent, Admin, Supervisor)
 router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
-    const { startDate, endDate, reason } = req.body;
+    const { startDate, endDate, reason, userId, userName, office, requestedBy, requestedByName } = req.body;
 
     // Validate dates
     if (new Date(startDate) >= new Date(endDate)) {
       return res.status(400).json({ message: 'End date must be after start date' });
     }
 
+    // Determine which user the leave is for
+    let leaveUserId = req.user.id;
+    let leaveUserName = req.user.fullName;
+    let leaveOffice = req.user.office;
+    
+    // If System Admin is assigning leave to another user
+    if (req.user.role === 'SystemAdmin' && userId && userName) {
+      leaveUserId = userId;
+      leaveUserName = userName;
+      leaveOffice = office || req.user.office;
+    }
+
+    // Determine requester information
+    let leaveRequestedBy = req.user.id;
+    let leaveRequestedByName = req.user.fullName;
+    
+    // If explicit requester information is provided
+    if (requestedBy && requestedByName) {
+      leaveRequestedBy = requestedBy;
+      leaveRequestedByName = requestedByName;
+    }
+
     // Create new leave request
     const leave = await Leave.create({
-      userId: req.user.id,
-      userName: req.user.fullName,
-      office: req.user.office, // Add office field
+      userId: leaveUserId,
+      userName: leaveUserName,
+      office: leaveOffice,
+      requestedBy: leaveRequestedBy,
+      requestedByName: leaveRequestedByName,
       startDate,
       endDate,
       reason,
@@ -90,7 +114,7 @@ router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'S
         action: 'CREATE',
         resourceType: 'LEAVE',
         resourceId: leave.id,
-        description: `Leave request for ${req.user.username} from ${startDate} to ${endDate}`
+        description: `Leave request for ${leaveUserName} from ${startDate} to ${endDate} requested by ${leaveRequestedByName}`
       });
     } catch (auditError) {
       console.error('Error creating audit log for leave request:', auditError);
@@ -104,7 +128,7 @@ router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'S
       // Get admin/supervisor for the office
       const admins = await User.findAll({
         where: {
-          office: req.user.office,
+          office: leaveOffice,
           role: {
             [require('sequelize').Op.or]: ['Admin', 'Supervisor']
           },
@@ -116,7 +140,7 @@ router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'S
       for (const admin of admins) {
         if (admin.email) {
           await emailService.sendLeaveRequestNotification({
-            employeeName: req.user.fullName,
+            employeeName: leaveUserName,
             startDate,
             endDate,
             reason

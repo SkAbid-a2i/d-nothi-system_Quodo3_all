@@ -20,7 +20,12 @@ CREATE TABLE IF NOT EXISTS leaves (
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. Sample INSERT statement for creating a new leave record
+-- 2. Add requester columns to existing leaves table (for manual execution)
+-- Check if columns exist before adding them
+ALTER TABLE leaves ADD COLUMN IF NOT EXISTS requestedBy INT;
+ALTER TABLE leaves ADD COLUMN IF NOT EXISTS requestedByName VARCHAR(255);
+
+-- 3. Sample INSERT statement for creating a new leave record
 -- For a regular user (Agent)
 INSERT INTO leaves (userId, userName, office, requestedBy, requestedByName, startDate, endDate, reason, status)
 VALUES (1, 'john_doe', 'Head Office', 1, 'john_doe', '2025-11-01', '2025-11-03', 'Family vacation', 'Pending');
@@ -29,7 +34,7 @@ VALUES (1, 'john_doe', 'Head Office', 1, 'john_doe', '2025-11-01', '2025-11-03',
 INSERT INTO leaves (userId, userName, office, requestedBy, requestedByName, startDate, endDate, reason, status)
 VALUES (2, 'jane_smith', 'Branch Office', 3, 'admin_user', '2025-11-10', '2025-11-12', 'Medical appointment', 'Pending');
 
--- 3. Sample UPDATE statements for approving/rejecting leaves
+-- 4. Sample UPDATE statements for approving/rejecting leaves
 -- Approve a leave
 UPDATE leaves 
 SET status = 'Approved', 
@@ -47,7 +52,7 @@ SET status = 'Rejected',
     approvedAt = NOW()
 WHERE id = 2;
 
--- 4. Sample SELECT statements for viewing leaves
+-- 5. Sample SELECT statements for viewing leaves
 -- View all pending leaves
 SELECT * FROM leaves WHERE status = 'Pending';
 
@@ -57,11 +62,28 @@ SELECT * FROM leaves WHERE userId = 1;
 -- View leaves for a specific office
 SELECT * FROM leaves WHERE office = 'Head Office';
 
--- View all leaves with user information
+-- View all leaves with requester information
+SELECT 
+  l.id,
+  l.userId,
+  l.userName AS employeeName,
+  l.office,
+  l.requestedByName AS requestedBy,
+  l.startDate,
+  l.endDate,
+  l.reason,
+  l.status,
+  l.approvedByName,
+  l.approvedAt,
+  l.createdAt
+FROM leaves l
+ORDER BY l.createdAt DESC;
+
+-- View leaves with user information
 SELECT l.*, u.fullName as userFullName, u.email as userEmail
 FROM leaves l
 JOIN users u ON l.userId = u.id
 ORDER BY l.createdAt DESC;
 
--- 5. Sample DELETE statement for removing a leave record
+-- 6. Sample DELETE statement for removing a leave record
 DELETE FROM leaves WHERE id = 1 AND status = 'Pending';
