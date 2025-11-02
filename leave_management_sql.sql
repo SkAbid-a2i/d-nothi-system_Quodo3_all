@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS leaves (
   userId INT NOT NULL,
   userName VARCHAR(255) NOT NULL,
   office VARCHAR(255),
+  requestedBy INT,
+  requestedByName VARCHAR(255),
   startDate DATETIME NOT NULL,
   endDate DATETIME NOT NULL,
   reason TEXT NOT NULL,
@@ -20,12 +22,12 @@ CREATE TABLE IF NOT EXISTS leaves (
 
 -- 2. Sample INSERT statement for creating a new leave record
 -- For a regular user (Agent)
-INSERT INTO leaves (userId, userName, office, startDate, endDate, reason, status)
-VALUES (1, 'john_doe', 'Head Office', '2025-11-01', '2025-11-03', 'Family vacation', 'Pending');
+INSERT INTO leaves (userId, userName, office, requestedBy, requestedByName, startDate, endDate, reason, status)
+VALUES (1, 'john_doe', 'Head Office', 1, 'john_doe', '2025-11-01', '2025-11-03', 'Family vacation', 'Pending');
 
 -- For a user assigned by System Admin
-INSERT INTO leaves (userId, userName, office, startDate, endDate, reason, status)
-VALUES (2, 'jane_smith', 'Branch Office', '2025-11-10', '2025-11-12', 'Medical appointment', 'Pending');
+INSERT INTO leaves (userId, userName, office, requestedBy, requestedByName, startDate, endDate, reason, status)
+VALUES (2, 'jane_smith', 'Branch Office', 3, 'admin_user', '2025-11-10', '2025-11-12', 'Medical appointment', 'Pending');
 
 -- 3. Sample UPDATE statements for approving/rejecting leaves
 -- Approve a leave

@@ -19,6 +19,13 @@ const Leave = sequelize.define('Leave', {
   office: {
     type: DataTypes.STRING(255)
   },
+  // Add requester information to track who assigned the leave
+  requestedBy: {
+    type: DataTypes.INTEGER
+  },
+  requestedByName: {
+    type: DataTypes.STRING(255)
+  },
   startDate: {
     type: DataTypes.DATE,
     allowNull: false

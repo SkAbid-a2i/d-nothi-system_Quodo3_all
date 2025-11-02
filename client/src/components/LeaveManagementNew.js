@@ -689,7 +689,10 @@ const LeaveManagement = () => {
         appliedDate: new Date().toISOString().split('T')[0],
         userId: leaveUser.id,
         userName: leaveUser.username || leaveUser.fullName,
-        office: leaveUser.office
+        office: leaveUser.office,
+        // Add requester information
+        requestedBy: user.id,
+        requestedByName: user.username || user.fullName
       };
       
       const response = await leaveAPI.createLeave(leaveData);
@@ -882,6 +885,7 @@ const LeaveManagement = () => {
                   <TableCell align="center">End Date</TableCell>
                   <TableCell align="center">Reason</TableCell>
                   <TableCell align="center">Applied Date</TableCell>
+                  <TableCell align="center">Requested By</TableCell>
                   <TableCell align="center">Status</TableCell>
                   <TableCell align="center">Actions</TableCell>
                 </TableRow>
@@ -894,6 +898,7 @@ const LeaveManagement = () => {
                     <TableCell align="center">{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell align="center">{leave.reason || 'N/A'}</TableCell>
                     <TableCell align="center">{leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell align="center">{leave.requestedByName || leave.userName || 'N/A'}</TableCell>
                     <TableCell align="center">
                       <Chip 
                         label={leave.status || 'Pending'} 
