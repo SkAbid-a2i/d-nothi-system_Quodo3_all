@@ -156,6 +156,20 @@ const LeaveManagement = () => {
     }
   }, [user, showSnackbar]);
 
+  // Fetch users for System Admins
+  const fetchUsers = useCallback(async () => {
+    if (user && user.role === 'SystemAdmin') {
+      try {
+        const response = await userAPI.getAllUsers();
+        const usersData = response.data || [];
+        setUsers(usersData);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        showSnackbar('Failed to fetch users: ' + error.message, 'error');
+      }
+    }
+  }, [user, showSnackbar]);
+
   // Fetch leaves on component mount
   useEffect(() => {
     fetchLeaves();
@@ -662,14 +676,20 @@ const LeaveManagement = () => {
     setError('');
     
     try {
+      // Determine which user the leave is for
+      let leaveUser = user; // Default to current user
+      if (user.role === 'SystemAdmin' && selectedUserForLeave) {
+        leaveUser = selectedUserForLeave;
+      }
+      
       const leaveData = {
         startDate: formState.startDate,
         endDate: formState.endDate,
         reason: formState.reason,
         appliedDate: new Date().toISOString().split('T')[0],
-        userId: user.id,
-        userName: user.username || user.fullName,
-        office: user.office
+        userId: leaveUser.id,
+        userName: leaveUser.username || leaveUser.fullName,
+        office: leaveUser.office
       };
       
       const response = await leaveAPI.createLeave(leaveData);
@@ -677,7 +697,7 @@ const LeaveManagement = () => {
       // Add new leave to list
       const newLeave = {
         id: response.data.id,
-        employee: user?.fullName || user?.username || 'Current User',
+        employee: leaveUser?.fullName || leaveUser?.username || 'Current User',
         ...leaveData,
         status: 'Pending'
       };
@@ -690,6 +710,9 @@ const LeaveManagement = () => {
       
       // Reset form
       resetForm();
+      if (user.role === 'SystemAdmin') {
+        setSelectedUserForLeave(null);
+      }
       
       // Show success notification
       showSnackbar(`Leave request for ${newLeave.startDate} to ${newLeave.endDate} submitted successfully!`, 'success');
@@ -1135,6 +1158,101 @@ const LeaveManagement = () => {
         <DialogActions>
           <Button onClick={() => closeDialog('delete')}>
             {t('common.cancel')}
+          </Button>
+          <Button onClick={confirmDeleteLeave} variant="contained" color="error">
+            {t('common.delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbar for real-time notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default LeaveManagement;}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbar for real-time notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default LeaveManagement;}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbar for real-time notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default LeaveManagement;
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default LeaveManagement;
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default LeaveManagement;}
           </Button>
           <Button onClick={confirmDeleteLeave} variant="contained" color="error">
             {t('common.delete')}
