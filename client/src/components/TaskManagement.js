@@ -827,6 +827,31 @@ const TaskManagement = () => {
     }
   };
 
+  // Handle status change for a task
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      setLoading(true);
+      // Update task status through API
+      const response = await taskAPI.updateTask(taskId, { status: newStatus });
+      
+      // Update task in state
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId 
+            ? { ...task, status: newStatus, ...response.data } 
+            : task
+        )
+      );
+      
+      showSnackbar(`Task status updated to ${newStatus}`, 'success');
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      showSnackbar('Failed to update task status: ' + (error.response?.data?.message || error.message), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Add additional logging to help debug agent task visibility
   if (process.env.NODE_ENV === 'development') {
     console.log('Task filtering debug info:', {
