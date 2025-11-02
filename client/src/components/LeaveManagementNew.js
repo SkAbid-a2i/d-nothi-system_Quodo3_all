@@ -27,7 +27,8 @@ import {
   Tab,
   Snackbar,
   CircularProgress,
-  styled
+  styled,
+  Autocomplete
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -39,7 +40,7 @@ import {
   CalendarToday as CalendarIcon,
   Notifications as NotificationsIcon
 } from '@mui/icons-material';
-import { leaveAPI } from '../services/api';
+import { leaveAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
@@ -74,6 +75,8 @@ const LeaveManagement = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [leaves, setLeaves] = useState([]);
+  const [users, setUsers] = useState([]); // Add users state
+  const [selectedUserForLeave, setSelectedUserForLeave] = useState(null); // Add selected user state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState(0);
@@ -156,6 +159,7 @@ const LeaveManagement = () => {
   // Fetch leaves on component mount
   useEffect(() => {
     fetchLeaves();
+    fetchUsers(); // Also fetch users for System Admins
     
     // Subscribe to auto-refresh service
     autoRefreshService.subscribe('LeaveManagement', 'leaves', fetchLeaves, 30000);
@@ -164,7 +168,7 @@ const LeaveManagement = () => {
     return () => {
       autoRefreshService.unsubscribe('LeaveManagement');
     };
-  }, [fetchLeaves]);
+  }, [fetchLeaves, fetchUsers]);
   
   // Get notifications for the current user based on their role
   const [userNotifications, setUserNotifications] = useState([]);
