@@ -40,7 +40,7 @@ router.get('/frontend', cors(corsOptions), authenticate, authorize('SystemAdmin'
 });
 
 // Get all logs (backend + frontend) (SystemAdmin only)
-router.get('/all', cors(corsOptions), authenticate, authorize('SystemAdmin'), (req, res) => {
+router.get('/all', authenticate, authorize('SystemAdmin'), (req, res) => {
   try {
     const { date } = req.query;
     const logs = logger.getAllLogs(date);

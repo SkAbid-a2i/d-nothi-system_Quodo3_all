@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
-router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
@@ -95,7 +95,7 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
 // @route   PUT /api/auth/change-password
 // @desc    Change user password
 // @access  Private
-router.put('/change-password', cors(corsOptions), authenticate, async (req, res) => {
+router.put('/change-password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
@@ -126,7 +126,7 @@ router.put('/change-password', cors(corsOptions), authenticate, async (req, res)
 // @route   PUT /api/auth/profile
 // @desc    Update user profile
 // @access  Private
-router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
+router.put('/profile', authenticate, async (req, res) => {
   try {
     const { fullName, email, office, bloodGroup, phoneNumber, bio } = req.body;
     const userId = req.user.id;

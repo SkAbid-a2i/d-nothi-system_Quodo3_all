@@ -4,35 +4,13 @@ const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { userValidation } = require('../validators/user.validator');
 const sequelize = require('sequelize');
 const notificationService = require('../services/notification.service');
-const cors = require('cors');
-
-// CORS configuration for users
-const corsOptions = {
-  origin: [
-    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-    'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com',
-    'https://d-nothi-system-quodo3-all.vercel.app',
-    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-};
 
 const router = express.Router();
 
 // @route   GET /api/users
 // @desc    Get all users (SystemAdmin, Admin, Supervisor, Agent)
 // @access  Private
-router.get('/', cors(corsOptions), authenticate, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     // Agents can only see active users
     const where = req.user.role === 'Agent' ? { isActive: true } : {};
@@ -51,7 +29,7 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
 // @route   POST /api/users
 // @desc    Create new user (SystemAdmin only)
 // @access  Private (SystemAdmin)
-router.post('/', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     // Validate request body
     const { error } = userValidation(req.body);
@@ -132,7 +110,7 @@ router.post('/', cors(corsOptions), authenticate, authorize('SystemAdmin'), asyn
 // @route   PUT /api/users/:id
 // @desc    Update user (SystemAdmin only)
 // @access  Private (SystemAdmin)
-router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
+router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio } = req.body;
@@ -198,57 +176,3 @@ router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), as
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   DELETE /api/users/:id
-// @desc    Delete user (SystemAdmin only)
-// @access  Private (SystemAdmin)
-router.delete('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check if user exists
-    const user = await User.findByPk(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Don't actually delete, just deactivate
-    user.isActive = false;
-    await user.save();
-
-    // Create audit log for user deactivation
-    try {
-      const AuditLog = require('../models/AuditLog');
-      await AuditLog.create({
-        userId: req.user.id,
-        userName: req.user.username,
-        action: 'DELETE',
-        resourceType: 'USER',
-        resourceId: user.id,
-        description: `User "${user.username}" deactivated by ${req.user.username}`
-      });
-    } catch (auditError) {
-      console.error('Error creating audit log for user deactivation:', auditError);
-    }
-
-    // Send notification
-    notificationService.notifyUserDeleted({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      office: user.office,
-    });
-
-    res.json({ message: 'User deactivated successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-module.exports = router;

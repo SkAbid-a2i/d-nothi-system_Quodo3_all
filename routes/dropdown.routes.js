@@ -2,35 +2,13 @@ const express = require('express');
 const Dropdown = require('../models/Dropdown');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const notificationService = require('../services/notification.service');
-const cors = require('cors');
-
-// CORS configuration for dropdowns
-const corsOptions = {
-  origin: [
-    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-    'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com',
-    'https://d-nothi-system-quodo3-all.vercel.app',
-    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-};
 
 const router = express.Router();
 
 // @route   GET /api/dropdowns
 // @desc    Get all dropdown values
 // @access  Private
-router.get('/', cors(corsOptions), authenticate, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const dropdowns = await Dropdown.findAll({ 
       where: { isActive: true },
@@ -46,7 +24,7 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
 // @route   GET /api/dropdowns/:type
 // @desc    Get dropdown values by type
 // @access  Private
-router.get('/:type', cors(corsOptions), authenticate, async (req, res) => {
+router.get('/:type', authenticate, async (req, res) => {
   try {
     const { type } = req.params;
     const { parentValue } = req.query;
@@ -75,7 +53,7 @@ router.get('/:type', cors(corsOptions), authenticate, async (req, res) => {
 // @route   POST /api/dropdowns
 // @desc    Create new dropdown value
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.post('/', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { type, value, parentType, parentValue } = req.body;
 
@@ -121,7 +99,7 @@ router.post('/', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor
 // @route   PUT /api/dropdowns/:id
 // @desc    Update dropdown value
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.put('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { type, value, parentType, parentValue, isActive } = req.body;
@@ -176,7 +154,7 @@ router.put('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Supervis
 // @route   DELETE /api/dropdowns/:id
 // @desc    Delete dropdown value
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.delete('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.delete('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -197,26 +175,3 @@ router.delete('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Super
         currentUser: req.user.id
       });
     }
-
-    // Don't actually delete, just deactivate
-    dropdown.isActive = false;
-    await dropdown.save();
-
-    // Send notification
-    notificationService.notifyDropdownDeleted({
-      id: dropdown.id,
-      type: dropdown.type,
-      value: dropdown.value,
-    });
-
-    // Log the action
-    // TODO: Implement audit logging
-
-    res.json({ message: 'Dropdown value deleted successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-module.exports = router;
