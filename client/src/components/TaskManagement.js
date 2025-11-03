@@ -1350,22 +1350,22 @@ const TaskManagement = () => {
                               <TableCell>{task.userName || 'N/A'}</TableCell>
                               <TableCell>{task.userInformation || 'N/A'}</TableCell>
                               <TableCell>
-                                <Chip
-                                  label={task.status || 'Pending'}
+                                <Select
+                                  value={task.status || 'Pending'}
+                                  onChange={(e) => handleStatusChange(task.id, e.target.value)}
                                   size="small"
                                   sx={{
-                                    backgroundColor: 
-                                      task.status === 'Pending' ? 'warning.light' :
-                                      task.status === 'In Progress' ? 'info.light' :
-                                      task.status === 'Completed' ? 'success.light' :
-                                      task.status === 'Cancelled' ? 'error.light' : 'default.light',
-                                    color: 
-                                      task.status === 'Pending' ? 'warning.dark' :
-                                      task.status === 'In Progress' ? 'info.dark' :
-                                      task.status === 'Completed' ? 'success.dark' :
-                                      task.status === 'Cancelled' ? 'error.dark' : 'default.dark',
+                                    minWidth: 120,
+                                    '& .MuiSelect-select': {
+                                      padding: '4px 8px',
+                                    }
                                   }}
-                                />
+                                >
+                                  <MenuItem value="Pending">Pending</MenuItem>
+                                  <MenuItem value="In Progress">In Progress</MenuItem>
+                                  <MenuItem value="Completed">Completed</MenuItem>
+                                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                                </Select>
                               </TableCell>
                               <TableCell>
                                 {task.files && task.files.length > 0 ? (
@@ -1878,31 +1878,6 @@ const TaskManagement = () => {
           {success && (
             <Alert severity="success" sx={{ mb: 2 }}>
               {success}
-            </Alert>
-          )}
-          
-          {/* Snackbar for notifications */}
-          <Snackbar 
-            open={snackbar.open} 
-            autoHideDuration={6000} 
-            onClose={handleCloseSnackbar}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          >
-            <Alert 
-              onClose={handleCloseSnackbar} 
-              severity={snackbar.severity} 
-              sx={{ width: '100%' }}
-            >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </>
-      )}
-    </Box>
-  );
-};
-
-export default TaskManagement;
             </Alert>
           )}
           

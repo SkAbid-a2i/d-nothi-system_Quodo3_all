@@ -10,7 +10,7 @@ const router = express.Router();
 // @route   GET /api/leaves
 // @desc    Get leaves (Agent: own leaves, Admin/Supervisor: team leaves)
 // @access  Private
-router.get('/', authenticate, async (req, res) => {
+router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     let where = {};
     
@@ -40,7 +40,7 @@ router.get('/', authenticate, async (req, res) => {
 // @route   POST /api/leaves
 // @desc    Request new leave
 // @access  Private (Agent, Admin, Supervisor)
-router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { startDate, endDate, reason, userId, userName, office, requestedBy, requestedByName } = req.body;
 
@@ -140,7 +140,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 // @route   PUT /api/leaves/:id/approve
 // @desc    Approve leave request
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.put('/:id/approve', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -223,7 +223,7 @@ router.put('/:id/approve', authenticate, authorize('Admin', 'Supervisor', 'Syste
 // @route   PUT /api/leaves/:id/reject
 // @desc    Reject leave request
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.put('/:id/reject', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
@@ -309,7 +309,7 @@ router.put('/:id/reject', authenticate, authorize('Admin', 'Supervisor', 'System
 // @route   PUT /api/leaves/:id
 // @desc    Update leave request
 // @access  Private (Owner, Admin, Supervisor)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { startDate, endDate, reason } = req.body;
@@ -350,7 +350,7 @@ router.put('/:id', authenticate, async (req, res) => {
 // @route   DELETE /api/leaves/:id
 // @desc    Delete leave request
 // @access  Private (Owner, Admin, Supervisor)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
