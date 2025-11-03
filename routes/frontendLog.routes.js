@@ -2,31 +2,9 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../services/logger.service');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
-const cors = require('cors');
-
-// CORS configuration for frontend logs
-const corsOptions = {
-  origin: [
-    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-    'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com',
-    'https://d-nothi-system-quodo3-all.vercel.app',
-    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-};
 
 // Receive frontend logs
-router.post('/frontend', cors(corsOptions), (req, res) => {
+router.post('/frontend', (req, res) => {
   try {
     const logData = req.body;
     
