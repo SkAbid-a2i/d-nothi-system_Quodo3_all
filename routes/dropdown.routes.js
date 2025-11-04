@@ -175,3 +175,27 @@ router.delete('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmi
         currentUser: req.user.id
       });
     }
+
+    await dropdown.destroy();
+
+    // Send notification
+    notificationService.notifyDropdownDeleted({
+      id: dropdown.id,
+      type: dropdown.type,
+      value: dropdown.value,
+      parentType: dropdown.parentType,
+      parentValue: dropdown.parentValue,
+      isActive: dropdown.isActive,
+    });
+
+    // Log the action
+    // TODO: Implement audit logging
+
+    res.json({ message: 'Dropdown value deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting dropdown:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+module.exports = router;
