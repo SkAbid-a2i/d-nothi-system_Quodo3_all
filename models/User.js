@@ -67,6 +67,11 @@ const User = sequelize.define('User', {
   bio: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  // Add designation field
+  designation: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   }
 }, {
   timestamps: true,

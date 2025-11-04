@@ -85,7 +85,8 @@ router.post('/login', async (req, res) => {
         office: user.office,
         bloodGroup: user.bloodGroup,
         phoneNumber: user.phoneNumber,
-        bio: user.bio
+        bio: user.bio,
+        designation: user.designation
       },
     });
   } catch (err) {
@@ -107,7 +108,22 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       return res.status(401).json({ message: 'User not found or inactive' });
     }
 
-    res.json(user);
+    // Return user data with designation field
+    const userData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      office: user.office,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber,
+      bio: user.bio,
+      designation: user.designation,
+      isActive: user.isActive
+    };
+
+    res.json(userData);
   } catch (err) {
     console.error('Error in /api/auth/me:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -150,7 +166,7 @@ router.put('/change-password', cors(corsOptions), authenticate, async (req, res)
 // @access  Private
 router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
   try {
-    const { fullName, email, office, bloodGroup, phoneNumber, bio } = req.body;
+    const { fullName, email, office, bloodGroup, phoneNumber, bio, designation } = req.body;
     const userId = req.user.id;
 
     // Check if user exists
@@ -166,6 +182,7 @@ router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
     user.bloodGroup = bloodGroup || user.bloodGroup;
     user.phoneNumber = phoneNumber || user.phoneNumber;
     user.bio = bio || user.bio;
+    user.designation = designation || user.designation;
 
     await user.save();
 
@@ -179,7 +196,8 @@ router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
       office: user.office,
       bloodGroup: user.bloodGroup,
       phoneNumber: user.phoneNumber,
-      bio: user.bio
+      bio: user.bio,
+      designation: user.designation
     });
 
     // Return updated user data (excluding password)
@@ -192,7 +210,8 @@ router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
       office: user.office,
       bloodGroup: user.bloodGroup,
       phoneNumber: user.phoneNumber,
-      bio: user.bio
+      bio: user.bio,
+      designation: user.designation
     };
 
     res.json(updatedUser);

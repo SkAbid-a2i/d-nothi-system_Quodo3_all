@@ -37,7 +37,7 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { username, email, password, fullName, role, office, bloodGroup, phoneNumber, bio } = req.body;
+    const { username, email, password, fullName, role, office, bloodGroup, phoneNumber, bio, designation } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
@@ -60,7 +60,8 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       office,
       bloodGroup,
       phoneNumber,
-      bio
+      bio,
+      designation
     });
 
     // Create audit log for user creation
@@ -87,7 +88,8 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       role: user.role,
       office: user.office,
       bloodGroup: user.bloodGroup,
-      phoneNumber: user.phoneNumber
+      phoneNumber: user.phoneNumber,
+      designation: user.designation
     });
 
     res.status(201).json({
@@ -99,7 +101,8 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
       office: user.office,
       bloodGroup: user.bloodGroup,
       phoneNumber: user.phoneNumber,
-      bio: user.bio
+      bio: user.bio,
+      designation: user.designation
     });
   } catch (err) {
     console.error(err);
@@ -113,7 +116,7 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
 router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio } = req.body;
+    const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio, designation } = req.body;
 
     // Check if user exists
     const user = await User.findByPk(id);
@@ -131,6 +134,7 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
     user.bloodGroup = bloodGroup || user.bloodGroup;
     user.phoneNumber = phoneNumber || user.phoneNumber;
     user.bio = bio || user.bio;
+    user.designation = designation || user.designation;
 
     await user.save();
 
@@ -159,7 +163,8 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
       office: user.office,
       isActive: user.isActive,
       bloodGroup: user.bloodGroup,
-      phoneNumber: user.phoneNumber
+      phoneNumber: user.phoneNumber,
+      designation: user.designation
     });
 
     res.json({
@@ -172,7 +177,8 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
       isActive: user.isActive,
       bloodGroup: user.bloodGroup,
       phoneNumber: user.phoneNumber,
-      bio: user.bio
+      bio: user.bio,
+      designation: user.designation
     });
   } catch (err) {
     console.error(err);
@@ -225,7 +231,8 @@ router.delete('/:id', authenticate, authorize('SystemAdmin'), async (req, res) =
       office: user.office,
       isActive: user.isActive,
       bloodGroup: user.bloodGroup,
-      phoneNumber: user.phoneNumber
+      phoneNumber: user.phoneNumber,
+      designation: user.designation
     });
 
     res.json({ message: 'User deleted successfully' });

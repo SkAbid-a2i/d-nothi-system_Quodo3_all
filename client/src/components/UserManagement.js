@@ -92,7 +92,8 @@ const UserManagement = () => {
     office: '',
     isActive: true,
     bloodGroup: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    designation: ''
   });
   
   // Dropdown management state
@@ -327,6 +328,7 @@ const UserManagement = () => {
         isActive: data.user.isActive !== undefined ? data.user.isActive : true,
         bloodGroup: data.user.bloodGroup || '',
         phoneNumber: data.user.phoneNumber || '',
+        designation: data.user.designation || '',
         bio: data.user.bio || ''
       });
       
@@ -345,6 +347,7 @@ const UserManagement = () => {
         isActive: true,
         bloodGroup: '',
         phoneNumber: '',
+        designation: '',
         bio: ''
       });
       setSelectedOffice(null);
@@ -518,7 +521,8 @@ const UserManagement = () => {
           office: userFormData.office,
           isActive: userFormData.isActive,
           bloodGroup: userFormData.bloodGroup,
-          phoneNumber: userFormData.phoneNumber
+          phoneNumber: userFormData.phoneNumber,
+          designation: userFormData.designation
         });
         
         showSnackbar('User updated successfully!', 'success');
@@ -533,7 +537,8 @@ const UserManagement = () => {
           office: userFormData.office,
           isActive: userFormData.isActive,
           bloodGroup: userFormData.bloodGroup,
-          phoneNumber: userFormData.phoneNumber
+          phoneNumber: userFormData.phoneNumber,
+          designation: userFormData.designation
         });
         
         showSnackbar('User created successfully!', 'success');
@@ -911,6 +916,7 @@ const UserManagement = () => {
                                 <TableCell>User</TableCell>
                                 <TableCell>Role</TableCell>
                                 <TableCell>Office</TableCell>
+                                <TableCell>Designation</TableCell>
                                 <TableCell>Blood Group</TableCell>
                                 <TableCell>Phone</TableCell>
                                 <TableCell>Status</TableCell>
@@ -975,6 +981,7 @@ const UserManagement = () => {
                                     />
                                   </TableCell>
                                   <TableCell>{u.office || 'Not assigned'}</TableCell>
+                                  <TableCell>{u.designation || 'N/A'}</TableCell>
                                   <TableCell>{u.bloodGroup || 'N/A'}</TableCell>
                                   <TableCell>{u.phoneNumber || 'N/A'}</TableCell>
                                   <TableCell>
@@ -1471,6 +1478,16 @@ const UserManagement = () => {
                     label="Phone Number"
                     name="phoneNumber"
                     value={userFormData.phoneNumber}
+                    onChange={handleUserInputChange}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Designation"
+                    name="designation"
+                    value={userFormData.designation || ''}
                     onChange={handleUserInputChange}
                   />
                 </Grid>

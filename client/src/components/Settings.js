@@ -53,7 +53,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
     username: '',
     bloodGroup: '',
     phoneNumber: '',
-    bio: ''
+    bio: '',
+    designation: ''
   });
   
   // Password state
@@ -72,7 +73,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
         username: user.username || '',
         bloodGroup: user.bloodGroup || '',
         phoneNumber: user.phoneNumber || '',
-        bio: user.bio || ''
+        bio: user.bio || '',
+        designation: user.designation || ''
       });
     }
   }, [user]);
@@ -102,7 +104,8 @@ const Settings = ({ darkMode, setDarkMode }) => {
         username: profileData.username,
         bloodGroup: profileData.bloodGroup,
         phoneNumber: profileData.phoneNumber,
-        bio: profileData.bio
+        bio: profileData.bio,
+        designation: profileData.designation
       };
       
       const response = await authAPI.updateProfile(profileUpdateData);
@@ -261,6 +264,28 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       label="Phone Number"
                       value={profileData.phoneNumber}
                       onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Designation"
+                      value={profileData.designation || ''}
+                      onChange={(e) => handleProfileChange('designation', e.target.value)}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
@@ -575,6 +600,11 @@ const Settings = ({ darkMode, setDarkMode }) => {
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     <strong>Last login:</strong> Today, 09:30 AM
                   </Typography>
+                  {user?.designation && (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Designation:</strong> {user.designation}
+                    </Typography>
+                  )}
                   {user?.bloodGroup && (
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       <BloodtypeIcon sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />

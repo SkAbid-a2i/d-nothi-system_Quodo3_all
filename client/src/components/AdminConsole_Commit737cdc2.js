@@ -98,7 +98,8 @@ const AdminConsole = () => {
     password: '',
     role: 'Agent',
     bloodGroup: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    designation: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -242,7 +243,8 @@ const AdminConsole = () => {
       password: '',
       role: user.role,
       bloodGroup: user.bloodGroup || '',
-      phoneNumber: user.phoneNumber || ''
+      phoneNumber: user.phoneNumber || '',
+      designation: user.designation || ''
     });
     
     setIsEditing(true);
@@ -644,6 +646,15 @@ Office,Chittagong Office,`;
                         <Grid item xs={12} sm={6}>
                           <TextField
                             fullWidth
+                            label="Designation"
+                            name="designation"
+                            value={formData.designation || ''}
+                            onChange={handleInputChange}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
                             label="Blood Group"
                             name="bloodGroup"
                             value={formData.bloodGroup}
@@ -708,7 +719,10 @@ Office,Chittagong Office,`;
                                     username: '',
                                     email: '',
                                     password: '',
-                                    role: 'Agent'
+                                    role: 'Agent',
+                                    bloodGroup: '',
+                                    phoneNumber: '',
+                                    designation: ''
                                   });
                                 }}
                                 disabled={loading}
@@ -786,6 +800,7 @@ Office,Chittagong Office,`;
                               <TableCell>Email</TableCell>
                               <TableCell>Blood Group</TableCell>
                               <TableCell>Phone</TableCell>
+                              <TableCell>Designation</TableCell>
                               <TableCell>Role</TableCell>
                               <TableCell>Status</TableCell>
                               <TableCell>Actions</TableCell>
@@ -812,6 +827,7 @@ Office,Chittagong Office,`;
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>{user.bloodGroup || 'N/A'}</TableCell>
                                 <TableCell>{user.phoneNumber || 'N/A'}</TableCell>
+                                <TableCell>{user.designation || 'N/A'}</TableCell>
                                 <TableCell>
                                   <Chip 
                                     label={user.role} 

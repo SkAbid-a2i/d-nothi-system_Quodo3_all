@@ -169,12 +169,12 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       console.log('Logout completed, redirecting to root path');
       // Add a small delay to ensure the logout process completes
       setTimeout(() => {
-        navigate('/');
+        window.location.href = process.env.REACT_APP_FRONTEND_URL || '/';
       }, 100);
     } catch (error) {
       console.error('Error during logout:', error);
       // Even if there's an error, still try to navigate to login
-      navigate('/');
+      window.location.href = process.env.REACT_APP_FRONTEND_URL || '/';
     }
   };
 
