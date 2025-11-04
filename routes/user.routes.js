@@ -176,3 +176,63 @@ router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/users/:id
+// @desc    Delete user (SystemAdmin only)
+// @access  Private (SystemAdmin)
+router.delete('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent users from deleting themselves
+    if (user.id === req.user.id) {
+      return res.status(400).json({ message: 'You cannot delete yourself' });
+    }
+
+    await user.destroy();
+
+    // Create audit log for user deletion
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        userId: req.user.id,
+        userName: req.user.username,
+        action: 'DELETE',
+        resourceType: 'USER',
+        resourceId: user.id,
+        description: `User "${user.username}" deleted by ${req.user.username}`
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log for user deletion:', auditError);
+    }
+
+    // Send notification
+    notificationService.notifyUserDeleted({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      office: user.office,
+      isActive: user.isActive,
+      bloodGroup: user.bloodGroup,
+      phoneNumber: user.phoneNumber
+    });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+module.exports = router;
