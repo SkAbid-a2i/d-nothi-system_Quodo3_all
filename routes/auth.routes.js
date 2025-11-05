@@ -31,7 +31,7 @@ const router = express.Router();
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', async (req, res) => {
+router.post('/login', cors(corsOptions), async (req, res) => {
   try {
     // Validate request body
     const { error } = loginValidation(req.body);

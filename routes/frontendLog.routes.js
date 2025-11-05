@@ -26,7 +26,7 @@ const corsOptions = {
 };
 
 // Receive frontend logs
-router.post('/frontend', (req, res) => {
+router.post('/frontend', cors(corsOptions), (req, res) => {
   try {
     const logData = req.body;
     

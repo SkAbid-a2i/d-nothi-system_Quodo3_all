@@ -2,13 +2,35 @@ const express = require('express');
 const Task = require('../models/Task');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const notificationService = require('../services/notification.service');
+const cors = require('cors');
+
+// CORS configuration for tasks
+const corsOptions = {
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
 const router = express.Router();
 
 // @route   GET /api/tasks
 // @desc    Get tasks (Agent: own tasks, Admin/Supervisor: team tasks)
 // @access  Private
-router.get('/', authenticate, async (req, res) => {
+router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     let where = {};
     
@@ -212,7 +234,7 @@ router.put('/:id', authenticate, async (req, res) => {
 // @route   DELETE /api/tasks/:id
 // @desc    Delete task
 // @access  Private (Owner, Admin, Supervisor)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
