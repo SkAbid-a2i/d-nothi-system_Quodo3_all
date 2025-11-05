@@ -1,7 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
-const { userValidation } = require('../validators/user.validator');
+const { userValidation, userUpdateValidation } = require('../validators/user.validator');
 const sequelize = require('sequelize');
 const notificationService = require('../services/notification.service');
 
@@ -115,6 +115,12 @@ router.post('/', authenticate, authorize('SystemAdmin'), async (req, res) => {
 // @access  Private (SystemAdmin)
 router.put('/:id', authenticate, authorize('SystemAdmin'), async (req, res) => {
   try {
+    // Validate request body
+    const { error } = userUpdateValidation(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
     const { id } = req.params;
     const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio, designation } = req.body;
 
