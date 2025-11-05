@@ -157,7 +157,8 @@ const AdminConsole = () => {
       const userToToggle = users.find(u => u.id === userId);
       if (!userToToggle) return;
 
-      const updatedUserData = { ...userToToggle, isActive: !userToToggle.isActive };
+      // Only send the isActive field for status toggle
+      const updatedUserData = { isActive: !userToToggle.isActive };
       await userAPI.updateUser(userId, updatedUserData);
 
       setUsers(users.map(user =>
@@ -173,7 +174,7 @@ const AdminConsole = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error toggling user status:', error);
-      setError('Failed to update user status');
+      setError('Failed to update user status: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
     }
   };
