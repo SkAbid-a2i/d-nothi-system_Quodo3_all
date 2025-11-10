@@ -317,9 +317,10 @@ const KanbanBoard = () => {
               }}
             >
               <option value="backlog">Backlog</option>
-              <option value="todo">To Do</option>
+              <option value="next">Next</option>
               <option value="inProgress">In Progress</option>
-              <option value="review">Review</option>
+              <option value="testing">Testing</option>
+              <option value="validate">Validate</option>
               <option value="done">Done</option>
             </TextField>
           </Box>
