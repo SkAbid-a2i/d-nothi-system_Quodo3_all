@@ -30,9 +30,10 @@ const KanbanBoard = () => {
   const [items, setItems] = useState([]);
   const [columns, setColumns] = useState({
     backlog: { id: 'backlog', title: 'Backlog', items: [] },
-    todo: { id: 'todo', title: 'To Do', items: [] },
+    next: { id: 'next', title: 'Next', items: [] },
     inProgress: { id: 'inProgress', title: 'In Progress', items: [] },
-    review: { id: 'review', title: 'Review', items: [] },
+    testing: { id: 'testing', title: 'Testing', items: [] },
+    validate: { id: 'validate', title: 'Validate', items: [] },
     done: { id: 'done', title: 'Done', items: [] }
   });
   const [openDialog, setOpenDialog] = useState(false);
@@ -62,9 +63,10 @@ const KanbanBoard = () => {
   const organizeItemsByColumn = (itemsData) => {
     const organized = {
       backlog: { id: 'backlog', title: 'Backlog', items: [] },
-      todo: { id: 'todo', title: 'To Do', items: [] },
+      next: { id: 'next', title: 'Next', items: [] },
       inProgress: { id: 'inProgress', title: 'In Progress', items: [] },
-      review: { id: 'review', title: 'Review', items: [] },
+      testing: { id: 'testing', title: 'Testing', items: [] },
+      validate: { id: 'validate', title: 'Validate', items: [] },
       done: { id: 'done', title: 'Done', items: [] }
     };
 
