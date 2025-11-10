@@ -45,7 +45,8 @@ import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   VideoCall as VideoCallIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  ViewKanban as KanbanIcon,
 } from '@mui/icons-material';
 import CollaborationIcon from './CollaborationIcon';
 import { styled, alpha } from '@mui/material/styles';
@@ -141,6 +142,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
     { text: t('navigation.collaboration'), icon: <CollaborationIcon />, path: '/collaboration' },
+    { text: t('navigation.kanban'), icon: <KanbanIcon />, path: '/kanban' },
     { text: t('navigation.errorMonitoring'), icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
@@ -931,5 +933,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     </Box>
   );
 };
+
+export default Layout;
 
 export default Layout;

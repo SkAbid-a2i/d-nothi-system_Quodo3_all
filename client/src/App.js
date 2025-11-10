@@ -395,6 +395,14 @@ function App() {
                 <Route index element={<CollaborationLink />} />
               </Route>
               
+              <Route path="/kanban" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                </ProtectedRoute>
+              }>
+                <Route index element={<KanbanBoard />} />
+              </Route>
+              
               {/* Fallback route for debugging */}
               <Route path="*" element={
                 <div>

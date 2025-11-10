@@ -57,7 +57,8 @@ const translations = {
     settings: 'Settings',
     help: 'Help & Support',
     logout: 'Logout',
-    collaboration: 'Collaboration'
+    collaboration: 'Collaboration',
+    kanban: 'Kanban Board'
   },
   
   // Login
@@ -351,5 +352,7 @@ const translations = {
 };
 
 export default translations;
+
+
 
 
