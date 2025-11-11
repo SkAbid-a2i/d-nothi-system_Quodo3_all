@@ -169,4 +169,12 @@ export const notificationAPI = {
   clearNotifications: () => api.delete('/notifications/clear'),
 };
 
+// Kanban board endpoints
+export const kanbanAPI = {
+  getAllItems: () => api.get('/kanban'),
+  createItem: (itemData) => api.post('/kanban', itemData),
+  updateItem: (id, itemData) => api.put(`/kanban/${id}`, itemData),
+  deleteItem: (id) => api.delete(`/kanban/${id}`),
+};
+
 export default api;

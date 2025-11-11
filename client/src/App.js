@@ -1,24 +1,27 @@
-              <Route path="/collaboration" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<CollaborationLink />} />
-              </Route>
-              
-              <Route path="/kanban" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<KanbanBoard />} />
-              </Route>
-              
-              {/* Fallback route for debugging */}
-              <Route path="*" element={
-                <div>
-                  <h1>404 - Page Not Found</h1>
-                  <p>This is a fallback route for debugging purposes.</p>
-                  <p>If you see this page, the routing is not working correctly.</p>
-                </div>
-              } />
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { AuthProvider } from './contexts/AuthContext';
+import { TranslationProvider } from './contexts/TranslationContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './components/Login';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
+import TaskLogger from './components/TaskLogger';
+import AgentDashboard from './components/AgentDashboard';
+import AdminDashboard from './components/AdminDashboard';
+import LeaveManagement from './components/LeaveManagement';
+import UserManagement from './components/UserManagement';
+import PermissionTemplateManagement from './components/PermissionTemplateManagement';
+import DropdownManagement from './components/DropdownManagement';
+import AdminConsole from './components/AdminConsole';
+import ReportManagement from './components/ReportManagement';
+import Settings from './components/Settings';
+import Help from './components/Help';
+import Files from './components/Files';
+import LogMonitoring from './components/LogMonitoring';
+import MeetingEngagement from './components/MeetingEngagement';
+import ErrorMonitoring from './components/ErrorMonitoring';
+import CollaborationLink from './components/CollaborationLink';
+import KanbanBoard from './components/KanbanBoard';
