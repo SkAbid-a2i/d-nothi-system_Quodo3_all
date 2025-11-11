@@ -14,11 +14,7 @@ import {
   Grid,
   Paper,
   Chip,
-  Tooltip,
-  CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -30,7 +26,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useAuth } from '../contexts/AuthContext';
 
-// API service for Kanban board
+// Mock API service for Kanban board
 const kanbanAPI = {
   getAllItems: async () => {
     try {
@@ -41,14 +37,10 @@ const kanbanAPI = {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      const result = await response.json();
-      if (result.success) {
-        return result.data;
-      }
-      throw new Error('Failed to fetch items');
+      return await response.json();
     } catch (error) {
       console.error('Error fetching Kanban items:', error);
-      return [];
+      return { success: false, data: [] };
     }
   },
   
@@ -62,14 +54,10 @@ const kanbanAPI = {
         },
         body: JSON.stringify(itemData)
       });
-      const result = await response.json();
-      if (result.success) {
-        return result.data;
-      }
-      throw new Error('Failed to create item');
+      return await response.json();
     } catch (error) {
       console.error('Error creating Kanban item:', error);
-      throw error;
+      return { success: false, message: 'Failed to create item' };
     }
   },
   
@@ -83,14 +71,10 @@ const kanbanAPI = {
         },
         body: JSON.stringify(itemData)
       });
-      const result = await response.json();
-      if (result.success) {
-        return result.data;
-      }
-      throw new Error('Failed to update item');
+      return await response.json();
     } catch (error) {
       console.error('Error updating Kanban item:', error);
-      throw error;
+      return { success: false, message: 'Failed to update item' };
     }
   },
   
@@ -103,14 +87,10 @@ const kanbanAPI = {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      const result = await response.json();
-      if (result.success) {
-        return true;
-      }
-      throw new Error('Failed to delete item');
+      return await response.json();
     } catch (error) {
       console.error('Error deleting Kanban item:', error);
-      throw error;
+      return { success: false, message: 'Failed to delete item' };
     }
   },
   
@@ -124,14 +104,10 @@ const kanbanAPI = {
         },
         body: JSON.stringify({ column, position })
       });
-      const result = await response.json();
-      if (result.success) {
-        return result.data;
-      }
-      throw new Error('Failed to reorder item');
+      return await response.json();
     } catch (error) {
       console.error('Error reordering Kanban item:', error);
-      throw error;
+      return { success: false, message: 'Failed to reorder item' };
     }
   }
 };
@@ -161,9 +137,11 @@ const KanbanBoard = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await kanbanAPI.getAllItems();
-      setItems(data);
-      organizeItemsByColumn(data);
+      const response = await kanbanAPI.getAllItems();
+      if (response.success) {
+        setItems(response.data);
+        organizeItemsByColumn(response.data);
+      }
     } catch (error) {
       console.error('Error fetching Kanban items:', error);
     } finally {
@@ -214,7 +192,7 @@ const KanbanBoard = () => {
       // Update item column and position
       const response = await kanbanAPI.reorderItem(item.id, destination.droppableId, destination.index);
       
-      if (response) {
+      if (response.success) {
         // Update local state
         const newItems = items.map(i => 
           i.id === item.id ? { ...i, column: destination.droppableId } : i
@@ -235,9 +213,9 @@ const KanbanBoard = () => {
       if (editingItem) {
         // Update existing item
         const response = await kanbanAPI.updateItem(editingItem.id, formData);
-        if (response) {
+        if (response.success) {
           const updatedItems = items.map(item => 
-            item.id === editingItem.id ? response : item
+            item.id === editingItem.id ? response.data : item
           );
           setItems(updatedItems);
           organizeItemsByColumn(updatedItems);
@@ -245,8 +223,8 @@ const KanbanBoard = () => {
       } else {
         // Create new item
         const response = await kanbanAPI.createItem(formData);
-        if (response) {
-          const newItems = [...items, response];
+        if (response.success) {
+          const newItems = [...items, response.data];
           setItems(newItems);
           organizeItemsByColumn(newItems);
         }
@@ -273,7 +251,7 @@ const KanbanBoard = () => {
   const handleDelete = async (itemId) => {
     try {
       const response = await kanbanAPI.deleteItem(itemId);
-      if (response) {
+      if (response.success) {
         const newItems = items.filter(item => item.id !== itemId);
         setItems(newItems);
         organizeItemsByColumn(newItems);
@@ -447,7 +425,6 @@ const KanbanBoard = () => {
         </DragDropContext>
       )}
 
-      {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {editingItem ? 'Edit Kanban Item' : 'Add New Kanban Item'}
