@@ -61,6 +61,34 @@ const CollaborationLink = () => {
     urgency: 'None'
   });
 
+  const showSnackbar = (message, severity) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const fetchCollaborations = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('Fetching collaborations for user:', user);
+      const response = await collaborationAPI.getAllCollaborations();
+      console.log('Collaborations response:', response);
+      const collaborationsData = response.data?.data || response.data || [];
+      setCollaborations(Array.isArray(collaborationsData) ? collaborationsData : []);
+    } catch (err) {
+      console.error('Error fetching collaborations:', err);
+      console.error('Error response:', err.response);
+      const errorMessage = err.response?.data?.message || err.message || t('collaboration.errorFetching') || 'Failed to fetch collaborations';
+      setError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+      setCollaborations([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  }, [t, showSnackbar, user]);
+
   // Fetch collaborations on component mount
   useEffect(() => {
     if (user) {
@@ -95,25 +123,12 @@ const CollaborationLink = () => {
     };
   }, [fetchCollaborations]);
 
-  const fetchCollaborations = useCallback(async () => {
-    setLoading(true);
-    try {
-      console.log('Fetching collaborations for user:', user);
-      const response = await collaborationAPI.getAllCollaborations();
-      console.log('Collaborations response:', response);
-      const collaborationsData = response.data?.data || response.data || [];
-      setCollaborations(Array.isArray(collaborationsData) ? collaborationsData : []);
-    } catch (err) {
-      console.error('Error fetching collaborations:', err);
-      console.error('Error response:', err.response);
-      const errorMessage = err.response?.data?.message || err.message || t('collaboration.errorFetching') || 'Failed to fetch collaborations';
-      setError(errorMessage);
-      showSnackbar(errorMessage, 'error');
-      setCollaborations([]); // Set empty array on error
-    } finally {
-      setLoading(false);
-    }
-  }, [t, showSnackbar]);
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({
+      ...prev,
+      open: false
+    }));
+  };
 
   const handleOpenDialog = (collaboration = null) => {
     if (collaboration) {
@@ -234,21 +249,6 @@ const CollaborationLink = () => {
       const errorMessage = err.response?.data?.message || err.message || t('collaboration.errorDeleting') || 'Error deleting collaboration link. Please try again.';
       showSnackbar(errorMessage, 'error');
     }
-  };
-
-  const showSnackbar = (message, severity) => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({
-      ...prev,
-      open: false
-    }));
   };
 
   const getUrgencyColor = (urgency) => {

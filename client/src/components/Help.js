@@ -1,8 +1,8 @@
 import React from 'react';
-import Help_Original from './Help_Original';
+import HelpOriginal from './HelpOriginal';
 
 const Help = () => {
-  return <Help_Original />;
+  return <HelpOriginal />;
 };
 
 export default Help;

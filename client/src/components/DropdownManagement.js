@@ -38,8 +38,6 @@ import {
   Upload as UploadIcon
 } from '@mui/icons-material';
 import { dropdownAPI } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../contexts/TranslationContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 

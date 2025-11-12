@@ -22,7 +22,6 @@ import {
   FormControlLabel,
   Tabs,
   Tab,
-  Autocomplete,
   Alert,
   Dialog,
   DialogTitle,
@@ -54,8 +53,7 @@ const AdminConsole = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [offices, setOffices] = useState([]);
-  const [selectedOffice, setSelectedOffice] = useState(null);
+
 
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);

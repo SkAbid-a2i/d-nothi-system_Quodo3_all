@@ -478,7 +478,7 @@ const ErrorMonitoring = () => {
         fetchAnalysis();
       }
     }
-  }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab]);
+  }, [filterLevel, filterSource, filterUser, filterDate, user, activeTab, fetchLogs, fetchAnalysis]);
 
   // Extract page name from URL or metadata
   const getPageName = (log) => {
