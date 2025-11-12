@@ -388,6 +388,21 @@ class NotificationService {
     this.on('collaborationDeleted', callback);
   }
 
+  // Listen for kanban item creation
+  onKanbanItemCreated(callback) {
+    this.on('kanbanItemCreated', callback);
+  }
+
+  // Listen for kanban item updates
+  onKanbanItemUpdated(callback) {
+    this.on('kanbanItemUpdated', callback);
+  }
+
+  // Listen for kanban item deletions
+  onKanbanItemDeleted(callback) {
+    this.on('kanbanItemDeleted', callback);
+  }
+
   // Listen for error monitoring notifications
   onErrorNotification(callback) {
     this.on('errorNotification', callback);

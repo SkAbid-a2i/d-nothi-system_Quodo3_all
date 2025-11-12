@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -25,120 +25,48 @@ import {
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useAuth } from '../contexts/AuthContext';
+import { kanbanAPI } from '../services/api';
+import notificationService from '../services/notificationService';
 
-// Mock API service for Kanban board
-const kanbanAPI = {
-  getAllItems: async () => {
-    try {
-      const response = await fetch('/api/kanban/items', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching Kanban items:', error);
-      return { success: false, data: [] };
-    }
-  },
-  
-  createItem: async (itemData) => {
-    try {
-      const response = await fetch('/api/kanban/items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(itemData)
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating Kanban item:', error);
-      return { success: false, message: 'Failed to create item' };
-    }
-  },
-  
-  updateItem: async (id, itemData) => {
-    try {
-      const response = await fetch(`/api/kanban/items/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(itemData)
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating Kanban item:', error);
-      return { success: false, message: 'Failed to update item' };
-    }
-  },
-  
-  deleteItem: async (id) => {
-    try {
-      const response = await fetch(`/api/kanban/items/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting Kanban item:', error);
-      return { success: false, message: 'Failed to delete item' };
-    }
-  },
-  
-  reorderItem: async (id, column, position) => {
-    try {
-      const response = await fetch(`/api/kanban/items/${id}/reorder`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ column, position })
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error reordering Kanban item:', error);
-      return { success: false, message: 'Failed to reorder item' };
-    }
-  }
-};
+// Column definitions
+const COLUMN_DEFINITIONS = [
+  { id: 'Backlog', title: 'Backlog' },
+  { id: 'Next', title: 'Next' },
+  { id: 'InProgress', title: 'In Progress' },
+  { id: 'Testing', title: 'Testing' },
+  { id: 'Validate', title: 'Validate' },
+  { id: 'Done', title: 'Done' }
+];
 
 const KanbanBoard = () => {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
-  const [columns, setColumns] = useState({
-    backlog: { id: 'backlog', title: 'Backlog', items: [] },
-    next: { id: 'next', title: 'Next', items: [] },
-    inProgress: { id: 'inProgress', title: 'In Progress', items: [] },
-    testing: { id: 'testing', title: 'Testing', items: [] },
-    validate: { id: 'validate', title: 'Validate', items: [] },
-    done: { id: 'done', title: 'Done', items: [] }
-  });
+  const [columns, setColumns] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    column: 'backlog'
+    status: 'Backlog'
   });
   const [loading, setLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState({});
+
+  // Initialize columns
+  useEffect(() => {
+    const initialColumns = {};
+    COLUMN_DEFINITIONS.forEach(column => {
+      initialColumns[column.id] = { ...column, items: [] };
+    });
+    setColumns(initialColumns);
+  }, []);
 
   // Fetch Kanban board items
   const fetchItems = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await kanbanAPI.getAllItems();
-      if (response.success) {
+      const response = await kanbanAPI.getAllKanbanItems();
+      if (response.data) {
         setItems(response.data);
         organizeItemsByColumn(response.data);
       }
@@ -151,18 +79,15 @@ const KanbanBoard = () => {
 
   // Organize items by column
   const organizeItemsByColumn = (itemsData) => {
-    const organized = {
-      backlog: { id: 'backlog', title: 'Backlog', items: [] },
-      next: { id: 'next', title: 'Next', items: [] },
-      inProgress: { id: 'inProgress', title: 'In Progress', items: [] },
-      testing: { id: 'testing', title: 'Testing', items: [] },
-      validate: { id: 'validate', title: 'Validate', items: [] },
-      done: { id: 'done', title: 'Done', items: [] }
-    };
+    const organized = {};
+    COLUMN_DEFINITIONS.forEach(column => {
+      organized[column.id] = { ...column, items: [] };
+    });
 
     itemsData.forEach(item => {
-      if (organized[item.column]) {
-        organized[item.column].items.push(item);
+      const status = item.status || 'Backlog';
+      if (organized[status]) {
+        organized[status].items.push(item);
       }
     });
 
@@ -189,16 +114,24 @@ const KanbanBoard = () => {
     if (!item) return;
 
     try {
-      // Update item column and position
-      const response = await kanbanAPI.reorderItem(item.id, destination.droppableId, destination.index);
+      // Update item status
+      const updatedItemData = {
+        ...item,
+        status: destination.droppableId
+      };
+
+      const response = await kanbanAPI.updateKanbanItem(item.id, updatedItemData);
       
-      if (response.success) {
+      if (response.data) {
         // Update local state
         const newItems = items.map(i => 
-          i.id === item.id ? { ...i, column: destination.droppableId } : i
+          i.id === item.id ? response.data : i
         );
         setItems(newItems);
         organizeItemsByColumn(newItems);
+        
+        // Notify about the update
+        notificationService.notifyKanbanItemUpdated(response.data);
       }
     } catch (error) {
       console.error('Error updating Kanban item:', error);
@@ -212,21 +145,27 @@ const KanbanBoard = () => {
     try {
       if (editingItem) {
         // Update existing item
-        const response = await kanbanAPI.updateItem(editingItem.id, formData);
-        if (response.success) {
+        const response = await kanbanAPI.updateKanbanItem(editingItem.id, formData);
+        if (response.data) {
           const updatedItems = items.map(item => 
             item.id === editingItem.id ? response.data : item
           );
           setItems(updatedItems);
           organizeItemsByColumn(updatedItems);
+          
+          // Notify about the update
+          notificationService.notifyKanbanItemUpdated(response.data);
         }
       } else {
         // Create new item
-        const response = await kanbanAPI.createItem(formData);
-        if (response.success) {
+        const response = await kanbanAPI.createKanbanItem(formData);
+        if (response.data) {
           const newItems = [...items, response.data];
           setItems(newItems);
           organizeItemsByColumn(newItems);
+          
+          // Notify about the creation
+          notificationService.notifyKanbanItemCreated(response.data);
         }
       }
       
@@ -242,7 +181,7 @@ const KanbanBoard = () => {
     setFormData({
       title: item.title,
       description: item.description || '',
-      column: item.column
+      status: item.status || 'Backlog'
     });
     setOpenDialog(true);
   };
@@ -250,11 +189,14 @@ const KanbanBoard = () => {
   // Handle delete
   const handleDelete = async (itemId) => {
     try {
-      const response = await kanbanAPI.deleteItem(itemId);
-      if (response.success) {
+      const response = await kanbanAPI.deleteKanbanItem(itemId);
+      if (response) {
         const newItems = items.filter(item => item.id !== itemId);
         setItems(newItems);
         organizeItemsByColumn(newItems);
+        
+        // Notify about the deletion
+        notificationService.notifyKanbanItemDeleted({ id: itemId });
       }
     } catch (error) {
       console.error('Error deleting Kanban item:', error);
@@ -267,7 +209,7 @@ const KanbanBoard = () => {
     setFormData({
       title: '',
       description: '',
-      column: 'backlog'
+      status: 'Backlog'
     });
     setOpenDialog(true);
   };
@@ -297,8 +239,37 @@ const KanbanBoard = () => {
 
   // Effect to fetch items on component mount
   useEffect(() => {
-    fetchItems();
+    if (user) {
+      fetchItems();
+    }
   }, [user, fetchItems]);
+
+  // Listen for kanban notifications
+  useEffect(() => {
+    const handleKanbanItemCreated = () => {
+      fetchItems();
+    };
+
+    const handleKanbanItemUpdated = () => {
+      fetchItems();
+    };
+
+    const handleKanbanItemDeleted = () => {
+      fetchItems();
+    };
+
+    // Subscribe to kanban notifications
+    notificationService.onKanbanItemCreated(handleKanbanItemCreated);
+    notificationService.onKanbanItemUpdated(handleKanbanItemUpdated);
+    notificationService.onKanbanItemDeleted(handleKanbanItemDeleted);
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.off('kanbanItemCreated', handleKanbanItemCreated);
+      notificationService.off('kanbanItemUpdated', handleKanbanItemUpdated);
+      notificationService.off('kanbanItemDeleted', handleKanbanItemDeleted);
+    };
+  }, [fetchItems]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -323,7 +294,7 @@ const KanbanBoard = () => {
         <DragDropContext onDragEnd={onDragEnd}>
           <Grid container spacing={3}>
             {Object.values(columns).map(column => (
-              <Grid item xs={12} sm={6} md={2.4} key={column.id}>
+              <Grid item xs={12} sm={6} md={2} key={column.id}>
                 <Paper elevation={3} sx={{ p: 2, minHeight: 500 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -403,7 +374,7 @@ const KanbanBoard = () => {
                                   
                                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                                     <Typography variant="caption" color="text.secondary">
-                                      {item.userName}
+                                      {item.creator?.fullName || item.creator?.username || 'Unknown'}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
                                       {new Date(item.createdAt).toLocaleDateString()}
@@ -457,22 +428,21 @@ const KanbanBoard = () => {
           <TextField
             select
             margin="dense"
-            name="column"
-            label="Column"
+            name="status"
+            label="Status"
             fullWidth
             variant="outlined"
-            value={formData.column}
+            value={formData.status}
             onChange={handleFormChange}
             SelectProps={{
               native: true,
             }}
           >
-            <option value="backlog">Backlog</option>
-            <option value="next">Next</option>
-            <option value="inProgress">In Progress</option>
-            <option value="testing">Testing</option>
-            <option value="validate">Validate</option>
-            <option value="done">Done</option>
+            {COLUMN_DEFINITIONS.map(column => (
+              <option key={column.id} value={column.id}>
+                {column.title}
+              </option>
+            ))}
           </TextField>
         </DialogContent>
         <DialogActions>

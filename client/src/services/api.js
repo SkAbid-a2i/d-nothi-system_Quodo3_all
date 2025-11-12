@@ -162,6 +162,14 @@ export const collaborationAPI = {
   deleteCollaboration: (id) => api.delete(`/collaborations/${id}`),
 };
 
+// Kanban endpoints
+export const kanbanAPI = {
+  getAllKanbanItems: () => api.get('/kanban'),
+  createKanbanItem: (kanbanData) => api.post('/kanban', kanbanData),
+  updateKanbanItem: (id, kanbanData) => api.put(`/kanban/${id}`, kanbanData),
+  deleteKanbanItem: (id) => api.delete(`/kanban/${id}`),
+};
+
 // Notification endpoints
 export const notificationAPI = {
   getNotifications: (params) => api.get('/notifications', { params }),

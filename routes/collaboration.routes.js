@@ -50,24 +50,27 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
     console.log('Fetching collaborations for user:', req.user);
     let where = {};
     
-    // Agents, Admins and Supervisors can see collaborations from their office
-    if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      // Get all users in the office
-      const officeUsers = await User.findAll({
-        where: { office: req.user.office },
-        attributes: ['id']
-      });
-      
-      const officeUserIds = officeUsers.map(user => user.id);
-      
-      where = {
-        [require('sequelize').Op.or]: [
-          { createdBy: req.user.id },
-          { '$creator.id$': { [require('sequelize').Op.in]: officeUserIds } }
-        ]
-      };
+    // SystemAdmin can see all collaborations
+    if (req.user.role !== 'SystemAdmin') {
+      // Agents, Admins and Supervisors can see collaborations from their office
+      if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+        // Get all users in the office
+        const officeUsers = await User.findAll({
+          where: { office: req.user.office },
+          attributes: ['id']
+        });
+        
+        const officeUserIds = officeUsers.map(user => user.id);
+        
+        where = {
+          [require('sequelize').Op.or]: [
+            { createdBy: req.user.id },
+            { '$creator.id$': { [require('sequelize').Op.in]: officeUserIds } }
+          ]
+        };
+      }
     }
-    // SystemAdmin can see all collaborations - no where clause needed
+    // SystemAdmin has no where clause, so they see all collaborations
 
     const collaborations = await Collaboration.findAll({ 
       where, 

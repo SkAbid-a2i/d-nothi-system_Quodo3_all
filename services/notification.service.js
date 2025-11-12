@@ -738,6 +738,69 @@ class NotificationService {
     }
   }
 
+  // Notify about kanban item creation
+  async notifyKanbanItemCreated(kanbanItem) {
+    const notification = {
+      type: 'kanbanItemCreated',
+      kanbanItemId: kanbanItem.id,
+      kanbanItem: kanbanItem,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'kanbanItemCreated',
+      message: `New kanban item created: ${kanbanItem.title || 'No title'}`,
+      userId: kanbanItem.createdBy, // Send to creator
+      data: notification
+    });
+    
+    // Send to the creator
+    this.sendToUser(kanbanItem.createdBy, notification);
+  }
+
+  // Notify about kanban item update
+  async notifyKanbanItemUpdated(kanbanItem) {
+    const notification = {
+      type: 'kanbanItemUpdated',
+      kanbanItemId: kanbanItem.id,
+      kanbanItem: kanbanItem,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'kanbanItemUpdated',
+      message: `Kanban item updated: ${kanbanItem.title || 'No title'}`,
+      userId: kanbanItem.createdBy, // Send to creator
+      data: notification
+    });
+    
+    // Send to the creator
+    this.sendToUser(kanbanItem.createdBy, notification);
+  }
+
+  // Notify about kanban item deletion
+  async notifyKanbanItemDeleted(kanbanItem) {
+    const notification = {
+      type: 'kanbanItemDeleted',
+      kanbanItemId: kanbanItem.id,
+      kanbanItem: kanbanItem,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Store in database for persistence
+    await this.storeNotification({
+      type: 'kanbanItemDeleted',
+      message: `Kanban item deleted: ${kanbanItem.title || 'No title'}`,
+      userId: kanbanItem.createdBy, // Send to creator
+      data: notification
+    });
+    
+    // Send to the creator
+    this.sendToUser(kanbanItem.createdBy, notification);
+  }
+
   // Notify about error
   async notifyError(errorData) {
     const notification = {
