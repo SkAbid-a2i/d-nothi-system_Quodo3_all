@@ -54,7 +54,6 @@ const ErrorMonitoring = () => {
   const [filterSource, setFilterSource] = useState('all');
   const [filterUser, setFilterUser] = useState('');
   const [filterDate, setFilterDate] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
   const [analysis, setAnalysis] = useState(null);
 
   const stats = {

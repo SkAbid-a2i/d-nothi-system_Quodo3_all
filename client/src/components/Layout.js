@@ -455,7 +455,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       // Don't disconnect from notification service on component unmount
       // Keep connection alive for better user experience
     };
-  }, [user?.id]); // Only reconnect when user ID changes
+  }, [user]); // Only reconnect when user changes
 
   // Filter notifications based on current page
   const getFilteredNotifications = () => {

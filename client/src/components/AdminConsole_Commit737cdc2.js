@@ -36,7 +36,6 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon,
   Upload as UploadIcon
 } from '@mui/icons-material';
 import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
@@ -46,7 +45,6 @@ import { auditLog } from '../services/auditLogger';
 
 const AdminConsole = () => {
   const { user } = useAuth();
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);

@@ -1,48 +1,44 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Paper, 
-  TextField, 
-  Button, 
+import {
+  Box,
+  Typography,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
-  IconButton,
+  Paper,
+  Button,
+  TextField,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  Alert,
-  Snackbar,
-  CircularProgress,
-  Switch,
-  FormControlLabel,
-  Autocomplete,
+  DialogContent,
+  DialogTitle,
+  Select,
+  MenuItem,
   FormControl,
   InputLabel,
-  Select,
-  MenuItem
+  Chip,
+  Alert,
+  CircularProgress,
+  Grid,
+  IconButton,
+  FormControlLabel,
+  Switch,
+  Snackbar
 } from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Edit as EditIcon, 
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon,
-  Category as CategoryIcon,
-  Business as BusinessIcon,
-  Source as SourceIcon,
-  Build as BuildIcon,
-  Gavel as GavelIcon
+  Upload as UploadIcon
 } from '@mui/icons-material';
 import { dropdownAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/TranslationContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 
@@ -50,8 +46,8 @@ const DropdownManagement = () => {
   const [dropdowns, setDropdowns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
+  const [success, setSuccess] = '';
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -74,11 +70,11 @@ const DropdownManagement = () => {
   
   // Available dropdown types
   const dropdownTypes = [
-    { value: 'Category', label: 'Category', icon: <CategoryIcon /> },
-    { value: 'Service', label: 'Service', icon: <BuildIcon /> },
-    { value: 'Source', label: 'Source', icon: <SourceIcon /> },
-    { value: 'Office', label: 'Office', icon: <BusinessIcon /> },
-    { value: 'Obligation', label: 'Obligation', icon: <GavelIcon /> }
+    { value: 'Category', label: 'Category', icon: <UploadIcon /> },
+    { value: 'Service', label: 'Service', icon: <UploadIcon /> },
+    { value: 'Source', label: 'Source', icon: <UploadIcon /> },
+    { value: 'Office', label: 'Office', icon: <UploadIcon /> },
+    { value: 'Obligation', label: 'Obligation', icon: <UploadIcon /> }
   ];
 
   const fetchDropdowns = useCallback(async () => {
@@ -100,7 +96,7 @@ const DropdownManagement = () => {
     }
   }, []);
 
-  // Fetch dropdowns on component mount
+  // Fetch dropdowns on component mount and subscribe to auto-refresh
   useEffect(() => {
     fetchDropdowns();
     
@@ -111,7 +107,7 @@ const DropdownManagement = () => {
     return () => {
       autoRefreshService.unsubscribe('DropdownManagement');
     };
-  }, [fetchDropdowns]);
+  }, [fetchDropdowns]); // Add fetchDropdowns to dependency array to fix ESLint warning
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -147,7 +143,7 @@ const DropdownManagement = () => {
       notificationService.off('dropdownUpdated', handleDropdownUpdated);
       notificationService.off('dropdownDeleted', handleDropdownDeleted);
     };
-  }, []);
+  }, [fetchDropdowns]);
 
   const showSnackbar = (message, severity = 'success') => {
     if (severity === 'success') {
@@ -204,10 +200,6 @@ const DropdownManagement = () => {
       edit: { open: false, dropdown: null },
       delete: { open: false, dropdown: null }
     });
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
   };
 
   const handleInputChange = (e) => {

@@ -66,7 +66,7 @@ const CollaborationLink = () => {
     if (user) {
       fetchCollaborations();
     }
-  }, [user]);
+  }, [user, fetchCollaborations]);
 
   // Listen for collaboration notifications
   useEffect(() => {
@@ -93,9 +93,9 @@ const CollaborationLink = () => {
       notificationService.off('collaborationUpdated', handleCollaborationUpdated);
       notificationService.off('collaborationDeleted', handleCollaborationDeleted);
     };
-  }, []);
+  }, [fetchCollaborations]);
 
-  const fetchCollaborations = async () => {
+  const fetchCollaborations = useCallback(async () => {
     setLoading(true);
     try {
       console.log('Fetching collaborations for user:', user);
@@ -113,7 +113,7 @@ const CollaborationLink = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t, showSnackbar]);
 
   const handleOpenDialog = (collaboration = null) => {
     if (collaboration) {
