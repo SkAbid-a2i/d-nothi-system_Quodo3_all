@@ -1,177 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const helmet = require('helmet');
-const morgan = require('morgan');
+const path = require('path');
+const fs = require('fs');
+const { parseCorsOrigins } = require('./config/cors');
+const logger = require('./utils/logger');
 
 // Load environment variables
 dotenv.config();
 
-// Initialize app
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Import logger service
-const logger = require('./services/logger.service');
-// Import notification service
-const notificationService = require('./services/notification.service');
-// Import database monitoring service
-const dbMonitor = require('./services/db-monitor.service');
-
-// Database connection
-const sequelize = require('./config/database');
-const MeetingUsers = require('./models/MeetingUsers');
-
-// Middleware
-app.use(helmet());
-
-// Fix CORS configuration to handle comma-separated values in environment variables
-function parseCorsOrigins() {
-  const origins = [
-    'https://quodo3-frontend.netlify.app',
-    'http://localhost:3000',
-    'https://d-nothi-zenith.vercel.app',
-    'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com',
-    'https://d-nothi-system-quodo3-all.vercel.app',
-    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-  ];
-
-  // Handle FRONTEND_URL (might contain comma-separated values)
-  if (process.env.FRONTEND_URL) {
-    const frontendUrls = process.env.FRONTEND_URL.split(',').map(url => url.trim());
-    origins.push(...frontendUrls);
-  }
-
-  // Handle FRONTEND_URL_2
-  if (process.env.FRONTEND_URL_2) {
-    origins.push(process.env.FRONTEND_URL_2);
-  }
-
-  // Handle FRONTEND_URL_3
-  if (process.env.FRONTEND_URL_3) {
-    origins.push(process.env.FRONTEND_URL_3);
-  }
-
-  // Remove duplicates and empty values
-  return [...new Set(origins)].filter(origin => origin && origin.length > 0);
+// Create logs directory if it doesn't exist
+const logsDir = path.join(__dirname, 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
 }
 
-app.use(cors({
-  origin: parseCorsOrigins(),
-  credentials: true,
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  preflightContinue: false
-}));
-
-// Custom logging middleware
-app.use((req, res, next) => {
-  const startTime = Date.now();
-  
-  // Log request
-  logger.info('Incoming request', {
-    method: req.method,
-    url: req.url,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString()
-  });
-
-  // Log response
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    logger.info('Request completed', {
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  next();
-});
-
-app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Start database monitoring
-dbMonitor.startMonitoring(30000); // Check every 30 seconds
-
-// Test database connection
-sequelize
-  .authenticate()
-  .then(() => {
-    logger.info('Connected to TiDB database');
-  })
-  .catch(err => {
-    logger.error('Unable to connect to TiDB database', { error: err.message, stack: err.stack });
-  });
-
-// Simple route for testing
-app.get('/', (req, res) => {
-  logger.info('Root endpoint accessed');
-  res.json({ 
-    message: 'Welcome to Quodo3 API',
-    status: 'Server is running',
-    connectedClients: notificationService.getConnectedClients()
-  });
-});
-
-// Debug endpoint to check environment variables
-app.get('/api/debug/env', (req, res) => {
-  res.json({
-    FRONTEND_URL: process.env.FRONTEND_URL,
-    FRONTEND_URL_2: process.env.FRONTEND_URL_2,
-    FRONTEND_URL_3: process.env.FRONTEND_URL_3,
-    corsOrigins: [
-      process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-      process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-      process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-      'https://quodo3-frontend.onrender.com',
-      'https://quodo3-backend.onrender.com',
-      'https://d-nothi-system-quodo3-all.vercel.app',
-      'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
-    ]
-  });
-});
-
-// SSE endpoint for real-time notifications (must be after middleware)
-app.get('/api/notifications', cors({
-  origin: [
-    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
-    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
-    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
-    'https://quodo3-frontend.onrender.com',
-    'https://quodo3-backend.onrender.com',
-    'https://d-nothi-system-quodo3-all.vercel.app',
-    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app',
-    'http://localhost:3001' // For testing
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200
-}), (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) {
-    return res.status(400).json({ message: 'userId is required' });
-  }
-  
-  logger.info('User connected to notifications', { userId });
-  notificationService.addClient(userId, res);
-});
+const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -203,6 +48,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   preflightContinue: false
 }));
+
+// Middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Use routes
 app.use('/api/auth', authRoutes);
