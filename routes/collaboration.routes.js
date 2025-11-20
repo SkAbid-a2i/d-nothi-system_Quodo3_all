@@ -63,7 +63,7 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
       where = {
         [require('sequelize').Op.or]: [
           { createdBy: req.user.id },
-          { '$creator.id$': { [require('sequelize').Op.in]: officeUserIds } }
+          { createdBy: { [require('sequelize').Op.in]: officeUserIds } }
         ]
       };
     }
