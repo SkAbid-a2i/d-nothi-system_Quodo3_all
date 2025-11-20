@@ -125,6 +125,12 @@ app.get('/', (req, res) => {
   });
 });
 
+// Handle HEAD requests to root as well
+app.head('/', (req, res) => {
+  logger.info('Root endpoint accessed (HEAD)');
+  res.status(200).end();
+});
+
 // Debug endpoint to check environment variables
 app.get('/api/debug/env', (req, res) => {
   res.json({
