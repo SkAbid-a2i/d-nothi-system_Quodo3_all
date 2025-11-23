@@ -51,8 +51,9 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
     let where = {};
     
     // Agents, Admins and Supervisors can see collaborations from their office
+    // This includes collaborations created by SystemAdmins in the same office
     if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      // Get all users in the office
+      // Get all users in the office including SystemAdmins
       const officeUsers = await User.findAll({
         where: { office: req.user.office },
         attributes: ['id']
@@ -60,10 +61,21 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
       
       const officeUserIds = officeUsers.map(user => user.id);
       
+      // Also get SystemAdmin users who might have created collaborations for this office
+      const systemAdminUsers = await User.findAll({
+        where: { role: 'SystemAdmin' },
+        attributes: ['id']
+      });
+      
+      const systemAdminUserIds = systemAdminUsers.map(user => user.id);
+      
+      // Combine both arrays
+      const allRelevantUserIds = [...officeUserIds, ...systemAdminUserIds];
+      
       where = {
         [require('sequelize').Op.or]: [
           { createdBy: req.user.id },
-          { createdBy: { [require('sequelize').Op.in]: officeUserIds } }
+          { createdBy: { [require('sequelize').Op.in]: allRelevantUserIds } }
         ]
       };
     }
