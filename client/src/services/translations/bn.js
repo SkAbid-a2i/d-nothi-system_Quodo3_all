@@ -57,7 +57,8 @@ const translations = {
     settings: 'সেটিংস',
     help: 'সাহায্য এবং সমর্থন',
     logout: 'লগআউট',
-    collaboration: 'সহযোগিতা'
+    collaboration: 'সহযোগিতা',
+    kanban: 'কানবান বোর্ড'
   },
   
   // Login

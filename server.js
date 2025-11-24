@@ -195,6 +195,7 @@ const meetingRoutes = require('./routes/meeting.routes');
 const healthRoutes = require('./routes/health.routes');
 const collaborationRoutes = require('./routes/collaboration.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const kanbanRoutes = require('./routes/kanban.routes');
 
 // Add debugging to check if routes are loaded
 console.log('Collaboration routes loaded:', !!collaborationRoutes);
@@ -225,6 +226,7 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/collaborations', collaborationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/kanban', kanbanRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

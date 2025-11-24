@@ -24,6 +24,7 @@ import LogMonitoring from './components/LogMonitoring';
 import MeetingEngagement from './components/MeetingEngagement';
 import ErrorMonitoring from './components/ErrorMonitoring';
 import CollaborationLink from './components/CollaborationLink';
+import KanbanBoard from './components/KanbanBoard';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -393,6 +394,13 @@ function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<CollaborationLink />} />
+              </Route>
+              <Route path="/kanban" element={
+                <ProtectedRoute>
+                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                </ProtectedRoute>
+              }>
+                <Route index element={<KanbanBoard />} />
               </Route>
               
               {/* Fallback route for debugging */}
