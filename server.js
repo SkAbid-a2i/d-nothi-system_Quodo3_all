@@ -179,6 +179,70 @@ app.get('/api/notifications', cors({
   notificationService.addClient(userId, res);
 });
 
+// Endpoint to create Kanban table (for production use)
+app.post('/api/setup/kanban-table', cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+}), async (req, res) => {
+  try {
+    // Check if we're in production environment
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(400).json({ message: 'This endpoint is only available in production' });
+    }
+    
+    // Check if kanban table exists
+    const [results] = await sequelize.query(
+      "SHOW TABLES LIKE 'kanban'",
+      { type: sequelize.QueryTypes.SELECT }
+    );
+    
+    if (results && results.length > 0) {
+      return res.json({ message: 'Kanban table already exists' });
+    }
+    
+    // Create kanban table
+    await sequelize.query(`
+      CREATE TABLE kanban (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        status VARCHAR(50) NOT NULL DEFAULT 'backlog',
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `, { type: sequelize.QueryTypes.RAW });
+    
+    // Create indexes
+    await sequelize.query(
+      'CREATE INDEX idx_kanban_status ON kanban(status)',
+      { type: sequelize.QueryTypes.RAW }
+    );
+    
+    await sequelize.query(
+      'CREATE INDEX idx_kanban_created_at ON kanban(createdAt)',
+      { type: sequelize.QueryTypes.RAW }
+    );
+    
+    logger.info('Kanban table created successfully');
+    res.json({ message: 'Kanban table created successfully' });
+  } catch (error) {
+    logger.error('Error creating Kanban table', { error: error.message, stack: error.stack });
+    res.status(500).json({ message: 'Error creating Kanban table', error: error.message });
+  }
+});
+
 // Import route files
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
