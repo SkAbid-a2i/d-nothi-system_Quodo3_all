@@ -29,7 +29,8 @@
     "verify-schema": "node scripts/verify-production-schema.js",
     "test-realtime": "node scripts/test-realtime-operations.js",
     "verify-user-management": "node scripts/verify-user-management.js",
-    "test-notifications": "node scripts/test-notifications.js"
+    "test-notifications": "node scripts/test-notifications.js",
+    "create-kanban-table": "node scripts/create-kanban-table.js"
   },
   "keywords": [],
   "author": "",
