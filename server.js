@@ -243,6 +243,53 @@ app.post('/api/setup/kanban-table', cors({
   }
 });
 
+// Endpoint to fix Kanban table status default value (for production use)
+app.post('/api/setup/fix-kanban-default', cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+}), async (req, res) => {
+  try {
+    // Check if we're in production environment
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(400).json({ message: 'This endpoint is only available in production' });
+    }
+    
+    // Check if kanban table exists
+    const [results] = await sequelize.query(
+      "SHOW TABLES LIKE 'kanban'",
+      { type: sequelize.QueryTypes.SELECT }
+    );
+    
+    if (!results || results.length === 0) {
+      return res.status(404).json({ message: 'Kanban table not found' });
+    }
+    
+    // Fix the default value for status column
+    await sequelize.query(
+      "ALTER TABLE kanban MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'backlog'",
+      { type: sequelize.QueryTypes.RAW }
+    );
+    
+    logger.info('Kanban table status default value fixed successfully');
+    res.json({ message: 'Kanban table status default value fixed successfully' });
+  } catch (error) {
+    logger.error('Error fixing Kanban table default value', { error: error.message, stack: error.stack });
+    res.status(500).json({ message: 'Error fixing Kanban table default value', error: error.message });
+  }
+});
+
 // Import route files
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
