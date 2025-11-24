@@ -54,10 +54,19 @@ const KanbanBoard = () => {
     fetchCards();
   }, []);
 
+  const getApiUrl = (endpoint) => {
+    // Remove duplicate /api prefix if it exists
+    const baseUrl = process.env.REACT_APP_API_URL || '';
+    if (baseUrl.endsWith('/api') && endpoint.startsWith('/api/')) {
+      return `${baseUrl}${endpoint.substring(4)}`; // Remove '/api' from endpoint
+    }
+    return `${baseUrl}${endpoint}`;
+  };
+
   const fetchCards = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/kanban`, {
+      const response = await fetch(getApiUrl('/api/kanban'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -111,8 +120,8 @@ const KanbanBoard = () => {
       const token = localStorage.getItem('token');
       const method = editingCard ? 'PUT' : 'POST';
       const url = editingCard 
-        ? `${process.env.REACT_APP_API_URL || ''}/api/kanban/${editingCard.id}` 
-        : `${process.env.REACT_APP_API_URL || ''}/api/kanban`;
+        ? getApiUrl(`/api/kanban/${editingCard.id}`) 
+        : getApiUrl('/api/kanban');
       
       const response = await fetch(url, {
         method,
@@ -138,7 +147,7 @@ const KanbanBoard = () => {
   const handleDelete = async (cardId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/kanban/${cardId}`, {
+      const response = await fetch(getApiUrl(`/api/kanban/${cardId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -177,7 +186,7 @@ const KanbanBoard = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/kanban/${cardId}`, {
+      const response = await fetch(getApiUrl(`/api/kanban/${cardId}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
