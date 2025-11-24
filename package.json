@@ -32,7 +32,8 @@
     "test-notifications": "node scripts/test-notifications.js",
     "create-kanban-table": "node scripts/create-kanban-table.js",
     "fix-kanban-table": "node scripts/fix-kanban-table.js",
-    "sync-kanban-model": "node scripts/sync-kanban-model.js"
+    "sync-kanban-model": "node scripts/sync-kanban-model.js",
+    "diagnose-kanban": "node scripts/diagnose-kanban-schema.js"
   },
   "keywords": [],
   "author": "",
