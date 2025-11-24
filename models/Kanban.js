@@ -17,7 +17,7 @@ const Kanban = sequelize.define('Kanban', {
   status: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    defaultValue: 'Backlog'
+    defaultValue: 'backlog'
   }
 }, {
   timestamps: true,
