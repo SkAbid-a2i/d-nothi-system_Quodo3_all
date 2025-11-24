@@ -290,6 +290,42 @@ app.post('/api/setup/fix-kanban-default', cors({
   }
 });
 
+// Endpoint to sync Kanban model with database (for production use)
+app.post('/api/setup/sync-kanban', cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://quodo3-frontend.netlify.app', 
+    process.env.FRONTEND_URL_2 || 'http://localhost:3000',
+    process.env.FRONTEND_URL_3 || 'https://d-nothi-zenith.vercel.app',
+    'https://quodo3-frontend.onrender.com',
+    'https://quodo3-backend.onrender.com',
+    'https://d-nothi-system-quodo3-all.vercel.app',
+    'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
+    'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+}), async (req, res) => {
+  try {
+    // Check if we're in production environment
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(400).json({ message: 'This endpoint is only available in production' });
+    }
+    
+    const Kanban = require('./models/Kanban');
+    
+    // Sync the model with the database
+    await Kanban.sync({ alter: true });
+    
+    logger.info('Kanban model synced successfully');
+    res.json({ message: 'Kanban model synced successfully' });
+  } catch (error) {
+    logger.error('Error syncing Kanban model', { error: error.message, stack: error.stack });
+    res.status(500).json({ message: 'Error syncing Kanban model', error: error.message });
+  }
+});
+
 // Import route files
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
