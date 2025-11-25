@@ -19,8 +19,15 @@ const corsOptions = {
       'https://d-nothi-system-quodo3-all-git-main-skabid-5302s-projects.vercel.app',
       'https://d-nothi-system-quodo3-l49aqp6te-skabid-5302s-projects.vercel.app',
       'https://d-nothi-system-quodo3-cn53p2hxd-skabid-5302s-projects.vercel.app',
-      'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app'
+      'https://d-nothi-system-quodo3-bp6mein7b-skabid-5302s-projects.vercel.app',
+      // Add the specific origin that's making the request
+      'https://d-nothi-zenith.vercel.app'
     ];
+    
+    // Allow any subdomain of vercel.app
+    if (origin && origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
