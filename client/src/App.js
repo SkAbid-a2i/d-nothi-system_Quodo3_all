@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import { TranslationProvider } from './contexts/TranslationContext';
+import { ThemeProvider as CustomThemeProvider, useThemeContext } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Layout from './components/Layout';
@@ -27,30 +28,22 @@ import CollaborationLink from './components/CollaborationLink';
 import KanbanBoard from './components/KanbanBoard';
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, setDarkMode, primaryColor, secondaryColor, toggleDarkMode } = useThemeContext();
 
-  // Load saved theme preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setDarkMode(true);
-    }
-  }, []);
-
-  // Create theme based on dark mode state with modern color palette
+  // Create theme based on dark mode state with modern color palette and color wheel concept
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: '#667eea', // Modern blue gradient start
-        light: '#764ba2', // Purple for lighter accents
-        dark: '#5a67d8', // Darker blue for contrast
+        main: darkMode ? '#667eea' : primaryColor, // Use custom primary color for light mode
+        light: darkMode ? '#764ba2' : primaryColor,
+        dark: darkMode ? '#5a67d8' : primaryColor,
         contrastText: '#ffffff'
       },
       secondary: {
-        main: '#f093fb', // Modern pink
-        light: '#f5b4fb',
-        dark: '#ec69f0',
+        main: darkMode ? '#f093fb' : secondaryColor, // Use custom secondary color for light mode
+        light: darkMode ? '#f5b4fb' : secondaryColor,
+        dark: darkMode ? '#ec69f0' : secondaryColor,
         contrastText: '#ffffff'
       },
       background: {
@@ -176,14 +169,14 @@ function App() {
                 borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
               },
               '&.Mui-focused fieldset': {
-                borderColor: darkMode ? '#667eea' : '#667eea',
+                borderColor: darkMode ? '#667eea' : primaryColor,
               }
             },
             '& .MuiInputLabel-root': {
               color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
             },
             '& .MuiInputLabel-root.Mui-focused': {
-              color: darkMode ? '#667eea' : '#667eea',
+              color: darkMode ? '#667eea' : primaryColor,
             },
             '& .MuiInputBase-input': {
               color: darkMode ? '#f1f5f9' : '#1e293b',
@@ -201,7 +194,7 @@ function App() {
               borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: darkMode ? '#667eea' : '#667eea',
+              borderColor: darkMode ? '#667eea' : primaryColor,
             },
             '& .MuiSelect-select': {
               color: darkMode ? '#f1f5f9' : '#1e293b',
@@ -290,132 +283,128 @@ function App() {
     ]
   });
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
-  };
-
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <TranslationProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Dashboard />} />
-              </Route>
-              <Route path="/tasks" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<TaskLogger />} />
-              </Route>
-              <Route path="/my-tasks" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<AgentDashboard />} />
-              </Route>
-              <Route path="/team-tasks" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<AdminDashboard />} />
-              </Route>
-              <Route path="/leaves" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<LeaveManagement />} />
-              </Route>
-              <Route path="/admin" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<AdminConsole />} />
-              </Route>
-              <Route path="/reports" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<ReportManagement />} />
-              </Route>
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Settings darkMode={darkMode} setDarkMode={setDarkMode} />} />
-              </Route>
-              <Route path="/help" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Help />} />
-              </Route>
-              <Route path="/logs" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<LogMonitoring />} />
-              </Route>
-              <Route path="/error-monitoring" element={
-                <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<ErrorMonitoring />} />
-              </Route>
-              <Route path="/meetings" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<MeetingEngagement />} />
-              </Route>
-              <Route path="/collaboration" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<CollaborationLink />} />
-              </Route>
-              <Route path="/kanban" element={
-                <ProtectedRoute>
-                  <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-                </ProtectedRoute>
-              }>
-                <Route index element={<KanbanBoard />} />
-              </Route>
-              
-              {/* Fallback route for debugging */}
-              <Route path="*" element={
-                <div>
-                  <h1>404 - Page Not Found</h1>
-                  <p>This is a fallback route for debugging purposes.</p>
-                  <p>If you see this page, the routing is not working correctly.</p>
-                </div>
-              } />
-            </Routes>
-          </Router>
-        </TranslationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <CustomThemeProvider>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <TranslationProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Dashboard />} />
+                </Route>
+                <Route path="/tasks" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<TaskLogger />} />
+                </Route>
+                <Route path="/my-tasks" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<AgentDashboard />} />
+                </Route>
+                <Route path="/team-tasks" element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<AdminDashboard />} />
+                </Route>
+                <Route path="/leaves" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<LeaveManagement />} />
+                </Route>
+                <Route path="/admin" element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<AdminConsole />} />
+                </Route>
+                <Route path="/reports" element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<ReportManagement />} />
+                </Route>
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Settings darkMode={darkMode} setDarkMode={setDarkMode} />} />
+                </Route>
+                <Route path="/help" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Help />} />
+                </Route>
+                <Route path="/logs" element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<LogMonitoring />} />
+                </Route>
+                <Route path="/error-monitoring" element={
+                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<ErrorMonitoring />} />
+                </Route>
+                <Route path="/meetings" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<MeetingEngagement />} />
+                </Route>
+                <Route path="/collaboration" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<CollaborationLink />} />
+                </Route>
+                <Route path="/kanban" element={
+                  <ProtectedRoute>
+                    <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<KanbanBoard />} />
+                </Route>
+                
+                {/* Fallback route for debugging */}
+                <Route path="*" element={
+                  <div>
+                    <h1>404 - Page Not Found</h1>
+                    <p>This is a fallback route for debugging purposes.</p>
+                    <p>If you see this page, the routing is not working correctly.</p>
+                  </div>
+                } />
+              </Routes>
+            </Router>
+          </TranslationProvider>
+        </AuthProvider>
+      </MuiThemeProvider>
+    </CustomThemeProvider>
   );
 }
 

@@ -62,6 +62,7 @@ import {
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import notificationService from '../services/notificationService';
 import UserFilterDropdown from './UserFilterDropdown';
+import FilterSection from './FilterSection';
 
 // Styled Tab component for better design
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -308,6 +309,15 @@ const AdminDashboard = () => {
   };
 
   const stats = getDashboardStats();
+
+  // Check if any filters are active
+  const hasActiveFilters = Boolean(searchTerm || userFilter);
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setUserFilter('');
+  };
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
@@ -721,73 +731,76 @@ const AdminDashboard = () => {
           </Grid>
         </Grid>
         
-        {/* Filters and Controls */}
+        {/* Modern Expandable Filter Section */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={2}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Time Range</InputLabel>
-                  <Select 
-                    value={timeRange}
-                    onChange={(e) => setTimeRange(e.target.value)}
-                    label="Time Range"
-                  >
-                    <MenuItem value="daily">Daily</MenuItem>
-                    <MenuItem value="weekly">Weekly</MenuItem>
-                    <MenuItem value="monthly">Monthly</MenuItem>
-                    <MenuItem value="yearly">Yearly</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} sm={2}>
-                <UserFilterDropdown
-                  users={users}
-                  selectedUser={users.find(u => u.username === userFilter) || null}
-                  onUserChange={(newValue) => {
-                    setUserFilter(newValue ? newValue.username : '');
-                  }}
-                  label="Filter by User"
-                  gridSize={{ xs: 12, sm: 12 }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    endAdornment: <SearchIcon fontSize="small" />
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={5}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('CSV')}
-                    variant="outlined"
-                    size="small"
-                  >
-                    Export CSV
-                  </Button>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('PDF')}
-                    variant="outlined"
-                    size="small"
-                  >
-                    Export PDF
-                  </Button>
-                </Box>
-              </Grid>
+          <FilterSection
+            title="Advanced Filters"
+            defaultExpanded={true}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearAllFilters}
+          >
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Time Range</InputLabel>
+                <Select 
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  label="Time Range"
+                >
+                  <MenuItem value="daily">Daily</MenuItem>
+                  <MenuItem value="weekly">Weekly</MenuItem>
+                  <MenuItem value="monthly">Monthly</MenuItem>
+                  <MenuItem value="yearly">Yearly</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
-          </Paper>
+            
+            <Grid item xs={12} sm={3}>
+              <UserFilterDropdown
+                users={users}
+                selectedUser={users.find(u => u.username === userFilter) || null}
+                onUserChange={(newValue) => {
+                  setUserFilter(newValue ? newValue.username : '');
+                }}
+                label="Filter by User"
+                gridSize={{ xs: 12, sm: 12 }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  endAdornment: <SearchIcon fontSize="small" />
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={2}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button 
+                  startIcon={<DownloadIcon />} 
+                  onClick={() => handleExport('CSV')}
+                  variant="outlined"
+                  size="small"
+                >
+                  Export CSV
+                </Button>
+                <Button 
+                  startIcon={<DownloadIcon />} 
+                  onClick={() => handleExport('PDF')}
+                  variant="outlined"
+                  size="small"
+                >
+                  Export PDF
+                </Button>
+              </Box>
+            </Grid>
+          </FilterSection>
         </Grid>
         
         {/* Data Tables */}

@@ -57,6 +57,7 @@ import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 import useUserFilter from '../hooks/useUserFilter';
 import UserFilterDropdown from './UserFilterDropdown';
+import FilterSection from './FilterSection';
 
 const TaskManagement = () => {
   const { user } = useAuth();
@@ -257,6 +258,24 @@ const TaskManagement = () => {
     });
     showSnackbar('Filters cleared', 'info');
   };
+
+  // Clear all filters - for the new FilterSection
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setStartDate('');
+    setEndDate('');
+    setAppliedFilters({
+      searchTerm: '',
+      statusFilter: '',
+      userFilter: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = Boolean(searchTerm || statusFilter || startDate || endDate);
 
   // Add a function to reset to default view (show all user's tasks)
   const resetToDefaultView = () => {
@@ -1192,107 +1211,71 @@ const TaskManagement = () => {
           {/* All Tasks Tab */}
           {activeTab === 0 && (
             <Box sx={{ mt: 2 }}>
-              {/* Task Filters - Redesigned for all user roles - REMOVED USER FILTER FOR ALL ROLES */}
-              <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
-                  Task Filters
-                </Typography>
-                <Grid container spacing={3}>
-                  {/* Search Field - Full width on mobile, responsive on larger screens */}
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Search Tasks"
-                      placeholder="Search by description, category, service..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      InputProps={{
-                        endAdornment: <SearchIcon color="action" />
-                      }}
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-                  
-                  {/* Status Filter - Full width on mobile, responsive on larger screens */}
-                  <Grid item xs={12} sm={6} md={4}>
-                    <FormControl fullWidth variant="outlined" size="small">
-                      <InputLabel>Status</InputLabel>
-                      <Select 
-                        label="Status" 
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                      >
-                        <MenuItem value=""><em>All Statuses</em></MenuItem>
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="In Progress">In Progress</MenuItem>
-                        <MenuItem value="Completed">Completed</MenuItem>
-                        <MenuItem value="Cancelled">Cancelled</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  
-                  {/* Start Date Filter */}
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Start Date"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-                  
-                  {/* End Date Filter */}
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="End Date"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-                  
-                  {/* Action Buttons - Responsive layout */}
-                  <Grid item xs={12}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      justifyContent: 'flex-end', 
-                      gap: 2,
-                      mt: 1
-                    }}>
-                      <Button 
-                        variant="outlined" 
-                        onClick={clearFilters}
-                        fullWidth={{ xs: true, sm: false }}
-                      >
-                        Clear Filters
-                      </Button>
-                      <Button 
-                        variant="contained" 
-                        onClick={applyFilters}
-                        sx={{ 
-                          background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                          '&:hover': {
-                            background: 'linear-gradient(45deg, #764ba2, #667eea)'
-                          }
-                        }}
-                        fullWidth={{ xs: true, sm: false }}
-                      >
-                        Apply Filters
-                      </Button>
-                    </Box>
-                  </Grid>
+              {/* Modern Expandable Filter Section */}
+              <FilterSection
+                title="Advanced Task Filters"
+                defaultExpanded={true}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearAllFilters}
+              >
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Search Tasks"
+                    placeholder="Search by description, category, service..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      endAdornment: <SearchIcon color="action" />
+                    }}
+                    variant="outlined"
+                    size="small"
+                  />
                 </Grid>
-              </Paper>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Status</InputLabel>
+                    <Select 
+                      label="Status" 
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <MenuItem value=""><em>All Statuses</em></MenuItem>
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="In Progress">In Progress</MenuItem>
+                      <MenuItem value="Completed">Completed</MenuItem>
+                      <MenuItem value="Cancelled">Cancelled</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Start Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="End Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+              </FilterSection>
               
               {/* Task List */}
               {dataLoading ? (

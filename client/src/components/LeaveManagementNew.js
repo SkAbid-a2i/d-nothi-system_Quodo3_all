@@ -47,6 +47,7 @@ import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
 import frontendLogger from '../services/frontendLogger';
 import autoRefreshService from '../services/autoRefreshService';
+import FilterSection from './FilterSection';
 
 // Styled Tab component for better design
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -419,6 +420,15 @@ const LeaveManagement = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  // Check if any filters are active
+  const hasActiveFilters = Boolean(searchTerm || statusFilter);
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+  };
 
   // Form handlers
   const handleFormChange = (field, value) => {
@@ -832,48 +842,40 @@ const LeaveManagement = () => {
             </form>
           </Paper>
           
-          {/* Leave Filters */}
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={5}>
-                <TextField
-                  fullWidth
-                  label={t('common.search')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    endAdornment: <SearchIcon />
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('tasks.status')}</InputLabel>
-                  <Select 
-                    label="Status" 
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="Pending">Pending</MenuItem>
-                    <MenuItem value="Approved">Approved</MenuItem>
-                    <MenuItem value="Rejected">Rejected</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button variant="outlined" sx={{ mr: 1 }}>
-                  Filter
-                </Button>
-                <Button variant="outlined" onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('');
-                }}>
-                  Clear
-                </Button>
-              </Grid>
+          {/* Modern Expandable Filter Section */}
+          <FilterSection
+            title="Advanced Filters"
+            defaultExpanded={true}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearAllFilters}
+          >
+            <Grid item xs={12} sm={5}>
+              <TextField
+                fullWidth
+                label={t('common.search')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  endAdornment: <SearchIcon />
+                }}
+              />
             </Grid>
-          </Paper>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth>
+                <InputLabel>{t('tasks.status')}</InputLabel>
+                <Select 
+                  label="Status" 
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="Approved">Approved</MenuItem>
+                  <MenuItem value="Rejected">Rejected</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </FilterSection>
           
           {/* Leave List */}
           <TableContainer component={Paper}>

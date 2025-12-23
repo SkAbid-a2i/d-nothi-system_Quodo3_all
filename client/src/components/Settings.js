@@ -20,7 +20,8 @@ import {
   TextField,
   Grid,
   Chip,
-  CircularProgress
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
 import { 
   Language as LanguageIcon,
@@ -32,13 +33,17 @@ import {
   Save as SaveIcon,
   Bloodtype as BloodtypeIcon,
   Phone as PhoneIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Colorize as ColorizeIcon,
+  Palette as PaletteIcon
 } from '@mui/icons-material';
 import { authAPI } from '../services/api';
+import { useThemeContext } from '../contexts/ThemeContext';
 
 const Settings = ({ darkMode, setDarkMode }) => {
   const { t } = useTranslation();
   const { user, updateUser } = useAuth();
+  const { primaryColor, secondaryColor, updatePrimaryColor, updateSecondaryColor, resetToDefaultColors } = useThemeContext();
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
@@ -149,6 +154,17 @@ const Settings = ({ darkMode, setDarkMode }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle color changes
+  const handlePrimaryColorChange = (e) => {
+    const newColor = e.target.value;
+    updatePrimaryColor(newColor);
+  };
+
+  const handleSecondaryColorChange = (e) => {
+    const newColor = e.target.value;
+    updateSecondaryColor(newColor);
   };
 
   return (
@@ -364,6 +380,92 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       }}
                     >
                       {loading ? 'Updating...' : 'Update Profile'}
+                    </Button>
+                  </Grid>
+                </Grid>
+                
+                <Divider sx={{ my: 4 }} />
+                
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center' }}>
+                  <PaletteIcon sx={{ mr: 1 }} />
+                  Theme & Colors
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Primary Color"
+                      type="color"
+                      value={primaryColor}
+                      onChange={handlePrimaryColorChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <ColorizeIcon sx={{ color: primaryColor }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Secondary Color"
+                      type="color"
+                      value={secondaryColor}
+                      onChange={handleSecondaryColorChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <ColorizeIcon sx={{ color: secondaryColor }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Button
+                      variant="outlined"
+                      onClick={resetToDefaultColors}
+                      sx={{ 
+                        borderColor: 'divider',
+                        color: 'text.primary',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                        }
+                      }}
+                    >
+                      Reset to Default Colors
                     </Button>
                   </Grid>
                 </Grid>
