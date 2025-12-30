@@ -51,8 +51,6 @@ const DropdownManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   
@@ -204,10 +202,6 @@ const DropdownManagement = () => {
       edit: { open: false, dropdown: null },
       delete: { open: false, dropdown: null }
     });
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
   };
 
   const handleInputChange = (e) => {

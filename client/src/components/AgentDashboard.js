@@ -879,39 +879,49 @@ const AgentDashboard = () => {
           </Card>
         </Grid>
         
-        {/* Filters and Controls */}
+        {/* Modern Expandable Filter Section */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center">
+          <FilterSection
+            title="Advanced Filters"
+            defaultExpanded={true}
+            hasActiveFilters={Boolean(searchTerm || userFilter)}
+            onClearFilters={() => {
+              setSearchTerm('');
+              setSelectedUser(null);
+              setUserFilter('');
+            }}
+          >
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Time Range</InputLabel>
+                <Select 
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  label="Time Range"
+                >
+                  <MenuItem value="daily">Daily</MenuItem>
+                  <MenuItem value="weekly">Weekly</MenuItem>
+                  <MenuItem value="monthly">Monthly</MenuItem>
+                  <MenuItem value="yearly">Yearly</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Search Tasks"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  endAdornment: <SearchIcon fontSize="small" />
+                }}
+              />
+            </Grid>
+            
+            {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
               <Grid item xs={12} sm={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Time Range</InputLabel>
-                  <Select 
-                    value={timeRange}
-                    onChange={(e) => setTimeRange(e.target.value)}
-                    label="Time Range"
-                  >
-                    <MenuItem value="daily">Daily</MenuItem>
-                    <MenuItem value="weekly">Weekly</MenuItem>
-                    <MenuItem value="monthly">Monthly</MenuItem>
-                    <MenuItem value="yearly">Yearly</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  fullWidth
-                  label="Search Tasks"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    endAdornment: <SearchIcon />
-                  }}
-                />
-              </Grid>
-              
-              {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
                 <UserFilterDropdown
                   users={filteredUsers}
                   selectedUser={selectedUser}
@@ -921,52 +931,47 @@ const AgentDashboard = () => {
                   }}
                   label="Filter by User"
                   loading={userLoading}
-                  gridSize={{ xs: 12, sm: 3 }}
+                  gridSize={{ xs: 12, sm: 12 }}
                 />
-              )}
-              
-              <Grid item xs={12} sm={3}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                  <Button 
-                    variant="outlined"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedUser(null);
-                      setUserFilter('');
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                  <Button 
-                    variant="contained"
-                    onClick={() => {
-                      // Apply user filter when Apply button is clicked
-                      if (selectedUser) {
-                        // Use the value field from the processed user object for consistent matching
-                        setUserFilter(selectedUser.value || selectedUser.username || selectedUser.email || '');
-                      } else {
-                        setUserFilter('');
-                      }
-                    }}
-                  >
-                    Apply
-                  </Button>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('CSV')}
-                  >
-                    Export CSV
-                  </Button>
-                  <Button 
-                    startIcon={<DownloadIcon />} 
-                    onClick={() => handleExport('PDF')}
-                  >
-                    Export PDF
-                  </Button>
-                </Box>
               </Grid>
+            )}
+            
+            <Grid item xs={12} sm={3}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button 
+                  variant="contained"
+                  onClick={() => {
+                    // Apply user filter when Apply button is clicked
+                    if (selectedUser) {
+                      // Use the value field from the processed user object for consistent matching
+                      setUserFilter(selectedUser.value || selectedUser.username || selectedUser.email || '');
+                    } else {
+                      setUserFilter('');
+                    }
+                  }}
+                  size="small"
+                >
+                  Apply
+                </Button>
+                <Button 
+                  startIcon={<DownloadIcon />} 
+                  onClick={() => handleExport('CSV')}
+                  variant="outlined"
+                  size="small"
+                >
+                  Export CSV
+                </Button>
+                <Button 
+                  startIcon={<DownloadIcon />} 
+                  onClick={() => handleExport('PDF')}
+                  variant="outlined"
+                  size="small"
+                >
+                  Export PDF
+                </Button>
+              </Box>
             </Grid>
-          </Paper>
+          </FilterSection>
         </Grid>
         
         {/* Charts and Task Table */}

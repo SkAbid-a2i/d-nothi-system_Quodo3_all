@@ -48,6 +48,7 @@ const KanbanBoard = () => {
     status: 'backlog'
   });
   const [expandedCards, setExpandedCards] = useState({});
+  const [viewingCard, setViewingCard] = useState(null);
 
   // Fetch cards from API
   useEffect(() => {
@@ -342,6 +343,7 @@ const KanbanBoard = () => {
                                 : '0 4px 12px rgba(0, 0, 0, 0.1)',
                               border: `1px solid ${getStatusColor(card.status)}`,
                               transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                              cursor: 'pointer',
                               '&:hover': {
                                 transform: 'translateY(-2px)',
                                 boxShadow: theme.palette.mode === 'dark' 
@@ -349,6 +351,7 @@ const KanbanBoard = () => {
                                   : '0 6px 16px rgba(0, 0, 0, 0.15)'
                               }
                             }}
+                            onClick={() => setViewingCard(card)}
                           >
                             <CardContent>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -396,7 +399,10 @@ const KanbanBoard = () => {
                                   </Collapse>
                                   <IconButton 
                                     size="small" 
-                                    onClick={() => toggleExpand(card.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Prevent card click from triggering
+                                      toggleExpand(card.id);
+                                    }}
                                     sx={{ mt: 1 }}
                                   >
                                     {expandedCards[card.id] ? 
@@ -412,7 +418,10 @@ const KanbanBoard = () => {
                               <Box>
                                 <IconButton 
                                   size="small" 
-                                  onClick={() => handleOpen(card)}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent card click from triggering
+                                    handleOpen(card);
+                                  }}
                                   sx={{ 
                                     color: theme.palette.primary.main,
                                     '&:hover': {
@@ -424,7 +433,10 @@ const KanbanBoard = () => {
                                 </IconButton>
                                 <IconButton 
                                   size="small" 
-                                  onClick={() => handleDelete(card.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent card click from triggering
+                                    handleDelete(card.id);
+                                  }}
                                   sx={{ 
                                     color: theme.palette.error.main,
                                     '&:hover': {
@@ -536,6 +548,90 @@ const KanbanBoard = () => {
             {editingCard ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
+      </Dialog>
+      
+      {/* View Card Details Dialog */}
+      <Dialog 
+        open={Boolean(viewingCard)} 
+        onClose={() => setViewingCard(null)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: theme.palette.mode === 'dark' 
+              ? '0 20px 40px rgba(0, 0, 0, 0.5)' 
+              : '0 20px 40px rgba(0, 0, 0, 0.2)'
+          }
+        }}
+      >
+        {viewingCard && (
+          <>
+            <DialogTitle sx={{ pb: 1, fontWeight: 'bold', fontSize: '1.5rem' }}>
+              {viewingCard.title}
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+                <strong>Status:</strong> 
+                <Chip 
+                  label={viewingCard.status} 
+                  size="small" 
+                  sx={{ 
+                    backgroundColor: getStatusColor(viewingCard.status),
+                    color: 'white',
+                    ml: 1,
+                    height: 24,
+                    fontWeight: 'bold'
+                  }} 
+                />
+              </Typography>
+              
+              {viewingCard.description && (
+                <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+                  <strong>Description:</strong>
+                  <div style={{ whiteSpace: 'pre-line', marginTop: '8px' }}>
+                    {viewingCard.description}
+                  </div>
+                </Typography>
+              )}
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                <strong>Created:</strong> {new Date(viewingCard.createdAt || Date.now()).toLocaleString()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <strong>Updated:</strong> {new Date(viewingCard.updatedAt || Date.now()).toLocaleString()}
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button 
+                onClick={() => setViewingCard(null)}
+                sx={{ 
+                  borderRadius: 2,
+                  color: theme.palette.text.primary
+                }}
+              >
+                Close
+              </Button>
+              <Button 
+                onClick={() => {
+                  handleOpen(viewingCard);
+                  setViewingCard(null);
+                }}
+                variant="contained" 
+                startIcon={<EditIcon />}
+                sx={{
+                  borderRadius: 2,
+                  boxShadow: 3,
+                  '&:hover': {
+                    boxShadow: 5
+                  }
+                }}
+              >
+                Edit
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );

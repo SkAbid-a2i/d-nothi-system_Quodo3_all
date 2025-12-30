@@ -313,11 +313,44 @@ const AdminDashboard = () => {
   // Check if any filters are active
   const hasActiveFilters = Boolean(searchTerm || userFilter);
 
+  // Handle View Details for different card types
+  const handleViewDetails = (type) => {
+    setActiveTab(0); // Set to Team Tasks tab by default
+    
+    switch (type) {
+      case 'total':
+        // Show all tasks - clear all filters
+        setSearchTerm('');
+        setUserFilter('');
+        break;
+      case 'pendingLeaves':
+        // Show pending leaves - switch to Pending Leaves tab
+        setActiveTab(1); // Switch to Pending Leaves tab
+        break;
+      case 'todaysLeaves':
+        // Show today's leaves - switch to Who's on Leave Today tab
+        setActiveTab(2); // Switch to Who's on Leave Today tab
+        break;
+      default:
+        break;
+    }
+  };
+
+
+
   // Clear all filters
   const clearAllFilters = () => {
     setSearchTerm('');
     setUserFilter('');
   };
+
+  // Filter today's leaves
+  const filteredTodaysLeaves = leaves.filter(leave => {
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = leave.startDate ? leave.startDate.split('T')[0] : '';
+    const endDate = leave.endDate ? leave.endDate.split('T')[0] : '';
+    return startDate <= today && endDate >= today && leave.status === 'Approved';
+  });
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
@@ -351,7 +384,7 @@ const AdminDashboard = () => {
                   </Box>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" fullWidth>View Details</Button>
+                  <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                 </CardActions>
               </Card>
             </Grid>
@@ -372,7 +405,7 @@ const AdminDashboard = () => {
                   </Box>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" fullWidth>View Details</Button>
+                  <Button size="small" fullWidth onClick={() => handleViewDetails('pendingLeaves')}>View Details</Button>
                 </CardActions>
               </Card>
             </Grid>
@@ -393,7 +426,7 @@ const AdminDashboard = () => {
                   </Box>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" fullWidth>View Details</Button>
+                  <Button size="small" fullWidth onClick={() => handleViewDetails('todaysLeaves')}>View Details</Button>
                 </CardActions>
               </Card>
             </Grid>
@@ -414,7 +447,7 @@ const AdminDashboard = () => {
                   </Box>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" fullWidth>View Details</Button>
+                  <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                 </CardActions>
               </Card>
             </Grid>
@@ -435,7 +468,7 @@ const AdminDashboard = () => {
                   </Box>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" fullWidth>View Details</Button>
+                  <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                 </CardActions>
               </Card>
             </Grid>
@@ -674,7 +707,7 @@ const AdminDashboard = () => {
                             </Typography>
                           </CardContent>
                           <CardActions>
-                            <Button size="small" fullWidth>View Details</Button>
+                            <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                           </CardActions>
                         </Card>
                       </Grid>
@@ -689,7 +722,7 @@ const AdminDashboard = () => {
                             </Typography>
                           </CardContent>
                           <CardActions>
-                            <Button size="small" fullWidth>View Details</Button>
+                            <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                           </CardActions>
                         </Card>
                       </Grid>
@@ -704,7 +737,7 @@ const AdminDashboard = () => {
                             </Typography>
                           </CardContent>
                           <CardActions>
-                            <Button size="small" fullWidth>View Details</Button>
+                            <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                           </CardActions>
                         </Card>
                       </Grid>
@@ -719,7 +752,7 @@ const AdminDashboard = () => {
                             </Typography>
                           </CardContent>
                           <CardActions>
-                            <Button size="small" fullWidth>View Details</Button>
+                            <Button size="small" fullWidth onClick={() => handleViewDetails('total')}>View Details</Button>
                           </CardActions>
                         </Card>
                       </Grid>
@@ -764,6 +797,7 @@ const AdminDashboard = () => {
                 }}
                 label="Filter by User"
                 gridSize={{ xs: 12, sm: 12 }}
+                loading={false}
               />
             </Grid>
             

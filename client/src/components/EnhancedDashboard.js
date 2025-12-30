@@ -28,7 +28,6 @@ import {
 import { 
   Assignment, 
   EventAvailable, 
-  Search as SearchIcon,
   Download as DownloadIcon,
   PieChart as PieChartIcon,
   BarChart as BarChartIcon,
@@ -37,8 +36,6 @@ import {
   Group as GroupIcon,
   Category as CategoryIcon,
   Build as BuildIcon,
-  Source as SourceIcon,
-  CalendarToday as CalendarIcon,
   Person as PersonIcon,
   People as PeopleIcon,
   FilterList as FilterIcon,
@@ -94,6 +91,7 @@ const EnhancedDashboard = () => {
   const [officeChartType, setOfficeChartType] = useState('pie');
   const [categoryChartType, setCategoryChartType] = useState('bar');
   const [serviceChartType, setServiceChartType] = useState('pie');
+  const [obligationChartType, setObligationChartType] = useState('pie');
   
   // Chart data states
   const [officeData, setOfficeData] = useState([]);
@@ -1196,7 +1194,7 @@ const EnhancedDashboard = () => {
 
   // Render different chart types for obligation classification
   const renderObligationChart = () => {
-    switch (serviceChartType) {
+    switch (obligationChartType) {
       case 'pie':
         return (
           <ResponsiveContainer width="100%" height="100%">
@@ -2203,13 +2201,13 @@ const EnhancedDashboard = () => {
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <Tooltip title="Pie Chart">
                   <IconButton 
-                    color={serviceChartType === 'pie' ? 'primary' : 'default'}
-                    onClick={() => setServiceChartType('pie')}
+                    color={obligationChartType === 'pie' ? 'primary' : 'default'}
+                    onClick={() => setObligationChartType('pie')}
                     size="small"
                     sx={{ 
                       borderRadius: 2,
-                      border: serviceChartType === 'pie' ? '2px solid' : '1px solid',
-                      borderColor: serviceChartType === 'pie' ? 'primary.main' : 'divider',
+                      border: obligationChartType === 'pie' ? '2px solid' : '1px solid',
+                      borderColor: obligationChartType === 'pie' ? 'primary.main' : 'divider',
                       '&:hover': {
                         backgroundColor: 'action.hover'
                       }
@@ -2220,13 +2218,13 @@ const EnhancedDashboard = () => {
                 </Tooltip>
                 <Tooltip title="Donut Chart">
                   <IconButton 
-                    color={serviceChartType === 'donut' ? 'primary' : 'default'}
-                    onClick={() => setServiceChartType('donut')}
+                    color={obligationChartType === 'donut' ? 'primary' : 'default'}
+                    onClick={() => setObligationChartType('donut')}
                     size="small"
                     sx={{ 
                       borderRadius: 2,
-                      border: serviceChartType === 'donut' ? '2px solid' : '1px solid',
-                      borderColor: serviceChartType === 'donut' ? 'primary.main' : 'divider',
+                      border: obligationChartType === 'donut' ? '2px solid' : '1px solid',
+                      borderColor: obligationChartType === 'donut' ? 'primary.main' : 'divider',
                       '&:hover': {
                         backgroundColor: 'action.hover'
                       }
@@ -2237,13 +2235,13 @@ const EnhancedDashboard = () => {
                 </Tooltip>
                 <Tooltip title="Radial Chart">
                   <IconButton 
-                    color={serviceChartType === 'radial' ? 'primary' : 'default'}
-                    onClick={() => setServiceChartType('radial')}
+                    color={obligationChartType === 'radial' ? 'primary' : 'default'}
+                    onClick={() => setObligationChartType('radial')}
                     size="small"
                     sx={{ 
                       borderRadius: 2,
-                      border: serviceChartType === 'radial' ? '2px solid' : '1px solid',
-                      borderColor: serviceChartType === 'radial' ? 'primary.main' : 'divider',
+                      border: obligationChartType === 'radial' ? '2px solid' : '1px solid',
+                      borderColor: obligationChartType === 'radial' ? 'primary.main' : 'divider',
                       '&:hover': {
                         backgroundColor: 'action.hover'
                       }
