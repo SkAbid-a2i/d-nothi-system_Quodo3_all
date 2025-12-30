@@ -72,7 +72,7 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
 // @access  Private (Agent, Admin, Supervisor)
 router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
-    const { date, source, category, service, userInformation, description, status = 'Pending', files = [], obligation } = req.body;
+    const { date, source, category, subCategory, incident, userInformation, description, status = 'Pending', files = [], obligation } = req.body;
 
     // Validate required fields
     if (!date || !description) {
@@ -84,7 +84,8 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       date: new Date(date),
       source: source || '',
       category: category || '',
-      service: service || '',
+      subCategory: subCategory || '',
+      incident: incident || '', // Add incident field
       userInformation: userInformation || '',
       description: description || '',
       status: status || 'Pending',
@@ -145,7 +146,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, source, category, service, userInformation, description, status, comments = [], attachments = [], files = [], obligation } = req.body;
+    const { date, source, category, subCategory, incident, userInformation, description, status, comments = [], attachments = [], files = [], obligation } = req.body;
 
     // Check if task exists
     const task = await Task.findByPk(id);
@@ -173,7 +174,8 @@ router.put('/:id', authenticate, async (req, res) => {
       date: date ? new Date(date) : task.date,
       source: source !== undefined ? source : task.source,
       category: category !== undefined ? category : task.category,
-      service: service !== undefined ? service : task.service,
+      subCategory: subCategory !== undefined ? subCategory : task.subCategory,
+      incident: incident !== undefined ? incident : task.incident, // Add incident field
       userInformation: userInformation !== undefined ? userInformation : task.userInformation,
       description: description || task.description,
       status: status || task.status,

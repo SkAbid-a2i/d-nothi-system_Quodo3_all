@@ -29,7 +29,7 @@ const Task = sequelize.define('Task', {
     allowNull: true,
     defaultValue: ''
   },
-  service: {
+  subCategory: {
     type: DataTypes.STRING(255),
     allowNull: true,
     defaultValue: ''
@@ -75,6 +75,12 @@ const Task = sequelize.define('Task', {
   },
   // Add obligation field
   obligation: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    defaultValue: ''
+  },
+  // Add incident field
+  incident: {
     type: DataTypes.STRING(255),
     allowNull: true,
     defaultValue: ''

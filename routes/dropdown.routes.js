@@ -52,7 +52,7 @@ router.get('/:type', authenticate, async (req, res) => {
     const { parentValue } = req.query;
 
     // Validate type
-    if (!['Source', 'Category', 'Service', 'Office', 'Obligation'].includes(type)) {
+    if (!['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'].includes(type)) {
       return res.status(400).json({ message: 'Invalid dropdown type' });
     }
 
@@ -61,6 +61,12 @@ router.get('/:type', authenticate, async (req, res) => {
     // For services, filter by parent category if provided
     if (type === 'Service' && parentValue) {
       where.parentType = 'Category';
+      where.parentValue = parentValue;
+    }
+    
+    // For incidents, filter by parent sub-category if provided
+    if (type === 'Incident' && parentValue) {
+      where.parentType = 'Sub-Category';
       where.parentValue = parentValue;
     }
 
@@ -80,7 +86,7 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
     const { type, value, parentType, parentValue } = req.body;
 
     // Validate type
-    if (!['Source', 'Category', 'Service', 'Office', 'Obligation'].includes(type)) {
+    if (!['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'].includes(type)) {
       return res.status(400).json({ message: 'Invalid dropdown type' });
     }
 
@@ -94,8 +100,8 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
     const dropdown = await Dropdown.create({
       type,
       value,
-      parentType: type === 'Service' ? parentType : undefined,
-      parentValue: type === 'Service' ? parentValue : undefined,
+      parentType: (type === 'Service' || type === 'Incident') ? parentType : undefined,
+      parentValue: (type === 'Service' || type === 'Incident') ? parentValue : undefined,
       createdBy: req.user.id,
     });
 
@@ -147,8 +153,8 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin')
     // Update dropdown fields
     dropdown.type = type || dropdown.type;
     dropdown.value = value || dropdown.value;
-    dropdown.parentType = type === 'Service' ? parentType : undefined;
-    dropdown.parentValue = type === 'Service' ? parentValue : undefined;
+    dropdown.parentType = (type === 'Service' || type === 'Incident') ? parentType : undefined;
+    dropdown.parentValue = (type === 'Service' || type === 'Incident') ? parentValue : undefined;
     dropdown.isActive = isActive !== undefined ? isActive : dropdown.isActive;
 
     await dropdown.save();

@@ -73,6 +73,8 @@ const DropdownManagement = () => {
   // Available dropdown types
   const dropdownTypes = [
     { value: 'Category', label: 'Category', icon: <CategoryIcon /> },
+    { value: 'Sub-Category', label: 'Sub-Category', icon: <CategoryIcon /> },
+    { value: 'Incident', label: 'Incident', icon: <BuildIcon /> },
     { value: 'Service', label: 'Service', icon: <BuildIcon /> },
     { value: 'Source', label: 'Source', icon: <SourceIcon /> },
     { value: 'Office', label: 'Office', icon: <BusinessIcon /> },
@@ -233,6 +235,11 @@ const DropdownManagement = () => {
       return;
     }
     
+    if (formState.type === 'Incident' && !formState.parentValue) {
+      showSnackbar('Please select a parent sub-category for incident', 'error');
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -241,8 +248,8 @@ const DropdownManagement = () => {
         const response = await dropdownAPI.updateDropdownValue(dialogs.edit.dropdown.id, {
           type: formState.type,
           value: formState.value,
-          parentType: formState.type === 'Service' ? formState.parentType : undefined,
-          parentValue: formState.type === 'Service' ? formState.parentValue : undefined,
+          parentType: (formState.type === 'Service' || formState.type === 'Incident') ? formState.parentType : undefined,
+          parentValue: (formState.type === 'Service' || formState.type === 'Incident') ? formState.parentValue : undefined,
           isActive: formState.isActive
         });
         
@@ -252,8 +259,8 @@ const DropdownManagement = () => {
         const response = await dropdownAPI.createDropdownValue({
           type: formState.type,
           value: formState.value,
-          parentType: formState.type === 'Service' ? formState.parentType : undefined,
-          parentValue: formState.type === 'Service' ? formState.parentValue : undefined
+          parentType: (formState.type === 'Service' || formState.type === 'Incident') ? formState.parentType : undefined,
+          parentValue: (formState.type === 'Service' || formState.type === 'Incident') ? formState.parentValue : undefined
         });
         
         showSnackbar('Dropdown value created successfully!', 'success');
@@ -540,7 +547,7 @@ const DropdownManagement = () => {
                 />
               </Grid>
               
-              {formState.type === 'Service' && (
+              {(formState.type === 'Service' || formState.type === 'Incident') && (
                 <>
                   <Grid item xs={12}>
                     <Autocomplete
@@ -556,7 +563,7 @@ const DropdownManagement = () => {
                       renderInput={(params) => (
                         <TextField 
                           {...params} 
-                          label="Parent Category" 
+                          label={formState.type === 'Service' ? 'Parent Category' : 'Parent Sub-Category'} 
                           required 
                         />
                       )}

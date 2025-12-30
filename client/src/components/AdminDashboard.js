@@ -284,7 +284,11 @@ const AdminDashboard = () => {
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesUser = !userFilter || 
-      (task.userName && task.userName.toLowerCase().includes(userFilter.toLowerCase()));
+      (task.userName && task.userName.toLowerCase() === userFilter.toLowerCase()) ||
+      // Handle case where userFilter is in format like "Mazedul Alam (maahi)" but task.userName is just "maahi"
+      (task.userName && userFilter.includes(`(${task.userName})`)) ||
+      // Handle case where task.userName is in format like "Mazedul Alam (maahi)" but userFilter is just "maahi"
+      (task.userName.includes('(') && task.userName.includes(userFilter));
     
     return matchesSearch && matchesUser;
   });
@@ -315,7 +319,8 @@ const AdminDashboard = () => {
 
   // Handle View Details for different card types
   const handleViewDetails = (type) => {
-    setActiveTab(0); // Set to Team Tasks tab by default
+    // Set to Team Tasks tab by default
+    setActiveTab(0);
     
     switch (type) {
       case 'total':
@@ -332,8 +337,18 @@ const AdminDashboard = () => {
         setActiveTab(2); // Switch to Who's on Leave Today tab
         break;
       default:
+        // For any other type, just ensure we're on the correct tab
+        setActiveTab(0);
         break;
     }
+    
+    // Scroll to the task list to provide visual feedback
+    setTimeout(() => {
+      const taskListElement = document.getElementById('task-list');
+      if (taskListElement) {
+        taskListElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
 

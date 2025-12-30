@@ -8,7 +8,7 @@ const Dropdown = sequelize.define('Dropdown', {
     autoIncrement: true
   },
   type: {
-    type: DataTypes.ENUM('Source', 'Category', 'Service', 'Office', 'Obligation'),
+    type: DataTypes.ENUM('Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'),
     allowNull: false
   },
   value: {

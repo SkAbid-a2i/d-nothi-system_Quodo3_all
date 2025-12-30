@@ -31,7 +31,11 @@ const UserFilterDropdown = ({
         options={users}
         getOptionLabel={(option) => {
           if (!option) return '';
-          return option.label || (option.fullName || option.username || option.email) + ' (' + (option.username || option.email) + ')' || 'Unknown User';
+          return (option.fullName || option.username || option.email) + ' (' + (option.username || option.email) + ')';
+        }}
+        isOptionEqualToValue={(option, value) => {
+          // Compare by username to handle cases like "Mazedul Alam (maahi)"
+          return option.username === value?.username;
         }}
         value={selectedUser}
         onChange={(event, newValue) => {
@@ -46,7 +50,6 @@ const UserFilterDropdown = ({
             disabled={loading}
           />
         )}
-        isOptionEqualToValue={(option, value) => option.id === value?.id}
         noOptionsText="No users found"
         loading={loading}
       />

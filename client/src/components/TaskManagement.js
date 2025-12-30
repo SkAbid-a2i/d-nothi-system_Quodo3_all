@@ -82,8 +82,10 @@ const TaskManagement = () => {
   const [selectedSource, setSelectedSource] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [services, setServices] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
+  const [subCategories, setSubCategories] = useState([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState(null);
+  const [incidents, setIncidents] = useState([]);
+  const [selectedIncident, setSelectedIncident] = useState(null);
   const [offices, setOffices] = useState([]); // Add offices state
   const [selectedOffice, setSelectedOffice] = useState(null); // Add selected office state
   const [userInformation, setUserInformation] = useState(''); // Add user information state
@@ -102,7 +104,8 @@ const TaskManagement = () => {
   const [editDate, setEditDate] = useState('');
   const [editSelectedSource, setEditSelectedSource] = useState(null);
   const [editSelectedCategory, setEditSelectedCategory] = useState(null);
-  const [editSelectedService, setEditSelectedService] = useState(null);
+  const [editSelectedSubCategory, setEditSelectedSubCategory] = useState(null);
+  const [editSelectedIncident, setEditSelectedIncident] = useState(null);
   const [editSelectedOffice, setEditSelectedOffice] = useState(null); // Add edit selected office state
   const [editUserInformation, setEditUserInformation] = useState(''); // Add edit user information state
   const [editDescription, setEditDescription] = useState('');
@@ -300,25 +303,51 @@ const TaskManagement = () => {
     resetToDefaultView();
   }, []);
 
-  // Filter services when category changes (for create form)
+  // Filter sub-categories when category changes (for create form)
   useEffect(() => {
     if (selectedCategory) {
-      fetchServicesForCategory(selectedCategory.value);
+      fetchSubCategoriesForCategory(selectedCategory.value);
     } else {
-      setServices([]);
-      setSelectedService(null);
+      setSubCategories([]);
+      setSelectedSubCategory(null);
+      // Also clear incidents when sub-category is cleared
+      setIncidents([]);
+      setSelectedIncident(null);
     }
   }, [selectedCategory]);
+  
+  // Filter incidents when sub-category changes (for create form)
+  useEffect(() => {
+    if (selectedSubCategory) {
+      fetchIncidentsForSubCategory(selectedSubCategory.value);
+    } else {
+      setIncidents([]);
+      setSelectedIncident(null);
+    }
+  }, [selectedSubCategory]);
 
-  // Filter services when category changes (for edit form)
+  // Filter sub-categories when category changes (for edit form)
   useEffect(() => {
     if (editSelectedCategory) {
-      fetchServicesForCategory(editSelectedCategory.value, true);
+      fetchSubCategoriesForCategory(editSelectedCategory.value, true);
     } else {
-      setServices([]);
-      setEditSelectedService(null);
+      setSubCategories([]);
+      setEditSelectedSubCategory(null);
+      // Also clear incidents when sub-category is cleared
+      setIncidents([]);
+      setEditSelectedIncident(null);
     }
   }, [editSelectedCategory]);
+  
+  // Filter incidents when sub-category changes (for edit form)
+  useEffect(() => {
+    if (editSelectedSubCategory) {
+      fetchIncidentsForSubCategory(editSelectedSubCategory.value, true);
+    } else {
+      setIncidents([]);
+      setEditSelectedIncident(null);
+    }
+  }, [editSelectedSubCategory]);
 
   const fetchTasks = useCallback(async () => {
     // Don't fetch tasks if user is not available yet
@@ -684,20 +713,37 @@ const TaskManagement = () => {
     setEditFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
 
-  // Fetch services for a specific category
-  const fetchServicesForCategory = async (categoryValue, isEdit = false) => {
+  // Fetch sub-categories for a specific category
+  const fetchSubCategoriesForCategory = async (categoryValue, isEdit = false) => {
     try {
-      const response = await dropdownAPI.getDropdownValues('Service', categoryValue);
+      const response = await dropdownAPI.getDropdownValues('Sub-Category', categoryValue);
       if (isEdit) {
-        setEditSelectedService(null);
+        setEditSelectedSubCategory(null);
       } else {
-        setSelectedService(null);
+        setSelectedSubCategory(null);
       }
-      setServices(response.data || []);
+      setSubCategories(response.data || []);
     } catch (error) {
-      console.error('Error fetching services:', error);
-      showSnackbar('Failed to load services', 'error');
-      setServices([]);
+      console.error('Error fetching sub-categories:', error);
+      showSnackbar('Failed to load sub-categories', 'error');
+      setSubCategories([]);
+    }
+  };
+  
+  // Fetch incidents for a specific sub-category
+  const fetchIncidentsForSubCategory = async (subCategoryValue, isEdit = false) => {
+    try {
+      const response = await dropdownAPI.getDropdownValues('Incident', subCategoryValue);
+      if (isEdit) {
+        setEditSelectedIncident(null);
+      } else {
+        setSelectedIncident(null);
+      }
+      setIncidents(response.data || []);
+    } catch (error) {
+      console.error('Error fetching incidents:', error);
+      showSnackbar('Failed to load incidents', 'error');
+      setIncidents([]);
     }
   };
 
@@ -718,7 +764,8 @@ const TaskManagement = () => {
         date,
         source: selectedSource?.value || '',
         category: selectedCategory?.value || '',
-        service: selectedService?.value || '',
+        subCategory: selectedSubCategory?.value || '', // Renamed from service to sub-category
+        incident: selectedIncident?.value || '', // Add incident field
         office: selectedOffice?.value || '',
         userInformation,
         description: description.trim(),
@@ -740,7 +787,8 @@ const TaskManagement = () => {
       setDate(new Date().toISOString().split('T')[0]);
       setSelectedSource(null);
       setSelectedCategory(null);
-      setSelectedService(null);
+      setSelectedSubCategory(null);
+      setSelectedIncident(null);
       setSelectedOffice(null);
       setUserInformation('');
       setDescription('');
@@ -770,7 +818,8 @@ const TaskManagement = () => {
     setEditDate(task.date ? task.date.split('T')[0] : '');
     setEditSelectedSource(sources.find(s => s.value === task.source) || null);
     setEditSelectedCategory(categories.find(c => c.value === task.category) || null);
-    setEditSelectedService(services.find(s => s.value === task.service) || null);
+    setEditSelectedSubCategory(subCategories.find(s => s.value === task.subCategory) || null); // Renamed from service to sub-category
+    setEditSelectedIncident(incidents.find(i => i.value === task.incident) || null); // Add incident field
     setEditSelectedOffice(offices.find(o => o.value === task.office) || null);
     setEditUserInformation(task.userInformation || '');
     setEditDescription(task.description || '');
@@ -794,7 +843,8 @@ const TaskManagement = () => {
         date: editDate,
         source: editSelectedSource?.value || '',
         category: editSelectedCategory?.value || '',
-        service: editSelectedService?.value || '',
+        subCategory: editSelectedSubCategory?.value || '', // Renamed from service to sub-category
+        incident: editSelectedIncident?.value || '', // Add incident field
         office: editSelectedOffice?.value || '',
         userInformation: editUserInformation,
         description: editDescription.trim(),
@@ -1053,11 +1103,11 @@ const TaskManagement = () => {
     csv += 'User: ' + data.user + '\n\n';
     
     // Tasks section
-    csv += 'Date,Source,Category,Service,User Info,Description,User,Status,Files\n';
+    csv += 'Date,Source,Category,Sub-Category,Incident,User Info,Description,User,Status,Files\n';
     
     data.tasks.forEach(task => {
       const filesCount = task.files ? task.files.length : 0;
-      csv += '"' + (task.date || '') + '","' + (task.source || '') + '","' + (task.category || '') + '","' + (task.service || '') + '","' + (task.userInformation || '') + '","' + (task.description || '') + '","' + (task.userName || '') + '","' + (task.status || '') + '","' + filesCount + '"\n';
+      csv += '"' + (task.date || '') + '","' + (task.source || '') + '","' + (task.category || '') + '","' + (task.subCategory || '') + '","' + (task.incident || '') + '","' + (task.userInformation || '') + '","' + (task.description || '') + '","' + (task.userName || '') + '","' + (task.status || '') + '","' + filesCount + '"\n';
     });
     
     return csv;
@@ -1078,7 +1128,8 @@ const TaskManagement = () => {
         pdf += (index + 1) + '. ' + (task.description || 'No description') + '\n';
         pdf += '   Date: ' + (task.date || 'N/A') + '\n';
         pdf += '   Category: ' + (task.category || 'N/A') + '\n';
-        pdf += '   Service: ' + (task.service || 'N/A') + '\n';
+        pdf += '   Sub-Category: ' + (task.subCategory || 'N/A') + '\n';
+        pdf += '   Incident: ' + (task.incident || 'N/A') + '\n';
         pdf += '   User Info: ' + (task.userInformation || 'N/A') + '\n';
         pdf += '   Status: ' + (task.status || 'N/A') + '\n';
         pdf += '   User: ' + (task.userName || 'N/A') + '\n';
@@ -1222,7 +1273,7 @@ const TaskManagement = () => {
                   <TextField
                     fullWidth
                     label="Search Tasks"
-                    placeholder="Search by description, category, service..."
+                    placeholder="Search by description, category, sub-category..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     InputProps={{
@@ -1291,12 +1342,12 @@ const TaskManagement = () => {
                           <TableCell>Date</TableCell>
                           <TableCell>Source</TableCell>
                           <TableCell>Category</TableCell>
-                          <TableCell>Service</TableCell>
-                          <TableCell>Obligation</TableCell>
+                          <TableCell>Sub-Category</TableCell>
+                          <TableCell>Incident</TableCell>
                           <TableCell>Office</TableCell>
+                          <TableCell>User Information</TableCell>
                           <TableCell>Description</TableCell>
                           <TableCell>User</TableCell>
-                          <TableCell>User Info</TableCell>
                           <TableCell>Status</TableCell>
                           <TableCell>Files</TableCell>
                           {/* Removed Flag column */}
@@ -1326,12 +1377,13 @@ const TaskManagement = () => {
                               <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
                               <TableCell>{task.source || 'N/A'}</TableCell>
                               <TableCell>{task.category || 'N/A'}</TableCell>
-                              <TableCell>{task.service || 'N/A'}</TableCell>
-                              <TableCell>{task.obligation || 'N/A'}</TableCell>
+                              <TableCell>{task.subCategory || 'N/A'}</TableCell>
+                              <TableCell>{task.incident || 'N/A'}</TableCell>
                               <TableCell>{task.office || 'N/A'}</TableCell>
+                              <TableCell>{task.userInformation || 'N/A'}</TableCell>
                               <TableCell>{task.description || 'N/A'}</TableCell>
                               <TableCell>{task.userName || 'N/A'}</TableCell>
-                              <TableCell>{task.userInformation || 'N/A'}</TableCell>
+                              <TableCell>{task.obligation || 'N/A'}</TableCell>
                               <TableCell>
                                 <Select
                                   value={task.status || 'Pending'}
@@ -1451,17 +1503,39 @@ const TaskManagement = () => {
                       <CircularProgress size={24} />
                     ) : (
                       <Autocomplete
-                        options={services}
+                        options={subCategories}
                         getOptionLabel={(option) => option.value}
-                        value={selectedService}
-                        onChange={(event, newValue) => setSelectedService(newValue)}
+                        value={selectedSubCategory}
+                        onChange={(event, newValue) => setSelectedSubCategory(newValue)}
                         disabled={!selectedCategory}
                         renderInput={(params) => (
                           <TextField 
                             {...params} 
-                            label="Service" 
+                            label="Sub-Category" 
                             fullWidth 
                             disabled={!selectedCategory}
+                          />
+                        )}
+                      />
+                    )}
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      <Autocomplete
+                        options={incidents}
+                        getOptionLabel={(option) => option.value}
+                        value={selectedIncident}
+                        onChange={(event, newValue) => setSelectedIncident(newValue)}
+                        disabled={!selectedSubCategory}
+                        renderInput={(params) => (
+                          <TextField 
+                            {...params} 
+                            label="Incident" 
+                            fullWidth 
+                            disabled={!selectedSubCategory}
                           />
                         )}
                       />
@@ -1694,17 +1768,39 @@ const TaskManagement = () => {
                       <CircularProgress size={24} />
                     ) : (
                       <Autocomplete
-                        options={services}
+                        options={subCategories}
                         getOptionLabel={(option) => option.value}
-                        value={editSelectedService}
-                        onChange={(event, newValue) => setEditSelectedService(newValue)}
+                        value={editSelectedSubCategory}
+                        onChange={(event, newValue) => setEditSelectedSubCategory(newValue)}
                         disabled={!editSelectedCategory}
                         renderInput={(params) => (
                           <TextField 
                             {...params} 
-                            label="Service" 
+                            label="Sub-Category" 
                             fullWidth 
                             disabled={!editSelectedCategory}
+                          />
+                        )}
+                      />
+                    )}
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      <Autocomplete
+                        options={incidents}
+                        getOptionLabel={(option) => option.value}
+                        value={editSelectedIncident}
+                        onChange={(event, newValue) => setEditSelectedIncident(newValue)}
+                        disabled={!editSelectedSubCategory}
+                        renderInput={(params) => (
+                          <TextField 
+                            {...params} 
+                            label="Incident" 
+                            fullWidth 
+                            disabled={!editSelectedSubCategory}
                           />
                         )}
                       />

@@ -72,6 +72,7 @@ import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
+import FilterSection from './FilterSection';
 
 const EnhancedDashboard = () => {
   const { user } = useAuth();
@@ -1678,16 +1679,15 @@ const EnhancedDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Filters and Controls */}
-      <Paper sx={{ p: { xs: 1.5, md: 2 }, mb: { xs: 2, md: 3 }, borderRadius: 2, boxShadow: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-          <FilterIcon sx={{ color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Filters
-          </Typography>
-        </Box>
-        
-        <Grid container spacing={{ xs: 1.5, md: 2 }} alignItems="center">
+      {/* Modern Expandable Filter Section */}
+      <Grid item xs={12}>
+        <FilterSection
+          title="Advanced Filters"
+          defaultExpanded={true}
+          hasActiveFilters={Boolean(startDate || endDate)}
+          onClearFilters={handleClearFilters}
+          onApplyFilters={handleApplyFilters}
+        >
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Time Range</InputLabel>
@@ -1732,52 +1732,7 @@ const EnhancedDashboard = () => {
           </Grid>
           
           <Grid item xs={12} sm={6} md={3}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button 
-                startIcon={<FilterIcon />} 
-                onClick={handleApplyFilters}
-                variant="contained"
-                size="small"
-                sx={{ 
-                  flex: 1,
-                  background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #764ba2, #667eea)',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                  },
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600
-                }}
-              >
-                Apply
-              </Button>
-              <Button 
-                startIcon={<ClearIcon />} 
-                onClick={handleClearFilters}
-                variant="outlined"
-                size="small"
-                sx={{ 
-                  flex: 1,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  '&:hover': {
-                    borderColor: 'primary.dark',
-                    backgroundColor: 'primary.light',
-                    color: 'primary.dark'
-                  }
-                }}
-              >
-                Clear
-              </Button>
-            </Box>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: { xs: 1, sm: 0 } }}>
               <Button 
                 startIcon={<DownloadIcon />} 
                 onClick={() => handleExport('CSV')}
@@ -1840,8 +1795,8 @@ const EnhancedDashboard = () => {
               </Button>
             </Box>
           </Grid>
-        </Grid>
-      </Paper>
+        </FilterSection>
+      </Grid>
 
       {/* Charts Section - Improved Layout and Sizes */}
       <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: { xs: 2, md: 4 } }}>

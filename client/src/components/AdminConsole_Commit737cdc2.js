@@ -40,6 +40,7 @@ import {
   Upload as UploadIcon
 } from '@mui/icons-material';
 import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
+import { parse } from 'papaparse';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
@@ -61,11 +62,12 @@ const AdminConsole = () => {
 
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);
-  const [dropdownTypes] = useState(['Source', 'Category', 'Service', 'Office', 'Obligation']);
+  const [dropdownTypes] = useState(['Source', 'Category', 'Sub-Category', 'Incident', 'Service', 'Office', 'Obligation']);
   const [selectedDropdownType, setSelectedDropdownType] = useState('All');
   const [dropdownValue, setDropdownValue] = useState('');
   const [parentCategory, setParentCategory] = useState('');
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [editingDropdown, setEditingDropdown] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dropdownToDelete, setDropdownToDelete] = useState(null);
@@ -146,7 +148,14 @@ const AdminConsole = () => {
       const uniqueCategories = [...new Set(response.data
         .filter(d => d.type === 'Category')
         .map(d => d.value))];
+      
+      // Get unique sub-categories for Incident dropdown parent selection
+      const uniqueSubCategories = [...new Set(response.data
+        .filter(d => d.type === 'Sub-Category')
+        .map(d => d.value))];
+      
       setCategories(uniqueCategories);
+      setSubCategories(uniqueSubCategories);
     } catch (error) {
       console.error('Error fetching dropdowns:', error);
     }
@@ -276,7 +285,7 @@ const AdminConsole = () => {
   const handleDropdownTypeChange = (event) => {
     setSelectedDropdownType(event.target.value);
     setDropdownValue('');
-    if (event.target.value !== 'Service') {
+    if (event.target.value !== 'Service' && event.target.value !== 'Incident') {
       setParentCategory('');
     }
   };
@@ -294,6 +303,12 @@ const AdminConsole = () => {
       return;
     }
 
+    if (selectedDropdownType === 'Incident' && !parentCategory) {
+      setError('Please select a parent sub-category for incident');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+
     try {
       const dropdownData = {
         type: selectedDropdownType,
@@ -302,6 +317,11 @@ const AdminConsole = () => {
 
       if (selectedDropdownType === 'Service') {
         dropdownData.parentType = 'Category';
+        dropdownData.parentValue = parentCategory;
+      }
+
+      if (selectedDropdownType === 'Incident') {
+        dropdownData.parentType = 'Sub-Category';
         dropdownData.parentValue = parentCategory;
       }
 
@@ -382,13 +402,59 @@ const AdminConsole = () => {
     try {
       setLoading(true);
       
-      // For now, we'll simulate the import process
-      // In a real implementation, you would parse the CSV/Excel file and send it to the backend
+      // Parse the CSV file
+      const fileText = await importFile.text();
+      const result = parse(fileText, {
+        header: true,
+        skipEmptyLines: true,
+      });
+
+      const importedData = result.data;
       
-      // Simulate file processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Validate required columns
+      if (!result.meta.fields || !result.meta.fields.includes('Type') || !result.meta.fields.includes('Value')) {
+        throw new Error('Invalid CSV format. Required columns: Type, Value');
+      }
       
-      setSuccess(`${importFile.name} imported successfully!`);
+      // Process and import each row
+      for (const row of importedData) {
+        const { Type, Value, Parent } = row;
+        
+        if (!Type || !Value) {
+          console.warn('Skipping row with missing Type or Value:', row);
+          continue;
+        }
+        
+        // Validate type
+        const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Service', 'Office', 'Obligation'];
+        if (!validTypes.includes(Type)) {
+          console.warn('Skipping row with invalid type:', Type);
+          continue;
+        }
+        
+        const dropdownData = {
+          type: Type,
+          value: Value
+        };
+        
+        // Handle parent relationships
+        if (Type === 'Service' && Parent) {
+          dropdownData.parentType = 'Category';
+          dropdownData.parentValue = Parent;
+        } else if (Type === 'Incident' && Parent) {
+          dropdownData.parentType = 'Sub-Category';
+          dropdownData.parentValue = Parent;
+        }
+        
+        try {
+          await dropdownAPI.createDropdownValue(dropdownData);
+        } catch (err) {
+          // Skip duplicates or handle errors
+          console.warn('Error importing dropdown value:', err.message);
+        }
+      }
+      
+      setSuccess(`${importFile.name} imported successfully! ${importedData.length} records processed.`);
       setImportDialogOpen(false);
       setImportFile(null);
       
@@ -398,7 +464,7 @@ const AdminConsole = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error importing dropdown values:', error);
-      setError('Failed to import dropdown values: ' + (error.response?.data?.message || error.message));
+      setError('Failed to import dropdown values: ' + (error.message || error));
       setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
@@ -413,6 +479,12 @@ Source,Email,
 Source,Phone,
 Category,IT,
 Category,HR,
+Sub-Category,Software,IT
+Sub-Category,Hardware,IT
+Sub-Category,Recruitment,HR
+Incident,Installation Issue,Software
+Incident,Repair Issue,Hardware
+Incident,Recruitment Delay,Recruitment
 Service,Software Installation,IT
 Service,Hardware Repair,IT
 Service,Recruitment,HR
@@ -1116,17 +1188,19 @@ Office,Chittagong Office,`;
                           required
                         />
                       </Grid>
-                      {selectedDropdownType === 'Service' && (
+                      {(selectedDropdownType === 'Service' || selectedDropdownType === 'Incident') && (
                         <Grid item xs={12} sm={6}>
                           <FormControl fullWidth>
-                            <InputLabel>Parent Category</InputLabel>
+                            <InputLabel>
+                              {selectedDropdownType === 'Service' ? 'Parent Category' : 'Parent Sub-Category'}
+                            </InputLabel>
                             <Select
                               value={parentCategory}
                               onChange={(e) => setParentCategory(e.target.value)}
-                              label="Parent Category"
+                              label={selectedDropdownType === 'Service' ? 'Parent Category' : 'Parent Sub-Category'}
                             >
-                              {categories.map(category => (
-                                <MenuItem key={category} value={category}>{category}</MenuItem>
+                              {(selectedDropdownType === 'Service' ? categories : subCategories).map(parentItem => (
+                                <MenuItem key={parentItem} value={parentItem}>{parentItem}</MenuItem>
                               ))}
                             </Select>
                           </FormControl>
@@ -1306,9 +1380,9 @@ Office,Chittagong Office,`;
                 Required Columns:
               </Typography>
               <Typography variant="body2">
-                <strong>Type</strong> - One of: Source, Category, Service, Office, Obligation<br />
+                <strong>Type</strong> - One of: Source, Category, Sub-Category, Incident, Service, Office, Obligation<br />
                 <strong>Value</strong> - The dropdown value<br />
-                <strong>Parent</strong> - Required only for Service type (should match a Category value)
+                <strong>Parent</strong> - Required only for Service (should match a Category value) and Incident (should match a Sub-Category value) types
               </Typography>
               <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'text.secondary' }}>
                 Note: Obligation values can be edited or deleted using the action buttons in the table below.
