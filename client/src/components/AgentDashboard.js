@@ -78,6 +78,7 @@ import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 import useUserFilter from '../hooks/useUserFilter'; // Add this import
 import UserFilterDropdown from './UserFilterDropdown'; // Add this import
+import FilterSection from './FilterSection'; // Add this import
 
 const AgentDashboard = () => {
   const { user } = useAuth();
