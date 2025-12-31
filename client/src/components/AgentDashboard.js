@@ -84,6 +84,7 @@ const AgentDashboard = () => {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
+  const [incidentChartType, setIncidentChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -113,7 +114,8 @@ const AgentDashboard = () => {
   const [editDate, setEditDate] = useState('');
   const [editSource, setEditSource] = useState('');
   const [editCategory, setEditCategory] = useState('');
-  const [editService, setEditService] = useState('');
+  const [editSubCategory, setEditSubCategory] = useState('');
+  const [editIncident, setEditIncident] = useState('');
   const [editOffice, setEditOffice] = useState(''); // Add office state
   const [editObligation, setEditObligation] = useState(''); // Add obligation state
   const [editUserInformation, setEditUserInformation] = useState(''); // Add user information state
@@ -124,12 +126,15 @@ const AgentDashboard = () => {
   // Dropdown options for edit dialog
   const [editSources, setEditSources] = useState([]);
   const [editCategories, setEditCategories] = useState([]);
-  const [editServices, setEditServices] = useState([]);
+  const [editSubCategories, setEditSubCategories] = useState([]);
+  const [editIncidents, setEditIncidents] = useState([]);
   const [editOffices, setEditOffices] = useState([]); // Add offices dropdown options
   const [editObligations, setEditObligations] = useState([]); // Add obligations dropdown options
   
-  // Service filtering based on category for edit dialog
-  const [filteredEditServices, setFilteredEditServices] = useState([]);
+  // SubCategory filtering based on category for edit dialog
+  const [filteredEditSubCategories, setFilteredEditSubCategories] = useState([]);
+  // Incident filtering based on subCategory for edit dialog
+  const [filteredEditIncidents, setFilteredEditIncidents] = useState([]);
 
   // Fetch tasks and leaves - useCallback to prevent recreation on every render
   const fetchDashboardData = useCallback(async () => {
@@ -238,17 +243,29 @@ const AgentDashboard = () => {
     };
   }, [fetchDashboardData]);
 
-  // Filter services when category changes in edit dialog
+  // Filter subCategories when category changes in edit dialog
   useEffect(() => {
-    if (editCategory && editServices.length > 0) {
-      const filtered = editServices.filter(svc => 
-        svc.parentValue === editCategory || !svc.parentValue
+    if (editCategory && editSubCategories.length > 0) {
+      const filtered = editSubCategories.filter(subCat => 
+        subCat.parentValue === editCategory || !subCat.parentValue
       );
-      setFilteredEditServices(filtered);
+      setFilteredEditSubCategories(filtered);
     } else {
-      setFilteredEditServices(editServices);
+      setFilteredEditSubCategories(editSubCategories);
     }
-  }, [editCategory, editServices]);
+  }, [editCategory, editSubCategories]);
+  
+  // Filter incidents when subCategory changes in edit dialog
+  useEffect(() => {
+    if (editSubCategory && editIncidents.length > 0) {
+      const filtered = editIncidents.filter(inc => 
+        inc.parentValue === editSubCategory || !inc.parentValue
+      );
+      setFilteredEditIncidents(filtered);
+    } else {
+      setFilteredEditIncidents(editIncidents);
+    }
+  }, [editSubCategory, editIncidents]);
 
   // Listen for real-time notifications - with proper dependency array
   useEffect(() => {
@@ -372,10 +389,10 @@ const AgentDashboard = () => {
     
     // Tasks section
     csv += 'Tasks:\n';
-    csv += 'Date,Source,Category,Service,Description,User,Status\n';
+    csv += 'Date,Source,Category,Sub-Category,Incident,Description,User,Status\n';
     
     data.tasks.forEach(task => {
-      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.service || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}"\n`;
+      csv += `"${task.date || ''}","${task.source || ''}","${task.category || ''}","${task.subCategory || ''}","${task.incident || ''}","${task.description || ''}","${task.userName || ''}","${task.status || ''}"\n`;
     });
     
     csv += '\nLeaves:\n';
@@ -406,6 +423,8 @@ const AgentDashboard = () => {
         pdf += `${index + 1}. ${task.description || 'No description'}\n`;
         pdf += `   Date: ${task.date || 'N/A'}\n`;
         pdf += `   Category: ${task.category || 'N/A'}\n`;
+        pdf += `   Sub-Category: ${task.subCategory || 'N/A'}\n`;
+        pdf += `   Incident: ${task.incident || 'N/A'}\n`;
         pdf += `   Status: ${task.status || 'N/A'}\n`;
         pdf += `   User: ${task.userName || 'N/A'}\n\n`;
       });
@@ -448,9 +467,10 @@ const AgentDashboard = () => {
     (searchTerm === '' || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase())))
-  );
+      (task.subCategory && task.subCategory.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.incident && task.incident.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))
+  ));
   
   // Apply user filter for all users including admins
   const finalFilteredTasks = userFilter === '' ? filteredTasks : 
@@ -489,8 +509,13 @@ const AgentDashboard = () => {
         return { data: [], error };
       });
       
-      const servicesPromise = dropdownAPI.getDropdownValues('Service').catch(error => {
-        console.error('Agent Dashboard - Error fetching services:', error);
+      const subCategoriesPromise = dropdownAPI.getDropdownValues('Sub-Category').catch(error => {
+        console.error('Agent Dashboard - Error fetching sub-categories:', error);
+        return { data: [], error };
+      });
+      
+      const incidentsPromise = dropdownAPI.getDropdownValues('Incident').catch(error => {
+        console.error('Agent Dashboard - Error fetching incidents:', error);
         return { data: [], error };
       });
       
@@ -504,17 +529,19 @@ const AgentDashboard = () => {
         return { data: [], error };
       });
       
-      const [sourcesRes, categoriesRes, servicesRes, officesRes, obligationsRes] = await Promise.all([
+      const [sourcesRes, categoriesRes, subCategoriesRes, incidentsRes, officesRes, obligationsRes] = await Promise.all([
         sourcesPromise,
         categoriesPromise,
-        servicesPromise,
+        subCategoriesPromise,
+        incidentsPromise,
         officesPromise,
         obligationsPromise
       ]);
       
       console.log('Agent Dashboard - Sources response:', sourcesRes);
       console.log('Agent Dashboard - Categories response:', categoriesRes);
-      console.log('Agent Dashboard - Services response:', servicesRes);
+      console.log('Agent Dashboard - Sub-Categories response:', subCategoriesRes);
+      console.log('Agent Dashboard - Incidents response:', incidentsRes);
       console.log('Agent Dashboard - Offices response:', officesRes);
       console.log('Agent Dashboard - Obligations response:', obligationsRes);
       
@@ -525,8 +552,11 @@ const AgentDashboard = () => {
       if (categoriesRes?.error) {
         console.error('Agent Dashboard - Error fetching categories:', categoriesRes.error);
       }
-      if (servicesRes?.error) {
-        console.error('Agent Dashboard - Error fetching services:', servicesRes.error);
+      if (subCategoriesRes?.error) {
+        console.error('Agent Dashboard - Error fetching sub-categories:', subCategoriesRes.error);
+      }
+      if (incidentsRes?.error) {
+        console.error('Agent Dashboard - Error fetching incidents:', incidentsRes.error);
       }
       if (officesRes?.error) {
         console.error('Agent Dashboard - Error fetching offices:', officesRes.error);
@@ -537,7 +567,8 @@ const AgentDashboard = () => {
       
       setEditSources(sourcesRes.data || []);
       setEditCategories(categoriesRes.data || []);
-      setEditServices(servicesRes.data || []);
+      setEditSubCategories(subCategoriesRes.data || []);
+      setEditIncidents(incidentsRes.data || []);
       setEditOffices(officesRes.data || []); // Set offices dropdown options
       setEditObligations(obligationsRes.data || []); // Set obligations dropdown options
       console.log('Agent Dashboard - Edit Obligations set to:', obligationsRes.data || []);
@@ -560,7 +591,8 @@ const AgentDashboard = () => {
       // Set default values if API fails
       setEditSources(['Email', 'Phone', 'Walk-in', 'Online Form', 'Other']);
       setEditCategories(['IT Support', 'HR', 'Finance', 'Administration', 'Other']);
-      setEditServices(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
+      setEditSubCategories(['Software', 'Hardware', 'Leave', 'Recruitment', 'Billing', 'Other']);
+      setEditIncidents(['Bug Report', 'Feature Request', 'System Error', 'User Issue', 'Security Concern', 'Other']);
       setEditOffices(['Head Office', 'Branch Office', 'Remote']); // Default offices
       setEditObligations(['Compliance', 'Legal', 'Financial', 'Operational']); // Default obligations
     }
@@ -570,7 +602,8 @@ const AgentDashboard = () => {
     setEditDate(task.date || '');
     setEditSource(task.source || '');
     setEditCategory(task.category || '');
-    setEditService(task.service || '');
+    setEditSubCategory(task.subCategory || '');
+    setEditIncident(task.incident || '');
     setEditOffice(task.office || ''); // Set office
     setEditObligation(task.obligation || ''); // Set obligation
     setEditUserInformation(task.userInformation || ''); // Set user information
@@ -588,7 +621,8 @@ const AgentDashboard = () => {
         date: editDate,
         source: editSource,
         category: editCategory,
-        service: editService,
+        subCategory: editSubCategory,
+        incident: editIncident,
         office: editOffice,
         obligation: editObligation,
         userInformation: editUserInformation,
@@ -637,17 +671,35 @@ const AgentDashboard = () => {
   const getTaskDistributionData = () => {
     if (!finalFilteredTasks || finalFilteredTasks.length === 0) return [];
     
-    // Group tasks by category
-    const categoryCount = {};
+    // Group tasks by subCategory
+    const subCategoryCount = {};
     finalFilteredTasks.forEach(task => {
-      const category = task.category || 'Unknown';
-      categoryCount[category] = (categoryCount[category] || 0) + 1;
+      const subCategory = task.subCategory || 'Unknown';
+      subCategoryCount[subCategory] = (subCategoryCount[subCategory] || 0) + 1;
     });
     
     // Convert to chart data format
-    return Object.keys(categoryCount).map(category => ({
-      name: category,
-      count: categoryCount[category]
+    return Object.keys(subCategoryCount).map(subCategory => ({
+      name: subCategory,
+      count: subCategoryCount[subCategory]
+    }));
+  };
+  
+  // Get incident distribution data for charts
+  const getIncidentDistributionData = () => {
+    if (!finalFilteredTasks || finalFilteredTasks.length === 0) return [];
+    
+    // Group tasks by incident
+    const incidentCount = {};
+    finalFilteredTasks.forEach(task => {
+      const incident = task.incident || 'Unknown';
+      incidentCount[incident] = (incidentCount[incident] || 0) + 1;
+    });
+    
+    // Convert to chart data format
+    return Object.keys(incidentCount).map(incident => ({
+      name: incident,
+      count: incidentCount[incident]
     }));
   };
 
@@ -980,7 +1032,7 @@ const AgentDashboard = () => {
           <Paper sx={{ p: 2, mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: { xs: 1, sm: 0 } }}>
-                Task Classification - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+                Sub-Category Classification - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
               </Typography>
               <Box>
                 <IconButton 
@@ -1143,6 +1195,173 @@ const AgentDashboard = () => {
             </Box>
           </Paper>
           
+          {/* Incident Classification Chart */}
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', mb: { xs: 1, sm: 0 } }}>
+                Incident Classification - {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}
+              </Typography>
+              <Box>
+                <IconButton 
+                  color={incidentChartType === 'bar' ? 'primary' : 'default'}
+                  onClick={() => setIncidentChartType('bar')}
+                  size="small"
+                  sx={{ mx: 0.5, border: incidentChartType === 'bar' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <BarChartIcon />
+                </IconButton>
+                <IconButton 
+                  color={incidentChartType === 'pie' ? 'primary' : 'default'}
+                  onClick={() => setIncidentChartType('pie')}
+                  size="small"
+                  sx={{ mx: 0.5, border: incidentChartType === 'pie' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <PieChartIcon />
+                </IconButton>
+                <IconButton 
+                  color={incidentChartType === 'donut' ? 'primary' : 'default'}
+                  onClick={() => setIncidentChartType('donut')}
+                  size="small"
+                  sx={{ mx: 0.5, border: incidentChartType === 'donut' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <DonutLargeIcon />
+                </IconButton>
+                <IconButton 
+                  color={incidentChartType === 'radial' ? 'primary' : 'default'}
+                  onClick={() => setIncidentChartType('radial')}
+                  size="small"
+                  sx={{ mx: 0.5, border: incidentChartType === 'radial' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <DonutLargeIcon />
+                </IconButton>
+                <IconButton 
+                  color={incidentChartType === 'line' ? 'primary' : 'default'}
+                  onClick={() => setIncidentChartType('line')}
+                  size="small"
+                  sx={{ mx: 0.5, border: incidentChartType === 'line' ? 1 : 0, borderColor: 'primary.main' }}
+                >
+                  <LineChartIcon />
+                </IconButton>
+              </Box>
+            </Box>
+            <Box sx={{ height: 300 }}>
+              {incidentChartType === 'bar' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={getIncidentDistributionData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="Incident Count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              
+              {incidentChartType === 'pie' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getIncidentDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getIncidentDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              
+              {incidentChartType === 'line' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={getIncidentDistributionData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} name="Incident Count" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+              
+              {incidentChartType === 'donut' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getIncidentDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="count"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {getIncidentDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              
+              {incidentChartType === 'radial' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart 
+                    innerRadius="10%" 
+                    outerRadius="80%" 
+                    barSize={10}
+                    data={getIncidentDistributionData().map((entry, index) => ({
+                      ...entry,
+                      fill: ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][index % 5]
+                    }))}
+                  >
+                    <RadialBar
+                      minAngle={15}
+                      label={{ fill: '#666', position: 'insideStart' }}
+                      background
+                      clockWise={true}
+                      dataKey="count"
+                    />
+                    <Tooltip />
+                    <Legend />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </Paper>
+          
           <Paper sx={{ p: 2 }}>
             <Tabs value={activeTab} onChange={handleTabChange}>
               <Tab label="Task History" />
@@ -1159,7 +1378,8 @@ const AgentDashboard = () => {
                           <TableCell>Date</TableCell>
                           <TableCell>Source</TableCell>
                           <TableCell>Category</TableCell>
-                          <TableCell>Service</TableCell>
+                          <TableCell>Sub-Category</TableCell>
+                          <TableCell>Incident</TableCell>
                           <TableCell>Obligation</TableCell>
                           <TableCell>User</TableCell>
                           <TableCell>Office</TableCell>
@@ -1176,7 +1396,8 @@ const AgentDashboard = () => {
                             <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
                             <TableCell>{task.source || 'N/A'}</TableCell>
                             <TableCell>{task.category || 'N/A'}</TableCell>
-                            <TableCell>{task.service || 'N/A'}</TableCell>
+                            <TableCell>{task.subCategory || 'N/A'}</TableCell>
+                            <TableCell>{task.incident || 'N/A'}</TableCell>
                             <TableCell>{task.obligation || 'N/A'}</TableCell>
                             <TableCell>{task.userName || 'N/A'}</TableCell>
                             <TableCell>{task.office || 'N/A'}</TableCell>
@@ -1334,12 +1555,20 @@ const AgentDashboard = () => {
                               color="info"
                             />
                           )}
-                          {item.type === 'task' && item.service && (
+                          {item.type === 'task' && item.subCategory && (
                             <Chip 
-                              label={item.service} 
+                              label={item.subCategory} 
                               size="small" 
                               sx={{ ml: 1 }}
                               color="secondary"
+                            />
+                          )}
+                          {item.type === 'task' && item.incident && (
+                            <Chip 
+                              label={item.incident} 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              color="warning"
                             />
                           )}
                           {item.type === 'meeting' && (
@@ -1397,8 +1626,11 @@ const AgentDashboard = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell>Date</TableCell>
-                      <TableCell>User</TableCell>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Sub-Category</TableCell>
+                      <TableCell>Incident</TableCell>
                       <TableCell>Description</TableCell>
+                      <TableCell>User</TableCell>
                       <TableCell>Status</TableCell>
                     </TableRow>
                   </TableHead>
@@ -1406,8 +1638,11 @@ const AgentDashboard = () => {
                     {viewDetailsDialog.data?.map((task) => (
                       <TableRow key={task.id}>
                         <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
-                        <TableCell>{task.userName || 'N/A'}</TableCell>
+                        <TableCell>{task.category || 'N/A'}</TableCell>
+                        <TableCell>{task.subCategory || 'N/A'}</TableCell>
+                        <TableCell>{task.incident || 'N/A'}</TableCell>
                         <TableCell>{task.description || 'N/A'}</TableCell>
+                        <TableCell>{task.userName || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
                             label={task.status || 'Pending'} 
@@ -1567,15 +1802,32 @@ const AgentDashboard = () => {
               
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>Service</InputLabel>
+                  <InputLabel>Sub-Category</InputLabel>
                   <Select
-                    value={editService}
-                    onChange={(e) => setEditService(e.target.value)}
-                    label="Service"
+                    value={editSubCategory}
+                    onChange={(e) => setEditSubCategory(e.target.value)}
+                    label="Sub-Category"
                   >
-                    {filteredEditServices.map((svc) => (
-                      <MenuItem key={svc.id || svc.value} value={svc.value || svc}>
-                        {svc.value || svc}
+                    {filteredEditSubCategories.map((subCat) => (
+                      <MenuItem key={subCat.id || subCat.value} value={subCat.value || subCat}>
+                        {subCat.value || subCat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Incident</InputLabel>
+                  <Select
+                    value={editIncident}
+                    onChange={(e) => setEditIncident(e.target.value)}
+                    label="Incident"
+                  >
+                    {filteredEditIncidents.map((inc) => (
+                      <MenuItem key={inc.id || inc.value} value={inc.value || inc}>
+                        {inc.value || inc}
                       </MenuItem>
                     ))}
                   </Select>

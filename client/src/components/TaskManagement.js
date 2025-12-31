@@ -527,7 +527,7 @@ const TaskManagement = () => {
       const matchesSearch = !appliedFilters.searchTerm || 
         (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
         (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
-        (task.service && task.service.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
+        (task.subCategory && task.subCategory.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()))
         (task.userName && task.userName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()));
       
       // Apply status filter
@@ -1346,6 +1346,7 @@ const TaskManagement = () => {
                           <TableCell>Incident</TableCell>
                           <TableCell>Office</TableCell>
                           <TableCell>User Information</TableCell>
+                          <TableCell>Obligation</TableCell>
                           <TableCell>Description</TableCell>
                           <TableCell>User</TableCell>
                           <TableCell>Status</TableCell>
@@ -1381,9 +1382,9 @@ const TaskManagement = () => {
                               <TableCell>{task.incident || 'N/A'}</TableCell>
                               <TableCell>{task.office || 'N/A'}</TableCell>
                               <TableCell>{task.userInformation || 'N/A'}</TableCell>
+                              <TableCell>{task.obligation || 'N/A'}</TableCell>
                               <TableCell>{task.description || 'N/A'}</TableCell>
                               <TableCell>{task.userName || 'N/A'}</TableCell>
-                              <TableCell>{task.obligation || 'N/A'}</TableCell>
                               <TableCell>
                                 <Select
                                   value={task.status || 'Pending'}
@@ -1393,6 +1394,20 @@ const TaskManagement = () => {
                                     minWidth: 120,
                                     '& .MuiSelect-select': {
                                       padding: '4px 8px',
+                                      backgroundColor: task.status === 'Completed' ? 'success.light' : 
+                                                      task.status === 'In Progress' ? 'info.light' : 
+                                                      task.status === 'Cancelled' ? 'error.light' : 'warning.light',
+                                      color: task.status === 'Completed' ? 'success.dark' : 
+                                             task.status === 'In Progress' ? 'info.dark' : 
+                                             task.status === 'Cancelled' ? 'error.dark' : 'warning.dark',
+                                      fontWeight: 'bold',
+                                      borderRadius: 1,
+                                      border: '1px solid',
+                                      borderColor: task.status === 'Completed' ? 'success.main' : 
+                                                     task.status === 'In Progress' ? 'info.main' : 
+                                                     task.status === 'Cancelled' ? 'error.main' : 'warning.main',
+                                      textTransform: 'uppercase',
+                                      fontSize: '0.8rem'
                                     }
                                   }}
                                 >
@@ -1630,6 +1645,7 @@ const TaskManagement = () => {
                         <MenuItem value="Pending">Pending</MenuItem>
                         <MenuItem value="In Progress">In Progress</MenuItem>
                         <MenuItem value="Completed">Completed</MenuItem>
+                        <MenuItem value="Cancelled">Cancelled</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>

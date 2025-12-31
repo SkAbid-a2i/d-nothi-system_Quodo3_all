@@ -62,7 +62,7 @@ const AdminConsole = () => {
 
   // Dropdown management state
   const [dropdowns, setDropdowns] = useState([]);
-  const [dropdownTypes] = useState(['Source', 'Category', 'Sub-Category', 'Incident', 'Service', 'Office', 'Obligation']);
+  const [dropdownTypes] = useState(['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation']);
   const [selectedDropdownType, setSelectedDropdownType] = useState('All');
   const [dropdownValue, setDropdownValue] = useState('');
   const [parentCategory, setParentCategory] = useState('');
@@ -144,7 +144,7 @@ const AdminConsole = () => {
       const response = await dropdownAPI.getAllDropdowns();
       setDropdowns(response.data);
       
-      // Get unique categories for Service dropdown parent selection
+      // Get unique categories
       const uniqueCategories = [...new Set(response.data
         .filter(d => d.type === 'Category')
         .map(d => d.value))];
@@ -285,7 +285,7 @@ const AdminConsole = () => {
   const handleDropdownTypeChange = (event) => {
     setSelectedDropdownType(event.target.value);
     setDropdownValue('');
-    if (event.target.value !== 'Service' && event.target.value !== 'Incident') {
+    if (event.target.value !== 'Incident') {
       setParentCategory('');
     }
   };
@@ -293,12 +293,6 @@ const AdminConsole = () => {
   const handleAddDropdown = async () => {
     if (!dropdownValue.trim()) {
       setError('Please enter a value');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-
-    if (selectedDropdownType === 'Service' && !parentCategory) {
-      setError('Please select a parent category for service');
       setTimeout(() => setError(''), 5000);
       return;
     }
@@ -314,11 +308,6 @@ const AdminConsole = () => {
         type: selectedDropdownType,
         value: dropdownValue
       };
-
-      if (selectedDropdownType === 'Service') {
-        dropdownData.parentType = 'Category';
-        dropdownData.parentValue = parentCategory;
-      }
 
       if (selectedDropdownType === 'Incident') {
         dropdownData.parentType = 'Sub-Category';
@@ -426,7 +415,7 @@ const AdminConsole = () => {
         }
         
         // Validate type
-        const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Service', 'Office', 'Obligation'];
+        const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'];
         if (!validTypes.includes(Type)) {
           console.warn('Skipping row with invalid type:', Type);
           continue;
@@ -438,10 +427,7 @@ const AdminConsole = () => {
         };
         
         // Handle parent relationships
-        if (Type === 'Service' && Parent) {
-          dropdownData.parentType = 'Category';
-          dropdownData.parentValue = Parent;
-        } else if (Type === 'Incident' && Parent) {
+        if (Type === 'Incident' && Parent) {
           dropdownData.parentType = 'Sub-Category';
           dropdownData.parentValue = Parent;
         }
@@ -483,13 +469,12 @@ Sub-Category,Software,IT
 Sub-Category,Hardware,IT
 Sub-Category,Recruitment,HR
 Incident,Installation Issue,Software
-Incident,Repair Issue,Hardware
+Incident,Hardware Failure,Hardware
 Incident,Recruitment Delay,Recruitment
-Service,Software Installation,IT
-Service,Hardware Repair,IT
-Service,Recruitment,HR
 Office,Dhaka Office,
-Office,Chittagong Office,`;
+Office,Chittagong Office,
+Obligation,Compliance,
+Obligation,Legal,`;
     
     // Create blob and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1188,18 +1173,18 @@ Office,Chittagong Office,`;
                           required
                         />
                       </Grid>
-                      {(selectedDropdownType === 'Service' || selectedDropdownType === 'Incident') && (
+                      {(selectedDropdownType === 'Sub-Category' || selectedDropdownType === 'Incident') && (
                         <Grid item xs={12} sm={6}>
                           <FormControl fullWidth>
                             <InputLabel>
-                              {selectedDropdownType === 'Service' ? 'Parent Category' : 'Parent Sub-Category'}
+                              Parent Sub-Category
                             </InputLabel>
                             <Select
                               value={parentCategory}
                               onChange={(e) => setParentCategory(e.target.value)}
-                              label={selectedDropdownType === 'Service' ? 'Parent Category' : 'Parent Sub-Category'}
+                              label="Parent Sub-Category"
                             >
-                              {(selectedDropdownType === 'Service' ? categories : subCategories).map(parentItem => (
+                              {subCategories.map(parentItem => (
                                 <MenuItem key={parentItem} value={parentItem}>{parentItem}</MenuItem>
                               ))}
                             </Select>
@@ -1380,9 +1365,9 @@ Office,Chittagong Office,`;
                 Required Columns:
               </Typography>
               <Typography variant="body2">
-                <strong>Type</strong> - One of: Source, Category, Sub-Category, Incident, Service, Office, Obligation<br />
+                <strong>Type</strong> - One of: Source, Category, Sub-Category, Incident, Office, Obligation<br />
                 <strong>Value</strong> - The dropdown value<br />
-                <strong>Parent</strong> - Required only for Service (should match a Category value) and Incident (should match a Sub-Category value) types
+                <strong>Parent</strong> - Required only for Incident (should match a Sub-Category value)
               </Typography>
               <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'text.secondary' }}>
                 Note: Obligation values can be edited or deleted using the action buttons in the table below.
@@ -1400,9 +1385,12 @@ Office,Chittagong Office,`;
                 Source,Phone,{'\n'}
                 Category,IT,{'\n'}
                 Category,HR,{'\n'}
-                Service,Software Installation,IT{'\n'}
-                Service,Hardware Repair,IT{'\n'}
-                Service,Recruitment,HR{'\n'}
+                Sub-Category,Software,IT{'\n'}
+                Sub-Category,Hardware,IT{'\n'}
+                Sub-Category,Recruitment,HR{'\n'}
+                Incident,Installation Issue,Software{'\n'}
+                Incident,Hardware Failure,Hardware{'\n'}
+                Incident,Recruitment Delay,Recruitment{'\n'}
                 Office,Dhaka Office,{'\n'}
                 Office,Chittagong Office,{'\n'}
                 Obligation,Compliance,{'\n'}

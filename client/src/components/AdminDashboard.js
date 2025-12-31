@@ -280,7 +280,8 @@ const AdminDashboard = () => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.service && task.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.subCategory && task.subCategory.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (task.incident && task.incident.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesUser = !userFilter || 
@@ -888,7 +889,8 @@ const AdminDashboard = () => {
                         <TableCell>Date</TableCell>
                         <TableCell>Source</TableCell>
                         <TableCell>Category</TableCell>
-                        <TableCell>Service</TableCell>
+                        <TableCell>Sub-Category</TableCell>
+                        <TableCell>Incident</TableCell>
                         <TableCell>Obligation</TableCell>
                         <TableCell>Office</TableCell>
                         <TableCell>User Info</TableCell>
@@ -904,7 +906,8 @@ const AdminDashboard = () => {
                           <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell>{task.source || 'N/A'}</TableCell>
                           <TableCell>{task.category || 'N/A'}</TableCell>
-                          <TableCell>{task.service || 'N/A'}</TableCell>
+                          <TableCell>{task.subCategory || 'N/A'}</TableCell>
+                          <TableCell>{task.incident || 'N/A'}</TableCell>
                           <TableCell>{task.obligation || 'N/A'}</TableCell>
                           <TableCell>{task.office || 'N/A'}</TableCell>
                           <TableCell>{task.userInformation || 'N/A'}</TableCell>
