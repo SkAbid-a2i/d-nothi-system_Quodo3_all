@@ -527,7 +527,7 @@ const TaskManagement = () => {
       const matchesSearch = !appliedFilters.searchTerm || 
         (task.description && task.description.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
         (task.category && task.category.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
-        (task.subCategory && task.subCategory.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()))
+        (task.subCategory && task.subCategory.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase())) ||
         (task.userName && task.userName.toLowerCase().includes(appliedFilters.searchTerm.toLowerCase()));
       
       // Apply status filter

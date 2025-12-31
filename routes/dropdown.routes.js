@@ -58,8 +58,8 @@ router.get('/:type', authenticate, async (req, res) => {
 
     let where = { type, isActive: true };
     
-    // For services, filter by parent category if provided
-    if (type === 'Service' && parentValue) {
+    // For sub-categories, filter by parent category if provided
+    if (type === 'Sub-Category' && parentValue) {
       where.parentType = 'Category';
       where.parentValue = parentValue;
     }
@@ -100,8 +100,8 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
     const dropdown = await Dropdown.create({
       type,
       value,
-      parentType: (type === 'Service' || type === 'Incident') ? parentType : undefined,
-      parentValue: (type === 'Service' || type === 'Incident') ? parentValue : undefined,
+      parentType: (type === 'Sub-Category' || type === 'Incident') ? parentType : undefined,
+      parentValue: (type === 'Sub-Category' || type === 'Incident') ? parentValue : undefined,
       createdBy: req.user.id,
     });
 
@@ -153,8 +153,8 @@ router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin')
     // Update dropdown fields
     dropdown.type = type || dropdown.type;
     dropdown.value = value || dropdown.value;
-    dropdown.parentType = (type === 'Service' || type === 'Incident') ? parentType : undefined;
-    dropdown.parentValue = (type === 'Service' || type === 'Incident') ? parentValue : undefined;
+    dropdown.parentType = (type === 'Sub-Category' || type === 'Incident') ? parentType : undefined;
+    dropdown.parentValue = (type === 'Sub-Category' || type === 'Incident') ? parentValue : undefined;
     dropdown.isActive = isActive !== undefined ? isActive : dropdown.isActive;
 
     await dropdown.save();

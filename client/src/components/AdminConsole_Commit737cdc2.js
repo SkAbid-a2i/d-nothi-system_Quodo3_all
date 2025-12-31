@@ -1177,16 +1177,21 @@ Obligation,Legal,`;
                         <Grid item xs={12} sm={6}>
                           <FormControl fullWidth>
                             <InputLabel>
-                              Parent Sub-Category
+                              {selectedDropdownType === 'Sub-Category' ? 'Parent Category' : 'Parent Sub-Category'}
                             </InputLabel>
                             <Select
                               value={parentCategory}
                               onChange={(e) => setParentCategory(e.target.value)}
-                              label="Parent Sub-Category"
+                              label={selectedDropdownType === 'Sub-Category' ? 'Parent Category' : 'Parent Sub-Category'}
                             >
-                              {subCategories.map(parentItem => (
-                                <MenuItem key={parentItem} value={parentItem}>{parentItem}</MenuItem>
-                              ))}
+                              {selectedDropdownType === 'Sub-Category' 
+                                ? categories.map(parentItem => (
+                                    <MenuItem key={parentItem} value={parentItem}>{parentItem}</MenuItem>
+                                  ))
+                                : subCategories.map(parentItem => (
+                                    <MenuItem key={parentItem} value={parentItem}>{parentItem}</MenuItem>
+                                  ))
+                              }
                             </Select>
                           </FormControl>
                         </Grid>
@@ -1367,7 +1372,7 @@ Obligation,Legal,`;
               <Typography variant="body2">
                 <strong>Type</strong> - One of: Source, Category, Sub-Category, Incident, Office, Obligation<br />
                 <strong>Value</strong> - The dropdown value<br />
-                <strong>Parent</strong> - Required only for Incident (should match a Sub-Category value)
+                <strong>Parent</strong> - Required only for Sub-Category (should match a Category value) and Incident (should match a Sub-Category value)
               </Typography>
               <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'text.secondary' }}>
                 Note: Obligation values can be edited or deleted using the action buttons in the table below.
