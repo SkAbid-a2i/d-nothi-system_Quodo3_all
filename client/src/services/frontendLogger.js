@@ -88,16 +88,11 @@ class FrontendLogger {
   }
 
   storeLog(logEntry) {
+    // Do not store logs in localStorage to comply with production standards
+    // Logs should only be sent to backend for persistence
     try {
-      const logs = JSON.parse(localStorage.getItem('frontend_logs') || '[]');
-      logs.push(logEntry);
-      
-      // Keep only the last 100 logs to prevent storage bloat
-      if (logs.length > 100) {
-        logs.shift();
-      }
-      
-      localStorage.setItem('frontend_logs', JSON.stringify(logs));
+      // Send log directly to backend instead of storing in localStorage
+      this.sendLogToBackend(logEntry);
     } catch (error) {
       console.error('Failed to store log:', error);
     }
@@ -179,21 +174,13 @@ class FrontendLogger {
 
   // Get stored logs
   getStoredLogs() {
-    try {
-      return JSON.parse(localStorage.getItem('frontend_logs') || '[]');
-    } catch (error) {
-      console.error('Failed to retrieve logs:', error);
-      return [];
-    }
+    // Return empty array as logs are now only stored on backend
+    return [];
   }
 
   // Clear stored logs
   clearStoredLogs() {
-    try {
-      localStorage.removeItem('frontend_logs');
-    } catch (error) {
-      console.error('Failed to clear logs:', error);
-    }
+    // No-op as logs are not stored in localStorage anymore
   }
 
   // Export logs for debugging

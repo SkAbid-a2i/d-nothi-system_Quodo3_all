@@ -111,6 +111,7 @@ export const reportAPI = {
   getTaskReport: (params) => api.get('/reports/tasks', { params }),
   getLeaveReport: (params) => api.get('/reports/leaves', { params }),
   getSummaryReport: (params) => api.get('/reports/summary', { params }),
+  getBreakdownReport: (params) => api.get('/reports/breakdown', { params }),
 };
 
 // Audit endpoints (deprecated - use logAPI instead)

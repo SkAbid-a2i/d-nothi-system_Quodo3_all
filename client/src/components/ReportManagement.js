@@ -147,7 +147,7 @@ const ReportManagement = () => {
         };
         
         // Fetch tasks with breakdown filters
-        const response = await reportAPI.getTaskReport(breakdownParams);
+        const response = await reportAPI.getBreakdownReport(breakdownParams);
         setBreakdownReports(response.data);
       } else {
         const params = {
@@ -187,65 +187,102 @@ const ReportManagement = () => {
       setLoading(true);
       setError('');
       
-      // Prepare data for export based on active tab
-      let exportData = {
-        generatedAt: new Date().toISOString(),
-        user: user?.username || 'Unknown',
-        reportType: activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : activeTab === 2 ? 'Summary' : 'Breakdown'
-      };
+      // Prepare export parameters based on active tab
+      let params = {};
       
-      // Get the appropriate data based on the active tab
-      if (activeTab === 0) {
-        exportData.tasks = taskReports;
-      } else if (activeTab === 1) {
-        exportData.leaves = leaveReports;
-      } else if (activeTab === 2) {
-        exportData.summary = activityReports;
-      } else {
-        exportData.breakdown = breakdownReports;
+      if (activeTab === 0) { // Task Report
+        params = {
+          startDate,
+          endDate,
+          userId: userId || undefined,
+          status: status || undefined,
+          format
+        };
+        // Call task report export endpoint
+        const response = await reportAPI.getTaskReport(params);
+        
+        // Create and download file from response
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = response.headers['content-disposition']?.split('filename=')[1] || `task_report.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (activeTab === 1) { // Leave Report
+        params = {
+          startDate,
+          endDate,
+          userId: userId || undefined,
+          status: status || undefined,
+          format
+        };
+        // Call leave report export endpoint
+        const response = await reportAPI.getLeaveReport(params);
+        
+        // Create and download file from response
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = response.headers['content-disposition']?.split('filename=')[1] || `leave_report.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (activeTab === 2) { // Summary Report
+        params = {
+          startDate,
+          endDate,
+          format
+        };
+        // Call summary report export endpoint
+        const response = await reportAPI.getSummaryReport(params);
+        
+        // Create and download file from response
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = response.headers['content-disposition']?.split('filename=')[1] || `summary_report.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (activeTab === 3) { // Breakdown Report
+        params = {
+          startDate: breakdownStartDate,
+          endDate: breakdownEndDate,
+          timeRange: breakdownTimeRange,
+          userId: breakdownUserId || undefined,
+          source: breakdownSource || undefined,
+          category: breakdownCategory || undefined,
+          subCategory: breakdownSubCategory || undefined,
+          incident: breakdownIncident || undefined,
+          office: breakdownOffice || undefined,
+          userInformation: breakdownUserInformation || undefined,
+          obligation: breakdownObligation || undefined,
+          format
+        };
+        // Call breakdown report export endpoint
+        const response = await reportAPI.getBreakdownReport(params);
+        
+        // Create and download file from response
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = response.headers['content-disposition']?.split('filename=')[1] || `breakdown_report.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
-      
-      // Create export content based on format
-      let content, mimeType, filename;
-      
-      if (format === 'csv') {
-        // Convert to CSV format
-        const csvContent = convertToCSV(exportData);
-        content = csvContent;
-        mimeType = 'text/csv;charset=utf-8;';
-        filename = `report_export_${new Date().toISOString().split('T')[0]}.${format}`;
-      } else if (format === 'xlsx') {
-        // For Excel, we'll create CSV content (simpler approach)
-        const csvContent = convertToCSV(exportData);
-        content = csvContent;
-        mimeType = 'application/vnd.ms-excel;charset=utf-8;';
-        filename = `report_export_${new Date().toISOString().split('T')[0]}.${format}`;
-      } else if (format === 'pdf') {
-        // For PDF, we'll create a simple text representation
-        const pdfContent = convertToPDF(exportData);
-        content = pdfContent;
-        mimeType = 'application/pdf;charset=utf-8;';
-        filename = `report_export_${new Date().toISOString().split('T')[0]}.${format}`;
-      } else {
-        // Default to JSON
-        content = JSON.stringify(exportData, null, 2);
-        mimeType = 'application/json;charset=utf-8;';
-        filename = `report_export_${new Date().toISOString().split('T')[0]}.json`;
-      }
-      
-      // Create and download file
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
       
       // Log audit entry
-      const reportTypeName = activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : 'Summary';
+      const reportTypeName = activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : activeTab === 2 ? 'Summary' : 'Breakdown';
       auditLog.reportExported(`${reportTypeName} Report`, format, user?.username || 'unknown');
       
       setSuccess(`Report exported as ${format.toUpperCase()} successfully!`);

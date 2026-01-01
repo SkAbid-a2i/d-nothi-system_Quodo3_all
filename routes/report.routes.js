@@ -184,6 +184,99 @@ router.get('/summary', cors(corsOptions), authenticate, authorize('Admin', 'Supe
   }
 });
 
+// @route   GET /api/reports/breakdown
+// @desc    Get breakdown report
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+  try {
+    let where = {};
+    
+    // Admins and Supervisors can only see their team's tasks
+    if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+      where.office = req.user.office;
+    }
+    
+    const { 
+      startDate, 
+      endDate, 
+      timeRange, 
+      userId, 
+      source, 
+      category, 
+      subCategory, 
+      incident, 
+      office, 
+      userInformation, 
+      obligation, 
+      format 
+    } = req.query;
+    
+    // Apply date filter
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date[Op.gte] = new Date(startDate);
+      if (endDate) where.date[Op.lte] = new Date(endDate);
+    }
+    
+    // Apply time range filter
+    if (timeRange) {
+      const now = new Date();
+      if (timeRange === 'Weekly') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - 7);
+        where.date = { ...where.date, [Op.gte]: startOfWeek };
+      } else if (timeRange === 'Monthly') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        where.date = { ...where.date, [Op.gte]: startOfMonth };
+      } else if (timeRange === 'Yearly') {
+        const startOfYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        where.date = { ...where.date, [Op.gte]: startOfYear };
+      }
+    }
+    
+    // Apply user filter
+    if (userId) where.userId = userId;
+    
+    // Apply source filter
+    if (source) where.source = source;
+    
+    // Apply category filter
+    if (category) where.category = category;
+    
+    // Apply sub-category filter
+    if (subCategory) where.subCategory = subCategory;
+    
+    // Apply incident filter
+    if (incident) where.incident = incident;
+    
+    // Apply office filter
+    if (office) where.office = office;
+    
+    // Apply user information filter (partial match)
+    if (userInformation) {
+      where.userInformation = { [Op.like]: `%${userInformation}%` };
+    }
+    
+    // Apply obligation filter
+    if (obligation) where.obligation = obligation;
+    
+    const tasks = await Task.findAll({ 
+      where,
+      order: [['date', 'DESC']]
+    });
+    
+    // Handle export formats
+    if (format) {
+      return handleExport(res, tasks, 'breakdown', format);
+    }
+    
+    res.json(tasks);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Helper function to handle exports
 const handleExport = (res, data, reportType, format) => {
   switch (format.toLowerCase()) {
@@ -228,6 +321,33 @@ const exportAsCSV = (res, data, reportType) => {
         return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
       });
       csvContent += values.join(',') + '\n';
+    });
+  } else if (reportType === 'breakdown' && data.length > 0) {
+    // Define headers for breakdown report
+    const headers = ['Date', 'Source', 'Category', 'Sub-Category', 'Incident', 'User', 'Office', 'User Information', 'Obligation', 'Status'];
+    csvContent += headers.join(',') + '\n';
+    
+    // Add data rows
+    data.forEach(item => {
+      const itemData = item.toJSON ? item.toJSON() : item;
+      const values = [
+        itemData.date ? new Date(itemData.date).toLocaleDateString() : 'N/A',
+        itemData.source || 'N/A',
+        itemData.category || 'N/A',
+        itemData.subCategory || 'N/A',
+        itemData.incident || 'N/A',
+        itemData.userName || 'N/A',
+        itemData.office || 'N/A',
+        itemData.userInformation || 'N/A',
+        itemData.obligation || 'N/A',
+        itemData.status || 'N/A'
+      ];
+      
+      // Escape commas and quotes in values
+      const escapedValues = values.map(value => {
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += escapedValues.join(',') + '\n';
     });
   } else if (reportType === 'summary') {
     csvContent += 'Report Type,Generated At\n';
@@ -279,6 +399,33 @@ const exportAsExcel = (res, data, reportType) => {
       });
       csvContent += values.join(',') + '\n';
     });
+  } else if (reportType === 'breakdown' && data.length > 0) {
+    // Define headers for breakdown report
+    const headers = ['Date', 'Source', 'Category', 'Sub-Category', 'Incident', 'User', 'Office', 'User Information', 'Obligation', 'Status'];
+    csvContent += headers.join(',') + '\n';
+    
+    // Add data rows
+    data.forEach(item => {
+      const itemData = item.toJSON ? item.toJSON() : item;
+      const values = [
+        itemData.date ? new Date(itemData.date).toLocaleDateString() : 'N/A',
+        itemData.source || 'N/A',
+        itemData.category || 'N/A',
+        itemData.subCategory || 'N/A',
+        itemData.incident || 'N/A',
+        itemData.userName || 'N/A',
+        itemData.office || 'N/A',
+        itemData.userInformation || 'N/A',
+        itemData.obligation || 'N/A',
+        itemData.status || 'N/A'
+      ];
+      
+      // Escape commas and quotes in values
+      const escapedValues = values.map(value => {
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += escapedValues.join(',') + '\n';
+    });
   } else if (reportType === 'summary') {
     csvContent += 'Report Type,Generated At\n';
     csvContent += `Summary,${data.generatedAt.toISOString()}\n\n`;
@@ -321,6 +468,22 @@ const exportAsPDF = (res, data, reportType) => {
       pdfContent += `${index + 1}. ${item.userName}\n`;
       pdfContent += `   Dates: ${item.startDate} to ${item.endDate}\n`;
       pdfContent += `   Status: ${item.status}\n\n`;
+    });
+  } else if (reportType === 'breakdown') {
+    pdfContent += 'Breakdown Report:\n';
+    pdfContent += 'Date,Source,Category,Sub-Category,Incident,User,Office,User Information,Obligation,Status\n';
+    data.forEach((item, index) => {
+      const itemData = item.toJSON ? item.toJSON() : item;
+      pdfContent += `${index + 1}. Date: ${itemData.date ? new Date(itemData.date).toLocaleDateString() : 'N/A'}\n`;
+      pdfContent += `   Source: ${itemData.source || 'N/A'}\n`;
+      pdfContent += `   Category: ${itemData.category || 'N/A'}\n`;
+      pdfContent += `   Sub-Category: ${itemData.subCategory || 'N/A'}\n`;
+      pdfContent += `   Incident: ${itemData.incident || 'N/A'}\n`;
+      pdfContent += `   User: ${itemData.userName || 'N/A'}\n`;
+      pdfContent += `   Office: ${itemData.office || 'N/A'}\n`;
+      pdfContent += `   User Information: ${itemData.userInformation || 'N/A'}\n`;
+      pdfContent += `   Obligation: ${itemData.obligation || 'N/A'}\n`;
+      pdfContent += `   Status: ${itemData.status || 'N/A'}\n\n`;
     });
   } else if (reportType === 'summary') {
     pdfContent += 'Summary Report\n\n';
