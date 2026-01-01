@@ -784,7 +784,7 @@ const AdminDashboard = () => {
         <Grid item xs={12}>
           <FilterSection
             title="Advanced Filters"
-            defaultExpanded={true}
+            defaultExpanded={false}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={clearAllFilters}
           >

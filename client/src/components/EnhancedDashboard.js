@@ -1828,7 +1828,7 @@ const EnhancedDashboard = () => {
       <Grid item xs={12}>
         <FilterSection
           title="Advanced Filters"
-          defaultExpanded={true}
+          defaultExpanded={false}
           hasActiveFilters={Boolean(startDate || endDate)}
           onClearFilters={handleClearFilters}
           onApplyFilters={handleApplyFilters}

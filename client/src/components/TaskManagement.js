@@ -1265,7 +1265,7 @@ const TaskManagement = () => {
               {/* Modern Expandable Filter Section */}
               <FilterSection
                 title="Advanced Task Filters"
-                defaultExpanded={true}
+                defaultExpanded={false}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearAllFilters}
               >

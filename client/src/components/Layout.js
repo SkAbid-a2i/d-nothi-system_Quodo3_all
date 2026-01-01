@@ -31,6 +31,8 @@ import {
 import { 
   Dashboard as DashboardIcon,
   Assignment as TaskIcon,
+  AssignmentInd as TaskModificationIcon,
+  AssignmentLate as TeamTaskIcon,
   EventAvailable as LeaveIcon,
   People as UserIcon,
   BarChart as ReportIcon,
@@ -137,7 +139,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
     { text: t('navigation.taskLogger'), icon: <TaskIcon />, path: '/tasks' },
-    { text: t('navigation.myTasks'), icon: <TaskIcon />, path: '/my-tasks' },
+    { text: t('navigation.myTasks'), icon: <TaskModificationIcon />, path: '/my-tasks' },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
     { text: t('navigation.collaboration'), icon: <CollaborationIcon />, path: '/collaboration' },
@@ -150,7 +152,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
 
   // Add team tasks for Admin/Supervisor/SystemAdmin
   if (user && (user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin')) {
-    menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TaskIcon />, path: '/team-tasks' });
+    menuItems.splice(3, 0, { text: t('navigation.teamTasks'), icon: <TeamTaskIcon />, path: '/team-tasks' });
   }
 
   const handleDrawerToggle = () => {

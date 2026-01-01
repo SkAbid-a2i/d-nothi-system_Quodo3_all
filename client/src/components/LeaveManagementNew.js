@@ -845,7 +845,7 @@ const LeaveManagement = () => {
           {/* Modern Expandable Filter Section */}
           <FilterSection
             title="Advanced Filters"
-            defaultExpanded={true}
+            defaultExpanded={false}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={clearAllFilters}
           >

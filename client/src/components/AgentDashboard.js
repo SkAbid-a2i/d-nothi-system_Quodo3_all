@@ -936,7 +936,7 @@ const AgentDashboard = () => {
         <Grid item xs={12}>
           <FilterSection
             title="Advanced Filters"
-            defaultExpanded={true}
+            defaultExpanded={false}
             hasActiveFilters={Boolean(searchTerm || userFilter)}
             onClearFilters={() => {
               setSearchTerm('');

@@ -70,7 +70,7 @@ router.post('/login', cors(corsOptions), async (req, res) => {
         role: user.role 
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '12h' }
     );
 
     // Return user data and token

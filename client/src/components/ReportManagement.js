@@ -26,7 +26,7 @@ import {
   Search as SearchIcon,
   Download as DownloadIcon
 } from '@mui/icons-material';
-import { reportAPI } from '../services/api';
+import { reportAPI, userAPI, dropdownAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
 import { auditLog } from '../services/auditLogger';
@@ -47,15 +47,77 @@ const ReportManagement = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
+  // Fetch dropdown options for breakdown report
+  useEffect(() => {
+    if (activeTab === 3) { // Only fetch when breakdown tab is active
+      fetchBreakdownDropdowns();
+    }
+  }, [activeTab]);
+  
+  const fetchBreakdownDropdowns = async () => {
+    setLoading(true);
+    try {
+      // Fetch all users
+      const usersResponse = await userAPI.getAllUsers();
+      setUsers(usersResponse.data || []);
+      
+      // Fetch all dropdown types
+      const [sourcesRes, categoriesRes, subCategoriesRes, incidentsRes, officesRes, obligationsRes] = await Promise.all([
+        dropdownAPI.getDropdownValues('Source'),
+        dropdownAPI.getDropdownValues('Category'),
+        dropdownAPI.getDropdownValues('Sub-Category'),
+        dropdownAPI.getDropdownValues('Incident'),
+        dropdownAPI.getDropdownValues('Office'),
+        dropdownAPI.getDropdownValues('Obligation')
+      ]);
+      
+      setSources(sourcesRes.data || []);
+      setCategories(categoriesRes.data || []);
+      setSubCategories(subCategoriesRes.data || []);
+      setIncidents(incidentsRes.data || []);
+      setOffices(officesRes.data || []);
+      setObligations(obligationsRes.data || []);
+    } catch (error) {
+      console.error('Error fetching breakdown dropdowns:', error);
+      setError('Failed to load dropdown options');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const [taskReports, setTaskReports] = useState([]);
   const [leaveReports, setLeaveReports] = useState([]);
   const [activityReports, setActivityReports] = useState([]);
+  const [breakdownReports, setBreakdownReports] = useState([]);
+  
+  // BreakDown Report states
+  const [breakdownTimeRange, setBreakdownTimeRange] = useState('');
+  const [breakdownStartDate, setBreakdownStartDate] = useState('');
+  const [breakdownEndDate, setBreakdownEndDate] = useState('');
+  const [breakdownUserId, setBreakdownUserId] = useState('');
+  const [breakdownSource, setBreakdownSource] = useState('');
+  const [breakdownCategory, setBreakdownCategory] = useState('');
+  const [breakdownSubCategory, setBreakdownSubCategory] = useState('');
+  const [breakdownIncident, setBreakdownIncident] = useState('');
+  const [breakdownOffice, setBreakdownOffice] = useState('');
+  const [breakdownUserInformation, setBreakdownUserInformation] = useState('');
+  const [breakdownObligation, setBreakdownObligation] = useState('');
+  
+  // Dropdown options for breakdown report
+  const [users, setUsers] = useState([]);
+  const [sources, setSources] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [incidents, setIncidents] = useState([]);
+  const [offices, setOffices] = useState([]);
+  const [obligations, setObligations] = useState([]);
 
   useEffect(() => {
     // Reset reports when tab changes
     setTaskReports([]);
     setLeaveReports([]);
     setActivityReports([]);
+    setBreakdownReports([]);
   }, [activeTab]);
 
   const handleTabChange = (event, newValue) => {
@@ -68,23 +130,44 @@ const ReportManagement = () => {
     setSuccess('');
     
     try {
-      const params = {
-        startDate,
-        endDate,
-        userId: userId || undefined,
-        status: status || undefined
-      };
-      
-      let data;
-      if (activeTab === 0) {
-        data = await reportAPI.getTaskReport(params);
-        setTaskReports(data.data);
-      } else if (activeTab === 1) {
-        data = await reportAPI.getLeaveReport(params);
-        setLeaveReports(data.data);
+      if (activeTab === 3) { // Breakdown Report
+        // Create breakdown report parameters
+        const breakdownParams = {
+          startDate: breakdownStartDate,
+          endDate: breakdownEndDate,
+          timeRange: breakdownTimeRange,
+          userId: breakdownUserId || undefined,
+          source: breakdownSource || undefined,
+          category: breakdownCategory || undefined,
+          subCategory: breakdownSubCategory || undefined,
+          incident: breakdownIncident || undefined,
+          office: breakdownOffice || undefined,
+          userInformation: breakdownUserInformation || undefined,
+          obligation: breakdownObligation || undefined,
+        };
+        
+        // Fetch tasks with breakdown filters
+        const response = await reportAPI.getTaskReport(breakdownParams);
+        setBreakdownReports(response.data);
       } else {
-        data = await reportAPI.getSummaryReport(params);
-        setActivityReports(data.data);
+        const params = {
+          startDate,
+          endDate,
+          userId: userId || undefined,
+          status: status || undefined
+        };
+        
+        let data;
+        if (activeTab === 0) {
+          data = await reportAPI.getTaskReport(params);
+          setTaskReports(data.data);
+        } else if (activeTab === 1) {
+          data = await reportAPI.getLeaveReport(params);
+          setLeaveReports(data.data);
+        } else {
+          data = await reportAPI.getSummaryReport(params);
+          setActivityReports(data.data);
+        }
       }
       
       setSuccess('Report generated successfully!');
@@ -108,7 +191,7 @@ const ReportManagement = () => {
       let exportData = {
         generatedAt: new Date().toISOString(),
         user: user?.username || 'Unknown',
-        reportType: activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : 'Summary'
+        reportType: activeTab === 0 ? 'Task' : activeTab === 1 ? 'Leave' : activeTab === 2 ? 'Summary' : 'Breakdown'
       };
       
       // Get the appropriate data based on the active tab
@@ -116,8 +199,10 @@ const ReportManagement = () => {
         exportData.tasks = taskReports;
       } else if (activeTab === 1) {
         exportData.leaves = leaveReports;
-      } else {
+      } else if (activeTab === 2) {
         exportData.summary = activityReports;
+      } else {
+        exportData.breakdown = breakdownReports;
       }
       
       // Create export content based on format
@@ -226,6 +311,16 @@ const ReportManagement = () => {
         });
         csv += '\n';
       }
+    } else if (data.reportType === 'Breakdown' && data.breakdown) {
+      // Breakdown report section
+      csv += 'Breakdown Report\n';
+      csv += 'Date,Source,Category,Sub-Category,Incident,User,Office,User Information,Obligation,Status\n';
+      
+      data.breakdown.forEach(task => {
+        // Handle both raw objects and Sequelize instances
+        const taskData = task.toJSON ? task.toJSON() : task;
+        csv += `"${taskData.date || ''}","${taskData.source || ''}","${taskData.category || ''}","${taskData.subCategory || ''}","${taskData.incident || ''}","${taskData.userName || ''}","${taskData.office || ''}","${taskData.userInformation || ''}","${taskData.obligation || ''}","${taskData.status || ''}"\n`;
+      });
     }
     
     return csv;
@@ -356,6 +451,50 @@ const ReportManagement = () => {
         
         pdf += '+------------+------------+\n';
       }
+    } else if (data.reportType === 'Breakdown' && data.breakdown) {
+      // Breakdown report section
+      pdf += 'BREAKDOWN REPORT\n';
+      pdf += '='.repeat(80) + '\n\n';
+      
+      if (data.breakdown.length === 0) {
+        pdf += 'No tasks found.\n\n';
+      } else {
+        // Create a table-like format for tasks
+        pdf += '+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+\n';
+        pdf += '| Date       | Source     | Category   | Sub-Category| Incident   | User       | Office     | User Info  | Obligation | Status     |\n';
+        pdf += '+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+\n';
+        
+        data.breakdown.forEach((task, index) => {
+          // Handle both raw objects and Sequelize instances
+          const taskData = task.toJSON ? task.toJSON() : task;
+          const date = taskData.date || 'N/A';
+          const source = taskData.source || 'N/A';
+          const category = taskData.category || 'N/A';
+          const subCategory = taskData.subCategory || 'N/A';
+          const incident = taskData.incident || 'N/A';
+          const userName = taskData.userName || 'N/A';
+          const office = taskData.office || 'N/A';
+          const userInformation = taskData.userInformation || 'N/A';
+          const obligation = taskData.obligation || 'N/A';
+          const status = taskData.status || 'N/A';
+          
+          // Truncate values to fit in columns
+          const formatDate = date.length > 10 ? date.substring(0, 10) : date;
+          const formatSource = source.length > 10 ? source.substring(0, 10) : source;
+          const formatCategory = category.length > 10 ? category.substring(0, 10) : category;
+          const formatSubCategory = subCategory.length > 12 ? subCategory.substring(0, 12) : subCategory;
+          const formatIncident = incident.length > 10 ? incident.substring(0, 10) : incident;
+          const formatUser = userName.length > 10 ? userName.substring(0, 10) : userName;
+          const formatOffice = office.length > 10 ? office.substring(0, 10) : office;
+          const formatUserInformation = userInformation.length > 10 ? userInformation.substring(0, 10) : userInformation;
+          const formatObligation = obligation.length > 10 ? obligation.substring(0, 10) : obligation;
+          const formatStatus = status.length > 10 ? status.substring(0, 10) : status;
+          
+          pdf += `| ${formatDate.padEnd(10)} | ${formatSource.padEnd(10)} | ${formatCategory.padEnd(10)} | ${formatSubCategory.padEnd(12)} | ${formatIncident.padEnd(10)} | ${formatUser.padEnd(10)} | ${formatOffice.padEnd(10)} | ${formatUserInformation.padEnd(10)} | ${formatObligation.padEnd(10)} | ${formatStatus.padEnd(10)} |\n`;
+        });
+        
+        pdf += '+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+\n';
+      }
     }
     
     // Add footer
@@ -406,6 +545,7 @@ const ReportManagement = () => {
           <Tab label={t('reports.taskReports')} icon={<SearchIcon />} />
           <Tab label={t('reports.leaveReports')} icon={<SearchIcon />} />
           <Tab label={t('reports.activityReports')} icon={<SearchIcon />} />
+          <Tab label="BreakDown Report" icon={<SearchIcon />} />
         </Tabs>
       </Paper>
       
@@ -416,92 +556,272 @@ const ReportManagement = () => {
               {activeTab === 0 && t('reports.taskReports')}
               {activeTab === 1 && t('reports.leaveReports')}
               {activeTab === 2 && t('reports.activityReports')}
+              {activeTab === 3 && 'BreakDown Report'}
             </Typography>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label={t('reports.startDate')}
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label={t('reports.endDate')}
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>{t('reports.reportType')}</InputLabel>
-              <Select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value)}
-                label={t('reports.reportType')}
-              >
-                <MenuItem value="task">{t('reports.taskReport')}</MenuItem>
-                <MenuItem value="leave">{t('reports.leaveReport')}</MenuItem>
-                <MenuItem value="summary">{t('reports.activityReport')}</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="contained" 
-              fullWidth
-              onClick={handleGenerateReport}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : null}
-            >
-              {t('reports.generateReport')}
-            </Button>
-          </Grid>
-          
-          {reportType !== 'summary' && (
+          {activeTab !== 3 ? (
+            // Original report filters
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   fullWidth
-                  label="User ID (optional)"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
+                  label={t('reports.startDate')}
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
                 />
               </Grid>
               
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label={t('reports.endDate')}
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
-                  <InputLabel>Status (optional)</InputLabel>
+                  <InputLabel>{t('reports.reportType')}</InputLabel>
                   <Select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    label="Status (optional)"
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    label={t('reports.reportType')}
                   >
-                    <MenuItem value="">All</MenuItem>
-                    {reportType === 'task' ? (
-                      <>
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="In Progress">In Progress</MenuItem>
-                        <MenuItem value="Completed">Completed</MenuItem>
-                        <MenuItem value="Cancelled">Cancelled</MenuItem>
-                      </>
-                    ) : (
-                      <>
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="Approved">Approved</MenuItem>
-                        <MenuItem value="Rejected">Rejected</MenuItem>
-                      </>
-                    )}
+                    <MenuItem value="task">{t('reports.taskReport')}</MenuItem>
+                    <MenuItem value="leave">{t('reports.leaveReport')}</MenuItem>
+                    <MenuItem value="summary">{t('reports.activityReport')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Button 
+                  variant="contained" 
+                  fullWidth
+                  onClick={handleGenerateReport}
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
+                >
+                  {t('reports.generateReport')}
+                </Button>
+              </Grid>
+              
+              {reportType !== 'summary' && (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="User ID (optional)"
+                      value={userId}
+                      onChange={(e) => setUserId(e.target.value)}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Status (optional)</InputLabel>
+                      <Select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        label="Status (optional)"
+                      >
+                        <MenuItem value="">All</MenuItem>
+                        {reportType === 'task' ? (
+                          <>
+                            <MenuItem value="Pending">Pending</MenuItem>
+                            <MenuItem value="In Progress">In Progress</MenuItem>
+                            <MenuItem value="Completed">Completed</MenuItem>
+                            <MenuItem value="Cancelled">Cancelled</MenuItem>
+                          </>
+                        ) : (
+                          <>
+                            <MenuItem value="Pending">Pending</MenuItem>
+                            <MenuItem value="Approved">Approved</MenuItem>
+                            <MenuItem value="Rejected">Rejected</MenuItem>
+                          </>
+                        )}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </>
+              )}
+            </>
+          ) : (
+            // BreakDown Report filters
+            <>
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Time Range</InputLabel>
+                  <Select
+                    value={breakdownTimeRange}
+                    onChange={(e) => setBreakdownTimeRange(e.target.value)}
+                    label="Time Range"
+                  >
+                    <MenuItem value="">Select Time Range</MenuItem>
+                    <MenuItem value="Weekly">Weekly</MenuItem>
+                    <MenuItem value="Monthly">Monthly</MenuItem>
+                    <MenuItem value="Yearly">Yearly</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label="Start Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={breakdownStartDate}
+                  onChange={(e) => setBreakdownStartDate(e.target.value)}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label="End Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={breakdownEndDate}
+                  onChange={(e) => setBreakdownEndDate(e.target.value)}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Button 
+                  variant="contained" 
+                  fullWidth
+                  onClick={handleGenerateReport}
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
+                >
+                  Generate Report
+                </Button>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>User</InputLabel>
+                  <Select
+                    value={breakdownUserId}
+                    onChange={(e) => setBreakdownUserId(e.target.value)}
+                    label="User"
+                  >
+                    <MenuItem value="">All Users</MenuItem>
+                    {users.map(user => (
+                      <MenuItem key={user.id} value={user.id}>{user.fullName || user.username}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Source</InputLabel>
+                  <Select
+                    value={breakdownSource}
+                    onChange={(e) => setBreakdownSource(e.target.value)}
+                    label="Source"
+                  >
+                    <MenuItem value="">All Sources</MenuItem>
+                    {sources.map(source => (
+                      <MenuItem key={source.id} value={source.value}>{source.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={breakdownCategory}
+                    onChange={(e) => setBreakdownCategory(e.target.value)}
+                    label="Category"
+                  >
+                    <MenuItem value="">All Categories</MenuItem>
+                    {categories.map(category => (
+                      <MenuItem key={category.id} value={category.value}>{category.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Sub-Category</InputLabel>
+                  <Select
+                    value={breakdownSubCategory}
+                    onChange={(e) => setBreakdownSubCategory(e.target.value)}
+                    label="Sub-Category"
+                  >
+                    <MenuItem value="">All Sub-Categories</MenuItem>
+                    {subCategories.map(subCategory => (
+                      <MenuItem key={subCategory.id} value={subCategory.value}>{subCategory.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Incident</InputLabel>
+                  <Select
+                    value={breakdownIncident}
+                    onChange={(e) => setBreakdownIncident(e.target.value)}
+                    label="Incident"
+                  >
+                    <MenuItem value="">All Incidents</MenuItem>
+                    {incidents.map(incident => (
+                      <MenuItem key={incident.id} value={incident.value}>{incident.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Office</InputLabel>
+                  <Select
+                    value={breakdownOffice}
+                    onChange={(e) => setBreakdownOffice(e.target.value)}
+                    label="Office"
+                  >
+                    <MenuItem value="">All Offices</MenuItem>
+                    {offices.map(office => (
+                      <MenuItem key={office.id} value={office.value}>{office.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label="User Information"
+                  value={breakdownUserInformation}
+                  onChange={(e) => setBreakdownUserInformation(e.target.value)}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Obligation</InputLabel>
+                  <Select
+                    value={breakdownObligation}
+                    onChange={(e) => setBreakdownObligation(e.target.value)}
+                    label="Obligation"
+                  >
+                    <MenuItem value="">All Obligations</MenuItem>
+                    {obligations.map(obligation => (
+                      <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -678,6 +998,54 @@ const ReportManagement = () => {
               </TableContainer>
             </Grid>
           </Grid>
+        </Paper>
+      )}
+      
+      {activeTab === 3 && breakdownReports.length > 0 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            BreakDown Report Results
+          </Typography>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center">Date</TableCell>
+                  <TableCell align="center">Source</TableCell>
+                  <TableCell align="center">Category</TableCell>
+                  <TableCell align="center">Sub-Category</TableCell>
+                  <TableCell align="center">Incident</TableCell>
+                  <TableCell align="center">User</TableCell>
+                  <TableCell align="center">Office</TableCell>
+                  <TableCell align="center">User Information</TableCell>
+                  <TableCell align="center">Obligation</TableCell>
+                  <TableCell align="center">Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {breakdownReports.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell align="center">{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell align="center">{task.source || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.category || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.subCategory || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.incident || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.userName || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.office || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.obligation || 'N/A'}</TableCell>
+                    <TableCell align="center">
+                      <Chip 
+                        label={task.status || 'N/A'} 
+                        color={getStatusColor(task.status)} 
+                        size="small" 
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Paper>
       )}
     </Box>
