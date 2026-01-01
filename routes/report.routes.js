@@ -191,7 +191,7 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
   try {
     let where = {};
     
-    // Admins and Supervisors can only see their team's tasks
+    // Admins and Supervisors can only see their team's tasks, but SystemAdmins can see all
     if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
       where.office = req.user.office;
     }
@@ -218,18 +218,18 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
       if (endDate) where.date[Op.lte] = new Date(endDate);
     }
     
-    // Apply time range filter
-    if (timeRange) {
+    // Apply time range filter (only if no specific start/end dates are provided)
+    if (timeRange && !startDate && !endDate) {
       const now = new Date();
       if (timeRange === 'Weekly') {
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - 7);
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - 7);
         where.date = { ...where.date, [Op.gte]: startOfWeek };
       } else if (timeRange === 'Monthly') {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         where.date = { ...where.date, [Op.gte]: startOfMonth };
       } else if (timeRange === 'Yearly') {
-        const startOfYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        const startOfYear = new Date(now.getFullYear() - 1, 0, 1);
         where.date = { ...where.date, [Op.gte]: startOfYear };
       }
     }
@@ -250,7 +250,13 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
     if (incident) where.incident = incident;
     
     // Apply office filter
-    if (office) where.office = office;
+    // If an office filter is explicitly provided, use it instead of the role-based restriction
+    if (office) {
+      where.office = office;
+    } else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+      // Only apply the role-based office filter if no specific office filter is provided
+      where.office = req.user.office;
+    }
     
     // Apply user information filter (partial match)
     if (userInformation) {
