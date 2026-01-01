@@ -909,24 +909,32 @@ const ReportManagement = () => {
                   <TableCell align="center">Date</TableCell>
                   <TableCell align="center">Source</TableCell>
                   <TableCell align="center">Category</TableCell>
+                  <TableCell align="center">Sub-Category</TableCell>
+                  <TableCell align="center">Incident</TableCell>
                   <TableCell align="center">Service</TableCell>
                   <TableCell align="center">User</TableCell>
                   <TableCell align="center">Office</TableCell>
+                  <TableCell align="center">User Information</TableCell>
+                  <TableCell align="center">Obligation</TableCell>
                   <TableCell align="center">Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {taskReports.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell align="center">{new Date(task.date).toLocaleDateString()}</TableCell>
-                    <TableCell align="center">{task.source}</TableCell>
-                    <TableCell align="center">{task.category}</TableCell>
-                    <TableCell align="center">{task.service}</TableCell>
-                    <TableCell align="center">{task.userName}</TableCell>
-                    <TableCell align="center">{task.office}</TableCell>
+                    <TableCell align="center">{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell align="center">{task.source || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.category || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.subCategory || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.incident || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.service || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.userName || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.office || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.obligation || 'N/A'}</TableCell>
                     <TableCell align="center">
                       <Chip 
-                        label={task.status} 
+                        label={task.status || 'N/A'} 
                         color={getStatusColor(task.status)} 
                         size="small" 
                       />

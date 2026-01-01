@@ -211,15 +211,16 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
       format 
     } = req.query;
     
-    // Apply date filter
-    if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date[Op.gte] = new Date(startDate);
-      if (endDate) where.date[Op.lte] = new Date(endDate);
+    // Apply date filter (only if not empty strings)
+    if (startDate && startDate.trim() !== '') {
+      where.date = { ...where.date, [Op.gte]: new Date(startDate) };
+    }
+    if (endDate && endDate.trim() !== '') {
+      where.date = { ...where.date, [Op.lte]: new Date(endDate) };
     }
     
-    // Apply time range filter (only if no specific start/end dates are provided)
-    if (timeRange && !startDate && !endDate) {
+    // Apply time range filter (only if no specific start/end dates are provided and timeRange is not empty)
+    if (timeRange && timeRange.trim() !== '' && !startDate && !endDate) {
       const now = new Date();
       if (timeRange === 'Weekly') {
         const startOfWeek = new Date();
@@ -234,24 +235,24 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
       }
     }
     
-    // Apply user filter
-    if (userId) where.userId = userId;
+    // Apply user filter (only if not empty)
+    if (userId && userId.trim() !== '') where.userId = userId;
     
-    // Apply source filter
-    if (source) where.source = source;
+    // Apply source filter (only if not empty)
+    if (source && source.trim() !== '') where.source = source;
     
-    // Apply category filter
-    if (category) where.category = category;
+    // Apply category filter (only if not empty)
+    if (category && category.trim() !== '') where.category = category;
     
-    // Apply sub-category filter
-    if (subCategory) where.subCategory = subCategory;
+    // Apply sub-category filter (only if not empty)
+    if (subCategory && subCategory.trim() !== '') where.subCategory = subCategory;
     
-    // Apply incident filter
-    if (incident) where.incident = incident;
+    // Apply incident filter (only if not empty)
+    if (incident && incident.trim() !== '') where.incident = incident;
     
     // Apply office filter
-    // If an office filter is explicitly provided, use it instead of the role-based restriction
-    if (office) {
+    // If an office filter is explicitly provided (and not empty), use it instead of the role-based restriction
+    if (office && office.trim() !== '') {
       where.office = office;
     } else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
       // Only apply the role-based office filter if no specific office filter is provided
@@ -259,12 +260,12 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
     }
     
     // Apply user information filter (partial match)
-    if (userInformation) {
+    if (userInformation && userInformation.trim() !== '') {
       where.userInformation = { [Op.like]: `%${userInformation}%` };
     }
     
     // Apply obligation filter
-    if (obligation) where.obligation = obligation;
+    if (obligation && obligation.trim() !== '') where.obligation = obligation;
     
     const tasks = await Task.findAll({ 
       where,
