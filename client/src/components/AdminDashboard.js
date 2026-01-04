@@ -61,6 +61,7 @@ import {
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI } from '../services/api';
 import notificationService from '../services/notificationService';
+import { useAuth } from '../contexts/AuthContext';
 import UserFilterDropdown from './UserFilterDropdown';
 import FilterSection from './FilterSection';
 
@@ -88,6 +89,7 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
 }));
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,6 +100,7 @@ const AdminDashboard = () => {
   const [leaves, setLeaves] = useState([]);
   const [users, setUsers] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [selectedUser, setSelectedUser] = useState(null); // Add selected user state for filter
   
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
@@ -807,9 +810,9 @@ const AdminDashboard = () => {
             <Grid item xs={12} sm={3}>
               <UserFilterDropdown
                 users={users}
-                selectedUser={users.find(u => u.username === userFilter) || null}
+                selectedUser={selectedUser}
                 onUserChange={(newValue) => {
-                  setUserFilter(newValue ? newValue.username : '');
+                  setSelectedUser(newValue);
                 }}
                 label="Filter by User"
                 gridSize={{ xs: 12, sm: 12 }}
@@ -817,7 +820,7 @@ const AdminDashboard = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 size="small"
@@ -830,8 +833,22 @@ const AdminDashboard = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={4}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button 
+                  variant="contained"
+                  onClick={() => {
+                    // Apply user filter when Apply button is clicked
+                    if (selectedUser) {
+                      setUserFilter(selectedUser.username || selectedUser.email || '');
+                    } else {
+                      setUserFilter('');
+                    }
+                  }}
+                  size="small"
+                >
+                  Apply
+                </Button>
                 <Button 
                   startIcon={<DownloadIcon />} 
                   onClick={() => handleExport('CSV')}
@@ -909,7 +926,7 @@ const AdminDashboard = () => {
                           <TableCell>{task.subCategory || 'N/A'}</TableCell>
                           <TableCell>{task.incident || 'N/A'}</TableCell>
                           <TableCell>{task.obligation || 'N/A'}</TableCell>
-                          <TableCell>{task.office || 'N/A'}</TableCell>
+                          <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
                           <TableCell>{task.userInformation || 'N/A'}</TableCell>
                           <TableCell>{task.description || 'N/A'}</TableCell>
                           <TableCell>
