@@ -136,14 +136,14 @@ const LeaveManagement = () => {
         leavesData = leavesData.filter(leave => 
           leave.userId === user.id || leave.userName === user.username
         );
-      } else if (user && (user.role === 'Admin' || user.role === 'Supervisor')) {
-        // Admins and Supervisors see leaves from their office
+      } else if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
+        // SystemAdmin and Admin can see all leaves
+        // leavesData remains unchanged
+      } else if (user && user.role === 'Supervisor') {
+        // Supervisors see leaves from their office
         leavesData = leavesData.filter(leave => 
           leave.office === user.office
         );
-      } else if (user && user.role === 'SystemAdmin') {
-        // SystemAdmin sees all leaves (no filtering needed)
-        // leavesData remains unchanged
       }
       
       setLeaves(leavesData);
@@ -157,9 +157,9 @@ const LeaveManagement = () => {
     }
   }, [user, showSnackbar]);
 
-  // Fetch users for System Admins
+  // Fetch users for System Admins and Admins
   const fetchUsers = useCallback(async () => {
-    if (user && user.role === 'SystemAdmin') {
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
       try {
         const response = await userAPI.getAllUsers();
         const usersData = response.data || [];
@@ -221,8 +221,34 @@ const LeaveManagement = () => {
               });
             }
           });
-      } else if (user.role === 'Admin' || user.role === 'Supervisor') {
-        // Admins/Supervisors see notifications for their team
+      } else if (user.role === 'SystemAdmin' || user.role === 'Admin') {
+        // SystemAdmin and Admin see all notifications
+        leaves.forEach(leave => {
+          if (leave.status === 'Pending') {
+            notifications.push({
+              id: `requested-${leave.id}`,
+              message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
+              time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
+              type: 'leave'
+            });
+          } else if (leave.status === 'Approved') {
+            notifications.push({
+              id: `approved-${leave.id}`,
+              message: `${leave.userName || leave.employee}'s leave request has been approved`,
+              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+              type: 'approval'
+            });
+          } else if (leave.status === 'Rejected') {
+            notifications.push({
+              id: `rejected-${leave.id}`,
+              message: `${leave.userName || leave.employee}'s leave request has been rejected`,
+              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
+              type: 'rejection'
+            });
+          }
+        });
+      } else if (user.role === 'Supervisor') {
+        // Supervisors see notifications for their team
         leaves.filter(l => l.office === user.office)
           .forEach(leave => {
             if (leave.status === 'Pending') {
@@ -248,32 +274,6 @@ const LeaveManagement = () => {
               });
             }
           });
-      } else if (user.role === 'SystemAdmin') {
-        // SystemAdmin sees all notifications
-        leaves.forEach(leave => {
-          if (leave.status === 'Pending') {
-            notifications.push({
-              id: `requested-${leave.id}`,
-              message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
-              time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
-              type: 'leave'
-            });
-          } else if (leave.status === 'Approved') {
-            notifications.push({
-              id: `approved-${leave.id}`,
-              message: `${leave.userName || leave.employee}'s leave request has been approved`,
-              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
-              type: 'approval'
-            });
-          } else if (leave.status === 'Rejected') {
-            notifications.push({
-              id: `rejected-${leave.id}`,
-              message: `${leave.userName || leave.employee}'s leave request has been rejected`,
-              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
-              type: 'rejection'
-            });
-          }
-        });
       }
     }
     
@@ -487,6 +487,16 @@ const LeaveManagement = () => {
       setTimeout(() => setError(''), 5000);
       return;
     }
+    
+    // Check if user has permission to edit this leave
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || 
+         (user.id === leave.userId && leave.status === 'Pending'))) {
+      setError('You do not have permission to edit this leave request');
+      showSnackbar('You do not have permission to edit this leave request', 'error');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     setFormState({
       startDate: leave.startDate ? new Date(leave.startDate).toISOString().split('T')[0] : '',
       endDate: leave.endDate ? new Date(leave.endDate).toISOString().split('T')[0] : '',
@@ -501,6 +511,15 @@ const LeaveManagement = () => {
       setTimeout(() => setError(''), 5000);
       return;
     }
+    
+    // Check if user has permission to delete this leave
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === leave.userId)) {
+      setError('You do not have permission to delete this leave request');
+      showSnackbar('You do not have permission to delete this leave request', 'error');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     openDialog('delete', leave);
   };
 
@@ -929,18 +948,22 @@ const LeaveManagement = () => {
                           </IconButton>
                         </>
                       )}
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleEditLeave(leave)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleDeleteLeave(leave)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      {(user.role === 'SystemAdmin' || user.role === 'Admin' || (user.id === leave.userId && leave.status === 'Pending')) && (
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleEditLeave(leave)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      )}
+                      {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === leave.userId) && (
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleDeleteLeave(leave)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

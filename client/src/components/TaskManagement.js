@@ -370,66 +370,52 @@ const TaskManagement = () => {
       console.log('User info for filtering:', {
         role: user.role,
         username: user.username,
-        fullName: user.fullName
+        fullName: user.fullName,
+        office: user.office
       });
       
-      // ALL users should only see their own tasks
-      // Use both username and fullName for matching to ensure compatibility
-      const currentUserIdentifier = user.fullName || user.username;
-      console.log('Filtering tasks for user:', currentUserIdentifier);
-      
-      tasksData = tasksData.filter(task => {
-        const taskUserIdentifier = task.userName;
-        
-        // More flexible matching to handle potential formatting differences
-        // This will match if either name contains the other or they match when trimmed
-        const isMatch = taskUserIdentifier === currentUserIdentifier ||
-                       (taskUserIdentifier && currentUserIdentifier && 
-                        (taskUserIdentifier.includes(currentUserIdentifier) || 
-                         currentUserIdentifier.includes(taskUserIdentifier))) ||
-                       // Fallback for cases where we might have partial matches
-                       (taskUserIdentifier && currentUserIdentifier && 
-                        (taskUserIdentifier.trim() === currentUserIdentifier.trim() ||
-                         taskUserIdentifier.trim().includes(currentUserIdentifier.trim()) || 
-                         currentUserIdentifier.trim().includes(taskUserIdentifier.trim()))) ||
-                       // Case insensitive matching as final fallback
-                       (taskUserIdentifier && currentUserIdentifier && 
-                        (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                         currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
-        
-        console.log('Task user matching:', {
-          taskUser: taskUserIdentifier,
-          currentUser: currentUserIdentifier,
-          exactMatch: taskUserIdentifier === currentUserIdentifier,
-          containsMatch: (taskUserIdentifier && currentUserIdentifier && 
-                         (taskUserIdentifier.includes(currentUserIdentifier) || 
-                          currentUserIdentifier.includes(taskUserIdentifier))),
-          trimmedMatch: (taskUserIdentifier && currentUserIdentifier && 
-                        (taskUserIdentifier.trim() === currentUserIdentifier.trim() ||
-                         taskUserIdentifier.trim().includes(currentUserIdentifier.trim()) || 
-                         currentUserIdentifier.trim().includes(taskUserIdentifier.trim()))),
-          caseInsensitiveMatch: (taskUserIdentifier && currentUserIdentifier && 
-                                (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                                 currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase()))),
-          isMatch: isMatch
+      // Apply role-based filtering
+      if (user.role === 'SystemAdmin' || user.role === 'Admin') {
+        // SystemAdmin and Admin can see all tasks
+        // No filtering needed
+        console.log(`${user.role}: showing all tasks`);
+      } else if (user.role === 'Supervisor') {
+        // Supervisor can see tasks from their office
+        tasksData = tasksData.filter(task => task.office === user.office);
+        console.log(`${user.role}: filtered to office tasks`, tasksData.length);
+      } else {
+        // Other roles (Agent, etc.) can only see their own tasks
+        const currentUserIdentifier = user.fullName || user.username;
+        tasksData = tasksData.filter(task => {
+          const taskUserIdentifier = task.userName;
+          
+          // More flexible matching to handle potential formatting differences
+          const isMatch = taskUserIdentifier === currentUserIdentifier ||
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.includes(currentUserIdentifier) || 
+                           currentUserIdentifier.includes(taskUserIdentifier))) ||
+                         // Fallback for cases where we might have partial matches
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.trim() === currentUserIdentifier.trim() ||
+                           taskUserIdentifier.trim().includes(currentUserIdentifier.trim()) || 
+                           currentUserIdentifier.trim().includes(taskUserIdentifier.trim()))) ||
+                         // Case insensitive matching as final fallback
+                         (taskUserIdentifier && currentUserIdentifier && 
+                          (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
+                           currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
+          
+          return isMatch;
         });
-        return isMatch;
-      });
+        console.log(`${user.role}: filtered to user tasks`, tasksData.length);
+      }
       
-      console.log(`${user.role}: filtered to user tasks`, tasksData.length);
       // Log the filtered tasks for debugging
       console.log('Filtered tasks:', tasksData.map(t => ({
         id: t.id,
         description: t.description,
-        userName: t.userName
+        userName: t.userName,
+        office: t.office
       })));
-      
-      // Additional check for agents
-      if (user.role === 'Agent' && tasksData.length === 0) {
-        console.warn('Agent has no tasks. This might be expected or could indicate an issue.');
-        console.log('All tasks from API:', Array.isArray(response.data) ? response.data : 
-                     response.data?.data || response.data || []);
-      }
       
       setTasks(tasksData);
     } catch (error) {
@@ -1380,7 +1366,7 @@ const TaskManagement = () => {
                               <TableCell>{task.category || 'N/A'}</TableCell>
                               <TableCell>{task.subCategory || 'N/A'}</TableCell>
                               <TableCell>{task.incident || 'N/A'}</TableCell>
-                              <TableCell>{task.office || 'N/A'}</TableCell>
+                              <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
                               <TableCell>{task.userInformation || 'N/A'}</TableCell>
                               <TableCell>{task.obligation || 'N/A'}</TableCell>
                               <TableCell>{task.description || 'N/A'}</TableCell>

@@ -14,49 +14,357 @@ export const ThemeProvider = ({ children }) => {
   const [darkMode, setDarkMode] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#667eea');
   const [secondaryColor, setSecondaryColor] = useState('#f093fb');
+  
+  // Background customization state
+  const [backgroundType, setBackgroundType] = useState('solid');
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [gradientEndColor, setGradientEndColor] = useState('#f0f0f0');
+  const [gradientDirection, setGradientDirection] = useState('to right');
+  const [backgroundImage, setBackgroundImage] = useState('');
 
-  // Load saved theme preferences
+  // Load theme preferences from backend
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setDarkMode(true);
-    }
+    const loadPreferences = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          const preferences = userData.preferences;
+          
+          if (preferences) {
+            if (preferences.theme === 'dark') {
+              setDarkMode(true);
+            }
+            
+            if (preferences.primaryColor) {
+              setPrimaryColor(preferences.primaryColor);
+            }
+            if (preferences.secondaryColor) {
+              setSecondaryColor(preferences.secondaryColor);
+            }
+            if (preferences.backgroundType) {
+              setBackgroundType(preferences.backgroundType);
+            }
+            if (preferences.backgroundColor) {
+              setBackgroundColor(preferences.backgroundColor);
+            }
+            if (preferences.gradientEndColor) {
+              setGradientEndColor(preferences.gradientEndColor);
+            }
+            if (preferences.gradientDirection) {
+              setGradientDirection(preferences.gradientDirection);
+            }
+            if (preferences.backgroundImage) {
+              setBackgroundImage(preferences.backgroundImage);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading theme preferences:', error);
+      }
+    };
     
-    // Load saved color preferences
-    const savedPrimaryColor = localStorage.getItem('primaryColor');
-    const savedSecondaryColor = localStorage.getItem('secondaryColor');
-    
-    if (savedPrimaryColor) {
-      setPrimaryColor(savedPrimaryColor);
-    }
-    
-    if (savedSecondaryColor) {
-      setSecondaryColor(savedSecondaryColor);
-    }
+    loadPreferences();
   }, []);
 
   // Save theme preferences
-  const toggleDarkMode = () => {
+  const toggleDarkMode = async () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: newMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor,
+              backgroundType,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
   };
 
-  const updatePrimaryColor = (color) => {
+  const updatePrimaryColor = async (color) => {
     setPrimaryColor(color);
-    localStorage.setItem('primaryColor', color);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor: color,
+              secondaryColor,
+              backgroundType,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
   };
 
-  const updateSecondaryColor = (color) => {
+  const updateSecondaryColor = async (color) => {
     setSecondaryColor(color);
-    localStorage.setItem('secondaryColor', color);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor: color,
+              backgroundType,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
   };
 
-  const resetToDefaultColors = () => {
+  const resetToDefaultColors = async () => {
     setPrimaryColor('#667eea');
     setSecondaryColor('#f093fb');
-    localStorage.removeItem('primaryColor');
-    localStorage.removeItem('secondaryColor');
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor: '#667eea',
+              secondaryColor: '#f093fb',
+              backgroundType,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
+  };
+  
+  const updateBackgroundType = async (type) => {
+    setBackgroundType(type);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor,
+              backgroundType: type,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
+  };
+  
+  const updateBackgroundColor = async (color) => {
+    setBackgroundColor(color);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor,
+              backgroundType,
+              backgroundColor: color,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
+  };
+  
+  const updateGradientEndColor = async (color) => {
+    setGradientEndColor(color);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor,
+              backgroundType,
+              backgroundColor,
+              gradientEndColor: color,
+              gradientDirection,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
+  };
+  
+  const updateGradientDirection = async (direction) => {
+    setGradientDirection(direction);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor,
+              backgroundType,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection: direction,
+              backgroundImage
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
+  };
+  
+  const updateBackgroundImage = async (image) => {
+    setBackgroundImage(image);
+    
+    // Update preferences in backend
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              theme: darkMode ? 'dark' : 'light',
+              primaryColor,
+              secondaryColor,
+              backgroundType,
+              backgroundColor,
+              gradientEndColor,
+              gradientDirection,
+              backgroundImage: image
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving theme preferences:', error);
+    }
   };
 
   const value = {
@@ -67,7 +375,18 @@ export const ThemeProvider = ({ children }) => {
     toggleDarkMode,
     updatePrimaryColor,
     updateSecondaryColor,
-    resetToDefaultColors
+    resetToDefaultColors,
+    // Background customization
+    backgroundType,
+    backgroundColor,
+    gradientEndColor,
+    gradientDirection,
+    backgroundImage,
+    updateBackgroundType,
+    updateBackgroundColor,
+    updateGradientEndColor,
+    updateGradientDirection,
+    updateBackgroundImage
   };
 
   return (

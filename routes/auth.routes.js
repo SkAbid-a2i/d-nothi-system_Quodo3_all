@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const UserPreferences = require('../models/UserPreferences');
 const { loginValidation } = require('../validators/auth.validator');
 const { authenticate } = require('../middleware/auth.middleware');
 const cors = require('cors');
@@ -108,7 +109,41 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       return res.status(401).json({ message: 'User not found or inactive' });
     }
 
-    // Return user data with designation field
+    // Get user preferences
+    let preferences = null;
+    try {
+      preferences = await UserPreferences.findOne({ where: { userId: user.id } });
+      if (!preferences) {
+        // Create default preferences if they don't exist
+        preferences = await UserPreferences.create({
+          userId: user.id,
+          theme: 'light',
+          primaryColor: '#667eea',
+          secondaryColor: '#f093fb',
+          backgroundType: 'solid',
+          backgroundColor: '#ffffff',
+          gradientEndColor: '#f093fb',
+          gradientDirection: 'to right',
+          language: 'en'
+        });
+      }
+    } catch (prefErr) {
+      console.error('Error fetching user preferences:', prefErr);
+      // Create default preferences if there's an error
+      preferences = await UserPreferences.create({
+        userId: user.id,
+        theme: 'light',
+        primaryColor: '#667eea',
+        secondaryColor: '#f093fb',
+        backgroundType: 'solid',
+        backgroundColor: '#ffffff',
+        gradientEndColor: '#f093fb',
+        gradientDirection: 'to right',
+        language: 'en'
+      });
+    }
+
+    // Return user data with designation field and preferences
     const userData = {
       id: user.id,
       username: user.username,
@@ -120,7 +155,18 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       phoneNumber: user.phoneNumber,
       bio: user.bio,
       designation: user.designation,
-      isActive: user.isActive
+      isActive: user.isActive,
+      preferences: {
+        theme: preferences.theme,
+        primaryColor: preferences.primaryColor,
+        secondaryColor: preferences.secondaryColor,
+        backgroundType: preferences.backgroundType,
+        backgroundColor: preferences.backgroundColor,
+        gradientEndColor: preferences.gradientEndColor,
+        gradientDirection: preferences.gradientDirection,
+        backgroundImage: preferences.backgroundImage,
+        language: preferences.language
+      }
     };
 
     res.json(userData);
@@ -166,7 +212,7 @@ router.put('/change-password', cors(corsOptions), authenticate, async (req, res)
 // @access  Private
 router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
   try {
-    const { fullName, email, office, bloodGroup, phoneNumber, bio, designation } = req.body;
+    const { fullName, email, office, bloodGroup, phoneNumber, bio, designation, preferences } = req.body;
     const userId = req.user.id;
 
     // Check if user exists
@@ -186,6 +232,26 @@ router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
 
     await user.save();
 
+    // Update user preferences if provided
+    if (preferences) {
+      let userPreferences = await UserPreferences.findOne({ where: { userId: userId } });
+      if (!userPreferences) {
+        // Create preferences if they don't exist
+        userPreferences = await UserPreferences.create({
+          userId: userId,
+          ...preferences
+        });
+      } else {
+        // Update existing preferences
+        Object.keys(preferences).forEach(key => {
+          if (userPreferences[key] !== undefined) {
+            userPreferences[key] = preferences[key];
+          }
+        });
+        await userPreferences.save();
+      }
+    }
+
     // Log the updated user data for debugging
     console.log('Updated user data:', {
       id: user.id,
@@ -200,6 +266,38 @@ router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
       designation: user.designation
     });
 
+    // Get updated preferences to return
+    let updatedPreferences = null;
+    try {
+      updatedPreferences = await UserPreferences.findOne({ where: { userId: userId } });
+      if (!updatedPreferences) {
+        updatedPreferences = await UserPreferences.create({
+          userId: userId,
+          theme: 'light',
+          primaryColor: '#667eea',
+          secondaryColor: '#f093fb',
+          backgroundType: 'solid',
+          backgroundColor: '#ffffff',
+          gradientEndColor: '#f093fb',
+          gradientDirection: 'to right',
+          language: 'en'
+        });
+      }
+    } catch (prefErr) {
+      console.error('Error fetching updated preferences:', prefErr);
+      updatedPreferences = await UserPreferences.create({
+        userId: userId,
+        theme: 'light',
+        primaryColor: '#667eea',
+        secondaryColor: '#f093fb',
+        backgroundType: 'solid',
+        backgroundColor: '#ffffff',
+        gradientEndColor: '#f093fb',
+        gradientDirection: 'to right',
+        language: 'en'
+      });
+    }
+
     // Return updated user data (excluding password)
     const updatedUser = {
       id: user.id,
@@ -211,7 +309,18 @@ router.put('/profile', cors(corsOptions), authenticate, async (req, res) => {
       bloodGroup: user.bloodGroup,
       phoneNumber: user.phoneNumber,
       bio: user.bio,
-      designation: user.designation
+      designation: user.designation,
+      preferences: {
+        theme: updatedPreferences.theme,
+        primaryColor: updatedPreferences.primaryColor,
+        secondaryColor: updatedPreferences.secondaryColor,
+        backgroundType: updatedPreferences.backgroundType,
+        backgroundColor: updatedPreferences.backgroundColor,
+        gradientEndColor: updatedPreferences.gradientEndColor,
+        gradientDirection: updatedPreferences.gradientDirection,
+        backgroundImage: updatedPreferences.backgroundImage,
+        language: updatedPreferences.language
+      }
     };
 
     res.json(updatedUser);

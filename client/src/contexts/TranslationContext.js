@@ -18,12 +18,34 @@ export const TranslationProvider = ({ children }) => {
   const [language, setLanguage] = useState(translationService.getCurrentLanguage());
   const [translations, setTranslations] = useState(translationService.getTranslations());
 
-  // Load saved language preference on initial load
+  // Load language preference from user data
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') || 'en';
-    if (savedLanguage !== language) {
-      changeLanguage(savedLanguage);
-    }
+    const loadLanguageFromUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          const userLanguage = userData.preferences?.language || 'en';
+          
+          if (userLanguage !== language) {
+            changeLanguage(userLanguage);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading language preference:', error);
+      }
+    };
+    
+    loadLanguageFromUser();
   }, []);
 
   const changeLanguage = (newLanguage) => {

@@ -15,20 +15,39 @@ class TranslationService {
   setLanguage(language) {
     if (this.translations[language]) {
       this.currentLanguage = language;
-      // Save to localStorage
-      localStorage.setItem('language', language);
+      // Update language in backend
+      this.saveLanguageToBackend(language);
       return true;
     }
     return false;
   }
 
   getCurrentLanguage() {
-    // Check for saved language preference first
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage && this.translations[savedLanguage]) {
-      this.currentLanguage = savedLanguage;
-    }
+    // Note: Language preference will be loaded from backend via user data
+    // when the user authenticates
     return this.currentLanguage;
+  }
+  
+  async saveLanguageToBackend(language) {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: {
+              language: language
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error saving language preference:', error);
+    }
   }
 
   t(key) {

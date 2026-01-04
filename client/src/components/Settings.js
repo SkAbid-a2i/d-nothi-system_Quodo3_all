@@ -40,10 +40,29 @@ import {
 import { authAPI } from '../services/api';
 import { useThemeContext } from '../contexts/ThemeContext';
 
-const Settings = ({ darkMode, setDarkMode }) => {
-  const { t } = useTranslation();
+const Settings = () => {
+  const { t, language, changeLanguage } = useTranslation();
   const { user, updateUser } = useAuth();
-  const { primaryColor, secondaryColor, updatePrimaryColor, updateSecondaryColor, resetToDefaultColors } = useThemeContext();
+  const { 
+    darkMode,
+    setDarkMode,
+    primaryColor, 
+    secondaryColor, 
+    updatePrimaryColor, 
+    updateSecondaryColor, 
+    resetToDefaultColors,
+    // Background customization
+    backgroundType,
+    backgroundColor,
+    gradientEndColor,
+    gradientDirection,
+    backgroundImage,
+    updateBackgroundType,
+    updateBackgroundColor,
+    updateGradientEndColor,
+    updateGradientDirection,
+    updateBackgroundImage
+  } = useThemeContext();
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
@@ -110,7 +129,17 @@ const Settings = ({ darkMode, setDarkMode }) => {
         bloodGroup: profileData.bloodGroup,
         phoneNumber: profileData.phoneNumber,
         bio: profileData.bio,
-        designation: profileData.designation
+        designation: profileData.designation,
+        preferences: {
+          theme: darkMode ? 'dark' : 'light',
+          primaryColor,
+          secondaryColor,
+          backgroundType,
+          backgroundColor,
+          gradientEndColor,
+          gradientDirection,
+          backgroundImage
+        }
       };
       
       const response = await authAPI.updateProfile(profileUpdateData);
@@ -165,6 +194,27 @@ const Settings = ({ darkMode, setDarkMode }) => {
   const handleSecondaryColorChange = (e) => {
     const newColor = e.target.value;
     updateSecondaryColor(newColor);
+  };
+  
+  // Handle background customization changes
+  const handleBackgroundTypeChange = (e) => {
+    updateBackgroundType(e.target.value);
+  };
+  
+  const handleBackgroundColorChange = (e) => {
+    updateBackgroundColor(e.target.value);
+  };
+  
+  const handleGradientEndColorChange = (e) => {
+    updateGradientEndColor(e.target.value);
+  };
+  
+  const handleGradientDirectionChange = (e) => {
+    updateGradientDirection(e.target.value);
+  };
+  
+  const handleBackgroundImageChange = (e) => {
+    updateBackgroundImage(e.target.value);
   };
 
   return (
@@ -452,6 +502,193 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     />
                   </Grid>
                   
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Gradient End Color"
+                      type="color"
+                      value={gradientEndColor}
+                      onChange={handleGradientEndColorChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <ColorizeIcon sx={{ color: gradientEndColor }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Gradient Direction</InputLabel>
+                      <Select
+                        value={gradientDirection || 'to right'}
+                        onChange={handleGradientDirectionChange}
+                        label="Gradient Direction"
+                        sx={{
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          }
+                        }}
+                      >
+                        <MenuItem value="to right">Left to Right</MenuItem>
+                        <MenuItem value="to bottom">Top to Bottom</MenuItem>
+                        <MenuItem value="to bottom right">Diagonal</MenuItem>
+                        <MenuItem value="radial">Radial</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Background Type</InputLabel>
+                      <Select
+                        value={backgroundType || 'solid'}
+                        onChange={handleBackgroundTypeChange}
+                        label="Background Type"
+                        sx={{
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'divider',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main',
+                          }
+                        }}
+                      >
+                        <MenuItem value="solid">Solid Color</MenuItem>
+                        <MenuItem value="gradient">Gradient</MenuItem>
+                        <MenuItem value="image">Image</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  {(backgroundType === 'solid' || backgroundType === 'gradient') && (
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Background Color"
+                        type="color"
+                        value={backgroundColor}
+                        onChange={handleBackgroundColorChange}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <ColorizeIcon sx={{ color: backgroundColor }} />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'divider',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                            }
+                          }
+                        }}
+                      />
+                    </Grid>
+                  )}
+                  
+                  {backgroundType === 'gradient' && (
+                    <>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label="Gradient End Color"
+                          type="color"
+                          value={gradientEndColor}
+                          onChange={handleGradientEndColorChange}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <ColorizeIcon sx={{ color: gradientEndColor }} />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: 'divider',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: 'primary.main',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: 'primary.main',
+                              }
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth>
+                          <InputLabel>Gradient Direction</InputLabel>
+                          <Select
+                            value={gradientDirection || 'to right'}
+                            onChange={handleGradientDirectionChange}
+                            label="Gradient Direction"
+                            sx={{
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'divider',
+                              },
+                              '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'primary.main',
+                              },
+                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'primary.main',
+                              }
+                            }}
+                          >
+                            <MenuItem value="to right">Left to Right</MenuItem>
+                            <MenuItem value="to bottom">Top to Bottom</MenuItem>
+                            <MenuItem value="to bottom right">Diagonal</MenuItem>
+                            <MenuItem value="radial">Radial</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </>
+                  )}
+                  
+                  {backgroundType === 'image' && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Background Image URL"
+                        value={backgroundImage}
+                        onChange={handleBackgroundImageChange}
+                      />
+                    </Grid>
+                  )}
+                  
                   <Grid item xs={12}>
                     <Button
                       variant="outlined"
@@ -482,8 +719,32 @@ const Settings = ({ darkMode, setDarkMode }) => {
                     <FormControl fullWidth>
                       <InputLabel>Language</InputLabel>
                       <Select
-                        value={t.language}
-                        onChange={(e) => t.toggleLanguage(e.target.value)}
+                        value={language}
+                        onChange={async (e) => {
+                          const newLang = e.target.value;
+                          changeLanguage(newLang);
+                          
+                          // Update preferences in backend
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (token) {
+                              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Authorization': `Bearer ${token}`,
+                                  'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                  preferences: {
+                                    language: newLang
+                                  }
+                                })
+                              });
+                            }
+                          } catch (error) {
+                            console.error('Error saving language preference:', error);
+                          }
+                        }}
                         label="Language"
                         sx={{
                           '& .MuiOutlinedInput-notchedOutline': {
@@ -508,7 +769,38 @@ const Settings = ({ darkMode, setDarkMode }) => {
                       control={
                         <Switch
                           checked={darkMode}
-                          onChange={() => setDarkMode(!darkMode)}
+                          onChange={async () => {
+                            const newMode = !darkMode;
+                            setDarkMode(newMode);
+                            
+                            // Update preferences in backend
+                            try {
+                              const token = localStorage.getItem('token');
+                              if (token) {
+                                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
+                                  method: 'PUT',
+                                  headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                  },
+                                  body: JSON.stringify({
+                                    preferences: {
+                                      theme: newMode ? 'dark' : 'light',
+                                      primaryColor,
+                                      secondaryColor,
+                                      backgroundType,
+                                      backgroundColor,
+                                      gradientEndColor,
+                                      gradientDirection,
+                                      backgroundImage
+                                    }
+                                  })
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Error saving theme preferences:', error);
+                            }
+                          }}
                           color="primary"
                         />
                       }

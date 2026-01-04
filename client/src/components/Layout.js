@@ -780,9 +780,6 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
         <Fade in={true} timeout={500}>
           <Box sx={{ 
             minHeight: 'calc(100vh - 64px - 24px)',
-            background: darkMode 
-              ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
-              : 'linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%)',
             borderRadius: { xs: 0, sm: 2, md: 3 },
             p: { xs: 1, sm: 2, md: 3 },
             boxShadow: darkMode 
@@ -790,7 +787,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               : '0 8px 32px rgba(0, 0, 0, 0.1)',
             border: darkMode 
               ? '1px solid rgba(255, 255, 255, 0.1)' 
-              : '1px solid rgba(0, 0, 0, 0.05)'
+              : '1px solid rgba(0, 0, 0, 0.05)',
+            background: 'inherit'
           }}>
             {/* Always render Outlet for nested routes */}
             <Outlet />

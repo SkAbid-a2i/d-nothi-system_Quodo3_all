@@ -463,39 +463,75 @@ const AgentDashboard = () => {
   };
 
   // Filter tasks based on search term and user
-  const filteredTasks = tasks.filter(task => 
-    (searchTerm === '' || 
+  const filteredTasks = tasks.filter(task => {
+    // Check search term match
+    const matchesSearch = searchTerm === '' || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.subCategory && task.subCategory.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.incident && task.incident.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()))
-  ));
+      (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Check user filter match - exact match instead of partial
+    const matchesUser = userFilter === '' || 
+      (task.userName && userFilter && 
+        (task.userName.toLowerCase() === userFilter.toLowerCase() ||
+         (task.fullName && task.fullName.toLowerCase() === userFilter.toLowerCase()) ||
+         (task.email && task.email.toLowerCase() === userFilter.toLowerCase())));
+    
+    // For SystemAdmin and Admin, show all tasks; for Supervisor, show all tasks in their office; for others, show only their own tasks
+    let matchesRole = false;
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
+      matchesRole = true; // Show all tasks
+    } else if (user && user.role === 'Supervisor') {
+      matchesRole = task.office === user.office; // Show tasks from their office
+    } else {
+      // For other roles, only show tasks assigned to the current user
+      matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
+    }
+    
+    return matchesSearch && matchesUser && matchesRole;
+  });
   
-  // Apply user filter for all users including admins
-  const finalFilteredTasks = userFilter === '' ? filteredTasks : 
-    filteredTasks.filter(task => 
-      task.userName && userFilter && 
-      (task.userName.toLowerCase() === userFilter.toLowerCase() ||
-       task.userName.toLowerCase().includes(userFilter.toLowerCase()))
-    );
+  const finalFilteredTasks = filteredTasks;
 
   // Filter leaves based on search term and user
-  const filteredLeaves = leaves.filter(leave => 
-    (searchTerm === '' || 
-      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase())))
-  );
+  const filteredLeaves = leaves.filter(leave => {
+    // Check search term match
+    const matchesSearch = searchTerm === '' || 
+      (leave.reason && leave.reason.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Check user filter match - exact match
+    const matchesUser = userFilter === '' || 
+      (leave.userName && userFilter && 
+        (leave.userName.toLowerCase() === userFilter.toLowerCase() ||
+         (leave.fullName && leave.fullName.toLowerCase() === userFilter.toLowerCase()) ||
+         (leave.email && leave.email.toLowerCase() === userFilter.toLowerCase())));
+    
+    // For SystemAdmin and Admin, show all leaves; for Supervisor, show all leaves in their office; for others, show only their own leaves
+    let matchesRole = false;
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
+      matchesRole = true; // Show all leaves
+    } else if (user && user.role === 'Supervisor') {
+      matchesRole = leave.office === user.office || leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName; // Show leaves from their office or their own
+    } else {
+      // For other roles, only show leaves assigned to the current user
+      matchesRole = leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName;
+    }
+    
+    return matchesSearch && matchesUser && matchesRole;
+  });
   
-  // Apply user filter for all users including admins
-  const finalFilteredLeaves = userFilter === '' ? filteredLeaves : 
-    filteredLeaves.filter(leave => 
-      leave.userName && userFilter && 
-      (leave.userName.toLowerCase() === userFilter.toLowerCase() ||
-       leave.userName.toLowerCase().includes(userFilter.toLowerCase()))
-    );
+  const finalFilteredLeaves = filteredLeaves;
 
   // Handle task edit
   const handleEditTask = async (task) => {
+    // Check if user has permission to edit this task
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === task.userId)) {
+      showSnackbar('You do not have permission to edit this task', 'error');
+      return;
+    }
+    
     // Fetch dropdown values for edit dialog
     try {
       // Fetch all dropdown values individually to better handle errors
@@ -616,6 +652,14 @@ const AgentDashboard = () => {
 
   // Handle task update
   const handleUpdateTask = async () => {
+    // Check if user has permission to update this task
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === editingTask.userId)) {
+      showSnackbar('You do not have permission to update this task', 'error');
+      setOpenEditDialog(false);
+      setEditingTask(null);
+      return;
+    }
+    
     try {
       const updatedTaskData = {
         date: editDate,
@@ -646,6 +690,15 @@ const AgentDashboard = () => {
 
   // Handle task delete
   const handleDeleteTask = async (taskId) => {
+    // Find the task to check permissions
+    const taskToDelete = tasks.find(task => task.id === taskId);
+    
+    // Check if user has permission to delete this task
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || (user.id === taskToDelete?.userId))) {
+      showSnackbar('You do not have permission to delete this task', 'error');
+      return;
+    }
+    
     try {
       await taskAPI.deleteTask(taskId);
       showSnackbar('Task deleted successfully!', 'success');
@@ -978,7 +1031,7 @@ const AgentDashboard = () => {
                 <UserFilterDropdown
                   users={filteredUsers}
                   selectedUser={selectedUser}
-                  onUserChange={(newValue) => {
+                  onUserChange={(event, newValue) => {
                     setSelectedUser(newValue);
                     // Don't apply filter immediately, let user click Apply button
                   }}
@@ -996,8 +1049,8 @@ const AgentDashboard = () => {
                   onClick={() => {
                     // Apply user filter when Apply button is clicked
                     if (selectedUser) {
-                      // Use the value field from the processed user object for consistent matching
-                      setUserFilter(selectedUser.value || selectedUser.username || selectedUser.email || '');
+                      // Set the filter to the selected user's identifier for consistent matching
+                      setUserFilter(selectedUser.username || selectedUser.email || selectedUser.fullName || '');
                     } else {
                       setUserFilter('');
                     }
@@ -1400,7 +1453,7 @@ const AgentDashboard = () => {
                             <TableCell>{task.incident || 'N/A'}</TableCell>
                             <TableCell>{task.obligation || 'N/A'}</TableCell>
                             <TableCell>{task.userName || 'N/A'}</TableCell>
-                            <TableCell>{task.office || 'N/A'}</TableCell>
+                            <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
                             <TableCell>{task.userInformation || 'N/A'}</TableCell>
                             <TableCell>{task.description || 'N/A'}</TableCell>
                             <TableCell>
@@ -1631,6 +1684,7 @@ const AgentDashboard = () => {
                       <TableCell>Incident</TableCell>
                       <TableCell>Description</TableCell>
                       <TableCell>User</TableCell>
+                      <TableCell>Office</TableCell>
                       <TableCell>Status</TableCell>
                     </TableRow>
                   </TableHead>
@@ -1643,6 +1697,7 @@ const AgentDashboard = () => {
                         <TableCell>{task.incident || 'N/A'}</TableCell>
                         <TableCell>{task.description || 'N/A'}</TableCell>
                         <TableCell>{task.userName || 'N/A'}</TableCell>
+                        <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
                             label={task.status || 'Pending'} 
@@ -1675,6 +1730,7 @@ const AgentDashboard = () => {
                       <TableCell>Start Date</TableCell>
                       <TableCell>End Date</TableCell>
                       <TableCell>Reason</TableCell>
+                      <TableCell>Office</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1684,6 +1740,7 @@ const AgentDashboard = () => {
                         <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell>{leave.reason || 'N/A'}</TableCell>
+                        <TableCell>{leave.office || user?.office || 'N/A'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

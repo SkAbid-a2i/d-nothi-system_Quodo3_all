@@ -62,18 +62,9 @@ const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Load saved theme preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setDarkMode(true);
-    }
-  }, []);
-
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
   };
 
   // Redirect to dashboard after authentication

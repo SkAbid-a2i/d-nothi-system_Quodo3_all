@@ -1,0 +1,510 @@
+{
+  "timestamp": "2026-01-01T18:23:05.625Z",
+  "summary": {
+    "totalIssues": 22,
+    "fieldVisibility": 0,
+    "apiErrors": 4,
+    "migrationIssues": 0,
+    "otherErrors": 18
+  },
+  "issues": {
+    "fieldVisibility": [],
+    "apiErrors": [
+      {
+        "timestamp": "2025-12-23T07:37:31.607Z",
+        "level": "info",
+        "message": "API Call",
+        "metadata": {
+          "timestamp": "2025-12-23T07:37:31.600Z",
+          "metadata": {
+            "method": "POST",
+            "url": "/auth/login",
+            "status": 500,
+            "duration": "285ms",
+            "error": "Request failed with status code 500"
+          },
+          "sessionId": "session_1766474180895_ax2c0xky1",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 28800,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:37:31.641Z",
+        "level": "info",
+        "message": "Auth Event",
+        "metadata": {
+          "timestamp": "2025-12-23T07:37:31.601Z",
+          "metadata": {
+            "event": "login_failed",
+            "username": "admin",
+            "error": "Request failed with status code 500",
+            "status": 500
+          },
+          "sessionId": "session_1766474180895_ax2c0xky1",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 28800,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:37:31.607Z",
+        "level": "info",
+        "message": "API Call",
+        "metadata": {
+          "timestamp": "2025-12-23T07:37:31.600Z",
+          "metadata": {
+            "method": "POST",
+            "url": "/auth/login",
+            "status": 500,
+            "duration": "285ms",
+            "error": "Request failed with status code 500"
+          },
+          "sessionId": "session_1766474180895_ax2c0xky1",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 28800,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:37:31.641Z",
+        "level": "info",
+        "message": "Auth Event",
+        "metadata": {
+          "timestamp": "2025-12-23T07:37:31.601Z",
+          "metadata": {
+            "event": "login_failed",
+            "username": "admin",
+            "error": "Request failed with status code 500",
+            "status": 500
+          },
+          "sessionId": "session_1766474180895_ax2c0xky1",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 28800,
+        "hostname": "SkAbid"
+      }
+    ],
+    "migrationIssues": [],
+    "otherErrors": [
+      {
+        "timestamp": "2025-12-23T07:12:16.938Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.819Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:16.997Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.825Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:17.033Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.829Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 108855,
+            "colno": 9,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109273:18)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)\n    at workLoopSync (http://localhost:3000/static/js/bundle.js:108466:9)\n    at renderRootSync (http://localhost:3000/static/js/bundle.js:108439:11)\n    at recoverFromConcurrentError (http://localhost:3000/static/js/bundle.js:107931:24)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:17.053Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.819Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:16.938Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.819Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:16.997Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.825Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:17.033Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.829Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 108855,
+            "colno": 9,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109273:18)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)\n    at workLoopSync (http://localhost:3000/static/js/bundle.js:108466:9)\n    at renderRootSync (http://localhost:3000/static/js/bundle.js:108439:11)\n    at recoverFromConcurrentError (http://localhost:3000/static/js/bundle.js:107931:24)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:17.053Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.819Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:16.938Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.819Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:16.997Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.825Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:17.033Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.829Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 108855,
+            "colno": 9,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109273:18)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)\n    at workLoopSync (http://localhost:3000/static/js/bundle.js:108466:9)\n    at renderRootSync (http://localhost:3000/static/js/bundle.js:108439:11)\n    at recoverFromConcurrentError (http://localhost:3000/static/js/bundle.js:107931:24)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-23T07:12:17.053Z",
+        "level": "error",
+        "message": "Global Error",
+        "metadata": {
+          "timestamp": "2025-12-23T07:12:16.819Z",
+          "metadata": {
+            "message": "Uncaught Error: useThemeContext must be used within a ThemeProvider",
+            "filename": "http://localhost:3000/static/js/bundle.js",
+            "lineno": 190364,
+            "colno": 5,
+            "error": "useThemeContext must be used within a ThemeProvider",
+            "stack": "Error: useThemeContext must be used within a ThemeProvider\n    at useThemeContext (http://localhost:3000/static/js/bundle.js:190364:11)\n    at App (http://localhost:3000/static/js/bundle.js:151669:78)\n    at renderWithHooks (http://localhost:3000/static/js/bundle.js:99039:22)\n    at mountIndeterminateComponent (http://localhost:3000/static/js/bundle.js:103011:17)\n    at beginWork (http://localhost:3000/static/js/bundle.js:104314:20)\n    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:89295:18)\n    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:89339:20)\n    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:89396:35)\n    at beginWork$1 (http://localhost:3000/static/js/bundle.js:109295:11)\n    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:108543:16)"
+          },
+          "sessionId": "session_1766473936722_2gkn0b0j2",
+          "userId": null,
+          "url": "http://localhost:3000/",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+          "screen": {
+            "width": 1536,
+            "height": 960
+          },
+          "source": "frontend"
+        },
+        "pid": 8640,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-30T15:38:58.743Z",
+        "level": "error",
+        "message": "Uncaught Exception",
+        "metadata": {
+          "error": "listen EADDRINUSE: address already in use :::5000",
+          "stack": "Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (D:\\Project\\Quodo3\\node_modules\\express\\lib\\application.js:635:24)\n    at Object.<anonymous> (D:\\Project\\Quodo3\\server.js:415:20)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)"
+        },
+        "pid": 13040,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2025-12-30T15:38:58.743Z",
+        "level": "error",
+        "message": "Uncaught Exception",
+        "metadata": {
+          "error": "listen EADDRINUSE: address already in use :::5000",
+          "stack": "Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (D:\\Project\\Quodo3\\node_modules\\express\\lib\\application.js:635:24)\n    at Object.<anonymous> (D:\\Project\\Quodo3\\server.js:415:20)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)"
+        },
+        "pid": 13040,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2026-01-01T17:33:31.097Z",
+        "level": "error",
+        "message": "Uncaught Exception",
+        "metadata": {
+          "error": "listen EADDRINUSE: address already in use :::5000",
+          "stack": "Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (D:\\Project\\Quodo3\\node_modules\\express\\lib\\application.js:635:24)\n    at Object.<anonymous> (D:\\Project\\Quodo3\\server.js:415:20)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)"
+        },
+        "pid": 42160,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2026-01-01T17:33:31.097Z",
+        "level": "error",
+        "message": "Uncaught Exception",
+        "metadata": {
+          "error": "listen EADDRINUSE: address already in use :::5000",
+          "stack": "Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (D:\\Project\\Quodo3\\node_modules\\express\\lib\\application.js:635:24)\n    at Object.<anonymous> (D:\\Project\\Quodo3\\server.js:415:20)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)"
+        },
+        "pid": 42160,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2026-01-01T18:08:50.654Z",
+        "level": "error",
+        "message": "Uncaught Exception",
+        "metadata": {
+          "error": "listen EADDRINUSE: address already in use :::5001",
+          "stack": "Error: listen EADDRINUSE: address already in use :::5001\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (D:\\Project\\Quodo3\\node_modules\\express\\lib\\application.js:635:24)\n    at Object.<anonymous> (D:\\Project\\Quodo3\\server.js:415:20)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)"
+        },
+        "pid": 46916,
+        "hostname": "SkAbid"
+      },
+      {
+        "timestamp": "2026-01-01T18:08:50.654Z",
+        "level": "error",
+        "message": "Uncaught Exception",
+        "metadata": {
+          "error": "listen EADDRINUSE: address already in use :::5001",
+          "stack": "Error: listen EADDRINUSE: address already in use :::5001\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (D:\\Project\\Quodo3\\node_modules\\express\\lib\\application.js:635:24)\n    at Object.<anonymous> (D:\\Project\\Quodo3\\server.js:415:20)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)"
+        },
+        "pid": 46916,
+        "hostname": "SkAbid"
+      }
+    ]
+  }
+}

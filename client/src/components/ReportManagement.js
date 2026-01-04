@@ -57,8 +57,15 @@ const ReportManagement = () => {
   const fetchBreakdownDropdowns = async () => {
     setLoading(true);
     try {
-      // Fetch all users
-      const usersResponse = await userAPI.getAllUsers();
+      // Fetch users based on role
+      let usersResponse;
+      if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+        // SystemAdmin, Admin, and Supervisor can see all users
+        usersResponse = await userAPI.getAllUsers();
+      } else {
+        // Other roles can only see their own user data
+        usersResponse = { data: [user] };
+      }
       setUsers(usersResponse.data || []);
       
       // Fetch all dropdown types
@@ -84,6 +91,27 @@ const ReportManagement = () => {
       setLoading(false);
     }
   };
+  
+  // Fetch users for report generation based on user role
+  const fetchUsersForReport = useCallback(async () => {
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      try {
+        const response = await userAPI.getAllUsers();
+        setUsers(response.data || []);
+      } catch (error) {
+        console.error('Error fetching users for reports:', error);
+        setError('Failed to load users for reports');
+      }
+    } else {
+      // Other roles only see themselves
+      setUsers([user]);
+    }
+  }, [user]);
+  
+  // Initialize users on component mount
+  useEffect(() => {
+    fetchUsersForReport();
+  }, [fetchUsersForReport]);
   
   const [taskReports, setTaskReports] = useState([]);
   const [leaveReports, setLeaveReports] = useState([]);
@@ -652,12 +680,21 @@ const ReportManagement = () => {
               {reportType !== 'summary' && (
                 <>
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="User ID (optional)"
-                      value={userId}
-                      onChange={(e) => setUserId(e.target.value)}
-                    />
+                    <FormControl fullWidth>
+                      <InputLabel>User (optional)</InputLabel>
+                      <Select
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                        label="User (optional)"
+                      >
+                        <MenuItem value="">All Users</MenuItem>
+                        {users.map(userItem => (
+                          <MenuItem key={userItem.id} value={userItem.id}>
+                            {userItem.fullName || userItem.username}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
                   
                   <Grid item xs={12} sm={6}>
@@ -751,8 +788,8 @@ const ReportManagement = () => {
                     label="User"
                   >
                     <MenuItem value="">All Users</MenuItem>
-                    {users.map(user => (
-                      <MenuItem key={user.id} value={user.id}>{user.fullName || user.username}</MenuItem>
+                    {users.map(userItem => (
+                      <MenuItem key={userItem.id} value={userItem.id}>{userItem.fullName || userItem.username}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -911,7 +948,6 @@ const ReportManagement = () => {
                   <TableCell align="center">Category</TableCell>
                   <TableCell align="center">Sub-Category</TableCell>
                   <TableCell align="center">Incident</TableCell>
-                  <TableCell align="center">Service</TableCell>
                   <TableCell align="center">User</TableCell>
                   <TableCell align="center">Office</TableCell>
                   <TableCell align="center">User Information</TableCell>
@@ -927,9 +963,8 @@ const ReportManagement = () => {
                     <TableCell align="center">{task.category || 'N/A'}</TableCell>
                     <TableCell align="center">{task.subCategory || 'N/A'}</TableCell>
                     <TableCell align="center">{task.incident || 'N/A'}</TableCell>
-                    <TableCell align="center">{task.service || 'N/A'}</TableCell>
                     <TableCell align="center">{task.userName || 'N/A'}</TableCell>
-                    <TableCell align="center">{task.office || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
                     <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
                     <TableCell align="center">{task.obligation || 'N/A'}</TableCell>
                     <TableCell align="center">
@@ -1076,7 +1111,7 @@ const ReportManagement = () => {
                     <TableCell align="center">{task.subCategory || 'N/A'}</TableCell>
                     <TableCell align="center">{task.incident || 'N/A'}</TableCell>
                     <TableCell align="center">{task.userName || 'N/A'}</TableCell>
-                    <TableCell align="center">{task.office || 'N/A'}</TableCell>
+                    <TableCell align="center">{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
                     <TableCell align="center">{task.userInformation || 'N/A'}</TableCell>
                     <TableCell align="center">{task.obligation || 'N/A'}</TableCell>
                     <TableCell align="center">
