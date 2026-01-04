@@ -80,6 +80,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
     }
     
     // Create new task with proper validation
+    // For SystemAdmin and Admin users, allow setting office from form; for others, use user's office
     const taskData = {
       date: new Date(date),
       source: source || '',
@@ -93,7 +94,7 @@ router.post('/', authenticate, authorize('Agent', 'Admin', 'Supervisor', 'System
       files: Array.isArray(files) ? files : [],
       userId: req.user.id,
       userName: req.user.fullName || req.user.username,
-      office: req.user.office || null
+      office: (req.user.role === 'SystemAdmin' || req.user.role === 'Admin') ? (req.body.office || req.user.office) : req.user.office
     };
 
     const task = await Task.create(taskData);
@@ -170,6 +171,7 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     // Update task with validation
+    // For SystemAdmin and Admin users, allow setting office from form; for others, preserve original office
     const updateData = {
       date: date ? new Date(date) : task.date,
       source: source !== undefined ? source : task.source,
@@ -186,7 +188,7 @@ router.put('/:id', authenticate, async (req, res) => {
       // Preserve original owner information - don't change userId and userName
       userId: task.userId, // Keep original userId
       userName: task.userName, // Keep original userName
-      office: req.user.office || task.office // Ensure office is maintained
+      office: (req.user.role === 'SystemAdmin' || req.user.role === 'Admin') ? (req.body.office || task.office) : task.office // Allow office change for Admin/SystemAdmin
     };
 
     const updatedTask = await task.update(updateData);

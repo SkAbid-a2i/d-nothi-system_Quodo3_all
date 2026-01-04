@@ -1366,7 +1366,7 @@ const TaskManagement = () => {
                               <TableCell>{task.category || 'N/A'}</TableCell>
                               <TableCell>{task.subCategory || 'N/A'}</TableCell>
                               <TableCell>{task.incident || 'N/A'}</TableCell>
-                              <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
+                              <TableCell>{task.office || user?.office || 'N/A'}</TableCell>
                               <TableCell>{task.userInformation || 'N/A'}</TableCell>
                               <TableCell>{task.obligation || 'N/A'}</TableCell>
                               <TableCell>{task.description || 'N/A'}</TableCell>

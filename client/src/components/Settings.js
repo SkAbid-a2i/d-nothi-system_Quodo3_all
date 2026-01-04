@@ -532,6 +532,50 @@ const Settings = () => {
                     />
                   </Grid>
                   
+                  {/* Gradient Presets */}
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                      Gradient Presets
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {[
+                        { name: 'Sunset', colors: ['#ff9a9e', '#fecfef'] },
+                        { name: 'Ocean', colors: ['#a8edea', '#fed6e3'] },
+                        { name: 'Forest', colors: ['#d299c2', '#fef9d7'] },
+                        { name: 'Sky', colors: ['#a1c4fd', '#c2e9fb'] },
+                        { name: 'Sunrise', colors: ['#ffecd2', '#fcb69f'] },
+                        { name: 'Lush', colors: ['#56ab2f', '#a8e063'] },
+                        { name: 'Purple', colors: ['#da22ff', '#9733ee'] },
+                        { name: 'Blue', colors: ['#2193b0', '#6dd5ed'] }
+                      ].map((preset, index) => (
+                        <Box
+                          key={index}
+                          onClick={() => {
+                            updatePrimaryColor(preset.colors[0]);
+                            updateSecondaryColor(preset.colors[1]);
+                            updateGradientEndColor(preset.colors[1]);
+                          }}
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '8px',
+                            background: `linear-gradient(45deg, ${preset.colors[0]}, ${preset.colors[1]})`,
+                            cursor: 'pointer',
+                            border: '2px solid',
+                            borderColor: 'divider',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              transform: 'scale(1.1)',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              borderColor: 'primary.main',
+                            }
+                          }}
+                          title={preset.name}
+                        />
+                      ))}
+                    </Box>
+                  </Grid>
+                  
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Gradient Direction</InputLabel>
@@ -674,6 +718,50 @@ const Settings = () => {
                             <MenuItem value="radial">Radial</MenuItem>
                           </Select>
                         </FormControl>
+                      </Grid>
+                      
+                      {/* Background Gradient Presets */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                          Background Gradient Presets
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {[
+                            { name: 'Sky', colors: ['#a8edea', '#fed6e3'], direction: 'to right' },
+                            { name: 'Sunset', colors: ['#ff9a9e', '#fecfef'], direction: 'to right' },
+                            { name: 'Ocean', colors: ['#a1c4fd', '#c2e9fb'], direction: 'to right' },
+                            { name: 'Forest', colors: ['#d299c2', '#fef9d7'], direction: 'to right' },
+                            { name: 'Sunrise', colors: ['#ffecd2', '#fcb69f'], direction: 'to right' },
+                            { name: 'Lush', colors: ['#56ab2f', '#a8e063'], direction: 'to right' },
+                            { name: 'Purple', colors: ['#da22ff', '#9733ee'], direction: 'to right' },
+                            { name: 'Blue', colors: ['#2193b0', '#6dd5ed'], direction: 'to right' }
+                          ].map((preset, index) => (
+                            <Box
+                              key={index}
+                              onClick={() => {
+                                updateBackgroundColor(preset.colors[0]);
+                                updateGradientEndColor(preset.colors[1]);
+                                updateGradientDirection(preset.direction);
+                              }}
+                              sx={{
+                                width: 60,
+                                height: 40,
+                                borderRadius: '8px',
+                                background: `linear-gradient(${preset.direction}, ${preset.colors[0]}, ${preset.colors[1]})`,
+                                cursor: 'pointer',
+                                border: '2px solid',
+                                borderColor: 'divider',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.1)',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                  borderColor: 'primary.main',
+                                }
+                              }}
+                              title={preset.name}
+                            />
+                          ))}
+                        </Box>
                       </Grid>
                     </>
                   )}

@@ -472,19 +472,27 @@ const AgentDashboard = () => {
       (task.incident && task.incident.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // Check user filter match - exact match instead of partial
+    // Check user filter match - exact match with username
     const matchesUser = userFilter === '' || 
       (task.userName && userFilter && 
-        (task.userName.toLowerCase() === userFilter.toLowerCase() ||
-         (task.fullName && task.fullName.toLowerCase() === userFilter.toLowerCase()) ||
-         (task.email && task.email.toLowerCase() === userFilter.toLowerCase())));
+        (task.userName.toLowerCase() === userFilter.toLowerCase()));
     
-    // For SystemAdmin and Admin, show all tasks; for Supervisor, show all tasks in their office; for others, show only their own tasks
+    // For SystemAdmin and Admin, show all tasks when no user filter is applied; for Supervisor, show all tasks in their office; for others, show only their own tasks
     let matchesRole = false;
     if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-      matchesRole = true; // Show all tasks
+      // If user filter is applied, check if it matches the current user's role
+      if (userFilter) {
+        matchesRole = true; // Admins can see all users when filtering
+      } else {
+        matchesRole = true; // Show all tasks when no filter
+      }
     } else if (user && user.role === 'Supervisor') {
-      matchesRole = task.office === user.office; // Show tasks from their office
+      // Supervisors can see their office tasks, and all tasks when filtering
+      if (userFilter) {
+        matchesRole = true; // Supervisor can see all when filtering
+      } else {
+        matchesRole = task.office === user.office; // Show tasks from their office
+      }
     } else {
       // For other roles, only show tasks assigned to the current user
       matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
@@ -508,12 +516,22 @@ const AgentDashboard = () => {
          (leave.fullName && leave.fullName.toLowerCase() === userFilter.toLowerCase()) ||
          (leave.email && leave.email.toLowerCase() === userFilter.toLowerCase())));
     
-    // For SystemAdmin and Admin, show all leaves; for Supervisor, show all leaves in their office; for others, show only their own leaves
+    // For SystemAdmin and Admin, show all leaves when no user filter is applied; for Supervisor, show all leaves in their office; for others, show only their own leaves
     let matchesRole = false;
     if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-      matchesRole = true; // Show all leaves
+      // If user filter is applied, check if it matches the current user's role
+      if (userFilter) {
+        matchesRole = true; // Admins can see all users when filtering
+      } else {
+        matchesRole = true; // Show all leaves when no filter
+      }
     } else if (user && user.role === 'Supervisor') {
-      matchesRole = leave.office === user.office || leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName; // Show leaves from their office or their own
+      // Supervisors can see their office leaves, and all leaves when filtering
+      if (userFilter) {
+        matchesRole = true; // Supervisor can see all when filtering
+      } else {
+        matchesRole = leave.office === user.office || leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName; // Show leaves from their office or their own
+      }
     } else {
       // For other roles, only show leaves assigned to the current user
       matchesRole = leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName;
@@ -1049,8 +1067,8 @@ const AgentDashboard = () => {
                   onClick={() => {
                     // Apply user filter when Apply button is clicked
                     if (selectedUser) {
-                      // Set the filter to the selected user's identifier for consistent matching
-                      setUserFilter(selectedUser.username || selectedUser.email || selectedUser.fullName || '');
+                      // Set the filter to the selected user's username for consistent matching
+                      setUserFilter(selectedUser.username || selectedUser.email || '');
                     } else {
                       setUserFilter('');
                     }

@@ -177,6 +177,11 @@ export const ThemeProvider = ({ children }) => {
   const resetToDefaultColors = async () => {
     setPrimaryColor('#667eea');
     setSecondaryColor('#f093fb');
+    setBackgroundType('solid');
+    setBackgroundColor('#ffffff');
+    setGradientEndColor('#f0f0f0');
+    setGradientDirection('to right');
+    setBackgroundImage('');
     
     // Update preferences in backend
     try {
@@ -193,11 +198,11 @@ export const ThemeProvider = ({ children }) => {
               theme: darkMode ? 'dark' : 'light',
               primaryColor: '#667eea',
               secondaryColor: '#f093fb',
-              backgroundType,
-              backgroundColor,
-              gradientEndColor,
-              gradientDirection,
-              backgroundImage
+              backgroundType: 'solid',
+              backgroundColor: '#ffffff',
+              gradientEndColor: '#f0f0f0',
+              gradientDirection: 'to right',
+              backgroundImage: ''
             }
           })
         });
