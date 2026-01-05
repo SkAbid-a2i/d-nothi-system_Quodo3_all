@@ -72,7 +72,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { taskAPI, leaveAPI, dropdownAPI, meetingAPI, collaborationAPI } from '../services/api';
+import { taskAPI, leaveAPI, dropdownAPI, meetingAPI, collaborationAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
