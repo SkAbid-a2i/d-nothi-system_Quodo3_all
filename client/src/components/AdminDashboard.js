@@ -340,7 +340,9 @@ const AdminDashboard = () => {
         // Handle case where userFilter is in format like "Mazedul Alam (maahi)" but task.userName is just "maahi"
         (task.userName && userFilter.includes(`(${task.userName})`)) ||
         // Handle case where task.userName is in format like "Mazedul Alam (maahi)" but userFilter is just "maahi"
-        (task.userName.includes('(') && task.userName.includes(userFilter))));
+        (task.userName.includes('(') && task.userName.includes(userFilter)) ||
+        // Additional check: if userFilter contains the task.userName in parentheses format
+        (`(${task.userName})`.includes(userFilter))));
     
     // Additional filter matches
     const matchesSource = selectedSource === '' || task.source === selectedSource;
