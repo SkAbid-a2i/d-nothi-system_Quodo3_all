@@ -108,6 +108,9 @@ const AgentDashboard = () => {
   const [userInformation, setUserInformation] = useState('');
   const [selectedObligation, setSelectedObligation] = useState('');
   
+  // Filter mode state - 'and' for all filters must match, 'or' for any filter must match
+  const [filterMode, setFilterMode] = useState('and'); // Default to AND mode for precision
+  
   // Dropdown options for advanced filters
   const [sources, setSources] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -569,7 +572,23 @@ const AgentDashboard = () => {
       }
     }
     
-    return matchesSearch && matchesUser && matchesRole && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUserInformation && matchesObligation;
+    // Apply AND or OR logic based on filter mode
+    if (filterMode === 'or') {
+      // For OR mode, at least one non-search filter must match (in addition to role and search)
+      const hasActiveFilters = matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUserInformation || matchesObligation || matchesUser;
+      
+      if (!hasActiveFilters) {
+        // If no filters are active, return all tasks that match search and role
+        return matchesSearch && matchesRole;
+      } else {
+        // For OR logic: task must match search, role, and at least one of the other filters
+        const anyFilterMatches = matchesUser || matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUserInformation || matchesObligation;
+        return matchesSearch && matchesRole && anyFilterMatches;
+      }
+    } else {
+      // For AND mode (default): task must match all active filters
+      return matchesSearch && matchesUser && matchesRole && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUserInformation && matchesObligation;
+    }
   });
   
   const finalFilteredTasks = filteredTasks;
@@ -1091,6 +1110,7 @@ const AgentDashboard = () => {
               setSelectedOffice('');
               setUserInformation('');
               setSelectedObligation('');
+              setFilterMode('and'); // Reset to default AND mode
             }}
           >
             <Grid item xs={12} sm={3}>
@@ -1239,6 +1259,20 @@ const AgentDashboard = () => {
                     {obligations.map(obligation => (
                       <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
                     ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Filter Mode</InputLabel>
+                  <Select
+                    value={filterMode}
+                    onChange={(e) => setFilterMode(e.target.value)}
+                    label="Filter Mode"
+                  >
+                    <MenuItem value="and">AND (All must match)</MenuItem>
+                    <MenuItem value="or">OR (Any can match)</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
