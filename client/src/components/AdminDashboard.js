@@ -102,6 +102,26 @@ const AdminDashboard = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state for filter
   
+  // Advanced filter states
+  const [selectedSource, setSelectedSource] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('');
+  const [selectedIncident, setSelectedIncident] = useState('');
+  const [selectedOffice, setSelectedOffice] = useState('');
+  const [userInformation, setUserInformation] = useState('');
+  const [selectedObligation, setSelectedObligation] = useState('');
+  
+  // Filter mode state - 'and' for all filters must match, 'or' for any filter must match
+  const [filterMode, setFilterMode] = useState('and'); // Default to AND mode for precision
+  
+  // Dropdown options for advanced filters
+  const [sources, setSources] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [incidents, setIncidents] = useState([]);
+  const [offices, setOffices] = useState([]);
+  const [obligations, setObligations] = useState([]);
+  
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -132,6 +152,36 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+  
+  // Fetch dropdown values for advanced filters
+  useEffect(() => {
+    const fetchDropdownValues = async () => {
+      try {
+        // Fetch all dropdown values in parallel
+        const [sourcesRes, categoriesRes, subCategoriesRes, incidentsRes, officesRes, obligationsRes] = await Promise.all([
+          dropdownAPI.getDropdownValues('Source'),
+          dropdownAPI.getDropdownValues('Category'),
+          dropdownAPI.getDropdownValues('Sub-Category'),
+          dropdownAPI.getDropdownValues('Incident'),
+          dropdownAPI.getDropdownValues('Office'),
+          dropdownAPI.getDropdownValues('Obligation')
+        ]);
+        
+        // Set the dropdown values
+        setSources(sourcesRes.data || []);
+        setCategories(categoriesRes.data || []);
+        setSubCategories(subCategoriesRes.data || []);
+        setIncidents(incidentsRes.data || []);
+        setOffices(officesRes.data || []);
+        setObligations(obligationsRes.data || []);
+      } catch (error) {
+        console.error('Error fetching dropdown values:', error);
+        showSnackbar('Error fetching dropdown values: ' + error.message, 'error');
+      }
+    };
+    
+    fetchDropdownValues();
   }, []);
 
   // Fetch data on component mount
@@ -280,7 +330,7 @@ const AdminDashboard = () => {
     }));
   };
 
-  // Filter team tasks based on search and user filter only
+  // Filter team tasks based on search and advanced filters
   const filteredTeamTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -289,7 +339,19 @@ const AdminDashboard = () => {
       (task.incident && task.incident.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesUser = !userFilter || 
+    // Advanced filter matches
+    const matchesSource = selectedSource === '' || task.source === selectedSource;
+    const matchesCategory = selectedCategory === '' || task.category === selectedCategory;
+    const matchesSubCategory = selectedSubCategory === '' || task.subCategory === selectedSubCategory;
+    const matchesIncident = selectedIncident === '' || task.incident === selectedIncident;
+    const matchesOffice = selectedOffice === '' || task.office === selectedOffice;
+    const matchesUser = selectedUser === null || selectedUser === '' || task.userId === selectedUser || task.userName === selectedUser || (selectedUser && selectedUser.id && task.userId === selectedUser.id);
+    const matchesUserInformation = userInformation === '' || 
+      (task.userInformation && task.userInformation.toLowerCase().includes(userInformation.toLowerCase()));
+    const matchesObligation = selectedObligation === '' || task.obligation === selectedObligation;
+    
+    // User filter compatibility - if userFilter is set, use it as well
+    const matchesUserFilter = !userFilter || 
       (task.userName && userFilter && 
         (task.userName.toLowerCase() === userFilter.toLowerCase() ||
         // Handle case where userFilter is in format like "Mazedul Alam (maahi)" but task.userName is just "maahi"
@@ -299,7 +361,23 @@ const AdminDashboard = () => {
         // Additional check: if userFilter contains the task.userName in parentheses format
         (`(${task.userName})`.includes(userFilter))));
     
-    return matchesSearch && matchesUser;
+    // Apply AND or OR logic based on filter mode
+    if (filterMode === 'or') {
+      // For OR mode, at least one non-search filter must match
+      const hasActiveFilters = matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUser || matchesUserInformation || matchesObligation;
+      
+      if (!hasActiveFilters) {
+        // If no filters are active, return all tasks that match search and user filter
+        return matchesSearch && matchesUserFilter;
+      } else {
+        // For OR logic: task must match search, user filter, and at least one of the other filters
+        const anyFilterMatches = matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUser || matchesUserInformation || matchesObligation;
+        return matchesSearch && matchesUserFilter && anyFilterMatches;
+      }
+    } else {
+      // For AND mode (default): task must match all active filters
+      return matchesSearch && matchesUserFilter && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUser && matchesUserInformation && matchesObligation;
+    }
   });
 
   // Filter pending leaves
@@ -382,6 +460,173 @@ const AdminDashboard = () => {
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
         Admin Dashboard
       </Typography>
+      
+      {/* Advanced Filter Section */}
+      <FilterSection
+        title="Advanced Filters"
+        defaultExpanded={false}
+        hasActiveFilters={
+          selectedSource || 
+          selectedCategory || 
+          selectedSubCategory || 
+          selectedIncident || 
+          selectedOffice || 
+          selectedUser || 
+          userInformation || 
+          selectedObligation
+        }
+        onApplyFilters={() => {
+          // Force re-render to apply filters
+          setSearchTerm(searchTerm);
+        }}
+        onClearFilters={() => {
+          setSelectedSource('');
+          setSelectedCategory('');
+          setSelectedSubCategory('');
+          setSelectedIncident('');
+          setSelectedOffice('');
+          setSelectedUser(null);
+          setUserInformation('');
+          setSelectedObligation('');
+          setSearchTerm('');
+          setUserFilter('');
+        }}
+      >
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Source</InputLabel>
+            <Select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+              label="Source"
+            >
+              <MenuItem value="">All Sources</MenuItem>
+              {sources.map((source) => (
+                <MenuItem key={source.id} value={source.value || source}>
+                  {source.value || source}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Category</InputLabel>
+            <Select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              label="Category"
+            >
+              <MenuItem value="">All Categories</MenuItem>
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.value || category}>
+                  {category.value || category}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Sub-Category</InputLabel>
+            <Select
+              value={selectedSubCategory}
+              onChange={(e) => setSelectedSubCategory(e.target.value)}
+              label="Sub-Category"
+            >
+              <MenuItem value="">All Sub-Categories</MenuItem>
+              {subCategories.map((subCategory) => (
+                <MenuItem key={subCategory.id} value={subCategory.value || subCategory}>
+                  {subCategory.value || subCategory}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Incident</InputLabel>
+            <Select
+              value={selectedIncident}
+              onChange={(e) => setSelectedIncident(e.target.value)}
+              label="Incident"
+            >
+              <MenuItem value="">All Incidents</MenuItem>
+              {incidents.map((incident) => (
+                <MenuItem key={incident.id} value={incident.value || incident}>
+                  {incident.value || incident}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Office</InputLabel>
+            <Select
+              value={selectedOffice}
+              onChange={(e) => setSelectedOffice(e.target.value)}
+              label="Office"
+            >
+              <MenuItem value="">All Offices</MenuItem>
+              {offices.map((office) => (
+                <MenuItem key={office.id} value={office.value || office}>
+                  {office.value || office}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>User</InputLabel>
+            <Select
+              value={selectedUser || ''}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              label="User"
+            >
+              <MenuItem value="">All Users</MenuItem>
+              {users.map((userItem) => (
+                <MenuItem key={userItem.id} value={userItem.id}>
+                  {userItem.fullName || userItem.username}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            fullWidth
+            label="User Information"
+            value={userInformation}
+            onChange={(e) => setUserInformation(e.target.value)}
+          />
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Obligation</InputLabel>
+            <Select
+              value={selectedObligation}
+              onChange={(e) => setSelectedObligation(e.target.value)}
+              label="Obligation"
+            >
+              <MenuItem value="">All Obligations</MenuItem>
+              {obligations.map((obligation) => (
+                <MenuItem key={obligation.id} value={obligation.value || obligation}>
+                  {obligation.value || obligation}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </FilterSection>
       
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
