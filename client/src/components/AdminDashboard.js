@@ -811,12 +811,13 @@ const AdminDashboard = () => {
               <UserFilterDropdown
                 users={users}
                 selectedUser={selectedUser}
-                onUserChange={(newValue) => {
+                onUserChange={(event, newValue) => {
                   setSelectedUser(newValue);
+                  // Don't apply filter immediately, let user click Apply button
                 }}
                 label="Filter by User"
-                gridSize={{ xs: 12, sm: 12 }}
                 loading={false}
+                gridSize={{ xs: 12, sm: 12 }}
               />
             </Grid>
             
