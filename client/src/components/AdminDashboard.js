@@ -102,26 +102,6 @@ const AdminDashboard = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [selectedUser, setSelectedUser] = useState(null); // Add selected user state for filter
   
-  // Advanced filter states
-  const [selectedSource, setSelectedSource] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSubCategory, setSelectedSubCategory] = useState('');
-  const [selectedIncident, setSelectedIncident] = useState('');
-  const [selectedOffice, setSelectedOffice] = useState('');
-  const [userInformation, setUserInformation] = useState('');
-  const [selectedObligation, setSelectedObligation] = useState('');
-  
-  // Filter mode state - 'and' for all filters must match, 'or' for any filter must match
-  const [filterMode, setFilterMode] = useState('and'); // Default to AND mode for precision
-  
-  // Dropdown options for advanced filters
-  const [sources, setSources] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
-  const [incidents, setIncidents] = useState([]);
-  const [offices, setOffices] = useState([]);
-  const [obligations, setObligations] = useState([]);
-  
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -159,35 +139,7 @@ const AdminDashboard = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
   
-  // Fetch dropdown values for advanced filters
-  useEffect(() => {
-    const fetchDropdownValues = async () => {
-      try {
-        // Fetch all dropdown values in parallel
-        const [sourcesRes, categoriesRes, subCategoriesRes, incidentsRes, officesRes, obligationsRes] = await Promise.all([
-          dropdownAPI.getDropdownValues('Source'),
-          dropdownAPI.getDropdownValues('Category'),
-          dropdownAPI.getDropdownValues('Sub-Category'),
-          dropdownAPI.getDropdownValues('Incident'),
-          dropdownAPI.getDropdownValues('Office'),
-          dropdownAPI.getDropdownValues('Obligation')
-        ]);
-        
-        // Set the dropdown values
-        setSources(sourcesRes.data || []);
-        setCategories(categoriesRes.data || []);
-        setSubCategories(subCategoriesRes.data || []);
-        setIncidents(incidentsRes.data || []);
-        setOffices(officesRes.data || []);
-        setObligations(obligationsRes.data || []);
-      } catch (error) {
-        console.error('Error fetching dropdown values:', error);
-        showSnackbar('Error fetching dropdown values: ' + error.message, 'error');
-      }
-    };
-    
-    fetchDropdownValues();
-  }, []);
+
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -328,7 +280,7 @@ const AdminDashboard = () => {
     }));
   };
 
-  // Filter team tasks based on search and user filter
+  // Filter team tasks based on search and user filter only
   const filteredTeamTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -347,33 +299,7 @@ const AdminDashboard = () => {
         // Additional check: if userFilter contains the task.userName in parentheses format
         (`(${task.userName})`.includes(userFilter))));
     
-    // Additional filter matches
-    const matchesSource = selectedSource === '' || task.source === selectedSource;
-    const matchesCategory = selectedCategory === '' || task.category === selectedCategory;
-    const matchesSubCategory = selectedSubCategory === '' || task.subCategory === selectedSubCategory;
-    const matchesIncident = selectedIncident === '' || task.incident === selectedIncident;
-    const matchesOffice = selectedOffice === '' || task.office === selectedOffice;
-    const matchesUserInformation = userInformation === '' || 
-      (task.userInformation && task.userInformation.toLowerCase().includes(userInformation.toLowerCase()));
-    const matchesObligation = selectedObligation === '' || task.obligation === selectedObligation;
-    
-    // Apply AND or OR logic based on filter mode
-    if (filterMode === 'or') {
-      // For OR mode, at least one non-search filter must match
-      const hasActiveFilters = matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUserInformation || matchesObligation || matchesUser;
-      
-      if (!hasActiveFilters) {
-        // If no filters are active, return all tasks that match search
-        return matchesSearch;
-      } else {
-        // For OR logic: task must match search and at least one of the other filters
-        const anyFilterMatches = matchesUser || matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUserInformation || matchesObligation;
-        return matchesSearch && anyFilterMatches;
-      }
-    } else {
-      // For AND mode (default): task must match all active filters
-      return matchesSearch && matchesUser && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUserInformation && matchesObligation;
-    }
+    return matchesSearch && matchesUser;
   });
 
   // Filter pending leaves
@@ -398,7 +324,7 @@ const AdminDashboard = () => {
   const stats = getDashboardStats();
 
   // Check if any filters are active
-  const hasActiveFilters = Boolean(searchTerm || userFilter || selectedSource || selectedCategory || selectedSubCategory || selectedIncident || selectedOffice || userInformation || selectedObligation);
+  const hasActiveFilters = Boolean(searchTerm || userFilter);
 
   // Handle View Details for different card types
   const handleViewDetails = (type) => {
@@ -441,14 +367,6 @@ const AdminDashboard = () => {
     setSearchTerm('');
     setUserFilter('');
     setSelectedUser(null);
-    setSelectedSource('');
-    setSelectedCategory('');
-    setSelectedSubCategory('');
-    setSelectedIncident('');
-    setSelectedOffice('');
-    setUserInformation('');
-    setSelectedObligation('');
-    setFilterMode('and'); // Reset to default AND mode
   };
 
   // Filter today's leaves
@@ -871,230 +789,7 @@ const AdminDashboard = () => {
           </Grid>
         </Grid>
         
-        {/* Modern Expandable Filter Section */}
-        <Grid item xs={12}>
-          <FilterSection
-            title="Advanced Filters"
-            defaultExpanded={false}
-            hasActiveFilters={hasActiveFilters}
-            onClearFilters={clearAllFilters}
-          >
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Time Range</InputLabel>
-                <Select 
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  label="Time Range"
-                >
-                  <MenuItem value="daily">Daily</MenuItem>
-                  <MenuItem value="weekly">Weekly</MenuItem>
-                  <MenuItem value="monthly">Monthly</MenuItem>
-                  <MenuItem value="yearly">Yearly</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>User</InputLabel>
-                <Select
-                  value={selectedUser?.id || ''}
-                  onChange={(e) => {
-                    const selectedUserId = e.target.value;
-                    if (selectedUserId) {
-                      const userObj = users.find(u => u.id === selectedUserId);
-                      setSelectedUser(userObj || null);
-                    } else {
-                      setSelectedUser(null);
-                    }
-                  }}
-                  label="User"
-                >
-                  <MenuItem value="">
-                    <em>All Users</em>
-                  </MenuItem>
-                  {users.map((userItem) => (
-                    <MenuItem key={userItem.id} value={userItem.id}>
-                      {userItem.fullName || userItem.username}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  endAdornment: <SearchIcon fontSize="small" />
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Source</InputLabel>
-                <Select
-                  value={selectedSource || ''}
-                  onChange={(e) => setSelectedSource(e.target.value)}
-                  label="Source"
-                >
-                  <MenuItem value=""><em>All Sources</em></MenuItem>
-                  {sources.map(source => (
-                    <MenuItem key={source.id} value={source.value}>{source.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={selectedCategory || ''}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  label="Category"
-                >
-                  <MenuItem value=""><em>All Categories</em></MenuItem>
-                  {categories.map(category => (
-                    <MenuItem key={category.id} value={category.value}>{category.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Sub-Category</InputLabel>
-                <Select
-                  value={selectedSubCategory || ''}
-                  onChange={(e) => setSelectedSubCategory(e.target.value)}
-                  label="Sub-Category"
-                >
-                  <MenuItem value=""><em>All Sub-Categories</em></MenuItem>
-                  {subCategories.map(subCategory => (
-                    <MenuItem key={subCategory.id} value={subCategory.value}>{subCategory.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Incident</InputLabel>
-                <Select
-                  value={selectedIncident || ''}
-                  onChange={(e) => setSelectedIncident(e.target.value)}
-                  label="Incident"
-                >
-                  <MenuItem value=""><em>All Incidents</em></MenuItem>
-                  {incidents.map(incident => (
-                    <MenuItem key={incident.id} value={incident.value}>{incident.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Office</InputLabel>
-                <Select
-                  value={selectedOffice || ''}
-                  onChange={(e) => setSelectedOffice(e.target.value)}
-                  label="Office"
-                >
-                  <MenuItem value=""><em>All Offices</em></MenuItem>
-                  {offices.map(office => (
-                    <MenuItem key={office.id} value={office.value}>{office.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                size="small"
-                label="User Information"
-                value={userInformation}
-                onChange={(e) => setUserInformation(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Obligation</InputLabel>
-                <Select
-                  value={selectedObligation || ''}
-                  onChange={(e) => setSelectedObligation(e.target.value)}
-                  label="Obligation"
-                >
-                  <MenuItem value=""><em>All Obligations</em></MenuItem>
-                  {obligations.map(obligation => (
-                    <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Filter Mode</InputLabel>
-                <Select
-                  value={filterMode}
-                  onChange={(e) => setFilterMode(e.target.value)}
-                  label="Filter Mode"
-                >
-                  <MenuItem value="and">AND (All must match)</MenuItem>
-                  <MenuItem value="or">OR (Any can match)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={4}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                <Button 
-                  variant="contained"
-                  onClick={() => {
-                    // Apply user filter when Apply button is clicked
-                    if (selectedUser) {
-                      setUserFilter(selectedUser.username || selectedUser.email || '');
-                    } else {
-                      setUserFilter('');
-                    }
-                    
-                    // Show notification that filters are applied
-                    showSnackbar('Filters applied', 'info');
-                  }}
-                  size="small"
-                >
-                  Apply
-                </Button>
-                <Button 
-                  startIcon={<DownloadIcon />} 
-                  onClick={() => handleExport('CSV')}
-                  variant="outlined"
-                  size="small"
-                >
-                  Export CSV
-                </Button>
-                <Button 
-                  startIcon={<DownloadIcon />} 
-                  onClick={() => handleExport('PDF')}
-                  variant="outlined"
-                  size="small"
-                >
-                  Export PDF
-                </Button>
-              </Box>
-            </Grid>
-          </FilterSection>
-        </Grid>
+
         
         {/* Data Tables */}
         <Grid item xs={12}>

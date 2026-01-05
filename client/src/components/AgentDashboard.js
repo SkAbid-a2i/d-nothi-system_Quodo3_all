@@ -99,25 +99,7 @@ const AgentDashboard = () => {
   const [userFilter, setUserFilter] = useState(''); // Add user filter state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
-  // Advanced filter states
-  const [selectedSource, setSelectedSource] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSubCategory, setSelectedSubCategory] = useState('');
-  const [selectedIncident, setSelectedIncident] = useState('');
-  const [selectedOffice, setSelectedOffice] = useState('');
-  const [userInformation, setUserInformation] = useState('');
-  const [selectedObligation, setSelectedObligation] = useState('');
-  
-  // Filter mode state - 'and' for all filters must match, 'or' for any filter must match
-  const [filterMode, setFilterMode] = useState('and'); // Default to AND mode for precision
-  
-  // Dropdown options for advanced filters
-  const [sources, setSources] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subCategories, setSubCategories] = useState([]);
-  const [incidents, setIncidents] = useState([]);
-  const [offices, setOffices] = useState([]);
-  const [obligations, setObligations] = useState([]);
+
   
   // Check if user has admin privileges (SystemAdmin, Admin, or Supervisor)
   const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
@@ -287,37 +269,7 @@ const AgentDashboard = () => {
     }
   }, [editSubCategory, editIncidents]);
 
-  // Fetch dropdown values for advanced filters
-  useEffect(() => {
-    const fetchDropdownValues = async () => {
-      if (user && (user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin')) {
-        try {
-          // Fetch all dropdown values in parallel
-          const [sourcesRes, categoriesRes, subCategoriesRes, incidentsRes, officesRes, obligationsRes] = await Promise.all([
-            dropdownAPI.getDropdownValues('Source'),
-            dropdownAPI.getDropdownValues('Category'),
-            dropdownAPI.getDropdownValues('Sub-Category'),
-            dropdownAPI.getDropdownValues('Incident'),
-            dropdownAPI.getDropdownValues('Office'),
-            dropdownAPI.getDropdownValues('Obligation')
-          ]);
-          
-          // Set the dropdown values
-          setSources(sourcesRes.data || []);
-          setCategories(categoriesRes.data || []);
-          setSubCategories(subCategoriesRes.data || []);
-          setIncidents(incidentsRes.data || []);
-          setOffices(officesRes.data || []);
-          setObligations(obligationsRes.data || []);
-        } catch (error) {
-          console.error('Error fetching dropdown values:', error);
-          showSnackbar('Error fetching dropdown values: ' + error.message, 'error');
-        }
-      }
-    };
-    
-    fetchDropdownValues();
-  }, [user]);
+
   
   // Listen for real-time notifications - with proper dependency array
   useEffect(() => {
@@ -514,7 +466,7 @@ const AgentDashboard = () => {
     setViewDetailsDialog({ open: false, type: '', data: null });
   };
 
-  // Filter tasks based on search term and user
+  // Filter tasks based on search term only
   const filteredTasks = tasks.filter(task => {
     // Check search term match
     const matchesSearch = searchTerm === '' || 
@@ -523,20 +475,6 @@ const AgentDashboard = () => {
       (task.subCategory && task.subCategory.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.incident && task.incident.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (task.userName && task.userName.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    // Check user filter match - exact match with username
-    // For my-tasks page, we don't use user filter as users only see their own tasks
-    const matchesUser = true; // Always true for my-tasks since users only see their own tasks
-    
-    // Additional filter matches
-    const matchesSource = selectedSource === '' || task.source === selectedSource;
-    const matchesCategory = selectedCategory === '' || task.category === selectedCategory;
-    const matchesSubCategory = selectedSubCategory === '' || task.subCategory === selectedSubCategory;
-    const matchesIncident = selectedIncident === '' || task.incident === selectedIncident;
-    const matchesOffice = selectedOffice === '' || task.office === selectedOffice;
-    const matchesUserInformation = userInformation === '' || 
-      (task.userInformation && task.userInformation.toLowerCase().includes(userInformation.toLowerCase()));
-    const matchesObligation = selectedObligation === '' || task.obligation === selectedObligation;
     
     // For my-tasks page, users should only see their own tasks
     let matchesRole = false;
@@ -550,23 +488,7 @@ const AgentDashboard = () => {
       matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
     }
     
-    // Apply AND or OR logic based on filter mode
-    if (filterMode === 'or') {
-      // For OR mode, at least one of the other filters must match (in addition to role and search)
-      const hasActiveFilters = matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUserInformation || matchesObligation;
-      
-      if (!hasActiveFilters) {
-        // If no filters are active, return all tasks that match search and role
-        return matchesSearch && matchesRole;
-      } else {
-        // For OR logic: task must match search, role, and at least one of the other filters
-        const anyFilterMatches = matchesSource || matchesCategory || matchesSubCategory || matchesIncident || matchesOffice || matchesUserInformation || matchesObligation;
-        return matchesSearch && matchesRole && anyFilterMatches;
-      }
-    } else {
-      // For AND mode (default): task must match all active filters
-      return matchesSearch && matchesRole && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUserInformation && matchesObligation;
-    }
+    return matchesSearch && matchesRole;
   });
   
   const finalFilteredTasks = filteredTasks;
@@ -1071,229 +993,7 @@ const AgentDashboard = () => {
           </Card>
         </Grid>
         
-        {/* Modern Expandable Filter Section */}
-        <Grid item xs={12}>
-          <FilterSection
-            title="Advanced Filters"
-            defaultExpanded={false}
-            hasActiveFilters={Boolean(searchTerm || selectedSource || selectedCategory || selectedSubCategory || selectedIncident || selectedOffice || userInformation || selectedObligation)}
-            onClearFilters={() => {
-              setSearchTerm('');
-              setSelectedUser(null);
-              // Don't reset userFilter since it's not used on my-tasks page
-              setSelectedSource('');
-              setSelectedCategory('');
-              setSelectedSubCategory('');
-              setSelectedIncident('');
-              setSelectedOffice('');
-              setUserInformation('');
-              setSelectedObligation('');
-              setFilterMode('and'); // Reset to default AND mode
-            }}
-          >
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Time Range</InputLabel>
-                <Select 
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  label="Time Range"
-                >
-                  <MenuItem value="daily">Daily</MenuItem>
-                  <MenuItem value="weekly">Weekly</MenuItem>
-                  <MenuItem value="monthly">Monthly</MenuItem>
-                  <MenuItem value="yearly">Yearly</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Search Tasks"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  endAdornment: <SearchIcon fontSize="small" />
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <UserFilterDropdown
-                users={filteredUsers}
-                selectedUser={selectedUser}
-                onUserChange={(event, newValue) => {
-                  setSelectedUser(newValue);
-                  // Don't apply filter immediately, let user click Apply button
-                }}
-                label="Filter by User"
-                loading={userLoading}
-                gridSize={{ xs: 12, sm: 12 }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Source</InputLabel>
-                <Select
-                  value={selectedSource || ''}
-                  onChange={(e) => setSelectedSource(e.target.value)}
-                  label="Source"
-                >
-                  <MenuItem value=""><em>All Sources</em></MenuItem>
-                  {sources.map(source => (
-                    <MenuItem key={source.id} value={source.value}>{source.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={selectedCategory || ''}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  label="Category"
-                >
-                  <MenuItem value=""><em>All Categories</em></MenuItem>
-                  {categories.map(category => (
-                    <MenuItem key={category.id} value={category.value}>{category.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Sub-Category</InputLabel>
-                <Select
-                  value={selectedSubCategory || ''}
-                  onChange={(e) => setSelectedSubCategory(e.target.value)}
-                  label="Sub-Category"
-                >
-                  <MenuItem value=""><em>All Sub-Categories</em></MenuItem>
-                  {subCategories.map(subCategory => (
-                    <MenuItem key={subCategory.id} value={subCategory.value}>{subCategory.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Incident</InputLabel>
-                <Select
-                  value={selectedIncident || ''}
-                  onChange={(e) => setSelectedIncident(e.target.value)}
-                  label="Incident"
-                >
-                  <MenuItem value=""><em>All Incidents</em></MenuItem>
-                  {incidents.map(incident => (
-                    <MenuItem key={incident.id} value={incident.value}>{incident.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Office</InputLabel>
-                <Select
-                  value={selectedOffice || ''}
-                  onChange={(e) => setSelectedOffice(e.target.value)}
-                  label="Office"
-                >
-                  <MenuItem value=""><em>All Offices</em></MenuItem>
-                  {offices.map(office => (
-                    <MenuItem key={office.id} value={office.value}>{office.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                size="small"
-                label="User Information"
-                value={userInformation}
-                onChange={(e) => setUserInformation(e.target.value)}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Obligation</InputLabel>
-                <Select
-                  value={selectedObligation || ''}
-                  onChange={(e) => setSelectedObligation(e.target.value)}
-                  label="Obligation"
-                >
-                  <MenuItem value=""><em>All Obligations</em></MenuItem>
-                  {obligations.map(obligation => (
-                    <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Filter Mode</InputLabel>
-                <Select
-                  value={filterMode}
-                  onChange={(e) => setFilterMode(e.target.value)}
-                  label="Filter Mode"
-                >
-                  <MenuItem value="and">AND (All must match)</MenuItem>
-                  <MenuItem value="or">OR (Any can match)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={3}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                <Button 
-                  variant="contained"
-                  onClick={() => {
-                    // Apply user filter when Apply button is clicked
-                    if (selectedUser) {
-                      // Set the filter to the selected user's username for consistent matching
-                      setUserFilter(selectedUser.username || selectedUser.email || '');
-                    } else {
-                      setUserFilter('');
-                    }
-                    
-                    // Show notification that filters are applied
-                    showSnackbar('Filters applied', 'info');
-                  }}
-                  size="small"
-                >
-                  Apply
-                </Button>
-                <Button 
-                  startIcon={<DownloadIcon />} 
-                  onClick={() => handleExport('CSV')}
-                  variant="outlined"
-                  size="small"
-                >
-                  Export CSV
-                </Button>
-                <Button 
-                  startIcon={<DownloadIcon />} 
-                  onClick={() => handleExport('PDF')}
-                  variant="outlined"
-                  size="small"
-                >
-                  Export PDF
-                </Button>
-              </Box>
-            </Grid>
-          </FilterSection>
-        </Grid>
+
         
         {/* Charts and Task Table */}
         <Grid item xs={12} md={8}>
