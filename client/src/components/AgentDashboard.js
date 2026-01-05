@@ -557,8 +557,16 @@ const AgentDashboard = () => {
         matchesRole = task.office === user.office; // Show tasks from their office
       }
     } else {
-      // For other roles, only show tasks assigned to the current user
-      matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
+      // For other roles, if user filter is applied and matches current user, allow viewing; otherwise only show own tasks
+      if (userFilter) {
+        // When user filter is applied, check if it matches the current user
+        // If it matches, allow the user to see their own tasks with other filters applied
+        // If it doesn't match, then matchesUser will be false anyway for other users' tasks
+        matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
+      } else {
+        // When no user filter is applied, only show tasks assigned to current user
+        matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
+      }
     }
     
     return matchesSearch && matchesUser && matchesRole && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUserInformation && matchesObligation;
@@ -1114,129 +1122,127 @@ const AgentDashboard = () => {
               />
             </Grid>
             
-            {(user.role === 'Admin' || user.role === 'Supervisor' || user.role === 'SystemAdmin') && (
-              <>
-                <Grid item xs={12} sm={3}>
-                  <UserFilterDropdown
-                    users={filteredUsers}
-                    selectedUser={selectedUser}
-                    onUserChange={(event, newValue) => {
-                      setSelectedUser(newValue);
-                      // Don't apply filter immediately, let user click Apply button
-                    }}
-                    label="Filter by User"
-                    loading={userLoading}
-                    gridSize={{ xs: 12, sm: 12 }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Source</InputLabel>
-                    <Select
-                      value={selectedSource || ''}
-                      onChange={(e) => setSelectedSource(e.target.value)}
-                      label="Source"
-                    >
-                      <MenuItem value=""><em>All Sources</em></MenuItem>
-                      {sources.map(source => (
-                        <MenuItem key={source.id} value={source.value}>{source.value}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Category</InputLabel>
-                    <Select
-                      value={selectedCategory || ''}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      label="Category"
-                    >
-                      <MenuItem value=""><em>All Categories</em></MenuItem>
-                      {categories.map(category => (
-                        <MenuItem key={category.id} value={category.value}>{category.value}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Sub-Category</InputLabel>
-                    <Select
-                      value={selectedSubCategory || ''}
-                      onChange={(e) => setSelectedSubCategory(e.target.value)}
-                      label="Sub-Category"
-                    >
-                      <MenuItem value=""><em>All Sub-Categories</em></MenuItem>
-                      {subCategories.map(subCategory => (
-                        <MenuItem key={subCategory.id} value={subCategory.value}>{subCategory.value}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Incident</InputLabel>
-                    <Select
-                      value={selectedIncident || ''}
-                      onChange={(e) => setSelectedIncident(e.target.value)}
-                      label="Incident"
-                    >
-                      <MenuItem value=""><em>All Incidents</em></MenuItem>
-                      {incidents.map(incident => (
-                        <MenuItem key={incident.id} value={incident.value}>{incident.value}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Office</InputLabel>
-                    <Select
-                      value={selectedOffice || ''}
-                      onChange={(e) => setSelectedOffice(e.target.value)}
-                      label="Office"
-                    >
-                      <MenuItem value=""><em>All Offices</em></MenuItem>
-                      {offices.map(office => (
-                        <MenuItem key={office.id} value={office.value}>{office.value}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="User Information"
-                    value={userInformation}
-                    onChange={(e) => setUserInformation(e.target.value)}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Obligation</InputLabel>
-                    <Select
-                      value={selectedObligation || ''}
-                      onChange={(e) => setSelectedObligation(e.target.value)}
-                      label="Obligation"
-                    >
-                      <MenuItem value=""><em>All Obligations</em></MenuItem>
-                      {obligations.map(obligation => (
-                        <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </>
-            )}
+            <>
+              <Grid item xs={12} sm={3}>
+                <UserFilterDropdown
+                  users={filteredUsers}
+                  selectedUser={selectedUser}
+                  onUserChange={(event, newValue) => {
+                    setSelectedUser(newValue);
+                    // Don't apply filter immediately, let user click Apply button
+                  }}
+                  label="Filter by User"
+                  loading={userLoading}
+                  gridSize={{ xs: 12, sm: 12 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Source</InputLabel>
+                  <Select
+                    value={selectedSource || ''}
+                    onChange={(e) => setSelectedSource(e.target.value)}
+                    label="Source"
+                  >
+                    <MenuItem value=""><em>All Sources</em></MenuItem>
+                    {sources.map(source => (
+                      <MenuItem key={source.id} value={source.value}>{source.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={selectedCategory || ''}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    label="Category"
+                  >
+                    <MenuItem value=""><em>All Categories</em></MenuItem>
+                    {categories.map(category => (
+                      <MenuItem key={category.id} value={category.value}>{category.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Sub-Category</InputLabel>
+                  <Select
+                    value={selectedSubCategory || ''}
+                    onChange={(e) => setSelectedSubCategory(e.target.value)}
+                    label="Sub-Category"
+                  >
+                    <MenuItem value=""><em>All Sub-Categories</em></MenuItem>
+                    {subCategories.map(subCategory => (
+                      <MenuItem key={subCategory.id} value={subCategory.value}>{subCategory.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Incident</InputLabel>
+                  <Select
+                    value={selectedIncident || ''}
+                    onChange={(e) => setSelectedIncident(e.target.value)}
+                    label="Incident"
+                  >
+                    <MenuItem value=""><em>All Incidents</em></MenuItem>
+                    {incidents.map(incident => (
+                      <MenuItem key={incident.id} value={incident.value}>{incident.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Office</InputLabel>
+                  <Select
+                    value={selectedOffice || ''}
+                    onChange={(e) => setSelectedOffice(e.target.value)}
+                    label="Office"
+                  >
+                    <MenuItem value=""><em>All Offices</em></MenuItem>
+                    {offices.map(office => (
+                      <MenuItem key={office.id} value={office.value}>{office.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="User Information"
+                  value={userInformation}
+                  onChange={(e) => setUserInformation(e.target.value)}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Obligation</InputLabel>
+                  <Select
+                    value={selectedObligation || ''}
+                    onChange={(e) => setSelectedObligation(e.target.value)}
+                    label="Obligation"
+                  >
+                    <MenuItem value=""><em>All Obligations</em></MenuItem>
+                    {obligations.map(obligation => (
+                      <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </>
             
             <Grid item xs={12} sm={3}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
