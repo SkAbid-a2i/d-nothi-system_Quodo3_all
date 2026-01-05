@@ -140,7 +140,14 @@ const TaskManagement = () => {
     statusFilter: '',
     userFilter: '', // This should always be empty for non-SystemAdmin users
     startDate: '',
-    endDate: ''
+    endDate: '',
+    sourceFilter: '',
+    categoryFilter: '',
+    subCategoryFilter: '',
+    incidentFilter: '',
+    officeFilter: '',
+    userInformationFilter: '',
+    obligationFilter: ''
   });
 
   // Fetch dropdown values on component mount
@@ -229,56 +236,57 @@ const TaskManagement = () => {
     const newAppliedFilters = {
       searchTerm,
       statusFilter,
-      userFilter: '', // Always empty since we removed user filter
-      startDate,
-      endDate
-    };
-    
-    console.log('Applying filters:', {
-      searchTerm,
-      statusFilter,
+      userFilter: '', // No user filter for tasks page
       startDate,
       endDate,
-      newAppliedFilters
-    });
+      sourceFilter: selectedSource?.value || '',
+      categoryFilter: selectedCategory?.value || '',
+      subCategoryFilter: selectedSubCategory?.value || '',
+      incidentFilter: selectedIncident?.value || '',
+      officeFilter: selectedOffice?.value || '',
+      userInformationFilter: userInformation || '',
+      obligationFilter: selectedObligation?.value || ''
+    };
+    
+    console.log('Applying filters:', newAppliedFilters);
     
     setAppliedFilters(newAppliedFilters);
     showSnackbar('Filters applied', 'info');
   };
 
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
-    setStartDate('');
-    setEndDate('');
-    setAppliedFilters({
-      searchTerm: '',
-      statusFilter: '',
-      userFilter: '',
-      startDate: '',
-      endDate: ''
-    });
-    showSnackbar('Filters cleared', 'info');
-  };
 
-  // Clear all filters - for the new FilterSection
+
+
+
+  // Check if any filters are active
+  const hasActiveFilters = Boolean(searchTerm || statusFilter || userFilter || startDate || endDate);
+  
+  // Clear all filters
   const clearAllFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
+    setUserFilter('');
     setStartDate('');
     setEndDate('');
+    setSelectedUser(null);
+    // Reset applied filters to default values
     setAppliedFilters({
       searchTerm: '',
       statusFilter: '',
       userFilter: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      sourceFilter: '',
+      categoryFilter: '',
+      subCategoryFilter: '',
+      incidentFilter: '',
+      officeFilter: '',
+      userInformationFilter: '',
+      obligationFilter: ''
     });
   };
-
-  // Check if any filters are active
-  const hasActiveFilters = Boolean(searchTerm || statusFilter || startDate || endDate);
+  
+  // Add a function to reset to default view (show all user's tasks)
 
   // Add a function to reset to default view (show all user's tasks)
   const resetToDefaultView = () => {
@@ -291,7 +299,14 @@ const TaskManagement = () => {
       statusFilter: '',
       userFilter: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      sourceFilter: '',
+      categoryFilter: '',
+      subCategoryFilter: '',
+      incidentFilter: '',
+      officeFilter: '',
+      userInformationFilter: '',
+      obligationFilter: ''
     });
     showSnackbar('View reset to default', 'info');
   };
@@ -519,6 +534,31 @@ const TaskManagement = () => {
       // Apply status filter
       const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
       
+      // Apply user filter - always true for tasks page since we don't include user filter
+      const matchesUser = true;
+      
+      // Apply source filter
+      const matchesSource = !appliedFilters.sourceFilter || task.source === appliedFilters.sourceFilter;
+      
+      // Apply category filter
+      const matchesCategory = !appliedFilters.categoryFilter || task.category === appliedFilters.categoryFilter;
+      
+      // Apply sub-category filter
+      const matchesSubCategory = !appliedFilters.subCategoryFilter || task.subCategory === appliedFilters.subCategoryFilter;
+      
+      // Apply incident filter
+      const matchesIncident = !appliedFilters.incidentFilter || task.incident === appliedFilters.incidentFilter;
+      
+      // Apply office filter
+      const matchesOffice = !appliedFilters.officeFilter || task.office === appliedFilters.officeFilter;
+      
+      // Apply user information filter
+      const matchesUserInformation = !appliedFilters.userInformationFilter || 
+        (task.userInformation && task.userInformation.toLowerCase().includes(appliedFilters.userInformationFilter.toLowerCase()));
+      
+      // Apply obligation filter
+      const matchesObligation = !appliedFilters.obligationFilter || task.obligation === appliedFilters.obligationFilter;
+      
       // Apply date range filtering
       let matchesDateRange = true;
       if (appliedFilters.startDate || appliedFilters.endDate) {
@@ -593,7 +633,7 @@ const TaskManagement = () => {
         }
       }
       
-      const finalResult = matchesSearch && matchesStatus && matchesDateRange;
+      const finalResult = matchesSearch && matchesStatus && matchesUser && matchesDateRange && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUserInformation && matchesObligation;
       console.log('Task filtering result:', {
         taskId: task.id,
         taskDescription: task.description,
@@ -615,7 +655,7 @@ const TaskManagement = () => {
         userName: t.userName
       }))
     });
-  }, [tasks, user, appliedFilters]);
+  }, [tasks, user, appliedFilters.searchTerm, appliedFilters.statusFilter, appliedFilters.userFilter, appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sourceFilter, appliedFilters.categoryFilter, appliedFilters.subCategoryFilter, appliedFilters.incidentFilter, appliedFilters.officeFilter, appliedFilters.userInformationFilter, appliedFilters.obligationFilter]);
 
   // Listen for real-time notifications
   useEffect(() => {
@@ -1288,6 +1328,129 @@ const TaskManagement = () => {
                 </Grid>
                 
                 <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Source</InputLabel>
+                    <Select 
+                      label="Source" 
+                      value={appliedFilters.sourceFilter || ''}
+                      onChange={(e) => {
+                        setAppliedFilters(prev => ({ ...prev, sourceFilter: e.target.value }));
+                      }}
+                    >
+                      <MenuItem value=""><em>All Sources</em></MenuItem>
+                      {sources.map(source => (
+                        <MenuItem key={source.id} value={source.value}>{source.value}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Category</InputLabel>
+                    <Select 
+                      label="Category" 
+                      value={appliedFilters.categoryFilter || ''}
+                      onChange={(e) => {
+                        setAppliedFilters(prev => ({ ...prev, categoryFilter: e.target.value }));
+                      }}
+                    >
+                      <MenuItem value=""><em>All Categories</em></MenuItem>
+                      {categories.map(category => (
+                        <MenuItem key={category.id} value={category.value}>{category.value}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Sub-Category</InputLabel>
+                    <Select 
+                      label="Sub-Category" 
+                      value={appliedFilters.subCategoryFilter || ''}
+                      onChange={(e) => {
+                        setAppliedFilters(prev => ({ ...prev, subCategoryFilter: e.target.value }));
+                      }}
+                    >
+                      <MenuItem value=""><em>All Sub-Categories</em></MenuItem>
+                      {subCategories.map(subCategory => (
+                        <MenuItem key={subCategory.id} value={subCategory.value}>{subCategory.value}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Incident</InputLabel>
+                    <Select 
+                      label="Incident" 
+                      value={appliedFilters.incidentFilter || ''}
+                      onChange={(e) => {
+                        setAppliedFilters(prev => ({ ...prev, incidentFilter: e.target.value }));
+                      }}
+                    >
+                      <MenuItem value=""><em>All Incidents</em></MenuItem>
+                      {incidents.map(incident => (
+                        <MenuItem key={incident.id} value={incident.value}>{incident.value}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Office</InputLabel>
+                    <Select 
+                      label="Office" 
+                      value={appliedFilters.officeFilter || ''}
+                      onChange={(e) => {
+                        setAppliedFilters(prev => ({ ...prev, officeFilter: e.target.value }));
+                      }}
+                    >
+                      <MenuItem value=""><em>All Offices</em></MenuItem>
+                      {offices.map(office => (
+                        <MenuItem key={office.id} value={office.value}>{office.value}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="User Information"
+                    value={appliedFilters.userInformationFilter || ''}
+                    onChange={(e) => {
+                      setAppliedFilters(prev => ({ ...prev, userInformationFilter: e.target.value }));
+                    }}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Obligation</InputLabel>
+                    <Select 
+                      label="Obligation" 
+                      value={appliedFilters.obligationFilter || ''}
+                      onChange={(e) => {
+                        setAppliedFilters(prev => ({ ...prev, obligationFilter: e.target.value }));
+                      }}
+                    >
+                      <MenuItem value=""><em>All Obligations</em></MenuItem>
+                      {obligations.map(obligation => (
+                        <MenuItem key={obligation.id} value={obligation.value}>{obligation.value}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+
+                
+                <Grid item xs={12} sm={6} md={4}>
                   <TextField
                     fullWidth
                     label="Start Date"
@@ -1311,6 +1474,51 @@ const TaskManagement = () => {
                     variant="outlined"
                     size="small"
                   />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: { xs: 2, sm: 0 } }}>
+                    <Button 
+                      variant="contained"
+                      onClick={() => {
+                        // Apply all filters when Apply button is clicked
+                        setAppliedFilters({
+                          searchTerm,
+                          statusFilter,
+                          userFilter: '', // No user filter for tasks page
+                          startDate,
+                          endDate,
+                          sourceFilter: selectedSource?.value || '',
+                          categoryFilter: selectedCategory?.value || '',
+                          subCategoryFilter: selectedSubCategory?.value || '',
+                          incidentFilter: selectedIncident?.value || '',
+                          officeFilter: selectedOffice?.value || '',
+                          userInformationFilter: userInformation || '',
+                          obligationFilter: selectedObligation?.value || ''
+                        });
+                        showSnackbar('Filters applied', 'info');
+                      }}
+                      size="small"
+                    >
+                      Apply
+                    </Button>
+                    <Button 
+                      startIcon={<DownloadIcon />} 
+                      onClick={() => handleExport('CSV')}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Export CSV
+                    </Button>
+                    <Button 
+                      startIcon={<DownloadIcon />} 
+                      onClick={() => handleExport('PDF')}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Export PDF
+                    </Button>
+                  </Box>
                 </Grid>
               </FilterSection>
               

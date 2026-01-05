@@ -169,6 +169,7 @@ const EnhancedDashboard = () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         filteredTasks = filteredTasks.filter(task => {
+          if (!task.date) return false;
           const taskDate = new Date(task.date);
           return taskDate >= start && taskDate <= end;
         });
@@ -472,6 +473,12 @@ const EnhancedDashboard = () => {
 
   const handleApplyFilters = () => {
     setApplyFilters(true);
+    // Ensure we update view mode to team when a user is selected
+    if (selectedUser) {
+      setViewMode('team');
+    } else {
+      setViewMode('individual');
+    }
     fetchDashboardData();
   };
 
@@ -1829,7 +1836,7 @@ const EnhancedDashboard = () => {
         <FilterSection
           title="Advanced Filters"
           defaultExpanded={false}
-          hasActiveFilters={Boolean(startDate || endDate)}
+          hasActiveFilters={Boolean(startDate || endDate || selectedUser)}
           onClearFilters={handleClearFilters}
           onApplyFilters={handleApplyFilters}
         >
@@ -1875,6 +1882,36 @@ const EnhancedDashboard = () => {
               variant="outlined"
             />
           </Grid>
+          
+          {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') && (
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>User</InputLabel>
+                <Select
+                  value={selectedUser?.id || ''}
+                  onChange={(e) => {
+                    const selectedUserId = e.target.value;
+                    if (selectedUserId) {
+                      const userObj = allUsers.find(u => u.id === selectedUserId);
+                      setSelectedUser(userObj || null);
+                    } else {
+                      setSelectedUser(null);
+                    }
+                  }}
+                  label="User"
+                >
+                  <MenuItem value="">
+                    <em>All Users</em>
+                  </MenuItem>
+                  {allUsers.map((userItem) => (
+                    <MenuItem key={userItem.id} value={userItem.id}>
+                      {userItem.fullName || userItem.username}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
           
           <Grid item xs={12} sm={6} md={3}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: { xs: 1, sm: 0 } }}>
