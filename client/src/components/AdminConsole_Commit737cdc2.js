@@ -391,8 +391,10 @@ const AdminConsole = () => {
     try {
       setLoading(true);
       
-      // Parse the CSV file
-      const fileText = await importFile.text();
+      // Parse the CSV file with proper UTF-8 encoding
+      const buffer = await importFile.arrayBuffer();
+      const decoder = new TextDecoder('utf-8');
+      const fileText = decoder.decode(buffer);
       const result = parse(fileText, {
         header: true,
         skipEmptyLines: true,
@@ -476,8 +478,8 @@ Office,Chittagong Office,
 Obligation,Compliance,
 Obligation,Legal,`;
     
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Create blob and download with proper UTF-8 encoding
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);

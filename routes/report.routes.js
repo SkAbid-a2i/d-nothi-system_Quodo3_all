@@ -373,9 +373,9 @@ const exportAsCSV = (res, data, reportType) => {
     });
   }
   
-  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${reportType}_report.csv"`);
-  res.status(200).send(csvContent);
+  res.status(200).send(Buffer.from(csvContent, 'utf-8'));
 };
 
 // Export as Excel (simplified - in a real implementation, you'd use a library like xlsx)
@@ -450,9 +450,9 @@ const exportAsExcel = (res, data, reportType) => {
     });
   }
   
-  res.setHeader('Content-Type', 'application/vnd.ms-excel');
+  res.setHeader('Content-Type', 'application/vnd.ms-excel; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${reportType}_report.xlsx"`);
-  res.status(200).send(csvContent);
+  res.status(200).send(Buffer.from(csvContent, 'utf-8'));
 };
 
 // Export as PDF (simplified - in a real implementation, you'd use a library like pdfkit)

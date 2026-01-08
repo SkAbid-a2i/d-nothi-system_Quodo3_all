@@ -428,8 +428,8 @@ const AgentDashboard = () => {
         filename = `dashboard_export_${new Date().toISOString().split('T')[0]}.json`;
       }
       
-      // Create and download file
-      const blob = new Blob([content], { type: mimeType });
+      // Create and download file with UTF-8 encoding
+      const blob = new Blob(['\uFEFF' + content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
