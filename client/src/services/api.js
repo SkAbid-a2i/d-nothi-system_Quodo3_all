@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,  // Enable credentials to maintain session
 });
 
 // Add a request interceptor to include auth token
@@ -56,7 +57,8 @@ api.interceptors.response.use(
       frontendLogger.warn('Authentication token expired or invalid, redirecting to login');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Use window.location.replace to prevent back button navigation to protected pages
+      window.location.replace('/login');
     }
     
     return Promise.reject(error);

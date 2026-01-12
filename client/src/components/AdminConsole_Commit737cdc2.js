@@ -302,6 +302,12 @@ const AdminConsole = () => {
       setTimeout(() => setError(''), 5000);
       return;
     }
+    
+    if (selectedDropdownType === 'Sub-Category' && !parentCategory) {
+      setError('Please select a parent category for sub-category');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
 
     try {
       const dropdownData = {
@@ -311,6 +317,11 @@ const AdminConsole = () => {
 
       if (selectedDropdownType === 'Incident') {
         dropdownData.parentType = 'Sub-Category';
+        dropdownData.parentValue = parentCategory;
+      }
+      
+      if (selectedDropdownType === 'Sub-Category') {
+        dropdownData.parentType = 'Category';
         dropdownData.parentValue = parentCategory;
       }
 
@@ -431,6 +442,11 @@ const AdminConsole = () => {
         // Handle parent relationships
         if (Type === 'Incident' && Parent) {
           dropdownData.parentType = 'Sub-Category';
+          dropdownData.parentValue = Parent;
+        }
+        
+        if (Type === 'Sub-Category' && Parent) {
+          dropdownData.parentType = 'Category';
           dropdownData.parentValue = Parent;
         }
         
