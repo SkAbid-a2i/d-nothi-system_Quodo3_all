@@ -86,6 +86,14 @@ const LeaveManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
+  // Calendar state
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Leave Summary state
+  const [leaveSummary, setLeaveSummary] = useState({});
+  const [summaryUserFilter, setSummaryUserFilter] = useState('');
+  const [summaryDateRange, setSummaryDateRange] = useState({ start: '', end: '' });
+  
   // Dialog states
   const [dialogs, setDialogs] = useState({
     approve: { open: false, leave: null },
@@ -336,10 +344,9 @@ const LeaveManagement = () => {
   };
   
   // Generate calendar data for the current month
-  const getCalendarData = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+  const getCalendarData = (date = currentDate) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
     
     // Get first day of month and last day of month
     const firstDay = new Date(year, month, 1);
@@ -371,11 +378,10 @@ const LeaveManagement = () => {
   };
   
   // Get leave data for calendar display
-  const getLeaveCalendarData = () => {
-    const calendarData = getCalendarData();
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+  const getLeaveCalendarData = (date = currentDate) => {
+    const calendarData = getCalendarData(date);
+    const year = date.getFullYear();
+    const month = date.getMonth();
     
     // Create a map of leave dates
     const leaveMap = {};
@@ -384,10 +390,10 @@ const LeaveManagement = () => {
         const start = new Date(leave.startDate);
         const end = new Date(leave.endDate);
         
-        // Only include leaves for current month
-        if (start.getFullYear() === currentYear && start.getMonth() === currentMonth) {
+        // Only include leaves for the selected month
+        if (start.getFullYear() === year && start.getMonth() === month) {
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            if (d.getMonth() === currentMonth) {
+            if (d.getMonth() === month) {
               const dateKey = d.getDate();
               if (!leaveMap[dateKey]) {
                 leaveMap[dateKey] = [];
@@ -406,6 +412,55 @@ const LeaveManagement = () => {
   };
   
   const { calendarData, leaveMap } = getLeaveCalendarData();
+  
+  // Generate leave summary data
+  useEffect(() => {
+    if (leaves.length > 0) {
+      const summary = {};
+      leaves.forEach(leave => {
+        const userName = leave.userName || leave.employee || 'Unknown';
+        if (!summary[userName]) {
+          summary[userName] = {
+            name: userName,
+            totalLeaves: 0,
+            leaveList: []
+          };
+        }
+        summary[userName].totalLeaves++;
+        summary[userName].leaveList.push({
+          startDate: leave.startDate,
+          endDate: leave.endDate,
+          reason: leave.reason,
+          status: leave.status,
+          appliedDate: leave.appliedDate
+        });
+      });
+      setLeaveSummary(summary);
+    }
+  }, [leaves]);
+  
+  // Filtered leave summary based on user selection
+  const filteredLeaveSummary = Object.fromEntries(
+    Object.entries(leaveSummary).filter(([userName, data]) => {
+      if (!summaryUserFilter) return true;
+      return userName.toLowerCase().includes(summaryUserFilter.toLowerCase());
+    })
+  );
+  
+  // Handle calendar navigation
+  const goToPreviousMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+  
+  const goToNextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+  
+  // Get current month/year display
+  const currentMonthDisplay = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  // Get updated calendar data based on current date
+  const { calendarData: currentCalendarData, leaveMap: currentLeaveMap } = getLeaveCalendarData();
 
   const notifications = userNotifications;
 
@@ -770,6 +825,7 @@ const LeaveManagement = () => {
         >
           <StyledTab label={t('leaves.leaveRequests')} icon={<SearchIcon />} iconPosition="start" />
           <StyledTab label={t('leaves.calendar')} icon={<CalendarIcon />} iconPosition="start" />
+          <StyledTab label="Leave Summary" icon={<CalendarIcon />} iconPosition="start" />
           <StyledTab label={t('leaves.notifications')} icon={<NotificationsIcon />} iconPosition="start" />
         </StyledTabs>
       </Paper>
@@ -981,9 +1037,9 @@ const LeaveManagement = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <Box sx={{ width: '100%', maxWidth: 800 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Button variant="outlined">Previous</Button>
-                <Typography variant="h6">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Typography>
-                <Button variant="outlined">Next</Button>
+                <Button variant="outlined" onClick={goToPreviousMonth}>Previous</Button>
+                <Typography variant="h6">{currentMonthDisplay}</Typography>
+                <Button variant="outlined" onClick={goToNextMonth}>Next</Button>
               </Box>
               <Table>
                 <TableHead>
@@ -998,7 +1054,7 @@ const LeaveManagement = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {calendarData.map((week, weekIndex) => (
+                  {currentCalendarData.map((week, weekIndex) => (
                     <TableRow key={weekIndex}>
                       {week.map((day, dayIndex) => (
                         <TableCell 
@@ -1014,7 +1070,7 @@ const LeaveManagement = () => {
                           {day && (
                             <>
                               <Typography variant="body2">{day}</Typography>
-                              {leaveMap[day] && leaveMap[day].map((leave, index) => (
+                              {currentLeaveMap[day] && currentLeaveMap[day].map((leave, index) => (
                                 <Box 
                                   key={index}
                                   sx={{ 
@@ -1050,6 +1106,95 @@ const LeaveManagement = () => {
       )}
       
       {activeTab === 2 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Leave Summary
+          </Typography>
+          
+          {/* Summary Filters */}
+          <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField
+              label="Filter by User"
+              value={summaryUserFilter}
+              onChange={(e) => setSummaryUserFilter(e.target.value)}
+              sx={{ minWidth: 300 }}
+            />
+            <TextField
+              label="From Date"
+              type="date"
+              value={summaryDateRange.start}
+              onChange={(e) => setSummaryDateRange({...summaryDateRange, start: e.target.value})}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 150 }}
+            />
+            <TextField
+              label="To Date"
+              type="date"
+              value={summaryDateRange.end}
+              onChange={(e) => setSummaryDateRange({...summaryDateRange, end: e.target.value})}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 150 }}
+            />
+            <Button 
+              variant="outlined" 
+              onClick={() => {
+                setSummaryUserFilter('');
+                setSummaryDateRange({ start: '', end: '' });
+              }}
+            >
+              Clear Filters
+            </Button>
+          </Box>
+          
+          {/* Summary Table */}
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center"><strong>User</strong></TableCell>
+                  <TableCell align="center"><strong>Total Leaves</strong></TableCell>
+                  <TableCell align="center"><strong>Leave Details</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {Object.entries(filteredLeaveSummary).length > 0 ? (
+                  Object.entries(filteredLeaveSummary).map(([userName, data]) => (
+                    <TableRow key={userName}>
+                      <TableCell align="center">{userName}</TableCell>
+                      <TableCell align="center">{data.totalLeaves}</TableCell>
+                      <TableCell>
+                        {data.leaveList.map((leave, index) => (
+                          <Box key={index} sx={{ mb: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                            <Typography variant="body2">
+                              <strong>Leave:</strong> {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Reason:</strong> {leave.reason}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Status:</strong> <Chip size="small" label={leave.status} color=
+                                {leave.status === 'Approved' ? 'success' : 
+                                leave.status === 'Rejected' ? 'error' : 'warning'} />
+                            </Typography>
+                          </Box>
+                        ))}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      No leave summary data available
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+      
+      {activeTab === 3 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Notifications
