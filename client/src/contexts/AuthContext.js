@@ -65,29 +65,60 @@ export const AuthProvider = ({ children }) => {
         retryCount
       });
       
-      // Only remove token if it's definitely invalid (401 Unauthorized)
-      // For other errors (network, server issues), keep the token and retry
+      let shouldSetLoadingFalse = true;
+      
+      // Handle different types of errors appropriately
       if (error.response?.status === 401) {
-        frontendLogger.warn('Token invalid, removing authentication');
+        // Definite token invalidation - remove authentication
+        frontendLogger.warn('Token invalid (401), removing authentication');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setIsAuthenticated(false);
         setUser(null);
-      } else if (retryCount < 2) {
-        // Retry for temporary network/server issues
-        frontendLogger.info('Retrying authentication', { retryCount: retryCount + 1 });
-        setTimeout(() => {
-          getCurrentUser(retryCount + 1);
-        }, 1000 * (retryCount + 1)); // Exponential backoff
-        return; // Don't set loading to false yet
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        // Network errors or timeout - retry with exponential backoff
+        if (retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          frontendLogger.info(`Network error, retrying in ${delay}ms`, { retryCount: retryCount + 1 });
+          setTimeout(() => {
+            getCurrentUser(retryCount + 1);
+          }, delay);
+          shouldSetLoadingFalse = false; // Don't set loading to false yet
+        } else {
+          // Max retries reached for network errors
+          frontendLogger.warn('Max network retries reached, keeping token but setting unauthenticated state');
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } else if (error.response?.status >= 500) {
+        // Server errors - retry with backoff
+        if (retryCount < 2) {
+          const delay = (retryCount + 1) * 2000; // 2s, 4s
+          frontendLogger.info(`Server error (${error.response.status}), retrying in ${delay}ms`, { retryCount: retryCount + 1 });
+          setTimeout(() => {
+            getCurrentUser(retryCount + 1);
+          }, delay);
+          shouldSetLoadingFalse = false; // Don't set loading to false yet
+        } else {
+          // Max retries reached for server errors
+          frontendLogger.warn('Max server retries reached, keeping token but setting unauthenticated state');
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       } else {
-        // After max retries, assume token might be invalid
-        frontendLogger.warn('Max retries reached, keeping token but setting unauthenticated state');
+        // Other errors (400, 403, 404, etc.) - don't retry, but keep token
+        frontendLogger.warn('Other error occurred, keeping token but setting unauthenticated state', { 
+          status: error.response?.status,
+          message: error.message 
+        });
         setIsAuthenticated(false);
         setUser(null);
       }
-    } finally {
-      setLoading(false);
+      
+      // Set loading state
+      if (shouldSetLoadingFalse) {
+        setLoading(false);
+      }
     }
   };
 

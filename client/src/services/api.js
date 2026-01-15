@@ -63,6 +63,8 @@ api.interceptors.response.use(
         if (storedToken) {
           // Give AuthContext a chance to handle revalidation
           frontendLogger.info('Token present, letting AuthContext handle revalidation');
+          // Don't redirect immediately, let AuthContext handle it
+          // The AuthContext will remove the token if truly invalid
         } else {
           // No token stored, safe to redirect
           localStorage.removeItem('token');
