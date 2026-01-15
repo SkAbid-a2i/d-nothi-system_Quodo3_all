@@ -105,15 +105,67 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Start database monitoring
 dbMonitor.startMonitoring(30000); // Check every 30 seconds
 
-// Test database connection
+// Test database connection and sync models
 sequelize
   .authenticate()
   .then(() => {
     logger.info('Connected to TiDB database');
+    
+    // In production, rely on migrations; in development, auto-sync is acceptable
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('Production environment detected - skipping auto-sync (migrations should be run separately)');
+      // Still try to create admin user if it doesn't exist
+      return createAdminUserIfNotExists();
+    } else {
+      // In development, synchronize database models to ensure tables exist
+      logger.info('Development environment detected - synchronizing database models...');
+      return sequelize.sync({ alter: true }); // Use alter to update existing tables
+    }
+  })
+  .then(() => {
+    logger.info('Database setup completed');
+    
+    // Try to create admin user if it doesn't exist
+    return createAdminUserIfNotExists();
   })
   .catch(err => {
-    logger.error('Unable to connect to TiDB database', { error: err.message, stack: err.stack });
+    logger.error('Database setup failed', { error: err.message, stack: err.stack });
   });
+
+// Function to create admin user if it doesn't exist
+async function createAdminUserIfNotExists() {
+  try {
+    const User = require('./models/User');
+    const bcrypt = require('bcryptjs');
+    
+    // Check if admin user exists
+    const existingAdmin = await User.findOne({
+      where: { role: 'SystemAdmin' }
+    });
+    
+    if (!existingAdmin) {
+      // Create admin user
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync('admin123', salt);
+      
+      await User.create({
+        username: 'admin',
+        email: 'admin@example.com',
+        password: hashedPassword,
+        fullName: 'System Administrator',
+        role: 'SystemAdmin',
+        office: 'Head Office',
+        isActive: true
+      });
+      
+      logger.info('Admin user created successfully');
+    } else {
+      logger.info('Admin user already exists');
+    }
+  } catch (error) {
+    logger.error('Error creating admin user', { error: error.message, stack: error.stack });
+  }
+}
 
 // Simple route for testing
 app.get('/', (req, res) => {

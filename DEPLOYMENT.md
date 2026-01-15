@@ -51,15 +51,35 @@ git push -u origin main
 
 ### 3. Initialize Database
 
-After the backend is deployed, you need to create the initial admin user:
+After the backend is deployed, you need to initialize the database with required tables and data:
 
+**Important**: Before starting the server, you need to run database migrations to create all required tables.
+
+**Option 1: Using Render Dashboard (Recommended)**
 1. Go to your Render dashboard
 2. Select your quodo3-backend service
 3. Go to "Shell" tab
-4. Run the following commands:
+4. Run the following commands in order:
    ```bash
-   node scripts/create-admin.js
+   # Run database migrations to create all tables
+   npm run migrate
+   
+   # Seed the database with initial data
+   npm run seed
    ```
+
+**Option 2: Update Your Render Build Process**
+Alternatively, you can modify the start command in Render to run migrations before starting the server:
+
+1. Go to your Render dashboard
+2. Select your quodo3-backend service
+3. Go to "Settings" tab
+4. Change the Start Command to:
+   ```bash
+   npm run migrate && npm run seed && npm start
+   ```
+
+This ensures database migrations run before the server starts, preventing the 500 errors on authentication endpoints.
 
 ## Frontend Deployment (Netlify)
 
