@@ -347,16 +347,7 @@ const kanbanRoutes = require('./routes/kanban.routes');
 // Add debugging to check if routes are loaded
 console.log('Collaboration routes loaded:', !!collaborationRoutes);
 
-// Apply global CORS middleware to all routes
-app.use(cors({
-  origin: parseCorsOrigins(),
-  credentials: true,
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  preflightContinue: false
-}));
+// Note: CORS is already applied globally at the top of the file
 
 // Use routes
 app.use('/api/auth', authRoutes);

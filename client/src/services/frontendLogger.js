@@ -92,7 +92,7 @@ class FrontendLogger {
     // Logs should only be sent to backend for persistence
     try {
       // Send log directly to backend instead of storing in localStorage
-      this.sendLogToBackend(logEntry);
+      this.sendToBackend(logEntry);
     } catch (error) {
       console.error('Failed to store log:', error);
     }
