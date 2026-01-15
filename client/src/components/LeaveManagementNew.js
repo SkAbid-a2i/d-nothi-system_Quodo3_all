@@ -38,7 +38,9 @@ import {
   Close as CloseIcon,
   Search as SearchIcon,
   CalendarToday as CalendarIcon,
-  Notifications as NotificationsIcon
+  Notifications as NotificationsIcon,
+  Download as DownloadIcon,
+  PictureAsPdf as PictureAsPdfIcon
 } from '@mui/icons-material';
 import { leaveAPI, userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -171,7 +173,13 @@ const LeaveManagement = () => {
       try {
         const response = await userAPI.getAllUsers();
         const usersData = response.data || [];
-        setUsers(usersData);
+        // Sort users by full name for better UX
+        const sortedUsers = usersData.sort((a, b) => {
+          const nameA = (a.fullName || a.username || '').toLowerCase();
+          const nameB = (b.fullName || b.username || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        setUsers(sortedUsers);
       } catch (error) {
         console.error('Error fetching users:', error);
         showSnackbar('Failed to fetch users: ' + error.message, 'error');
@@ -418,7 +426,8 @@ const LeaveManagement = () => {
     if (leaves.length > 0) {
       const summary = {};
       leaves.forEach(leave => {
-        const userName = leave.userName || leave.employee || 'Unknown';
+        // Use full name if available, otherwise username
+        const userName = leave.employee || leave.userName || leave.requestedByName || 'Unknown';
         if (!summary[userName]) {
           summary[userName] = {
             name: userName,
@@ -759,6 +768,23 @@ const LeaveManagement = () => {
     e.preventDefault();
     setError('');
     
+    // Validate dates
+    if (!formState.startDate || !formState.endDate) {
+      setError('Please select both start and end dates');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
+    const startDate = new Date(formState.startDate);
+    const endDate = new Date(formState.endDate);
+    
+    // Allow same start and end date for single day leave
+    if (startDate > endDate) {
+      setError('Start date cannot be after end date');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     try {
       // Determine which user the leave is for
       let leaveUser = user; // Default to current user
@@ -807,6 +833,107 @@ const LeaveManagement = () => {
       console.error('Error submitting leave:', error);
       setError('Failed to submit leave request: ' + (error.response?.data?.message || error.message));
       setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  // Export functions
+  const exportToCSV = () => {
+    try {
+      // Prepare CSV data
+      const csvHeaders = ['Employee', 'Start Date', 'End Date', 'Reason', 'Applied Date', 'Requested By', 'Status'];
+      const csvRows = filteredLeaves.map(leave => [
+        leave.employee || leave.userName || 'N/A',
+        leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A',
+        leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A',
+        leave.reason || 'N/A',
+        leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A',
+        leave.requestedByName || leave.userName || 'N/A',
+        leave.status || 'Pending'
+      ]);
+      
+      // Create CSV content
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(field => `"${field}"`).join(','))
+      ].join('\n');
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `leave_requests_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar('Leave data exported to CSV successfully!', 'success');
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      showSnackbar('Failed to export CSV: ' + error.message, 'error');
+    }
+  };
+
+  const exportToPDF = () => {
+    try {
+      // Simple PDF generation using browser print functionality
+      // In a real app, you'd use a library like jsPDF
+      const printWindow = window.open('', '_blank');
+      const printContent = `
+        <html>
+        <head>
+          <title>Leave Requests Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+          </style>
+        </head>
+        <body>
+          <h1>Leave Requests Report</h1>
+          <p>Generated on: ${new Date().toLocaleString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+                <th>Applied Date</th>
+                <th>Requested By</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredLeaves.map(leave => `
+                <tr>
+                  <td>${leave.employee || leave.userName || 'N/A'}</td>
+                  <td>${leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</td>
+                  <td>${leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</td>
+                  <td>${leave.reason || 'N/A'}</td>
+                  <td>${leave.appliedDate ? new Date(leave.appliedDate).toLocaleDateString() : 'N/A'}</td>
+                  <td>${leave.requestedByName || leave.userName || 'N/A'}</td>
+                  <td>${leave.status || 'Pending'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
+      
+      showSnackbar('Leave data exported to PDF successfully!', 'success');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      showSnackbar('Failed to export PDF: ' + error.message, 'error');
     }
   };
 
@@ -953,6 +1080,23 @@ const LeaveManagement = () => {
           </FilterSection>
           
           {/* Leave List */}
+          {/* Export Buttons */}
+          <Box sx={{ mb: 2, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Button 
+              variant="outlined" 
+              startIcon={<DownloadIcon />}
+              onClick={exportToCSV}
+            >
+              Export CSV
+            </Button>
+            <Button 
+              variant="outlined" 
+              startIcon={<PictureAsPdfIcon />}
+              onClick={exportToPDF}
+            >
+              Export PDF
+            </Button>
+          </Box>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>

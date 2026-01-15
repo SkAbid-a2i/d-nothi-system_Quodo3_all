@@ -36,8 +36,8 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const getCurrentUser = async () => {
-    frontendLogger.info('Getting current user');
+  const getCurrentUser = async (retryCount = 0) => {
+    frontendLogger.info('Getting current user', { retryCount });
     try {
       const response = await authAPI.getCurrentUser();
       const userData = response.data?.data || response.data;
@@ -61,14 +61,31 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       frontendLogger.error('Failed to get current user', { 
         error: error.message,
-        status: error.response?.status
+        status: error.response?.status,
+        retryCount
       });
       
-      // Token is invalid, remove it
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setIsAuthenticated(false);
-      setUser(null);
+      // Only remove token if it's definitely invalid (401 Unauthorized)
+      // For other errors (network, server issues), keep the token and retry
+      if (error.response?.status === 401) {
+        frontendLogger.warn('Token invalid, removing authentication');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
+        setUser(null);
+      } else if (retryCount < 2) {
+        // Retry for temporary network/server issues
+        frontendLogger.info('Retrying authentication', { retryCount: retryCount + 1 });
+        setTimeout(() => {
+          getCurrentUser(retryCount + 1);
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+        return; // Don't set loading to false yet
+      } else {
+        // After max retries, assume token might be invalid
+        frontendLogger.warn('Max retries reached, keeping token but setting unauthenticated state');
+        setIsAuthenticated(false);
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

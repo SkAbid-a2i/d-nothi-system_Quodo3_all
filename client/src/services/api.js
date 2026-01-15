@@ -53,12 +53,24 @@ api.interceptors.response.use(
     );
     
     if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to login
-      frontendLogger.warn('Authentication token expired or invalid, redirecting to login');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Use window.location.replace to prevent back button navigation to protected pages
-      window.location.replace('/login');
+      // Token expired or invalid, but let's be more careful
+      frontendLogger.warn('Authentication token expired or invalid, checking if we should redirect');
+      
+      // Only redirect if we're not already on login page
+      if (window.location.pathname !== '/login') {
+        // Check if this is a fresh page load vs ongoing session
+        const storedToken = localStorage.getItem('token');
+        if (storedToken) {
+          // Give AuthContext a chance to handle revalidation
+          frontendLogger.info('Token present, letting AuthContext handle revalidation');
+        } else {
+          // No token stored, safe to redirect
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          frontendLogger.info('No token found, redirecting to login');
+          window.location.replace('/login');
+        }
+      }
     }
     
     return Promise.reject(error);
