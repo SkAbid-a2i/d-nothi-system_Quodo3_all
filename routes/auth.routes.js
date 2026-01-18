@@ -101,7 +101,12 @@ router.post('/login', cors(corsOptions), async (req, res) => {
 // @access  Private
 router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
   try {
-    console.log('Fetching user data for ID:', req.user.id);
+    console.log('Fetching user data for ID:', req.user?.id);
+    
+    // Basic validation of authenticated user
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Invalid authentication token' });
+    }
     
     let user = null;
     try {
@@ -110,56 +115,20 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       });
     } catch (userErr) {
       console.error('Error fetching user data:', userErr);
-      // If user fetch fails completely, we need to handle this gracefully
-      return res.status(500).json({ message: 'Error fetching user data', error: userErr.message });
-    }
-    
-    console.log('User found:', !!user, 'isActive:', user?.isActive);
-    
-    if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'User not found or inactive' });
-    }
-
-    // Get user preferences with even more resilient error handling
-    let preferences = null;
-    try {
-      console.log('Fetching preferences for user ID:', user.id);
-      preferences = await UserPreferences.findOne({ where: { userId: user.id } });
-      console.log('Preferences found:', !!preferences);
-      
-      if (!preferences) {
-        // Create default preferences if they don't exist
-        console.log('Creating default preferences for user ID:', user.id);
-        preferences = await UserPreferences.create({
-          userId: user.id,
-          theme: 'light',
-          primaryColor: '#667eea',
-          secondaryColor: '#f093fb',
-          backgroundType: 'solid',
-          backgroundColor: '#ffffff',
-          gradientEndColor: '#f093fb',
-          gradientDirection: 'to right',
-          language: 'en'
-        });
-      }
-    } catch (prefErr) {
-      console.error('Error in main preferences operation:', prefErr);
-      // As a last resort, try to return user data without preferences
-      console.log('Attempting to return user data without preferences for user ID:', user.id);
-      
-      // Return user data with minimal preferences to ensure functionality
-      const userDataMinimal = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        office: user.office,
-        bloodGroup: user.bloodGroup,
-        phoneNumber: user.phoneNumber,
-        bio: user.bio,
-        designation: user.designation,
-        isActive: user.isActive,
+      // If user fetch fails completely, return basic user info from token
+      console.log('Returning user data from token for ID:', req.user.id);
+      return res.json({
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        fullName: req.user.fullName || req.user.username,
+        role: req.user.role,
+        office: req.user.office || '',
+        bloodGroup: '',
+        phoneNumber: '',
+        bio: '',
+        designation: '',
+        isActive: true, // Assume active if in token
         preferences: {
           theme: 'light',
           primaryColor: '#667eea',
@@ -171,14 +140,46 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
           backgroundImage: null,
           language: 'en'
         }
-      };
-      
-      console.log('Returning user data without preferences for user ID:', user.id);
-      return res.json(userDataMinimal);
+      });
+    }
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: 'User not found or inactive' });
     }
 
-    console.log('Preparing user data response for ID:', user.id);
+    // Try to get user preferences with simplified error handling
+    let preferences = {
+      theme: 'light',
+      primaryColor: '#667eea',
+      secondaryColor: '#f093fb',
+      backgroundType: 'solid',
+      backgroundColor: '#ffffff',
+      gradientEndColor: '#f093fb',
+      gradientDirection: 'to right',
+      backgroundImage: null,
+      language: 'en'
+    };
     
+    try {
+      const userPrefs = await UserPreferences.findOne({ where: { userId: user.id } });
+      if (userPrefs) {
+        preferences = {
+          theme: userPrefs.theme,
+          primaryColor: userPrefs.primaryColor,
+          secondaryColor: userPrefs.secondaryColor,
+          backgroundType: userPrefs.backgroundType,
+          backgroundColor: userPrefs.backgroundColor,
+          gradientEndColor: userPrefs.gradientEndColor,
+          gradientDirection: userPrefs.gradientDirection,
+          backgroundImage: userPrefs.backgroundImage,
+          language: userPrefs.language
+        };
+      }
+    } catch (prefErr) {
+      console.error('Warning: Error fetching user preferences, using defaults:', prefErr);
+      // Continue with default preferences
+    }
+
     // Return user data with designation field and preferences
     const userData = {
       id: user.id,
@@ -192,17 +193,7 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       bio: user.bio,
       designation: user.designation,
       isActive: user.isActive,
-      preferences: {
-        theme: preferences.theme,
-        primaryColor: preferences.primaryColor,
-        secondaryColor: preferences.secondaryColor,
-        backgroundType: preferences.backgroundType,
-        backgroundColor: preferences.backgroundColor,
-        gradientEndColor: preferences.gradientEndColor,
-        gradientDirection: preferences.gradientDirection,
-        backgroundImage: preferences.backgroundImage,
-        language: preferences.language
-      }
+      preferences: preferences
     };
 
     console.log('Sending user data response for ID:', user.id);
