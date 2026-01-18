@@ -27,7 +27,9 @@ const authenticate = async (req, res, next) => {
     if (err.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Invalid token' });
     }
-    res.status(401).json({ message: 'Token is not valid' });
+    // Log the specific error for debugging
+    console.error('Unexpected authentication error:', err.message, err.stack);
+    res.status(500).json({ message: 'Authentication error', error: err.message });
   }
 };
 

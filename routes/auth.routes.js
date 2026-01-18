@@ -101,9 +101,13 @@ router.post('/login', cors(corsOptions), async (req, res) => {
 // @access  Private
 router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
   try {
+    console.log('Fetching user data for ID:', req.user.id);
+    
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
     });
+    
+    console.log('User found:', !!user, 'isActive:', user?.isActive);
     
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'User not found or inactive' });
@@ -112,9 +116,13 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
     // Get user preferences
     let preferences = null;
     try {
+      console.log('Fetching preferences for user ID:', user.id);
       preferences = await UserPreferences.findOne({ where: { userId: user.id } });
+      console.log('Preferences found:', !!preferences);
+      
       if (!preferences) {
         // Create default preferences if they don't exist
+        console.log('Creating default preferences for user ID:', user.id);
         preferences = await UserPreferences.create({
           userId: user.id,
           theme: 'light',
@@ -131,8 +139,10 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       console.error('Error fetching user preferences:', prefErr);
       // Try to fetch or create user preferences with enhanced error handling
       try {
+        console.log('Secondary attempt to fetch preferences for user ID:', user.id);
         preferences = await UserPreferences.findOne({ where: { userId: user.id } });
         if (!preferences) {
+          console.log('Secondary attempt to create preferences for user ID:', user.id);
           // Try to create default preferences
           preferences = await UserPreferences.create({
             userId: user.id,
@@ -162,6 +172,8 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       }
     }
 
+    console.log('Preparing user data response for ID:', user.id);
+    
     // Return user data with designation field and preferences
     const userData = {
       id: user.id,
@@ -188,9 +200,11 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       }
     };
 
+    console.log('Sending user data response for ID:', user.id);
     res.json(userData);
   } catch (err) {
     console.error('Error in /api/auth/me:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
