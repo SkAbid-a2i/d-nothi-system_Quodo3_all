@@ -42,7 +42,7 @@ import { useThemeContext } from '../contexts/ThemeContext';
 
 const Settings = () => {
   const { t, language, changeLanguage } = useTranslation();
-  const { user, updateUser } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const { 
     darkMode,
     setDarkMode,
