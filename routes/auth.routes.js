@@ -103,9 +103,16 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
   try {
     console.log('Fetching user data for ID:', req.user.id);
     
-    const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ['password'] }
-    });
+    let user = null;
+    try {
+      user = await User.findByPk(req.user.id, {
+        attributes: { exclude: ['password'] }
+      });
+    } catch (userErr) {
+      console.error('Error fetching user data:', userErr);
+      // If user fetch fails completely, we need to handle this gracefully
+      return res.status(500).json({ message: 'Error fetching user data', error: userErr.message });
+    }
     
     console.log('User found:', !!user, 'isActive:', user?.isActive);
     
@@ -205,7 +212,12 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
   } catch (err) {
     console.error('Error in /api/auth/me:', err);
     console.error('Error stack:', err.stack);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    // More specific error response
+    res.status(500).json({ 
+      message: 'Server error in auth/me endpoint', 
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
