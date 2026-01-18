@@ -120,7 +120,7 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       return res.status(401).json({ message: 'User not found or inactive' });
     }
 
-    // Get user preferences
+    // Get user preferences with even more resilient error handling
     let preferences = null;
     try {
       console.log('Fetching preferences for user ID:', user.id);
@@ -143,30 +143,24 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
         });
       }
     } catch (prefErr) {
-      console.error('Error fetching user preferences:', prefErr);
-      // Try to fetch or create user preferences with enhanced error handling
-      try {
-        console.log('Secondary attempt to fetch preferences for user ID:', user.id);
-        preferences = await UserPreferences.findOne({ where: { userId: user.id } });
-        if (!preferences) {
-          console.log('Secondary attempt to create preferences for user ID:', user.id);
-          // Try to create default preferences
-          preferences = await UserPreferences.create({
-            userId: user.id,
-            theme: 'light',
-            primaryColor: '#667eea',
-            secondaryColor: '#f093fb',
-            backgroundType: 'solid',
-            backgroundColor: '#ffffff',
-            gradientEndColor: '#f093fb',
-            gradientDirection: 'to right',
-            language: 'en'
-          });
-        }
-      } catch (createPrefErr) {
-        console.error('Error in preferences lookup/create:', createPrefErr);
-        // If all preference operations fail, use default preferences object
-        preferences = {
+      console.error('Error in main preferences operation:', prefErr);
+      // As a last resort, try to return user data without preferences
+      console.log('Attempting to return user data without preferences for user ID:', user.id);
+      
+      // Return user data with minimal preferences to ensure functionality
+      const userDataMinimal = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        office: user.office,
+        bloodGroup: user.bloodGroup,
+        phoneNumber: user.phoneNumber,
+        bio: user.bio,
+        designation: user.designation,
+        isActive: user.isActive,
+        preferences: {
           theme: 'light',
           primaryColor: '#667eea',
           secondaryColor: '#f093fb',
@@ -174,9 +168,13 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
           backgroundColor: '#ffffff',
           gradientEndColor: '#f093fb',
           gradientDirection: 'to right',
+          backgroundImage: null,
           language: 'en'
-        };
-      }
+        }
+      };
+      
+      console.log('Returning user data without preferences for user ID:', user.id);
+      return res.json(userDataMinimal);
     }
 
     console.log('Preparing user data response for ID:', user.id);
@@ -210,9 +208,9 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
     console.log('Sending user data response for ID:', user.id);
     res.json(userData);
   } catch (err) {
-    console.error('Error in /api/auth/me:', err);
+    console.error('Critical error in /api/auth/me:', err);
     console.error('Error stack:', err.stack);
-    // More specific error response
+    // Ultimate fallback response
     res.status(500).json({ 
       message: 'Server error in auth/me endpoint', 
       error: err.message,

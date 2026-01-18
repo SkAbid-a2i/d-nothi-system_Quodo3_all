@@ -67,6 +67,10 @@ router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'S
     const { startDate, endDate, reason, userId, userName, office, requestedBy, requestedByName } = req.body;
 
     // Validate dates - allow same start and end date for single-day leave
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'Both start date and end date are required' });
+    }
+    
     if (new Date(startDate) > new Date(endDate)) {
       return res.status(400).json({ message: 'End date must be same as or after start date' });
     }
