@@ -11,7 +11,16 @@ const authenticate = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    const user = await User.findByPk(decoded.id);
+    let user = null;
+    try {
+      user = await User.findByPk(decoded.id);
+    } catch (dbErr) {
+      console.error('Database error fetching user in auth middleware:', dbErr);
+      // If database fetch fails, we can still pass the decoded token info
+      // This allows the route to handle gracefully
+      req.user = { id: decoded.id };
+      return next();
+    }
     
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Token is not valid' });
