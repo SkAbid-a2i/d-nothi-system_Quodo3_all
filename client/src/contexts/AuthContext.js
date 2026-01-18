@@ -141,6 +141,7 @@ export const AuthProvider = ({ children }) => {
       if (userData) {
         setUser(userData);
         setIsAuthenticated(true);
+        setLoading(false);  // Set loading to false after successful authentication
         frontendLogger.setUserId(userData.id);
         frontendLogger.info('User authenticated successfully', { userId: userData.id, role: userData.role });
         
