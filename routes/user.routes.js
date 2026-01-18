@@ -235,21 +235,26 @@ router.delete('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'),
     }
 
     // Delete related records first to avoid foreign key constraint issues
-    await Leave.destroy({ where: { userId: id } });
-    await Task.destroy({ where: { userId: id } });
-    await Notification.destroy({ where: { userId: id } });
-    
-    // Delete related meetings where user is the creator
-    await Meeting.destroy({ where: { userId: id } });
-    
-    // Delete related collaborations
-    await Collaboration.destroy({ where: { userId: id } });
-    
-    // Delete related files
-    await File.destroy({ where: { userId: id } });
-    
-    // Delete user preferences
-    await UserPreferences.destroy({ where: { userId: id } });
+    try {
+      await Leave.destroy({ where: { userId: id } });
+      await Task.destroy({ where: { userId: id } });
+      await Notification.destroy({ where: { userId: id } });
+      
+      // Delete related meetings where user is the creator
+      await Meeting.destroy({ where: { userId: id } });
+      
+      // Delete related collaborations
+      await Collaboration.destroy({ where: { userId: id } });
+      
+      // Delete related files
+      await File.destroy({ where: { userId: id } });
+      
+      // Delete user preferences
+      await UserPreferences.destroy({ where: { userId: id } });
+    } catch (cleanupError) {
+      console.error('Error during user record cleanup:', cleanupError);
+      // Continue with user deletion even if cleanup fails
+    }
 
     // Store user data for notification before deletion
     const userData = {
