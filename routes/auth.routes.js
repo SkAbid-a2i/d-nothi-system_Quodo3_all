@@ -129,22 +129,26 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
       }
     } catch (prefErr) {
       console.error('Error fetching user preferences:', prefErr);
-      // Create default preferences if there's an error
+      // Try to fetch or create user preferences with enhanced error handling
       try {
-        preferences = await UserPreferences.create({
-          userId: user.id,
-          theme: 'light',
-          primaryColor: '#667eea',
-          secondaryColor: '#f093fb',
-          backgroundType: 'solid',
-          backgroundColor: '#ffffff',
-          gradientEndColor: '#f093fb',
-          gradientDirection: 'to right',
-          language: 'en'
-        });
+        preferences = await UserPreferences.findOne({ where: { userId: user.id } });
+        if (!preferences) {
+          // Try to create default preferences
+          preferences = await UserPreferences.create({
+            userId: user.id,
+            theme: 'light',
+            primaryColor: '#667eea',
+            secondaryColor: '#f093fb',
+            backgroundType: 'solid',
+            backgroundColor: '#ffffff',
+            gradientEndColor: '#f093fb',
+            gradientDirection: 'to right',
+            language: 'en'
+          });
+        }
       } catch (createPrefErr) {
-        console.error('Error creating default preferences:', createPrefErr);
-        // If preferences still can't be created, return user without preferences
+        console.error('Error in preferences lookup/create:', createPrefErr);
+        // If all preference operations fail, use default preferences object
         preferences = {
           theme: 'light',
           primaryColor: '#667eea',
