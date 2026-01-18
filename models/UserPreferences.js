@@ -10,13 +10,14 @@ const UserPreferences = sequelize.define('UserPreferences', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    unique: true,
-    references: {
-      model: 'users',
-      key: 'id'
-    },
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
+    unique: true
+    // Note: Foreign key constraint is omitted for SQLite compatibility
+    // references: {
+    //   model: 'users',
+    //   key: 'id'
+    // },
+    // onDelete: 'CASCADE',
+    // onUpdate: 'CASCADE'
   },
   theme: {
     type: DataTypes.STRING(20),

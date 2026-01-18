@@ -130,17 +130,32 @@ router.get('/me', cors(corsOptions), authenticate, async (req, res) => {
     } catch (prefErr) {
       console.error('Error fetching user preferences:', prefErr);
       // Create default preferences if there's an error
-      preferences = await UserPreferences.create({
-        userId: user.id,
-        theme: 'light',
-        primaryColor: '#667eea',
-        secondaryColor: '#f093fb',
-        backgroundType: 'solid',
-        backgroundColor: '#ffffff',
-        gradientEndColor: '#f093fb',
-        gradientDirection: 'to right',
-        language: 'en'
-      });
+      try {
+        preferences = await UserPreferences.create({
+          userId: user.id,
+          theme: 'light',
+          primaryColor: '#667eea',
+          secondaryColor: '#f093fb',
+          backgroundType: 'solid',
+          backgroundColor: '#ffffff',
+          gradientEndColor: '#f093fb',
+          gradientDirection: 'to right',
+          language: 'en'
+        });
+      } catch (createPrefErr) {
+        console.error('Error creating default preferences:', createPrefErr);
+        // If preferences still can't be created, return user without preferences
+        preferences = {
+          theme: 'light',
+          primaryColor: '#667eea',
+          secondaryColor: '#f093fb',
+          backgroundType: 'solid',
+          backgroundColor: '#ffffff',
+          gradientEndColor: '#f093fb',
+          gradientDirection: 'to right',
+          language: 'en'
+        };
+      }
     }
 
     // Return user data with designation field and preferences

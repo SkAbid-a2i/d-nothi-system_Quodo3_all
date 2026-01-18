@@ -833,7 +833,7 @@ const LeaveManagement = () => {
     
     // Allow same start and end date for single day leave
     if (startDate > endDate) {
-      setError('Start date cannot be after end date');
+      setError('Start date cannot be after end date (can be same as end date for single day leave)');
       setTimeout(() => setError(''), 5000);
       return;
     }

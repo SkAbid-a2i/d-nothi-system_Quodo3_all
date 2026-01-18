@@ -66,9 +66,9 @@ router.post('/', cors(corsOptions), authenticate, authorize('Agent', 'Admin', 'S
   try {
     const { startDate, endDate, reason, userId, userName, office, requestedBy, requestedByName } = req.body;
 
-    // Validate dates
-    if (new Date(startDate) >= new Date(endDate)) {
-      return res.status(400).json({ message: 'End date must be after start date' });
+    // Validate dates - allow same start and end date for single-day leave
+    if (new Date(startDate) > new Date(endDate)) {
+      return res.status(400).json({ message: 'End date must be same as or after start date' });
     }
 
     // Determine which user the leave is for
@@ -350,9 +350,9 @@ router.put('/:id', cors(corsOptions), authenticate, async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    // Validate dates if provided
-    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      return res.status(400).json({ message: 'End date must be after start date' });
+    // Validate dates if provided - allow same start and end date for single-day leave
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      return res.status(400).json({ message: 'End date must be same as or after start date' });
     }
 
     // Update leave
