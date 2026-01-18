@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { authAPI } from '../services/api';
 import { auditLog } from '../services/auditLogger';
 import frontendLogger from '../services/frontendLogger';
@@ -22,6 +22,70 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const tokenValidationRef = useRef(null);
+  
+  // Handle token storage with tab synchronization
+  const setStoredToken = (token) => {
+    if (token) {
+      localStorage.setItem('token', token);
+      // Broadcast to other tabs
+      window.dispatchEvent(new CustomEvent('tokenChanged', { detail: { token } }));
+    } else {
+      localStorage.removeItem('token');
+      window.dispatchEvent(new CustomEvent('tokenChanged', { detail: { token: null } }));
+    }
+  };
+  
+  const setStoredUser = (userData) => {
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      window.dispatchEvent(new CustomEvent('userChanged', { detail: { user: userData } }));
+    } else {
+      localStorage.removeItem('user');
+      window.dispatchEvent(new CustomEvent('userChanged', { detail: { user: null } }));
+    }
+  };
+
+  // Handle storage events for cross-tab synchronization
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        const newToken = e.newValue;
+        if (!newToken) {
+          // Token was removed in another tab
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      }
+    };
+    
+    const handleTokenChange = (e) => {
+      const { token } = e.detail;
+      if (!token) {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+    
+    const handleUserChange = (e) => {
+      const { user: userData } = e.detail;
+      if (userData) {
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('tokenChanged', handleTokenChange);
+    window.addEventListener('userChanged', handleUserChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('tokenChanged', handleTokenChange);
+      window.removeEventListener('userChanged', handleUserChange);
+    };
+  }, []);
 
   // Check if user is logged in on initial load
   useEffect(() => {
@@ -34,7 +98,39 @@ export const AuthProvider = ({ children }) => {
       frontendLogger.info('No token found, setting unauthenticated state');
       setLoading(false);
     }
+    
+    // Set up periodic token validation
+    tokenValidationRef.current = setInterval(() => {
+      if (isAuthenticated && user) {
+        // Validate token periodically
+        validateToken();
+      }
+    }, 30000); // Every 30 seconds
+    
+    return () => {
+      if (tokenValidationRef.current) {
+        clearInterval(tokenValidationRef.current);
+      }
+    };
   }, []);
+
+  const validateToken = async () => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      const userData = response.data?.data || response.data;
+      
+      if (userData) {
+        setUser(userData);
+        frontendLogger.info('Token validated successfully', { userId: userData.id });
+      }
+    } catch (error) {
+      frontendLogger.warn('Token validation failed', { error: error.message });
+      if (error.response?.status === 401) {
+        // Token is invalid, logout
+        handleLogout();
+      }
+    }
+  };
 
   const getCurrentUser = async (retryCount = 0) => {
     frontendLogger.info('Getting current user', { retryCount });
@@ -71,8 +167,8 @@ export const AuthProvider = ({ children }) => {
       if (error.response?.status === 401) {
         // Definite token invalidation - remove authentication
         frontendLogger.warn('Token invalid (401), removing authentication');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        setStoredToken(null);
+        setStoredUser(null);
         setIsAuthenticated(false);
         setUser(null);
       } else if (error.code === 'NETWORK_ERROR' || !error.response) {
@@ -129,8 +225,8 @@ export const AuthProvider = ({ children }) => {
       const { token, user: userData } = response.data;
       
       // Store token and user data
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      setStoredToken(token);
+      setStoredUser(userData);
       
       setUser(userData);
       setIsAuthenticated(true);
@@ -160,15 +256,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    frontendLogger.logAuthEvent('logout', { userId: user?.id });
-    
+  const handleLogout = () => {
     // Disconnect notification service
     notificationService.disconnect();
     
     // Remove token and user data
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    setStoredToken(null);
+    setStoredUser(null);
     
     setUser(null);
     setIsAuthenticated(false);
@@ -181,15 +275,15 @@ export const AuthProvider = ({ children }) => {
     frontendLogger.info('User logged out');
   };
 
+  const logout = () => {
+    frontendLogger.logAuthEvent('logout', { userId: user?.id });
+    handleLogout();
+  };
+
   const updateUser = (userData) => {
     setUser(userData);
     // Also update localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      const updatedUser = { ...parsedUser, ...userData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
+    setStoredUser(userData);
   };
 
   const value = {

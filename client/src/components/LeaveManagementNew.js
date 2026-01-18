@@ -427,16 +427,19 @@ const LeaveManagement = () => {
       const summary = {};
       leaves.forEach(leave => {
         // Use full name if available, otherwise username
-        const userName = leave.employee || leave.userName || leave.requestedByName || 'Unknown';
-        if (!summary[userName]) {
-          summary[userName] = {
-            name: userName,
+        // Extract full name from the user data
+        const userFullName = users.find(u => u.id === leave.userId)?.fullName || 
+                      leave.employee || leave.userName || leave.requestedByName || 'Unknown';
+        
+        if (!summary[userFullName]) {
+          summary[userFullName] = {
+            name: userFullName,
             totalLeaves: 0,
             leaveList: []
           };
         }
-        summary[userName].totalLeaves++;
-        summary[userName].leaveList.push({
+        summary[userFullName].totalLeaves++;
+        summary[userFullName].leaveList.push({
           startDate: leave.startDate,
           endDate: leave.endDate,
           reason: leave.reason,
@@ -446,13 +449,63 @@ const LeaveManagement = () => {
       });
       setLeaveSummary(summary);
     }
-  }, [leaves]);
+  }, [leaves, users]);
   
-  // Filtered leave summary based on user selection
+  // Filtered leave summary based on user selection and date range
   const filteredLeaveSummary = Object.fromEntries(
     Object.entries(leaveSummary).filter(([userName, data]) => {
-      if (!summaryUserFilter) return true;
-      return userName.toLowerCase().includes(summaryUserFilter.toLowerCase());
+      // User filter
+      const matchesUser = !summaryUserFilter || userName.toLowerCase().includes(summaryUserFilter.toLowerCase());
+      
+      // Date range filter
+      const matchesDateRange = data.leaveList.some(leave => {
+        const leaveStart = new Date(leave.startDate);
+        const leaveEnd = new Date(leave.endDate);
+        
+        const startDateFilter = summaryDateRange.start ? new Date(summaryDateRange.start) : null;
+        const endDateFilter = summaryDateRange.end ? new Date(summaryDateRange.end) : null;
+        
+        // If both start and end date are provided, check if the leave period overlaps with the filter range
+        if (startDateFilter && endDateFilter) {
+          return (leaveStart <= endDateFilter && leaveEnd >= startDateFilter);
+        }
+        // If only start date is provided, check if the leave period starts before or during the filter
+        else if (startDateFilter) {
+          return leaveEnd >= startDateFilter;
+        }
+        // If only end date is provided, check if the leave period ends during or after the filter
+        else if (endDateFilter) {
+          return leaveStart <= endDateFilter;
+        }
+        
+        // If no date filters, include all
+        return true;
+      });
+      
+      return matchesUser && matchesDateRange;
+    }).map(([userName, data]) => {
+      // Filter the leaveList based on date range
+      let filteredLeaveList = data.leaveList;
+      if (summaryDateRange.start || summaryDateRange.end) {
+        filteredLeaveList = data.leaveList.filter(leave => {
+          const leaveStart = new Date(leave.startDate);
+          const leaveEnd = new Date(leave.endDate);
+          
+          const startDateFilter = summaryDateRange.start ? new Date(summaryDateRange.start) : null;
+          const endDateFilter = summaryDateRange.end ? new Date(summaryDateRange.end) : null;
+          
+          if (startDateFilter && endDateFilter) {
+            return (leaveStart <= endDateFilter && leaveEnd >= startDateFilter);
+          } else if (startDateFilter) {
+            return leaveEnd >= startDateFilter;
+          } else if (endDateFilter) {
+            return leaveStart <= endDateFilter;
+          }
+          return true;
+        });
+      }
+      
+      return [userName, { ...data, leaveList: filteredLeaveList, totalLeaves: filteredLeaveList.length }];
     })
   );
   
@@ -785,6 +838,8 @@ const LeaveManagement = () => {
       return;
     }
     
+    // If start and end date are the same, it's a single day leave
+    // The system will accept same start and end date as a single day
     try {
       // Determine which user the leave is for
       let leaveUser = user; // Default to current user
@@ -1257,11 +1312,27 @@ const LeaveManagement = () => {
           
           {/* Summary Filters */}
           <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-            <TextField
-              label="Filter by User"
-              value={summaryUserFilter}
-              onChange={(e) => setSummaryUserFilter(e.target.value)}
-              sx={{ minWidth: 300 }}
+            <Autocomplete
+              options={users}
+              getOptionLabel={(option) => 
+                option ? (option.fullName || option.username) + ' (' + (option.username || option.email) + ')' : ''
+              }
+              value={users.find(u => 
+                (u.fullName || u.username) + ' (' + (u.username || u.email) + ')' === summaryUserFilter
+              ) || null}
+              onChange={(event, newValue) => {
+                setSummaryUserFilter(newValue ? 
+                  (newValue.fullName || newValue.username) + ' (' + (newValue.username || newValue.email) + ')'
+                  : '');
+              }}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Filter by User" 
+                  sx={{ minWidth: 300 }}
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value?.id}
             />
             <TextField
               label="From Date"
@@ -1287,6 +1358,112 @@ const LeaveManagement = () => {
               }}
             >
               Clear Filters
+            </Button>
+          </Box>
+          
+          {/* Export Buttons for Summary */}
+          <Box sx={{ mb: 2, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Button 
+              variant="outlined" 
+              startIcon={<DownloadIcon />}
+              onClick={() => {
+                // Filter the summary data based on current filters
+                const filteredData = Object.entries(filteredLeaveSummary);
+                
+                // Prepare CSV data for summary
+                const csvHeaders = ['User', 'Total Leaves', 'Leave Details'];
+                const csvRows = filteredData.map(([userName, data]) => [
+                  userName,
+                  data.totalLeaves,
+                  data.leaveList.map(leave => 
+                    `${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()} (${leave.status})`
+                  ).join('; ')
+                ]);
+                
+                // Create CSV content
+                const csvContent = [
+                  csvHeaders.join(','),
+                  ...csvRows.map(row => row.map(field => `"${field}"`).join(','))
+                ].join('\n');
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `leave_summary_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showSnackbar('Leave summary exported to CSV successfully!', 'success');
+              }}
+            >
+              Export Summary CSV
+            </Button>
+            <Button 
+              variant="outlined" 
+              startIcon={<PictureAsPdfIcon />}
+              onClick={() => {
+                // Simple PDF generation using browser print functionality
+                const filteredData = Object.entries(filteredLeaveSummary);
+                const printWindow = window.open('', '_blank');
+                const printContent = `
+                  <html>
+                  <head>
+                    <title>Leave Summary Report</title>
+                    <style>
+                      body { font-family: Arial, sans-serif; margin: 20px; }
+                      h1 { color: #333; }
+                      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                      th { background-color: #f2f2f2; }
+                      tr:nth-child(even) { background-color: #f9f9f9; }
+                    </style>
+                  </head>
+                  <body>
+                    <h1>Leave Summary Report</h1>
+                    <p>Generated on: ${new Date().toLocaleString()}</p>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>User</th>
+                          <th>Total Leaves</th>
+                          <th>Leave Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${filteredData.map(([userName, data]) => `
+                          <tr>
+                            <td>${userName}</td>
+                            <td>${data.totalLeaves}</td>
+                            <td>
+                              ${data.leaveList.map(leave => `
+                                <div style="margin-bottom: 5px;">
+                                  <strong>Dates:</strong> ${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}<br/>
+                                  <strong>Reason:</strong> ${leave.reason}<br/>
+                                  <strong>Status:</strong> ${leave.status}<br/>
+                                  <strong>Applied:</strong> ${new Date(leave.appliedDate).toLocaleDateString()}
+                                </div>
+                              `).join('')}
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </body>
+                  </html>
+                `;
+                
+                printWindow.document.write(printContent);
+                printWindow.document.close();
+                printWindow.print();
+                
+                showSnackbar('Leave summary exported to PDF successfully!', 'success');
+              }}
+            >
+              Export Summary PDF
             </Button>
           </Box>
           
