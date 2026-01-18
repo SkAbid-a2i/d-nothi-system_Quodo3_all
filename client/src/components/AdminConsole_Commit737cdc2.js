@@ -71,6 +71,7 @@ const AdminConsole = () => {
   const [editingDropdown, setEditingDropdown] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dropdownToDelete, setDropdownToDelete] = useState(null);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [importFile, setImportFile] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   
@@ -95,7 +96,7 @@ const AdminConsole = () => {
   // Form state
   // Blood group options
   const bloodGroups = [
-    'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'
+    'A (+ve)', 'A (-ve)', 'B (+ve)', 'B (-ve)', 'AB (+ve)', 'AB (-ve)', 'O (+ve)', 'O (-ve)'
   ];
   
   const [formData, setFormData] = useState({
@@ -303,12 +304,18 @@ const AdminConsole = () => {
     setEditingUserId(user.id);
   };
 
-  const handleDeleteUser = async (userId) => {
+  const openDeleteUserDialog = (user) => {
+    setUserToDelete(user);
+  };
+  
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    
     try {
       setLoading(true);
-      await userAPI.deleteUser(userId);
+      await userAPI.deleteUser(userToDelete.id);
       setSuccess('User deleted successfully!');
-      auditLog.userDeleted(userId, user?.username || 'unknown');
+      auditLog.userDeleted(userToDelete.id, user?.username || 'unknown');
       
       // Refresh users list
       fetchUsers();
@@ -320,7 +327,12 @@ const AdminConsole = () => {
       setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
+      setUserToDelete(null);
     }
+  };
+  
+  const closeDeleteUserDialog = () => {
+    setUserToDelete(null);
   };
 
   // Dropdown management functions
@@ -997,7 +1009,7 @@ Obligation,Legal,`;
                                   <IconButton 
                                     size="small" 
                                     color="error" 
-                                    onClick={() => handleDeleteUser(user.id)}
+                                    onClick={() => openDeleteUserDialog(user)}
                                   >
                                     <DeleteIcon />
                                   </IconButton>
@@ -1410,7 +1422,7 @@ Obligation,Legal,`;
         </Box>
       </Paper>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Dropdown Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
@@ -1423,6 +1435,24 @@ Obligation,Legal,`;
             Cancel
           </Button>
           <Button onClick={handleDeleteDropdown} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* User Delete Confirmation Dialog */}
+      <Dialog open={!!userToDelete} onClose={closeDeleteUserDialog}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the user <strong>{userToDelete?.fullName || userToDelete?.username}</strong>? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteUserDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDeleteUser} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>
