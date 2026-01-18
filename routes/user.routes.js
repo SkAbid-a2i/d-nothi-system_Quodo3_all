@@ -1,5 +1,12 @@
 const express = require('express');
 const User = require('../models/User');
+const Leave = require('../models/Leave');
+const Task = require('../models/Task');
+const Notification = require('../models/Notification');
+const File = require('../models/File');
+const Meeting = require('../models/Meeting');
+const Collaboration = require('../models/Collaboration');
+const UserPreferences = require('../models/UserPreferences');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { userValidation, userUpdateValidation } = require('../validators/user.validator');
 const sequelize = require('sequelize');
@@ -227,15 +234,6 @@ router.delete('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'),
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Import related models
-    const Leave = require('../models/Leave');
-    const Task = require('../models/Task');
-    const Notification = require('../models/Notification');
-    const File = require('../models/File');
-    const Meeting = require('../models/Meeting');
-    const Collaboration = require('../models/Collaboration');
-    const UserPreferences = require('../models/UserPreferences');
-    
     // Delete related records first to avoid foreign key constraint issues
     await Leave.destroy({ where: { userId: id } });
     await Task.destroy({ where: { userId: id } });
