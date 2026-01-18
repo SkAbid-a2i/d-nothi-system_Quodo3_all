@@ -27,8 +27,10 @@ import {
   ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { useAuth } from '../contexts/AuthContext';
 
 const KanbanBoard = () => {
+  const { token } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [cards, setCards] = useState([]);
@@ -66,10 +68,10 @@ const KanbanBoard = () => {
 
   const fetchCards = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const authToken = token;
       const response = await fetch(getApiUrl('/api/kanban'), {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       });
@@ -118,7 +120,7 @@ const KanbanBoard = () => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const authToken = token;
       const method = editingCard ? 'PUT' : 'POST';
       const url = editingCard 
         ? getApiUrl(`/api/kanban/${editingCard.id}`) 
@@ -127,7 +129,7 @@ const KanbanBoard = () => {
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(newCard)
@@ -147,11 +149,11 @@ const KanbanBoard = () => {
 
   const handleDelete = async (cardId) => {
     try {
-      const token = localStorage.getItem('token');
+      const authToken = token;
       const response = await fetch(getApiUrl(`/api/kanban/${cardId}`), {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       });
@@ -186,11 +188,11 @@ const KanbanBoard = () => {
     const newStatus = destination.droppableId;
     
     try {
-      const token = localStorage.getItem('token');
+      const authToken = token;
       const response = await fetch(getApiUrl(`/api/kanban/${cardId}`), {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({

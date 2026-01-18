@@ -145,7 +145,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
     { text: t('navigation.collaboration'), icon: <CollaborationIcon />, path: '/collaboration' },
     { text: t('navigation.kanban'), icon: <DashboardIcon />, path: '/kanban' },
     { text: t('navigation.errorMonitoring'), icon: <ErrorIcon />, path: '/error-monitoring', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
-    { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin'] },
+    { text: t('navigation.adminConsole'), icon: <UserIcon />, path: '/admin', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.reports'), icon: <ReportIcon />, path: '/reports', allowedRoles: ['SystemAdmin', 'Admin', 'Supervisor'] },
     { text: t('navigation.help'), icon: <HelpIcon />, path: '/help' },
   ];
@@ -455,8 +455,8 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
       console.log('Layout: Cleaning up notification listeners');
       // Remove the specific listener
       notificationService.off('notification', handleAllNotifications);
-      // Don't disconnect from notification service on component unmount
-      // Keep connection alive for better user experience
+      // Disconnect from notification service on component unmount to prevent memory leaks
+      notificationService.disconnect();
     };
   }, [user?.id]); // Only reconnect when user ID changes
 
@@ -720,7 +720,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
               }
               
               // Special handling for Admin Console
-              if (item.path === '/admin' && user && user.role === 'SystemAdmin') {
+              if (item.path === '/admin' && user && ['SystemAdmin', 'Admin', 'Supervisor'].includes(user.role)) {
                 return (
                   <Box key={item.text}>
                     <StyledListItem 

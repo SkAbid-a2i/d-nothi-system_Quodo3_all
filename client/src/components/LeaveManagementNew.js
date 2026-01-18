@@ -606,7 +606,7 @@ const LeaveManagement = () => {
     }
     
     // Check if user has permission to edit this leave
-    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || 
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor' || 
          (user.id === leave.userId && leave.status === 'Pending'))) {
       setError('You do not have permission to edit this leave request');
       showSnackbar('You do not have permission to edit this leave request', 'error');
@@ -1203,7 +1203,7 @@ const LeaveManagement = () => {
                           </IconButton>
                         </>
                       )}
-                      {(user.role === 'SystemAdmin' || user.role === 'Admin' || (user.id === leave.userId && leave.status === 'Pending')) && (
+                      {(user.role === 'SystemAdmin' || (user.id === leave.userId && leave.status === 'Pending')) && (
                         <IconButton 
                           size="small" 
                           onClick={() => handleEditLeave(leave)}
@@ -1211,7 +1211,7 @@ const LeaveManagement = () => {
                           <EditIcon />
                         </IconButton>
                       )}
-                      {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === leave.userId) && (
+                      {(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor' || user.id === leave.userId) && (
                         <IconButton 
                           size="small" 
                           onClick={() => handleDeleteLeave(leave)}

@@ -376,7 +376,7 @@ const AppWithTheme = () => {
                   <Route index element={<LeaveManagement />} />
                 </Route>
                 <Route path="/admin" element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
                     <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
                   </ProtectedRoute>
                 }>
@@ -411,7 +411,7 @@ const AppWithTheme = () => {
                   <Route index element={<LogMonitoring />} />
                 </Route>
                 <Route path="/error-monitoring" element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
+                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
                     <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
                   </ProtectedRoute>
                 }>

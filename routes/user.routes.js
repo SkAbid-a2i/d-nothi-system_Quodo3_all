@@ -12,6 +12,7 @@ const { userValidation, userUpdateValidation } = require('../validators/user.val
 const sequelize = require('sequelize');
 const notificationService = require('../services/notification.service');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
 
 // CORS configuration for users
 const corsOptions = {
@@ -79,11 +80,18 @@ router.post('/', cors(corsOptions), authenticate, authorize('SystemAdmin'), asyn
       return res.status(400).json({ message: 'User with this username or email already exists' });
     }
 
+    // Hash the password before creating the user
+    let hashedPassword = password;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(password, salt);
+    }
+    
     // Create new user
     const user = await User.create({
       username,
       email,
-      password,
+      password: hashedPassword,
       fullName,
       role,
       office,
@@ -140,9 +148,9 @@ router.post('/', cors(corsOptions), authenticate, authorize('SystemAdmin'), asyn
 });
 
 // @route   PUT /api/users/:id
-// @desc    Update user (SystemAdmin only)
-// @access  Private (SystemAdmin)
-router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), async (req, res) => {
+// @desc    Update user (SystemAdmin, Admin, Supervisor)
+// @access  Private (SystemAdmin, Admin, Supervisor)
+router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin', 'Admin', 'Supervisor'), async (req, res) => {
   try {
     // Validate request body
     const { error } = userUpdateValidation(req.body);
@@ -151,7 +159,7 @@ router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), as
     }
 
     const { id } = req.params;
-    const { username, email, fullName, role, office, isActive, bloodGroup, phoneNumber, bio, designation } = req.body;
+    const { username, email, password, fullName, role, office, isActive, bloodGroup, phoneNumber, bio, designation } = req.body;
 
     // Check if user exists
     const user = await User.findByPk(id);
@@ -159,9 +167,24 @@ router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin'), as
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Prevent Admin and Supervisor from updating SystemAdmin users
+    if ((req.user.role === 'Admin' || req.user.role === 'Supervisor') && user.role === 'SystemAdmin') {
+      return res.status(403).json({ message: 'Access denied - Admin and Supervisor cannot update SystemAdmin users' });
+    }
+
+    // Prevent Admin and Supervisor from updating passwords
+    if ((req.user.role === 'Admin' || req.user.role === 'Supervisor') && password) {
+      return res.status(403).json({ message: 'Access denied - Admin and Supervisor cannot update passwords' });
+    }
+
     // Update user fields
     user.username = username || user.username;
     user.email = email || user.email;
+    // Only update password if provided and user has proper permissions (only SystemAdmin can update passwords)
+    if (password && req.user.role === 'SystemAdmin') {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
     user.fullName = fullName || user.fullName;
     user.role = role || user.role;
     user.office = office || user.office;

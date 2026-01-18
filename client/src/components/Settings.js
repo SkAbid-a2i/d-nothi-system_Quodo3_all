@@ -814,7 +814,6 @@ const Settings = () => {
                           
                           // Update preferences in backend
                           try {
-                            const token = localStorage.getItem('token');
                             if (token) {
                               const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
                                 method: 'PUT',
@@ -863,7 +862,6 @@ const Settings = () => {
                             
                             // Update preferences in backend
                             try {
-                              const token = localStorage.getItem('token');
                               if (token) {
                                 const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/profile`, {
                                   method: 'PUT',

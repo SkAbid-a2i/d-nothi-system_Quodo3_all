@@ -368,12 +368,117 @@ const AgentDashboard = () => {
       fetchDashboardData(); // Refresh data
     };
 
+    const handleUserCreated = (data) => {
+      console.log('User created notification received:', data);
+      showSnackbar(`New user created: ${data.user.username}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleUserUpdated = (data) => {
+      console.log('User updated notification received:', data);
+      showSnackbar(`User updated: ${data.user.username}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleUserDeleted = (data) => {
+      console.log('User deleted notification received:', data);
+      showSnackbar(`User deleted: ${data.username}`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleDropdownCreated = (data) => {
+      console.log('Dropdown created notification received:', data);
+      showSnackbar(`New dropdown value created: ${data.dropdown.value}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleDropdownUpdated = (data) => {
+      console.log('Dropdown updated notification received:', data);
+      showSnackbar(`Dropdown value updated: ${data.dropdown.value}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleDropdownDeleted = (data) => {
+      console.log('Dropdown deleted notification received:', data);
+      showSnackbar(`Dropdown value deleted: ${data.dropdownValue}`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handlePermissionTemplateCreated = (data) => {
+      console.log('Permission template created notification received:', data);
+      showSnackbar(`New permission template created: ${data.template.name}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handlePermissionTemplateUpdated = (data) => {
+      console.log('Permission template updated notification received:', data);
+      showSnackbar(`Permission template updated: ${data.template.name}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handlePermissionTemplateDeleted = (data) => {
+      console.log('Permission template deleted notification received:', data);
+      showSnackbar(`Permission template deleted: ${data.templateName}`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleMeetingCreated = (data) => {
+      console.log('Meeting created notification received:', data);
+      showSnackbar(`New meeting scheduled: ${data.meeting.subject}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleMeetingUpdated = (data) => {
+      console.log('Meeting updated notification received:', data);
+      showSnackbar(`Meeting updated: ${data.meeting.subject}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleMeetingDeleted = (data) => {
+      console.log('Meeting deleted notification received:', data);
+      showSnackbar(`Meeting cancelled: ${data.meeting.subject}`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleCollaborationCreated = (data) => {
+      console.log('Collaboration created notification received:', data);
+      showSnackbar(`New collaboration link created: ${data.collaboration.title}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleCollaborationUpdated = (data) => {
+      console.log('Collaboration updated notification received:', data);
+      showSnackbar(`Collaboration link updated: ${data.collaboration.title}`, 'info');
+      fetchDashboardData(); // Refresh data
+    };
+
+    const handleCollaborationDeleted = (data) => {
+      console.log('Collaboration deleted notification received:', data);
+      showSnackbar(`Collaboration link deleted: ${data.collaboration.title}`, 'warning');
+      fetchDashboardData(); // Refresh data
+    };
+
     // Subscribe to notifications
     notificationService.onTaskCreated(handleTaskCreated);
     notificationService.onTaskUpdated(handleTaskUpdated);
     notificationService.onLeaveRequested(handleLeaveRequested);
     notificationService.onLeaveApproved(handleLeaveApproved);
     notificationService.onLeaveRejected(handleLeaveRejected);
+    notificationService.onUserCreated(handleUserCreated);
+    notificationService.onUserUpdated(handleUserUpdated);
+    notificationService.onUserDeleted(handleUserDeleted);
+    notificationService.onDropdownCreated(handleDropdownCreated);
+    notificationService.onDropdownUpdated(handleDropdownUpdated);
+    notificationService.onDropdownDeleted(handleDropdownDeleted);
+    notificationService.onPermissionTemplateCreated(handlePermissionTemplateCreated);
+    notificationService.onPermissionTemplateUpdated(handlePermissionTemplateUpdated);
+    notificationService.onPermissionTemplateDeleted(handlePermissionTemplateDeleted);
+    notificationService.onMeetingCreated(handleMeetingCreated);
+    notificationService.onMeetingUpdated(handleMeetingUpdated);
+    notificationService.onMeetingDeleted(handleMeetingDeleted);
+    notificationService.onCollaborationCreated(handleCollaborationCreated);
+    notificationService.onCollaborationUpdated(handleCollaborationUpdated);
+    notificationService.onCollaborationDeleted(handleCollaborationDeleted);
 
     // Cleanup on unmount
     return () => {
@@ -382,6 +487,21 @@ const AgentDashboard = () => {
       notificationService.off('leaveRequested', handleLeaveRequested);
       notificationService.off('leaveApproved', handleLeaveApproved);
       notificationService.off('leaveRejected', handleLeaveRejected);
+      notificationService.off('userCreated', handleUserCreated);
+      notificationService.off('userUpdated', handleUserUpdated);
+      notificationService.off('userDeleted', handleUserDeleted);
+      notificationService.off('dropdownCreated', handleDropdownCreated);
+      notificationService.off('dropdownUpdated', handleDropdownUpdated);
+      notificationService.off('dropdownDeleted', handleDropdownDeleted);
+      notificationService.off('permissionTemplateCreated', handlePermissionTemplateCreated);
+      notificationService.off('permissionTemplateUpdated', handlePermissionTemplateUpdated);
+      notificationService.off('permissionTemplateDeleted', handlePermissionTemplateDeleted);
+      notificationService.off('meetingCreated', handleMeetingCreated);
+      notificationService.off('meetingUpdated', handleMeetingUpdated);
+      notificationService.off('meetingDeleted', handleMeetingDeleted);
+      notificationService.off('collaborationCreated', handleCollaborationCreated);
+      notificationService.off('collaborationUpdated', handleCollaborationUpdated);
+      notificationService.off('collaborationDeleted', handleCollaborationDeleted);
     };
   }, [fetchDashboardData]);
 
