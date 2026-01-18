@@ -93,11 +93,17 @@ const AdminConsole = () => {
   const [editingTemplate, setEditingTemplate] = useState(null);
 
   // Form state
+  // Blood group options
+  const bloodGroups = [
+    'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'
+  ];
+  
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     role: 'Agent',
     bloodGroup: '',
     phoneNumber: '',
@@ -208,15 +214,46 @@ const AdminConsole = () => {
       setTimeout(() => setError(''), 5000);
       return;
     }
+    
+    // If updating and password is provided, validate password confirmation
+    if (isEditing && formData.password && formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
+    // If creating, password is required
+    if (!isEditing && (!formData.password || formData.password !== formData.confirmPassword)) {
+      setError(isEditing ? 'Passwords do not match' : 'Please provide a password');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
 
     try {
       setLoading(true);
+      
+      // Prepare user data - only include password if it's provided
+      let userData = { ...formData };
+      if (isEditing && (!formData.password || formData.password === '')) {
+        // Don't send password if it's empty during update
+        delete userData.password;
+        delete userData.confirmPassword;
+      } else {
+        // Either creating new user or updating with new password
+        if (formData.password) {
+          delete userData.confirmPassword; // Don't send confirmPassword to server
+        } else {
+          delete userData.password;
+          delete userData.confirmPassword;
+        }
+      }
+      
       if (isEditing) {
-        await userAPI.updateUser(editingUserId, formData);
+        await userAPI.updateUser(editingUserId, userData);
         setSuccess('User updated successfully!');
         auditLog.userUpdated(editingUserId, user?.username || 'unknown');
       } else {
-        await userAPI.createUser(formData);
+        await userAPI.createUser(userData);
         setSuccess('User created successfully!');
         auditLog.userCreated(1, user?.username || 'unknown');
       }
@@ -227,7 +264,11 @@ const AdminConsole = () => {
         username: '',
         email: '',
         password: '',
-        role: 'Agent'
+        confirmPassword: '',
+        role: 'Agent',
+        bloodGroup: '',
+        phoneNumber: '',
+        designation: ''
       });
       setIsEditing(false);
       setEditingUserId(null);
@@ -250,7 +291,8 @@ const AdminConsole = () => {
       fullName: user.fullName,
       username: user.username,
       email: user.email,
-      password: '',
+      password: '',  // Don't pre-fill password for security
+      confirmPassword: '',
       role: user.role,
       bloodGroup: user.bloodGroup || '',
       phoneNumber: user.phoneNumber || '',
@@ -729,27 +771,43 @@ Obligation,Legal,`;
                           />
                         </Grid>
                         <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth>
+                            <InputLabel>Blood Group</InputLabel>
+                            <Select
+                              name="bloodGroup"
+                              value={formData.bloodGroup}
+                              onChange={handleInputChange}
+                              label="Blood Group"
+                            >
+                              <MenuItem value="">None</MenuItem>
+                              {bloodGroups.map(group => (
+                                <MenuItem key={group} value={group}>{group}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
                           <TextField
                             fullWidth
-                            label="Blood Group"
-                            name="bloodGroup"
-                            value={formData.bloodGroup}
+                            label="Password"
+                            name="password"
+                            type="password"
+                            value={formData.password}
                             onChange={handleInputChange}
+                            placeholder={isEditing ? "Leave blank to keep current password" : "Enter password"}
                           />
                         </Grid>
-                        {!isEditing && (
-                          <Grid item xs={12} sm={6}>
-                            <TextField
-                              fullWidth
-                              label="Password"
-                              name="password"
-                              type="password"
-                              value={formData.password}
-                              onChange={handleInputChange}
-                              required={!isEditing}
-                            />
-                          </Grid>
-                        )}
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Confirm Password"
+                            name="confirmPassword"
+                            type="password"
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                            placeholder="Confirm password"
+                          />
+                        </Grid>
                         <Grid item xs={12} sm={6}>
                           <FormControl fullWidth>
                             <InputLabel>Role</InputLabel>
@@ -795,6 +853,7 @@ Obligation,Legal,`;
                                     username: '',
                                     email: '',
                                     password: '',
+                                    confirmPassword: '',
                                     role: 'Agent',
                                     bloodGroup: '',
                                     phoneNumber: '',
