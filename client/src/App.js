@@ -355,7 +355,7 @@ const AppWithTheme = () => {
                   <Route index element={<TaskLogger />} />
                 </Route>
                 <Route path="/my-tasks" element={
-                  <ProtectedRoute allowedRoles={['SystemAdmin', 'Admin', 'Supervisor']}>
+                  <ProtectedRoute allowedRoles={['SystemAdmin']}>
                     <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
                   </ProtectedRoute>
                 }>

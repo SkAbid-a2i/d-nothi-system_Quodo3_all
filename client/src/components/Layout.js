@@ -139,7 +139,7 @@ const Layout = ({ darkMode, toggleDarkMode, children }) => {
   const menuItems = [
     { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
     { text: t('navigation.taskLogger'), icon: <TaskIcon />, path: '/tasks' },
-    { text: t('navigation.myTasks'), icon: <TaskModificationIcon />, path: '/my-tasks' },
+    { text: t('navigation.myTasks'), icon: <TaskModificationIcon />, path: '/my-tasks', allowedRoles: ['SystemAdmin'] },
     { text: t('navigation.leaves'), icon: <LeaveIcon />, path: '/leaves' },
     { text: t('navigation.meetings'), icon: <VideoCallIcon />, path: '/meetings' },
     { text: t('navigation.collaboration'), icon: <CollaborationIcon />, path: '/collaboration' },
