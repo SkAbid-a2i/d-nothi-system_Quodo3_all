@@ -124,6 +124,9 @@ const AgentDashboard = () => {
   // Check if user is an Agent
   const isAgent = user && user.role === 'Agent';
   
+  // Specifically check for SystemAdmin role
+  const isSystemAdmin = user && user.role === 'SystemAdmin';
+  
   // Use the user filter hook
   const { users: filteredUsers, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
   
@@ -177,7 +180,7 @@ const AgentDashboard = () => {
                        tasksResponse.data?.data || tasksResponse.data || [];
       
       // If user is admin, supervisor, or SystemAdmin, show all tasks initially, but apply user filter if set
-      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+      if (isAdmin) {
         // For admin, supervisor, and SystemAdmin users, we still want to show all tasks initially
         // The user filter will be applied in the finalFilteredTasks calculation
       } else if (user && user.role === 'Agent') {
@@ -199,7 +202,7 @@ const AgentDashboard = () => {
                         leavesResponse.data?.data || leavesResponse.data || [];
       
       // If user is admin, supervisor, or SystemAdmin, show all leaves initially, but apply user filter if set
-      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+      if (isAdmin) {
         // For admin, supervisor, and SystemAdmin users, we still want to show all leaves initially
         // The user filter will be applied in the finalFilteredLeaves calculation
       } else if (user && user.role === 'Agent') {
@@ -221,7 +224,7 @@ const AgentDashboard = () => {
                          meetingsResponse.data?.data || meetingsResponse.data || [];
       
       // Filter meetings for the current user
-      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+      if (isAdmin) {
         // Admins, Supervisors, and SystemAdmin see all meetings
       } else if (user && user.role === 'Agent') {
         // Agent users see meetings they created or are invited to
@@ -246,7 +249,7 @@ const AgentDashboard = () => {
                                collaborationsResponse.data?.data || collaborationsResponse.data || [];
       
       // Filter collaborations for the current user
-      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+      if (isAdmin) {
         // Admins, Supervisors, and SystemAdmin see all collaborations
       } else if (user && user.role === 'Agent') {
         // Agent users see collaborations they created or are in the same office
