@@ -55,6 +55,12 @@ export const auditLog = {
       resourceId: userId, 
       description: `User role changed from ${oldRole} to ${newRole} by ${changer}` 
     }),
+  
+  userPasswordReset: (userId, resetBy) => 
+    createAuditLog('PASSWORD_RESET', 'USER', { 
+      resourceId: userId, 
+      description: `User password reset by ${resetBy}` 
+    }),
     
   // Task actions
   taskCreated: (taskId, creator) => 

@@ -1198,7 +1198,7 @@ const LeaveManagement = () => {
                           </IconButton>
                         </>
                       )}
-                      {((user.role === 'SystemAdmin') || (user.id === leave.userId && leave.status === 'Pending')) && (
+                      {(user.role === 'SystemAdmin' || (user.id === leave.userId && leave.status === 'Pending')) && (
                         <IconButton 
                           size="small" 
                           onClick={() => handleEditLeave(leave)}

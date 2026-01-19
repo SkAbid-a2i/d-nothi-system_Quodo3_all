@@ -37,7 +37,8 @@ import {
   Search as SearchIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  LockReset as LockResetIcon
 } from '@mui/icons-material';
 import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
 import { parse } from 'papaparse';
@@ -112,6 +113,8 @@ const AdminConsole = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
+  const [resettingPasswordUserId, setResettingPasswordUserId] = useState(null);
+  const [passwordResetForm, setPasswordResetForm] = useState({ newPassword: '', confirmNewPassword: '' });
 
   // Fetch users and offices on component mount
   const fetchUsers = useCallback(async () => {
@@ -292,6 +295,60 @@ const AdminConsole = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePasswordReset = (user) => {
+    setResettingPasswordUserId(user.id);
+    setPasswordResetForm({ newPassword: '', confirmNewPassword: '' });
+  };
+
+  const handlePasswordResetSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!passwordResetForm.newPassword || !passwordResetForm.confirmNewPassword) {
+      setError('Please enter both new password and confirmation');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
+    if (passwordResetForm.newPassword !== passwordResetForm.confirmNewPassword) {
+      setError('Passwords do not match');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Only update the password field
+      const userData = { password: passwordResetForm.newPassword };
+      await userAPI.updateUser(resettingPasswordUserId, userData);
+      
+      setSuccess('Password reset successfully!');
+      setResettingPasswordUserId(null);
+      setPasswordResetForm({ newPassword: '', confirmNewPassword: '' });
+      
+      // Log audit entry
+      if (user) {
+        auditLog.userPasswordReset(resettingPasswordUserId, user.username || 'unknown');
+      }
+      
+      // Refresh users list
+      fetchUsers();
+      
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      setError('Failed to reset password: ' + (error.response?.data?.message || error.message));
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelPasswordReset = () => {
+    setResettingPasswordUserId(null);
+    setPasswordResetForm({ newPassword: '', confirmNewPassword: '' });
   };
 
   const handleEditUser = (user) => {
@@ -1028,6 +1085,17 @@ Obligation,Legal,`;
                                   >
                                     <EditIcon />
                                   </IconButton>
+                                  {user.role !== 'SystemAdmin' && (
+                                    <IconButton 
+                                      size="small" 
+                                      color="warning" 
+                                      onClick={() => handlePasswordReset(user)}
+                                      sx={{ mr: 1 }}
+                                      title="Reset Password"
+                                    >
+                                      <LockResetIcon />
+                                    </IconButton>
+                                  )}
                                   <IconButton 
                                     size="small" 
                                     color="error" 
@@ -1567,6 +1635,62 @@ Obligation,Legal,`;
             {loading ? 'Importing...' : 'Import'}
           </Button>
         </DialogActions>
+      </Dialog>
+      
+      {/* Password Reset Dialog */}
+      <Dialog open={!!resettingPasswordUserId} onClose={cancelPasswordReset} maxWidth="sm" fullWidth>
+        <DialogTitle>Reset User Password</DialogTitle>
+        <form onSubmit={handlePasswordResetSubmit}>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Enter a new password for the selected user.
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="New Password"
+                  name="newPassword"
+                  type="password"
+                  value={passwordResetForm.newPassword}
+                  onChange={(e) => setPasswordResetForm({
+                    ...passwordResetForm,
+                    newPassword: e.target.value
+                  })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Confirm New Password"
+                  name="confirmNewPassword"
+                  type="password"
+                  value={passwordResetForm.confirmNewPassword}
+                  onChange={(e) => setPasswordResetForm({
+                    ...passwordResetForm,
+                    confirmNewPassword: e.target.value
+                  })}
+                  required
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={cancelPasswordReset} color="primary">
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary" 
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
+            >
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
     </Box>
   );
