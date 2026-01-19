@@ -229,7 +229,14 @@ const AdminConsole = () => {
       setTimeout(() => setError(''), 5000);
       return;
     }
-
+    
+    // Check if current user is Admin or Supervisor and trying to update another user's password
+    if ((user.role === 'Admin' || user.role === 'Supervisor') && isEditing && editingUserId !== user.id && formData.password) {
+      setError('Admin and Supervisor roles cannot update other users\' passwords');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -798,28 +805,43 @@ Obligation,Legal,`;
                             </Select>
                           </FormControl>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            label="Password"
-                            name="password"
-                            type="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            placeholder={isEditing ? "Leave blank to keep current password" : "Enter password"}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <TextField
-                            fullWidth
-                            label="Confirm Password"
-                            name="confirmPassword"
-                            type="password"
-                            value={formData.confirmPassword}
-                            onChange={handleInputChange}
-                            placeholder="Confirm password"
-                          />
-                        </Grid>
+                        {!(isEditing && (user.role === 'Admin' || user.role === 'Supervisor') && editingUserId !== user.id) && (
+                          <>
+                            <Grid item xs={12} sm={6}>
+                              <TextField
+                                fullWidth
+                                label="Password"
+                                name="password"
+                                type="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                placeholder={isEditing ? "Leave blank to keep current password" : "Enter password"}
+                              />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <TextField
+                                fullWidth
+                                label="Confirm Password"
+                                name="confirmPassword"
+                                type="password"
+                                value={formData.confirmPassword}
+                                onChange={handleInputChange}
+                                placeholder="Confirm password"
+                              />
+                            </Grid>
+                          </>
+                        )}
+                        {isEditing && (user.role === 'Admin' || user.role === 'Supervisor') && editingUserId !== user.id && (
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              label="Password"
+                              disabled={true}
+                              value="Disabled for Admin/Supervisor"
+                              placeholder="Password updates disabled for Admin/Supervisor role when editing other users"
+                            />
+                          </Grid>
+                        )}
                         <Grid item xs={12} sm={6}>
                           <FormControl fullWidth>
                             <InputLabel>Role</InputLabel>
