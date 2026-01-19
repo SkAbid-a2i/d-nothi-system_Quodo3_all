@@ -172,16 +172,11 @@ router.put('/:id', cors(corsOptions), authenticate, authorize('SystemAdmin', 'Ad
       return res.status(403).json({ message: 'Access denied - Admin and Supervisor cannot update SystemAdmin users' });
     }
 
-    // Prevent Admin and Supervisor from updating passwords
-    if ((req.user.role === 'Admin' || req.user.role === 'Supervisor') && password) {
-      return res.status(403).json({ message: 'Access denied - Admin and Supervisor cannot update passwords' });
-    }
-
     // Update user fields
     user.username = username || user.username;
     user.email = email || user.email;
-    // Only update password if provided and user has proper permissions (only SystemAdmin can update passwords)
-    if (password && req.user.role === 'SystemAdmin') {
+    // Only update password if provided and user has proper permissions (SystemAdmin, Admin, and Supervisor can update passwords)
+    if (password && (req.user.role === 'SystemAdmin' || req.user.role === 'Admin' || req.user.role === 'Supervisor')) {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
     }

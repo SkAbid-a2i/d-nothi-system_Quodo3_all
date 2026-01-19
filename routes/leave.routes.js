@@ -40,14 +40,9 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
     if (req.user.role === 'Agent') {
       where.userId = req.user.id;
     } 
-    // Admins and Supervisors can see their team's leaves
+    // Admins and Supervisors can see all leaves
     else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      where = {
-        [require('sequelize').Op.or]: [
-          { office: req.user.office },
-          { userId: req.user.id }
-        ]
-      };
+      // No filter needed, they can see all leaves
     }
     // SystemAdmin can see all leaves (no filter needed)
     

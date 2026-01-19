@@ -862,32 +862,7 @@ Obligation,Legal,`;
                             </Select>
                           </FormControl>
                         </Grid>
-                        {!(isEditing && (user.role === 'Admin' || user.role === 'Supervisor') && editingUserId !== user.id) && (
-                          <>
-                            <Grid item xs={12} sm={6}>
-                              <TextField
-                                fullWidth
-                                label="Password"
-                                name="password"
-                                type="password"
-                                value={formData.password}
-                                onChange={handleInputChange}
-                                placeholder={isEditing ? "Leave blank to keep current password" : "Enter password"}
-                              />
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <TextField
-                                fullWidth
-                                label="Confirm Password"
-                                name="confirmPassword"
-                                type="password"
-                                value={formData.confirmPassword}
-                                onChange={handleInputChange}
-                                placeholder="Confirm password"
-                              />
-                            </Grid>
-                          </>
-                        )}
+                        
                         {isEditing && (user.role === 'Admin' || user.role === 'Supervisor') && editingUserId !== user.id && (
                           <Grid item xs={12} sm={6}>
                             <TextField
