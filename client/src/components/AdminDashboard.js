@@ -29,9 +29,9 @@ import {
   Divider,
   styled
 } from '@mui/material';
-import { 
-  Assignment, 
-  EventAvailable, 
+import {
+  Assignment,
+  EventAvailable,
   Search as SearchIcon,
   Download as DownloadIcon,
   PieChart as PieChartIcon,
@@ -42,7 +42,11 @@ import {
   Person as PersonIcon,
   Group as GroupIcon,
   TrendingUp as TrendingUpIcon,
-  CalendarToday as CalendarIcon
+  CalendarToday as CalendarIcon,
+  FileDownload as FileDownloadIcon,
+  PictureAsPdf as PdfIcon,
+  Description as CsvIcon,
+  TableChart as ExcelIcon
 } from '@mui/icons-material';
 import { 
   BarChart, 
@@ -252,10 +256,138 @@ const AdminDashboard = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  // Export functionality
+  const exportToCSV = (data, filename) => {
+    if (!data || data.length === 0) {
+      showSnackbar('No data to export', 'warning');
+      return;
+    }
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          // Escape commas and wrap in quotes if needed
+          return typeof value === 'string' && value.includes(',') 
+            ? `"${value.replace(/"/g, '""')}"`
+            : value;
+        }).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSnackbar(`Exported ${data.length} records to CSV`, 'success');
+  };
+
+  const exportToExcel = (data, filename) => {
+    if (!data || data.length === 0) {
+      showSnackbar('No data to export', 'warning');
+      return;
+    }
+    
+    // Simple Excel-like format using tab-separated values
+    const headers = Object.keys(data[0]);
+    const excelContent = [
+      headers.join('\t'),
+      ...data.map(row => 
+        headers.map(header => row[header] || '').join('\t')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSnackbar(`Exported ${data.length} records to Excel`, 'success');
+  };
+
+  const exportToPDF = async (data, filename) => {
+    if (!data || data.length === 0) {
+      showSnackbar('No data to export', 'warning');
+      return;
+    }
+    
+    try {
+      // For now, we'll create a simple PDF-like text file
+      // In a real implementation, you'd use a library like jsPDF
+      const headers = Object.keys(data[0]);
+      const pdfContent = [
+        `Team Tasks Report - Generated on ${new Date().toLocaleString()}`,
+        '='.repeat(50),
+        '',
+        headers.join(' | '),
+        '-'.repeat(headers.join(' | ').length),
+        ...data.map(row => 
+          headers.map(header => String(row[header] || 'N/A')).join(' | ')
+        ),
+        '',
+        `Total Records: ${data.length}`
+      ].join('\n');
+      
+      const blob = new Blob([pdfContent], { type: 'application/pdf;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}.txt`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(`Exported ${data.length} records to PDF format`, 'success');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      showSnackbar('Error exporting to PDF', 'error');
+    }
+  };
+
   const handleExport = (format) => {
-    // Implement export functionality
-    console.log(`Exporting data as ${format}`);
-    showSnackbar(`Exporting data as ${format}`, 'info');
+    const exportData = filteredTeamTasks.map(task => ({
+      'User': task.userName || 'N/A',
+      'Date': task.date ? new Date(task.date).toLocaleDateString() : 'N/A',
+      'Source': task.source || 'N/A',
+      'Category': task.category || 'N/A',
+      'Sub-Category': task.subCategory || 'N/A',
+      'Incident': task.incident || 'N/A',
+      'Obligation': task.obligation || 'N/A',
+      'Office': task.office || task.userOffice || user?.office || 'N/A',
+      'User Info': task.userInformation || 'N/A',
+      'Description': task.description || 'N/A',
+      'Status': task.status || 'N/A'
+    }));
+    
+    const filename = `team-tasks-${new Date().toISOString().split('T')[0]}`;
+    
+    switch (format) {
+      case 'csv':
+        exportToCSV(exportData, filename);
+        break;
+      case 'excel':
+        exportToExcel(exportData, filename);
+        break;
+      case 'pdf':
+        exportToPDF(exportData, filename);
+        break;
+      default:
+        showSnackbar('Unsupported export format', 'error');
+    }
   };
 
   const handleApproveLeave = async (leaveId) => {
@@ -332,6 +464,7 @@ const AdminDashboard = () => {
 
   // Filter team tasks based on search and advanced filters
   // For SystemAdmin, Admin, and Supervisor roles, show all users' data by default
+  // For Agent role, show only their own tasks
   const filteredTeamTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -352,18 +485,26 @@ const AdminDashboard = () => {
     const matchesObligation = selectedObligation === '' || task.obligation === selectedObligation;
     
     // For SystemAdmin, Admin, and Supervisor roles, show all users' data
-    // Only apply userFilter for other roles (Agent)
+    // For Agent role, show only their own tasks
     const isAdminOrSupervisor = ['SystemAdmin', 'Admin', 'Supervisor'].includes(user?.role);
-    const matchesUserFilter = isAdminOrSupervisor || 
-      !userFilter || 
-      (task.userName && userFilter && 
-        (task.userName.toLowerCase() === userFilter.toLowerCase() ||
-        // Handle case where userFilter is in format like "Mazedul Alam (maahi)" but task.userName is just "maahi"
-        (task.userName && userFilter.includes(`(${task.userName})`)) ||
-        // Handle case where task.userName is in format like "Mazedul Alam (maahi)" but userFilter is just "maahi"
-        (task.userName.includes('(') && task.userName.includes(userFilter)) ||
-        // Additional check: if userFilter contains the task.userName in parentheses format
-        (`(${task.userName})`.includes(userFilter))));
+    const isAgent = user?.role === 'Agent';
+    
+    let matchesUserFilter = true;
+    if (isAdminOrSupervisor) {
+      // Admin roles see all tasks
+      matchesUserFilter = true;
+    } else if (isAgent) {
+      // Agent role sees only their own tasks
+      matchesUserFilter = task.userName === user?.username;
+    } else {
+      // Other roles follow normal filtering
+      matchesUserFilter = !userFilter || 
+        (task.userName && userFilter && 
+          (task.userName.toLowerCase() === userFilter.toLowerCase() ||
+          (task.userName && userFilter.includes(`(${task.userName})`)) ||
+          (task.userName.includes('(') && task.userName.includes(userFilter)) ||
+          (`(${task.userName})`.includes(userFilter))));
+    }
     
     // Apply AND or OR logic based on filter mode
     if (filterMode === 'or') {
@@ -1054,11 +1195,14 @@ const AdminDashboard = () => {
                 icon={<Assignment />} 
                 iconPosition="start" 
               />
-              <StyledTab 
-                label="Pending Leaves" 
-                icon={<EventAvailable />} 
-                iconPosition="start" 
-              />
+              {/* Hide Pending Leaves tab for Agent role */}
+              {user?.role !== 'Agent' && (
+                <StyledTab 
+                  label="Pending Leaves" 
+                  icon={<EventAvailable />} 
+                  iconPosition="start" 
+                />
+              )}
               <StyledTab 
                 label="Who's on Leave Today" 
                 icon={<CalendarIcon />} 
@@ -1068,8 +1212,36 @@ const AdminDashboard = () => {
             
             <Box sx={{ mt: 2 }}>
               {activeTab === 0 && (
-                <TableContainer sx={{ overflowX: 'auto' }}>
-                  <Table size="small">
+                <>
+                  {/* Export Buttons */}
+                  <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CsvIcon />}
+                      onClick={() => handleExport('csv')}
+                      size="small"
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<ExcelIcon />}
+                      onClick={() => handleExport('excel')}
+                      size="small"
+                    >
+                      Export Excel
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<PdfIcon />}
+                      onClick={() => handleExport('pdf')}
+                      size="small"
+                    >
+                      Export PDF
+                    </Button>
+                  </Box>
+                  <TableContainer sx={{ overflowX: 'auto' }}>
+                    <Table size="small">
                     <TableHead>
                       <TableRow>
                         <TableCell>User</TableCell>
@@ -1126,10 +1298,11 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </TableContainer>
-              )}
-              
-              {activeTab === 1 && (
+                    </TableContainer>
+                  </>
+                )}
+                
+                {activeTab === 1 && (
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
