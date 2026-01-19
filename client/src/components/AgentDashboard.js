@@ -121,6 +121,8 @@ const AgentDashboard = () => {
     
   // Check if user has admin privileges (SystemAdmin, Admin, or Supervisor)
   const isAdmin = user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor');
+  // Check if user is an Agent
+  const isAgent = user && user.role === 'Agent';
   
   // Use the user filter hook
   const { users: filteredUsers, loading: userLoading, error: userError, fetchUsers } = useUserFilter(user);
@@ -174,12 +176,17 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
-      // If user is admin or supervisor, show all tasks initially, but apply user filter if set
-      if (isAdmin) {
-        // For admin and supervisor users, we still want to show all tasks initially
+      // If user is admin, supervisor, or SystemAdmin, show all tasks initially, but apply user filter if set
+      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+        // For admin, supervisor, and SystemAdmin users, we still want to show all tasks initially
         // The user filter will be applied in the finalFilteredTasks calculation
+      } else if (user && user.role === 'Agent') {
+        // For Agent users, show only their own tasks
+        tasksData = tasksData.filter(task => 
+          task.userId === user.id || task.userName === user.username
+        );
       } else {
-        // For non-admin users, show only their own tasks
+        // For other roles, show only their own tasks
         tasksData = tasksData.filter(task => 
           task.userId === user.id || task.userName === user.username
         );
@@ -191,12 +198,17 @@ const AgentDashboard = () => {
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
       
-      // If user is admin or supervisor, show all leaves initially, but apply user filter if set
-      if (isAdmin) {
-        // For admin and supervisor users, we still want to show all leaves initially
+      // If user is admin, supervisor, or SystemAdmin, show all leaves initially, but apply user filter if set
+      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+        // For admin, supervisor, and SystemAdmin users, we still want to show all leaves initially
         // The user filter will be applied in the finalFilteredLeaves calculation
+      } else if (user && user.role === 'Agent') {
+        // For Agent users, show only their own leaves
+        leavesData = leavesData.filter(leave => 
+          leave.userId === user.id || leave.userName === user.username
+        );
       } else {
-        // For non-admin users, show only their own leaves
+        // For other roles, show only their own leaves
         leavesData = leavesData.filter(leave => 
           leave.userId === user.id || leave.userName === user.username
         );
@@ -209,10 +221,17 @@ const AgentDashboard = () => {
                          meetingsResponse.data?.data || meetingsResponse.data || [];
       
       // Filter meetings for the current user
-      if (isAdmin) {
-        // Admins and Supervisors see all meetings
+      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+        // Admins, Supervisors, and SystemAdmin see all meetings
+      } else if (user && user.role === 'Agent') {
+        // Agent users see meetings they created or are invited to
+        meetingsData = meetingsData.filter(meeting => 
+          meeting.createdBy === user.id || 
+          (meeting.selectedUserIds && meeting.selectedUserIds.includes(user.id)) ||
+          (meeting.selectedUsers && meeting.selectedUsers.some(u => u.id === user.id))
+        );
       } else {
-        // Regular users see meetings they're invited to or created
+        // Other roles see meetings they created or are invited to
         meetingsData = meetingsData.filter(meeting => 
           meeting.createdBy === user.id || 
           (meeting.selectedUserIds && meeting.selectedUserIds.includes(user.id)) ||
@@ -227,10 +246,16 @@ const AgentDashboard = () => {
                                collaborationsResponse.data?.data || collaborationsResponse.data || [];
       
       // Filter collaborations for the current user
-      if (isAdmin) {
-        // Admins and Supervisors see all collaborations
+      if (isAdmin || (user && user.role === 'SystemAdmin')) {
+        // Admins, Supervisors, and SystemAdmin see all collaborations
+      } else if (user && user.role === 'Agent') {
+        // Agent users see collaborations they created or are in the same office
+        collaborationsData = collaborationsData.filter(collab => 
+          collab.createdBy === user.id || 
+          collab.office === user.office
+        );
       } else {
-        // Regular users see collaborations they created or are in the same office
+        // Other roles see collaborations they created or are in the same office
         collaborationsData = collaborationsData.filter(collab => 
           collab.createdBy === user.id || 
           collab.office === user.office
@@ -668,15 +693,15 @@ const AgentDashboard = () => {
       (task.userInformation && task.userInformation.toLowerCase().includes(userInformation.toLowerCase()));
     const matchesObligation = selectedObligation === '' || task.obligation === selectedObligation;
     
-    // For my-tasks page, users should only see their own tasks
+    // For my-tasks page, role-based access to tasks
     let matchesRole = false;
-    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-      matchesRole = true; // SystemAdmin and Admin can see all tasks
-    } else if (user && user.role === 'Supervisor') {
-      // Supervisors see their own tasks
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      matchesRole = true; // SystemAdmin, Admin, and Supervisor can see all tasks
+    } else if (user && user.role === 'Agent') {
+      // Agent users only see their own tasks
       matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
     } else {
-      // Regular users only see their own tasks
+      // Other roles default to seeing their own tasks
       matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
     }
     
@@ -714,17 +739,13 @@ const AgentDashboard = () => {
          (leave.fullName && leave.fullName.toLowerCase() === userFilter.toLowerCase()) ||
          (leave.email && leave.email.toLowerCase() === userFilter.toLowerCase())));
     
-    // For SystemAdmin and Admin, show all leaves when no user filter is applied; for Supervisor, show all leaves in their office; for others, show only their own leaves
+    // For SystemAdmin, Admin, and Supervisor, show all leaves when no user filter is applied; for others, show only their own leaves
     let matchesRole = false;
-    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-      matchesRole = true; // SystemAdmin and Admin can see all leaves
-    } else if (user && user.role === 'Supervisor') {
-      // Supervisors can see their office leaves, and all leaves when filtering
-      if (userFilter) {
-        matchesRole = true; // Supervisor can see all when filtering
-      } else {
-        matchesRole = leave.office === user.office || leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName; // Show leaves from their office or their own
-      }
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+      matchesRole = true; // SystemAdmin, Admin, and Supervisor can see all leaves
+    } else if (user && user.role === 'Agent') {
+      // Agent users only see their own leaves
+      matchesRole = leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName;
     } else {
       // For other roles, only show leaves assigned to the current user
       matchesRole = leave.userId === user.id || leave.userName === user.username || leave.userName === user.fullName;
@@ -738,7 +759,14 @@ const AgentDashboard = () => {
   // Handle task edit
   const handleEditTask = async (task) => {
     // Check if user has permission to edit this task
-    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === task.userId)) {
+    const hasPermission = user && (
+      user.role === 'SystemAdmin' || 
+      user.role === 'Admin' || 
+      user.role === 'Supervisor' || 
+      user.id === task.userId
+    );
+    
+    if (!hasPermission) {
       showSnackbar('You do not have permission to edit this task', 'error');
       return;
     }
@@ -864,7 +892,14 @@ const AgentDashboard = () => {
   // Handle task update
   const handleUpdateTask = async () => {
     // Check if user has permission to update this task
-    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === editingTask.userId)) {
+    const hasPermission = user && (
+      user.role === 'SystemAdmin' || 
+      user.role === 'Admin' || 
+      user.role === 'Supervisor' || 
+      user.id === editingTask.userId
+    );
+    
+    if (!hasPermission) {
       showSnackbar('You do not have permission to update this task', 'error');
       setOpenEditDialog(false);
       setEditingTask(null);
@@ -905,7 +940,14 @@ const AgentDashboard = () => {
     const taskToDelete = tasks.find(task => task.id === taskId);
     
     // Check if user has permission to delete this task
-    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || (user.id === taskToDelete?.userId))) {
+    const hasPermission = user && (
+      user.role === 'SystemAdmin' || 
+      user.role === 'Admin' || 
+      user.role === 'Supervisor' || 
+      (user.id === taskToDelete?.userId)
+    );
+    
+    if (!hasPermission) {
       showSnackbar('You do not have permission to delete this task', 'error');
       return;
     }

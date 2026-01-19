@@ -34,9 +34,14 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     let where = {};
     
-    // All users can only see their own tasks
-    where.userId = req.user.id;
+    // For SystemAdmin, Admin, and Supervisor roles, allow viewing all tasks
+    // For Agent role, restrict to their own tasks only
+    const isAdminOrSupervisor = ['SystemAdmin', 'Admin', 'Supervisor'].includes(req.user.role);
     
+    if (!isAdminOrSupervisor) {
+      // Only allow non-admin/supervisor users to see their own tasks
+      where.userId = req.user.id;
+    }
     
     const tasks = await Task.findAll({ 
       where, 
@@ -147,8 +152,11 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     // Check permissions
-    // All users can only modify their own tasks
-    if (task.userId !== req.user.id) {
+    // For SystemAdmin, Admin, and Supervisor roles, allow modifying any task
+    // For Agent role, restrict to their own tasks only
+    const isAdminOrSupervisor = ['SystemAdmin', 'Admin', 'Supervisor'].includes(req.user.role);
+    
+    if (!isAdminOrSupervisor && task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only modify your own tasks' });
     }
 
@@ -231,8 +239,11 @@ router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
     }
 
     // Check permissions
-    // All users can only delete their own tasks
-    if (task.userId !== req.user.id) {
+    // For SystemAdmin, Admin, and Supervisor roles, allow deleting any task
+    // For Agent role, restrict to their own tasks only
+    const isAdminOrSupervisor = ['SystemAdmin', 'Admin', 'Supervisor'].includes(req.user.role);
+    
+    if (!isAdminOrSupervisor && task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only delete your own tasks' });
     }
 

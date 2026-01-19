@@ -491,11 +491,11 @@ const AdminDashboard = () => {
     
     let matchesUserFilter = true;
     if (isAdminOrSupervisor) {
-      // Admin roles see all tasks
-      matchesUserFilter = true;
+      // Admin roles see all tasks, but respect any selected user filter in the dropdown
+      matchesUserFilter = matchesUser; // Allow user filter to work for admins when specifically selected
     } else if (isAgent) {
       // Agent role sees only their own tasks
-      matchesUserFilter = task.userName === user?.username;
+      matchesUserFilter = task.userName === user?.username || task.userId === user?.id;
     } else {
       // Other roles follow normal filtering
       matchesUserFilter = !userFilter || 
