@@ -863,6 +863,35 @@ Obligation,Legal,`;
                           </FormControl>
                         </Grid>
                         
+                        {!isEditing && (
+                          <>
+                            <Grid item xs={12} sm={6}>
+                              <TextField
+                                fullWidth
+                                label="Password"
+                                name="password"
+                                type="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                required
+                                placeholder="Enter password"
+                              />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <TextField
+                                fullWidth
+                                label="Confirm Password"
+                                name="confirmPassword"
+                                type="password"
+                                value={formData.confirmPassword}
+                                onChange={handleInputChange}
+                                required
+                                placeholder="Confirm password"
+                              />
+                            </Grid>
+                          </>
+                        )}
+                        
                         {isEditing && (user.role === 'Admin' || user.role === 'Supervisor') && editingUserId !== user.id && (
                           <Grid item xs={12} sm={6}>
                             <TextField

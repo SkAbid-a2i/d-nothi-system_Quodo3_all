@@ -210,16 +210,27 @@ const LeaveManagement = () => {
         leaves.filter(l => l.userId === user.id || l.userName === user.username)
           .forEach(leave => {
             if (leave.status === 'Approved') {
+              let approvalMessage = `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been approved`;
+              if (leave.approvedByName) {
+                approvalMessage += ` by ${leave.approvedByName}`;
+              }
               notifications.push({
                 id: `approved-${leave.id}`,
-                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been approved`,
+                message: approvalMessage,
                 time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
                 type: 'approval'
               });
             } else if (leave.status === 'Rejected') {
+              let rejectionMessage = `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been rejected`;
+              if (leave.approvedByName) {
+                rejectionMessage += ` by ${leave.approvedByName}`;
+              }
+              if (leave.rejectionReason) {
+                rejectionMessage += `. Reason: ${leave.rejectionReason}`;
+              }
               notifications.push({
                 id: `rejected-${leave.id}`,
-                message: `Your leave request for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been rejected`,
+                message: rejectionMessage,
                 time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
                 type: 'rejection'
               });
@@ -244,16 +255,27 @@ const LeaveManagement = () => {
                 type: 'leave'
               });
             } else if (leave.status === 'Approved') {
+              let adminApprovalMessage = `${leave.userName || leave.employee}'s leave request has been approved`;
+              if (leave.approvedByName) {
+                adminApprovalMessage += ` by ${leave.approvedByName}`;
+              }
               notifications.push({
                 id: `approved-${leave.id}`,
-                message: `${leave.userName || leave.employee}'s leave request has been approved`,
+                message: adminApprovalMessage,
                 time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
                 type: 'approval'
               });
             } else if (leave.status === 'Rejected') {
+              let adminRejectionMessage = `${leave.userName || leave.employee}'s leave request has been rejected`;
+              if (leave.approvedByName) {
+                adminRejectionMessage += ` by ${leave.approvedByName}`;
+              }
+              if (leave.rejectionReason) {
+                adminRejectionMessage += `. Reason: ${leave.rejectionReason}`;
+              }
               notifications.push({
                 id: `rejected-${leave.id}`,
-                message: `${leave.userName || leave.employee}'s leave request has been rejected`,
+                message: adminRejectionMessage,
                 time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
                 type: 'rejection'
               });
@@ -1466,6 +1488,23 @@ const LeaveManagement = () => {
                                 {leave.status === 'Approved' ? 'success' : 
                                 leave.status === 'Rejected' ? 'error' : 'warning'} />
                             </Typography>
+                            {leave.status === 'Approved' && leave.approvedByName && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Approved by:</strong> {leave.approvedByName}
+                                {leave.approvedAt && ` on ${new Date(leave.approvedAt).toLocaleDateString()}`}
+                              </Typography>
+                            )}
+                            {leave.status === 'Rejected' && leave.approvedByName && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Rejected by:</strong> {leave.approvedByName}
+                                {leave.approvedAt && ` on ${new Date(leave.approvedAt).toLocaleDateString()}`}
+                              </Typography>
+                            )}
+                            {leave.status === 'Rejected' && leave.rejectionReason && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Rejection reason:</strong> {leave.rejectionReason}
+                              </Typography>
+                            )}
                           </Box>
                         ))}
                       </TableCell>
