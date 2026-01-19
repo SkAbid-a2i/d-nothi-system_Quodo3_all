@@ -146,14 +146,9 @@ const LeaveManagement = () => {
         leavesData = leavesData.filter(leave => 
           leave.userId === user.id || leave.userName === user.username
         );
-      } else if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-        // SystemAdmin and Admin can see all leaves
+      } else if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
+        // SystemAdmin, Admin, and Supervisor can see all leaves
         // leavesData remains unchanged
-      } else if (user && user.role === 'Supervisor') {
-        // Supervisors see leaves from their office
-        leavesData = leavesData.filter(leave => 
-          leave.office === user.office
-        );
       }
       
       setLeaves(leavesData);
@@ -167,9 +162,9 @@ const LeaveManagement = () => {
     }
   }, [user, showSnackbar]);
 
-  // Fetch users for System Admins and Admins
+  // Fetch users for System Admins, Admins, and Supervisors
   const fetchUsers = useCallback(async () => {
-    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
+    if (user && (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor')) {
       try {
         const response = await userAPI.getAllUsers();
         const usersData = response.data || [];
@@ -237,7 +232,7 @@ const LeaveManagement = () => {
               });
             }
           });
-      } else if (user.role === 'SystemAdmin' || user.role === 'Admin') {
+      } else if (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') {
         // SystemAdmin and Admin see all notifications
         leaves.forEach(leave => {
           if (leave.status === 'Pending') {
@@ -630,7 +625,7 @@ const LeaveManagement = () => {
     }
     
     // Check if user has permission to delete this leave
-    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.id === leave.userId)) {
+    if (!user || !(user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor' || user.id === leave.userId)) {
       setError('You do not have permission to delete this leave request');
       showSnackbar('You do not have permission to delete this leave request', 'error');
       setTimeout(() => setError(''), 5000);
