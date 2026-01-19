@@ -233,34 +233,8 @@ const LeaveManagement = () => {
             }
           });
       } else if (user.role === 'SystemAdmin' || user.role === 'Admin' || user.role === 'Supervisor') {
-        // SystemAdmin and Admin see all notifications
-        leaves.forEach(leave => {
-          if (leave.status === 'Pending') {
-            notifications.push({
-              id: `requested-${leave.id}`,
-              message: `${leave.userName || leave.employee} has requested leave for ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}`,
-              time: leave.createdAt ? new Date(leave.createdAt).toLocaleString() : 'Recently',
-              type: 'leave'
-            });
-          } else if (leave.status === 'Approved') {
-            notifications.push({
-              id: `approved-${leave.id}`,
-              message: `${leave.userName || leave.employee}'s leave request has been approved`,
-              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
-              type: 'approval'
-            });
-          } else if (leave.status === 'Rejected') {
-            notifications.push({
-              id: `rejected-${leave.id}`,
-              message: `${leave.userName || leave.employee}'s leave request has been rejected`,
-              time: leave.updatedAt ? new Date(leave.updatedAt).toLocaleString() : 'Recently',
-              type: 'rejection'
-            });
-          }
-        });
-      } else if (user.role === 'Supervisor') {
-        // Supervisors see notifications for their team
-        leaves.filter(l => l.office === user.office)
+        // SystemAdmin, Admin, and Supervisor see all notifications
+        leaves
           .forEach(leave => {
             if (leave.status === 'Pending') {
               notifications.push({
