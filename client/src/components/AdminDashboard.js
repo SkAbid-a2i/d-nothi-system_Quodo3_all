@@ -331,6 +331,7 @@ const AdminDashboard = () => {
   };
 
   // Filter team tasks based on search and advanced filters
+  // For SystemAdmin, Admin, and Supervisor roles, show all users' data by default
   const filteredTeamTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -350,8 +351,11 @@ const AdminDashboard = () => {
       (task.userInformation && task.userInformation.toLowerCase().includes(userInformation.toLowerCase()));
     const matchesObligation = selectedObligation === '' || task.obligation === selectedObligation;
     
-    // User filter compatibility - if userFilter is set, use it as well
-    const matchesUserFilter = !userFilter || 
+    // For SystemAdmin, Admin, and Supervisor roles, show all users' data
+    // Only apply userFilter for other roles (Agent)
+    const isAdminOrSupervisor = ['SystemAdmin', 'Admin', 'Supervisor'].includes(user?.role);
+    const matchesUserFilter = isAdminOrSupervisor || 
+      !userFilter || 
       (task.userName && userFilter && 
         (task.userName.toLowerCase() === userFilter.toLowerCase() ||
         // Handle case where userFilter is in format like "Mazedul Alam (maahi)" but task.userName is just "maahi"
