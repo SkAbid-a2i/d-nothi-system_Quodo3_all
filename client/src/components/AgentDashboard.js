@@ -174,9 +174,9 @@ const AgentDashboard = () => {
       let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       
-      // If user is admin, show all tasks initially, but apply user filter if set
+      // If user is admin or supervisor, show all tasks initially, but apply user filter if set
       if (isAdmin) {
-        // For admin users, we still want to show all tasks initially
+        // For admin and supervisor users, we still want to show all tasks initially
         // The user filter will be applied in the finalFilteredTasks calculation
       } else {
         // For non-admin users, show only their own tasks
@@ -191,9 +191,9 @@ const AgentDashboard = () => {
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
       
-      // If user is admin, show all leaves initially, but apply user filter if set
+      // If user is admin or supervisor, show all leaves initially, but apply user filter if set
       if (isAdmin) {
-        // For admin users, we still want to show all leaves initially
+        // For admin and supervisor users, we still want to show all leaves initially
         // The user filter will be applied in the finalFilteredLeaves calculation
       } else {
         // For non-admin users, show only their own leaves
@@ -210,7 +210,7 @@ const AgentDashboard = () => {
       
       // Filter meetings for the current user
       if (isAdmin) {
-        // Admins see all meetings
+        // Admins and Supervisors see all meetings
       } else {
         // Regular users see meetings they're invited to or created
         meetingsData = meetingsData.filter(meeting => 
@@ -228,7 +228,7 @@ const AgentDashboard = () => {
       
       // Filter collaborations for the current user
       if (isAdmin) {
-        // Admins see all collaborations
+        // Admins and Supervisors see all collaborations
       } else {
         // Regular users see collaborations they created or are in the same office
         collaborationsData = collaborationsData.filter(collab => 
@@ -671,7 +671,7 @@ const AgentDashboard = () => {
     // For my-tasks page, users should only see their own tasks
     let matchesRole = false;
     if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-      matchesRole = true; // Admins can see all their tasks
+      matchesRole = true; // SystemAdmin and Admin can see all tasks
     } else if (user && user.role === 'Supervisor') {
       // Supervisors see their own tasks
       matchesRole = task.userId === user.id || task.userName === user.username || task.userName === user.fullName;
@@ -717,12 +717,7 @@ const AgentDashboard = () => {
     // For SystemAdmin and Admin, show all leaves when no user filter is applied; for Supervisor, show all leaves in their office; for others, show only their own leaves
     let matchesRole = false;
     if (user && (user.role === 'SystemAdmin' || user.role === 'Admin')) {
-      // If user filter is applied, check if it matches the current user's role
-      if (userFilter) {
-        matchesRole = true; // Admins can see all users when filtering
-      } else {
-        matchesRole = true; // Show all leaves when no filter
-      }
+      matchesRole = true; // SystemAdmin and Admin can see all leaves
     } else if (user && user.role === 'Supervisor') {
       // Supervisors can see their office leaves, and all leaves when filtering
       if (userFilter) {
@@ -1743,7 +1738,7 @@ const AgentDashboard = () => {
                             <TableCell>{task.incident || 'N/A'}</TableCell>
                             <TableCell>{task.obligation || 'N/A'}</TableCell>
                             <TableCell>{task.userName || 'N/A'}</TableCell>
-                            <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
+                            <TableCell>{task.office || 'N/A'}</TableCell>
                             <TableCell>{task.userInformation || 'N/A'}</TableCell>
                             <TableCell>{task.description || 'N/A'}</TableCell>
                             <TableCell>
@@ -1987,7 +1982,7 @@ const AgentDashboard = () => {
                         <TableCell>{task.incident || 'N/A'}</TableCell>
                         <TableCell>{task.description || 'N/A'}</TableCell>
                         <TableCell>{task.userName || 'N/A'}</TableCell>
-                        <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
+                        <TableCell>{task.office || 'N/A'}</TableCell>
                         <TableCell>
                           <Chip 
                             label={task.status || 'Pending'} 
@@ -2030,7 +2025,7 @@ const AgentDashboard = () => {
                         <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell>{leave.reason || 'N/A'}</TableCell>
-                        <TableCell>{leave.office || user?.office || 'N/A'}</TableCell>
+                        <TableCell>{leave.office || 'N/A'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -389,43 +389,16 @@ const TaskManagement = () => {
         office: user.office
       });
       
-      // Apply role-based filtering
-      if (user.role === 'SystemAdmin' || user.role === 'Admin') {
-        // SystemAdmin and Admin can see all tasks
-        // No filtering needed
-        console.log(`${user.role}: showing all tasks`);
-      } else if (user.role === 'Supervisor') {
-        // Supervisor can see tasks from their office
-        tasksData = tasksData.filter(task => task.office === user.office);
-        console.log(`${user.role}: filtered to office tasks`, tasksData.length);
-      } else {
-        // Other roles (Agent, etc.) can only see their own tasks
-        const currentUserIdentifier = user.fullName || user.username;
-        tasksData = tasksData.filter(task => {
-          const taskUserIdentifier = task.userName;
-          
-          // More flexible matching to handle potential formatting differences
-          const isMatch = taskUserIdentifier === currentUserIdentifier ||
-                         (taskUserIdentifier && currentUserIdentifier && 
-                          (taskUserIdentifier.includes(currentUserIdentifier) || 
-                           currentUserIdentifier.includes(taskUserIdentifier))) ||
-                         // Fallback for cases where we might have partial matches
-                         (taskUserIdentifier && currentUserIdentifier && 
-                          (taskUserIdentifier.trim() === currentUserIdentifier.trim() ||
-                           taskUserIdentifier.trim().includes(currentUserIdentifier.trim()) || 
-                           currentUserIdentifier.trim().includes(taskUserIdentifier.trim()))) ||
-                         // Case insensitive matching as final fallback
-                         (taskUserIdentifier && currentUserIdentifier && 
-                          (taskUserIdentifier.toLowerCase().includes(currentUserIdentifier.toLowerCase()) || 
-                           currentUserIdentifier.toLowerCase().includes(taskUserIdentifier.toLowerCase())));
-          
-          return isMatch;
-        });
-        console.log(`${user.role}: filtered to user tasks`, tasksData.length);
-      }
+      // The backend already filters tasks based on user role:
+      // - Agents: only their own tasks (filtered by userId)
+      // - Supervisors: tasks from their office (filtered by office)
+      // - Admin and SystemAdmin: all tasks (no filter)
       
-      // Log the filtered tasks for debugging
-      console.log('Filtered tasks:', tasksData.map(t => ({
+      console.log('Task filtering debug - user role:', user.role);
+      // So we don't need additional frontend filtering here
+      
+      // Log the tasks for debugging
+      console.log('Received tasks:', tasksData.map(t => ({
         id: t.id,
         description: t.description,
         userName: t.userName,
@@ -503,13 +476,16 @@ const TaskManagement = () => {
   useEffect(() => {
     console.log('Tasks state updated:', {
       totalTasks: tasks.length,
+      userRole: user?.role,
+      userOffice: user?.office,
       firstFewTasks: tasks.slice(0, 3).map(t => ({
         id: t.id,
         description: t.description,
-        userName: t.userName
+        userName: t.userName,
+        office: t.office
       }))
     });
-  }, [tasks]);
+  }, [tasks, user]);
 
   // Update filteredTasks when tasks or appliedFilters change
   useEffect(() => {
@@ -1574,7 +1550,7 @@ const TaskManagement = () => {
                               <TableCell>{task.category || 'N/A'}</TableCell>
                               <TableCell>{task.subCategory || 'N/A'}</TableCell>
                               <TableCell>{task.incident || 'N/A'}</TableCell>
-                              <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
+                              <TableCell>{task.office || 'N/A'}</TableCell>
                               <TableCell>{task.userInformation || 'N/A'}</TableCell>
                               <TableCell>{task.obligation || 'N/A'}</TableCell>
                               <TableCell>{task.description || 'N/A'}</TableCell>

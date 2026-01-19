@@ -35,8 +35,8 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     let where = {};
     
-    // Agents, Admins and Supervisors can see meetings from their office
-    if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+    // Agents can only see meetings from their office
+    if (req.user.role === 'Agent') {
       // Get all users in the office
       const officeUsers = await User.findAll({
         where: { office: req.user.office },
@@ -56,7 +56,8 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
         ]
       };
     }
-    // SystemAdmin can see all meetings - no where clause needed
+    // Admin, Supervisor, and SystemAdmin can see all meetings - no where clause needed
+    // This allows Admin and SystemAdmin to see all meetings from all offices
 
     const meetings = await Meeting.findAll({ 
       where, 
@@ -161,7 +162,7 @@ router.put('/:id', cors(corsOptions), authenticate, async (req, res) => {
     }
 
     // Check permissions - only creator can update
-    if (meeting.createdBy !== req.user.id && req.user.role !== 'SystemAdmin') {
+    if (meeting.createdBy !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only update your own meetings' });
     }
 
@@ -234,7 +235,7 @@ router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
     }
 
     // Check permissions - only creator can delete
-    if (meeting.createdBy !== req.user.id && req.user.role !== 'SystemAdmin') {
+    if (meeting.createdBy !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only delete your own meetings' });
     }
 

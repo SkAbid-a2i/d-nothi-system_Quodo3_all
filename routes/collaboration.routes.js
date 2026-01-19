@@ -50,9 +50,8 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
     console.log('Fetching collaborations for user:', req.user);
     let where = {};
     
-    // Agents, Admins and Supervisors can see collaborations from their office
-    // This includes collaborations created by SystemAdmins in the same office
-    if (req.user.role === 'Agent' || req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+    // Agents can only see collaborations from their office
+    if (req.user.role === 'Agent') {
       // Get all users in the office including SystemAdmins
       const officeUsers = await User.findAll({
         where: { office: req.user.office },
@@ -79,7 +78,8 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
         ]
       };
     }
-    // SystemAdmin can see all collaborations - no where clause needed
+    // Admin, Supervisor, and SystemAdmin can see all collaborations - no where clause needed
+    // This allows Admin and SystemAdmin to see all collaborations from all offices
 
     const collaborations = await Collaboration.findAll({ 
       where, 

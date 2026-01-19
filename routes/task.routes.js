@@ -34,18 +34,9 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
   try {
     let where = {};
     
-    // Agents can only see their own tasks
-    if (req.user.role === 'Agent') {
-      where.userId = req.user.id;
-    } 
-    // Admins and Supervisors can see their team's tasks
-    else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      // Check if office exists before filtering
-      if (req.user.office) {
-        where.office = req.user.office;
-      }
-    }
-    // SystemAdmin can see all tasks (no filter needed)
+    // All users can only see their own tasks
+    where.userId = req.user.id;
+    
     
     const tasks = await Task.findAll({ 
       where, 
@@ -156,17 +147,8 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     // Check permissions
-    // SystemAdmin can modify any task
-    // Admins can modify any task in their office
-    // Users can modify their own tasks
-    if (req.user.role === 'SystemAdmin') {
-      // SystemAdmin can modify any task - no additional checks needed
-    } else if (req.user.role === 'Admin') {
-      // Admins can modify any task in their office
-      if (task.office && task.office !== req.user.office) {
-        return res.status(403).json({ message: 'Access denied - Admins can only modify tasks from their office' });
-      }
-    } else if (task.userId !== req.user.id) {
+    // All users can only modify their own tasks
+    if (task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only modify your own tasks' });
     }
 
@@ -249,17 +231,8 @@ router.delete('/:id', cors(corsOptions), authenticate, async (req, res) => {
     }
 
     // Check permissions
-    // SystemAdmin can delete any task
-    // Admins can delete any task in their office
-    // Users can delete their own tasks
-    if (req.user.role === 'SystemAdmin') {
-      // SystemAdmin can delete any task - no additional checks needed
-    } else if (req.user.role === 'Admin') {
-      // Admins can delete any task in their office
-      if (task.office && task.office !== req.user.office) {
-        return res.status(403).json({ message: 'Access denied - Admins can only delete tasks from their office' });
-      }
-    } else if (task.userId !== req.user.id) {
+    // All users can only delete their own tasks
+    if (task.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied - You can only delete your own tasks' });
     }
 

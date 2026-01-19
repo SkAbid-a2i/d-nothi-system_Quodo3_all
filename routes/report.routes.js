@@ -35,10 +35,8 @@ router.get('/tasks', cors(corsOptions), authenticate, authorize('Admin', 'Superv
   try {
     let where = {};
     
-    // Admins and Supervisors can only see their team's tasks
-    if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      where.office = req.user.office;
-    }
+    // All users can only see their own data
+    where.userId = req.user.id;
     
     const { startDate, endDate, userId, status, format } = req.query;
     
@@ -79,10 +77,8 @@ router.get('/leaves', cors(corsOptions), authenticate, authorize('Admin', 'Super
   try {
     let where = {};
     
-    // Admins and Supervisors can only see their team's leaves
-    if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      where.office = req.user.office;
-    }
+    // All users can only see their own data
+    where.userId = req.user.id;
     
     const { startDate, endDate, userId, status, format } = req.query;
     
@@ -124,11 +120,9 @@ router.get('/summary', cors(corsOptions), authenticate, authorize('Admin', 'Supe
     let taskWhere = {};
     let leaveWhere = {};
     
-    // Admins and Supervisors can only see their team's data
-    if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      taskWhere.office = req.user.office;
-      leaveWhere.office = req.user.office;
-    }
+    // All users can only see their own data
+    taskWhere.userId = req.user.id;
+    leaveWhere.userId = req.user.id;
     
     const { startDate, endDate, format } = req.query;
     
@@ -191,10 +185,8 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
   try {
     let where = {};
     
-    // Admins and Supervisors can only see their team's tasks, but SystemAdmins can see all
-    if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
-      where.office = req.user.office;
-    }
+    // All users can only see their own data
+    where.userId = req.user.id;
     
     const { 
       startDate, 
@@ -254,10 +246,11 @@ router.get('/breakdown', cors(corsOptions), authenticate, authorize('Admin', 'Su
     // If an office filter is explicitly provided (and not empty), use it instead of the role-based restriction
     if (office && office.trim() !== '') {
       where.office = office;
-    } else if (req.user.role === 'Admin' || req.user.role === 'Supervisor') {
+    } else if (req.user.role === 'Supervisor') {
       // Only apply the role-based office filter if no specific office filter is provided
       where.office = req.user.office;
     }
+    // Admin and SystemAdmin can see all offices (no filter needed)
     
     // Apply user information filter (partial match)
     if (userInformation && userInformation.trim() !== '') {
