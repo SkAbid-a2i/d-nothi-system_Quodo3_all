@@ -64,6 +64,7 @@ import {
   Cell
 } from 'recharts';
 import { taskAPI, leaveAPI, userAPI, dropdownAPI } from '../services/api';
+import * as XLSX from 'xlsx';
 import notificationService from '../services/notificationService';
 import { useAuth } from '../contexts/AuthContext';
 import UserFilterDropdown from './UserFilterDropdown';
@@ -100,8 +101,10 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [userFilter, setUserFilter] = useState('');
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [viewMode, setViewMode] = useState(user?.role === 'Agent' ? 'card' : 'table'); // 'table' or 'card', default to 'card' for Agent role
   const [showViewDetails, setShowViewDetails] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskDetailsModalOpen, setTaskDetailsModalOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [users, setUsers] = useState([]);
@@ -344,24 +347,15 @@ const AdminDashboard = () => {
       return;
     }
     
-    // Simple Excel-like format using tab-separated values
-    const headers = Object.keys(data[0]);
-    const excelContent = [
-      headers.join('\t'),
-      ...data.map(row => 
-        headers.map(header => row[header] || '').join('\t')
-      )
-    ].join('\n');
+    // Create a worksheet from the export data
+    const ws = XLSX.utils.json_to_sheet(data);
     
-    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.xls`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Create a workbook and append the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Team Tasks');
+    
+    // Write the workbook to a binary string
+    XLSX.writeFile(wb, `${filename}.xlsx`);
     
     showSnackbar(`Exported ${data.length} records to Excel`, 'success');
   };
@@ -1367,21 +1361,9 @@ const AdminDashboard = () => {
                                 variant="outlined"
                                 size="small"
                                 onClick={() => {
-                                  // Show task details in a dialog
-                                  alert(`Task Details:
-
-User: ${task.userName || 'N/A'}
-Date: ${task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}
-Source: ${task.source || 'N/A'}
-Category: ${task.category || 'N/A'}
-Sub-Category: ${task.subCategory || 'N/A'}
-Incident: ${task.incident || 'N/A'}
-Obligation: ${task.obligation || 'N/A'}
-Office: ${task.office || task.userOffice || user?.office || 'N/A'}
-User Info: ${task.userInformation || 'N/A'}
-Description: ${task.description || 'N/A'}
-Status: ${task.status || 'Pending'}
-Files: ${task.files && task.files.length > 0 ? task.files.length : '0'}`);
+                                  // Open task details modal
+                                  setSelectedTask(task);
+                                  setTaskDetailsModalOpen(true);
                                 }}
                               >
                                 View Details
@@ -1427,21 +1409,9 @@ Files: ${task.files && task.files.length > 0 ? task.files.length : '0'}`);
                               <Button
                                 size="small"
                                 onClick={() => {
-                                  // Show task details in a dialog
-                                  alert(`Task Details:
-
-User: ${task.userName || 'N/A'}
-Date: ${task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}
-Source: ${task.source || 'N/A'}
-Category: ${task.category || 'N/A'}
-Sub-Category: ${task.subCategory || 'N/A'}
-Incident: ${task.incident || 'N/A'}
-Obligation: ${task.obligation || 'N/A'}
-Office: ${task.office || task.userOffice || user?.office || 'N/A'}
-User Info: ${task.userInformation || 'N/A'}
-Description: ${task.description || 'N/A'}
-Status: ${task.status || 'Pending'}
-Files: ${task.files && task.files.length > 0 ? task.files.length : '0'}`);
+                                  // Open task details modal
+                                  setSelectedTask(task);
+                                  setTaskDetailsModalOpen(true);
                                 }}
                               >
                                 View Details
@@ -1541,6 +1511,37 @@ Files: ${task.files && task.files.length > 0 ? task.files.length : '0'}`);
           {snackbar.message}
         </Alert>
       </Snackbar>
+      
+      {/* Task Details Modal */}
+      <Dialog
+        open={taskDetailsModalOpen}
+        onClose={() => setTaskDetailsModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Task Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedTask && (
+            <Box sx={{ py: 1 }}>
+              <Typography variant="body2" gutterBottom><strong>User:</strong> {selectedTask.userName || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Date:</strong> {selectedTask.date ? new Date(selectedTask.date).toLocaleDateString() : 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Source:</strong> {selectedTask.source || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Category:</strong> {selectedTask.category || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Sub-Category:</strong> {selectedTask.subCategory || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Incident:</strong> {selectedTask.incident || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Obligation:</strong> {selectedTask.obligation || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Office:</strong> {selectedTask.office || selectedTask.userOffice || user?.office || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>User Info:</strong> {selectedTask.userInformation || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Description:</strong> {selectedTask.description || 'N/A'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Status:</strong> {selectedTask.status || 'Pending'}</Typography>
+              <Typography variant="body2" gutterBottom><strong>Files:</strong> {selectedTask.files && selectedTask.files.length > 0 ? selectedTask.files.length : '0'}</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTaskDetailsModalOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

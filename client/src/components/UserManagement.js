@@ -50,6 +50,7 @@ import {
   Build as BuildIcon
 } from '@mui/icons-material';
 import { dropdownAPI, userAPI, permissionAPI, taskAPI } from '../services/api';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
@@ -587,24 +588,15 @@ const UserManagement = () => {
         'Files Count': task.files ? task.files.length : 0
       }));
       
-      // Simple Excel-like format using tab-separated values
-      const headers = Object.keys(exportData[0]);
-      const excelContent = [
-        headers.join('\t'),
-        ...exportData.map(row => 
-          headers.map(header => row[header] || '').join('\t')
-        )
-      ].join('\n');
+      // Create a worksheet from the export data
+      const ws = XLSX.utils.json_to_sheet(exportData);
       
-      const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${fileName}.xls`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Create a workbook and append the worksheet
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'User Tasks');
+      
+      // Write the workbook to a binary string
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
       
       showSnackbar(`Exported ${exportData.length} task records to Excel for user ${dialogs.userDelete.user.username || dialogs.userDelete.user.id}`, 'success');
       
