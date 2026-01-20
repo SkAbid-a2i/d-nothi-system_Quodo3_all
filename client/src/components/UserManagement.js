@@ -49,7 +49,7 @@ import {
   Source as SourceIcon,
   Build as BuildIcon
 } from '@mui/icons-material';
-import { dropdownAPI, userAPI, permissionAPI } from '../services/api';
+import { dropdownAPI, userAPI, permissionAPI, taskAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
@@ -558,8 +558,59 @@ const UserManagement = () => {
   const handleDeleteUser = async () => {
     try {
       setLoading(true);
+      
+      // First, fetch the user's tasks before deletion
+      const tasksResponse = await taskAPI.getAllTasks();
+      const allTasks = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                       tasksResponse.data?.data || tasksResponse.data || [];
+      
+      // Filter tasks belonging to the user being deleted
+      const userTasks = allTasks.filter(task => task.userId === dialogs.userDelete.user.id);
+      
+      // Export the user's tasks to Excel
+      const fileName = `user_${dialogs.userDelete.user.username || dialogs.userDelete.user.id}_tasks_${new Date().toISOString().split('T')[0]}`;
+      
+      // Prepare data with user information
+      const exportData = userTasks.map(task => ({
+        'User ID': task.userId,
+        'Username': task.userName,
+        'Date': task.date ? new Date(task.date).toLocaleDateString() : 'N/A',
+        'Source': task.source || 'N/A',
+        'Category': task.category || 'N/A',
+        'Sub-Category': task.subCategory || 'N/A',
+        'Incident': task.incident || 'N/A',
+        'Obligation': task.obligation || 'N/A',
+        'Office': task.office || 'N/A',
+        'User Info': task.userInformation || 'N/A',
+        'Description': task.description || 'N/A',
+        'Status': task.status || 'N/A',
+        'Files Count': task.files ? task.files.length : 0
+      }));
+      
+      // Simple Excel-like format using tab-separated values
+      const headers = Object.keys(exportData[0]);
+      const excelContent = [
+        headers.join('\t'),
+        ...exportData.map(row => 
+          headers.map(header => row[header] || '').join('\t')
+        )
+      ].join('\n');
+      
+      const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${fileName}.xls`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSnackbar(`Exported ${exportData.length} task records to Excel for user ${dialogs.userDelete.user.username || dialogs.userDelete.user.id}`, 'success');
+      
+      // Now delete the user
       await userAPI.deleteUser(dialogs.userDelete.user.id);
-      showSnackbar('User deleted successfully!', 'success');
+      showSnackbar('User deleted successfully! Their data has been exported.', 'success');
       closeDialog('userDelete');
       fetchUsers(); // Refresh data
     } catch (error) {

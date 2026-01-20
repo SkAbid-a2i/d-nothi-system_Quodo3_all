@@ -100,6 +100,8 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [userFilter, setUserFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [showViewDetails, setShowViewDetails] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [users, setUsers] = useState([]);
@@ -254,6 +256,52 @@ const AdminDashboard = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Function to export user's task data to Excel when user is deleted
+  const exportUserTasksToExcel = (userData, tasks, filename) => {
+    if (!tasks || tasks.length === 0) {
+      showSnackbar('No task data to export for this user', 'warning');
+      return;
+    }
+    
+    // Prepare data with user information
+    const exportData = tasks.map(task => ({
+      'User ID': task.userId,
+      'Username': task.userName,
+      'Date': task.date ? new Date(task.date).toLocaleDateString() : 'N/A',
+      'Source': task.source || 'N/A',
+      'Category': task.category || 'N/A',
+      'Sub-Category': task.subCategory || 'N/A',
+      'Incident': task.incident || 'N/A',
+      'Obligation': task.obligation || 'N/A',
+      'Office': task.office || 'N/A',
+      'User Info': task.userInformation || 'N/A',
+      'Description': task.description || 'N/A',
+      'Status': task.status || 'N/A',
+      'Files Count': task.files ? task.files.length : 0
+    }));
+    
+    // Simple Excel-like format using tab-separated values
+    const headers = Object.keys(exportData[0]);
+    const excelContent = [
+      headers.join('\t'),
+      ...exportData.map(row => 
+        headers.map(header => row[header] || '').join('\t')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSnackbar(`Exported ${exportData.length} task records to Excel for user ${userData.username || userData.id}`, 'success');
   };
 
   // Export functionality
@@ -603,7 +651,7 @@ const AdminDashboard = () => {
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        Admin Dashboard
+        {user?.role === 'Agent' ? 'Task Dashboard' : 'Admin Dashboard'}
       </Typography>
       
       {/* Advanced Filter Section */}
@@ -1213,94 +1261,199 @@ const AdminDashboard = () => {
             <Box sx={{ mt: 2 }}>
               {activeTab === 0 && (
                 <>
-                  {/* Export Buttons */}
-                  <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<CsvIcon />}
-                      onClick={() => handleExport('csv')}
-                      size="small"
-                    >
-                      Export CSV
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<ExcelIcon />}
-                      onClick={() => handleExport('excel')}
-                      size="small"
-                    >
-                      Export Excel
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<PdfIcon />}
-                      onClick={() => handleExport('pdf')}
-                      size="small"
-                    >
-                      Export PDF
-                    </Button>
+                  {/* Export Buttons and View Toggle */}
+                  <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<CsvIcon />}
+                        onClick={() => handleExport('csv')}
+                        size="small"
+                      >
+                        Export CSV
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<ExcelIcon />}
+                        onClick={() => handleExport('excel')}
+                        size="small"
+                      >
+                        Export Excel
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<PdfIcon />}
+                        onClick={() => handleExport('pdf')}
+                        size="small"
+                      >
+                        Export PDF
+                      </Button>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant={viewMode === 'table' ? 'contained' : 'outlined'}
+                        size="small"
+                        onClick={() => setViewMode('table')}
+                      >
+                        Table View
+                      </Button>
+                      <Button
+                        variant={viewMode === 'card' ? 'contained' : 'outlined'}
+                        size="small"
+                        onClick={() => setViewMode('card')}
+                      >
+                        Card View
+                      </Button>
+                    </Box>
                   </Box>
-                  <TableContainer sx={{ overflowX: 'auto' }}>
-                    <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>User</TableCell>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Source</TableCell>
-                        <TableCell>Category</TableCell>
-                        <TableCell>Sub-Category</TableCell>
-                        <TableCell>Incident</TableCell>
-                        <TableCell>Obligation</TableCell>
-                        <TableCell>Office</TableCell>
-                        <TableCell>User Info</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Files</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredTeamTasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell>{task.userName || 'N/A'}</TableCell>
-                          <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
-                          <TableCell>{task.source || 'N/A'}</TableCell>
-                          <TableCell>{task.category || 'N/A'}</TableCell>
-                          <TableCell>{task.subCategory || 'N/A'}</TableCell>
-                          <TableCell>{task.incident || 'N/A'}</TableCell>
-                          <TableCell>{task.obligation || 'N/A'}</TableCell>
-                          <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
-                          <TableCell>{task.userInformation || 'N/A'}</TableCell>
-                          <TableCell>{task.description || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={task.status || 'Pending'} 
-                              size="small"
-                              color={
-                                task.status === 'Completed' ? 'success' : 
-                                task.status === 'In Progress' ? 'primary' : 
-                                task.status === 'Cancelled' ? 'error' : 'default'
-                              } 
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {task.files && task.files.length > 0 ? (
-                              <Chip 
-                                label={task.files.length} 
-                                size="small" 
-                                color="primary" 
-                                variant="outlined" 
-                              />
-                            ) : (
-                              <Chip label="No Files" size="small" variant="outlined" />
-                            )}
-                          </TableCell>
+                  {viewMode === 'table' ? (
+                    <TableContainer sx={{ overflowX: 'auto' }}>
+                      <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>User</TableCell>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Source</TableCell>
+                          <TableCell>Category</TableCell>
+                          <TableCell>Sub-Category</TableCell>
+                          <TableCell>Incident</TableCell>
+                          <TableCell>Obligation</TableCell>
+                          <TableCell>Office</TableCell>
+                          <TableCell>User Info</TableCell>
+                          <TableCell>Description</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Files</TableCell>
+                          <TableCell>Actions</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHead>
+                      <TableBody>
+                        {filteredTeamTasks.map((task) => (
+                          <TableRow key={task.id}>
+                            <TableCell>{task.userName || 'N/A'}</TableCell>
+                            <TableCell>{task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}</TableCell>
+                            <TableCell>{task.source || 'N/A'}</TableCell>
+                            <TableCell>{task.category || 'N/A'}</TableCell>
+                            <TableCell>{task.subCategory || 'N/A'}</TableCell>
+                            <TableCell>{task.incident || 'N/A'}</TableCell>
+                            <TableCell>{task.obligation || 'N/A'}</TableCell>
+                            <TableCell>{task.office || task.userOffice || user?.office || 'N/A'}</TableCell>
+                            <TableCell>{task.userInformation || 'N/A'}</TableCell>
+                            <TableCell>{task.description || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={task.status || 'Pending'} 
+                                size="small"
+                                color={
+                                  task.status === 'Completed' ? 'success' : 
+                                  task.status === 'In Progress' ? 'primary' : 
+                                  task.status === 'Cancelled' ? 'error' : 'default'
+                                } 
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {task.files && task.files.length > 0 ? (
+                                <Chip 
+                                  label={task.files.length} 
+                                  size="small" 
+                                  color="primary" 
+                                  variant="outlined" 
+                                />
+                              ) : (
+                                <Chip label="No Files" size="small" variant="outlined" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  // Show task details in a dialog
+                                  alert(`Task Details:
+
+User: ${task.userName || 'N/A'}
+Date: ${task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}
+Source: ${task.source || 'N/A'}
+Category: ${task.category || 'N/A'}
+Sub-Category: ${task.subCategory || 'N/A'}
+Incident: ${task.incident || 'N/A'}
+Obligation: ${task.obligation || 'N/A'}
+Office: ${task.office || task.userOffice || user?.office || 'N/A'}
+User Info: ${task.userInformation || 'N/A'}
+Description: ${task.description || 'N/A'}
+Status: ${task.status || 'Pending'}
+Files: ${task.files && task.files.length > 0 ? task.files.length : '0'}`);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                     </TableContainer>
-                  </>
-                )}
+                  ) : (
+                    /* Card View */
+                    <Grid container spacing={2}>
+                      {filteredTeamTasks.map((task) => (
+                        <Grid item xs={12} sm={6} md={4} lg={3} key={task.id}>
+                          <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <CardContent>
+                              <Typography variant="h6" component="div" gutterBottom>
+                                {task.description || 'N/A'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                <strong>User:</strong> {task.userName || 'N/A'}<br/>
+                                <strong>Date:</strong> {task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}<br/>
+                                <strong>Category:</strong> {task.category || 'N/A'}<br/>
+                                <strong>Status:</strong> <Chip 
+                                  label={task.status || 'Pending'} 
+                                  size="small"
+                                  color={
+                                    task.status === 'Completed' ? 'success' : 
+                                    task.status === 'In Progress' ? 'primary' : 
+                                    task.status === 'Cancelled' ? 'error' : 'default'
+                                  } 
+                                /><br/>
+                                <strong>Source:</strong> {task.source || 'N/A'}<br/>
+                                <strong>Sub-Category:</strong> {task.subCategory || 'N/A'}<br/>
+                                <strong>Incident:</strong> {task.incident || 'N/A'}<br/>
+                                <strong>Obligation:</strong> {task.obligation || 'N/A'}<br/>
+                                <strong>Office:</strong> {task.office || task.userOffice || user?.office || 'N/A'}<br/>
+                                <strong>Files:</strong> {task.files && task.files.length > 0 ? task.files.length : '0'}
+                              </Typography>
+                            </CardContent>
+                            <CardActions>
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  // Show task details in a dialog
+                                  alert(`Task Details:
+
+User: ${task.userName || 'N/A'}
+Date: ${task.date ? new Date(task.date).toLocaleDateString() : 'N/A'}
+Source: ${task.source || 'N/A'}
+Category: ${task.category || 'N/A'}
+Sub-Category: ${task.subCategory || 'N/A'}
+Incident: ${task.incident || 'N/A'}
+Obligation: ${task.obligation || 'N/A'}
+Office: ${task.office || task.userOffice || user?.office || 'N/A'}
+User Info: ${task.userInformation || 'N/A'}
+Description: ${task.description || 'N/A'}
+Status: ${task.status || 'Pending'}
+Files: ${task.files && task.files.length > 0 ? task.files.length : '0'}`);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                            </CardActions>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+                </>
+              )}
                 
                 {activeTab === 1 && (
                 <TableContainer>
