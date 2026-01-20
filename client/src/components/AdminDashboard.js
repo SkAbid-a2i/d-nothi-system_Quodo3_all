@@ -27,6 +27,11 @@ import {
   Snackbar,
   Alert,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   styled
 } from '@mui/material';
 import {
@@ -145,11 +150,14 @@ const AdminDashboard = () => {
       console.log('Fetching tasks...');
       const tasksResponse = await taskAPI.getAllTasks();
       console.log('Tasks API response:', tasksResponse);
+      console.log('Tasks response data structure:', typeof tasksResponse.data, Array.isArray(tasksResponse.data));
+      console.log('Tasks response data keys:', Object.keys(tasksResponse.data || {}));
       // Ensure we're setting an array - API might return an object with data property
       const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       console.log('Fetched tasks data:', tasksData);
       console.log('Number of tasks:', tasksData.length);
+      console.log('Sample tasks:', tasksData.slice(0, 3));
       setTasks(tasksData);
         
       // Fetch leaves
@@ -556,6 +564,7 @@ const AdminDashboard = () => {
       matchesUserFilter = matchesUser; // Allow user filter to work for admins when specifically selected
     } else if (isAgent) {
       // Agent role sees only their own tasks
+      console.log('Agent filtering - task:', task.userName, task.userId, 'user:', user?.username, user?.id);
       matchesUserFilter = task.userName === user?.username || task.userId === user?.id;
     } else {
       // Other roles follow normal filtering
