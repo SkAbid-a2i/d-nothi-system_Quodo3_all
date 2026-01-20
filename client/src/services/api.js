@@ -16,6 +16,8 @@ api.interceptors.request.use(
     const startTime = Date.now();
     config.metadata = { startTime };
     
+    console.log('API Request:', config.method, config.baseURL + config.url);
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -34,6 +36,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     const duration = Date.now() - response.config.metadata.startTime;
+    console.log('API Response:', response.config.method, response.config.url, response.status, response.data);
     frontendLogger.logApiCall(
       response.config.method.toUpperCase(), 
       response.config.url, 
