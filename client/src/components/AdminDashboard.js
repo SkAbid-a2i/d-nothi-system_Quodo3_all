@@ -139,28 +139,39 @@ const AdminDashboard = () => {
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
+    console.log('Starting data fetch...');
     try {
       // Fetch tasks
+      console.log('Fetching tasks...');
       const tasksResponse = await taskAPI.getAllTasks();
+      console.log('Tasks API response:', tasksResponse);
       // Ensure we're setting an array - API might return an object with data property
       const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
       console.log('Fetched tasks data:', tasksData);
       console.log('Number of tasks:', tasksData.length);
       setTasks(tasksData);
-      
+        
       // Fetch leaves
+      console.log('Fetching leaves...');
       const leavesResponse = await leaveAPI.getAllLeaves();
+      console.log('Leaves API response:', leavesResponse);
       // Ensure we're setting an array - API might return an object with data property
       const leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 
                         leavesResponse.data?.data || leavesResponse.data || [];
+      console.log('Fetched leaves data:', leavesData);
+      console.log('Number of leaves:', leavesData.length);
       setLeaves(leavesData);
-      
+        
       // Fetch users
+      console.log('Fetching users...');
       const usersResponse = await userAPI.getAllUsers();
+      console.log('Users API response:', usersResponse);
       // Ensure we're setting an array - API might return an object with data property
       const usersData = Array.isArray(usersResponse.data) ? usersResponse.data : 
                        usersResponse.data?.data || usersResponse.data || [];
+      console.log('Fetched users data:', usersData);
+      console.log('Number of users:', usersData.length);
       setUsers(usersData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
