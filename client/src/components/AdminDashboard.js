@@ -95,6 +95,11 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  
+  // Debug logging
+  console.log('AdminDashboard mounted with user:', user);
+  console.log('User role:', user?.role);
+  console.log('Current time:', new Date().toISOString());
   const [timeRange, setTimeRange] = useState('weekly');
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
@@ -140,6 +145,8 @@ const AdminDashboard = () => {
       // Ensure we're setting an array - API might return an object with data property
       const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
                        tasksResponse.data?.data || tasksResponse.data || [];
+      console.log('Fetched tasks data:', tasksData);
+      console.log('Number of tasks:', tasksData.length);
       setTasks(tasksData);
       
       // Fetch leaves
@@ -507,6 +514,7 @@ const AdminDashboard = () => {
   // Filter team tasks based on search and advanced filters
   // For SystemAdmin, Admin, and Supervisor roles, show all users' data by default
   // For Agent role, show only their own tasks
+  console.log('Filtering tasks. Total tasks:', tasks.length, 'User role:', user?.role);
   const filteredTeamTasks = tasks.filter(task => {
     const matchesSearch = !searchTerm || 
       (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -566,6 +574,9 @@ const AdminDashboard = () => {
       return matchesSearch && matchesUserFilter && matchesSource && matchesCategory && matchesSubCategory && matchesIncident && matchesOffice && matchesUser && matchesUserInformation && matchesObligation;
     }
   });
+  
+  console.log('Filtered team tasks count:', filteredTeamTasks.length);
+  console.log('Sample filtered tasks:', filteredTeamTasks.slice(0, 3));
 
   // Filter pending leaves
   const filteredPendingLeaves = leaves.filter(leave => 
