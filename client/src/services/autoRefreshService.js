@@ -6,7 +6,7 @@ class AutoRefreshService {
   }
 
   // Subscribe to auto-refresh updates
-  subscribe(componentId, dataType, callback, interval = 30000) {
+  subscribe(componentId, dataType, callback, interval = 300000) {
     // Clear existing interval for this component if it exists
     if (this.intervals.has(componentId)) {
       clearInterval(this.intervals.get(componentId));

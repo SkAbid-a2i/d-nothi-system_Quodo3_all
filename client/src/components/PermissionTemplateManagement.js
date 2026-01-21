@@ -109,7 +109,7 @@ const PermissionTemplateManagement = () => {
     fetchTemplates();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('PermissionTemplateManagement', 'permissionTemplates', fetchTemplates, 30000);
+    autoRefreshService.subscribe('PermissionTemplateManagement', 'permissionTemplates', fetchTemplates, 300000);
     
     // Clean up subscription on component unmount
     return () => {

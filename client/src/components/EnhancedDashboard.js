@@ -342,7 +342,7 @@ const EnhancedDashboard = () => {
     fetchDashboardData();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('EnhancedDashboard', 'dashboard', fetchDashboardData, 30000);
+    autoRefreshService.subscribe('EnhancedDashboard', 'dashboard', fetchDashboardData, 300000);
     
     // Clean up subscription on component unmount
     return () => {

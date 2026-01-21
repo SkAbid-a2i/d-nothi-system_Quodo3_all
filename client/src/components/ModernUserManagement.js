@@ -106,7 +106,7 @@ const ModernUserManagement = () => {
     fetchUsers();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('ModernUserManagement', 'users', fetchUsers, 30000);
+    autoRefreshService.subscribe('ModernUserManagement', 'users', fetchUsers, 300000);
     
     // Clean up subscription on component unmount
     return () => {

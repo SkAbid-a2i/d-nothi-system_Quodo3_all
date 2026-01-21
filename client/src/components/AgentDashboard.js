@@ -283,7 +283,7 @@ const AgentDashboard = () => {
     fetchDashboardData();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('AgentDashboard', 'dashboard', fetchDashboardData, 30000);
+    autoRefreshService.subscribe('AgentDashboard', 'dashboard', fetchDashboardData, 300000);
     
     // Clean up subscription on component unmount
     return () => {

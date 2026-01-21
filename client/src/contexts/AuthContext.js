@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
         // Validate token periodically
         validateToken();
       }
-    }, 30000); // Every 30 seconds
+    }, 300000); // Every 300 seconds
     
     return () => {
       if (tokenValidationRef.current) {

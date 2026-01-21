@@ -203,9 +203,9 @@ const UserManagement = () => {
     fetchPermissionTemplates();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('UserManagement', 'users', fetchUsers, 30000);
-    autoRefreshService.subscribe('UserManagement-templates', 'permissionTemplates', fetchPermissionTemplates, 30000);
-    autoRefreshService.subscribe('UserManagement-dropdowns', 'dropdowns', fetchDropdowns, 30000);
+    autoRefreshService.subscribe('UserManagement', 'users', fetchUsers, 300000);
+    autoRefreshService.subscribe('UserManagement-templates', 'permissionTemplates', fetchPermissionTemplates, 300000);
+    autoRefreshService.subscribe('UserManagement-dropdowns', 'dropdowns', fetchDropdowns, 300000);
     
     // Clean up subscriptions on component unmount
     return () => {

@@ -438,7 +438,7 @@ const TaskManagement = () => {
       fetchDropdownValues();
       
       // Subscribe to auto-refresh service
-      autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 30000);
+      autoRefreshService.subscribe('TaskManagement', 'tasks', fetchTasks, 300000);
       
       // Clean up subscription on component unmount
       return () => {

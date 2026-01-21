@@ -188,7 +188,7 @@ const LeaveManagement = () => {
     fetchUsers(); // Also fetch users for System Admins
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('LeaveManagement', 'leaves', fetchLeaves, 30000);
+    autoRefreshService.subscribe('LeaveManagement', 'leaves', fetchLeaves, 300000);
     
     // Clean up subscription on component unmount
     return () => {

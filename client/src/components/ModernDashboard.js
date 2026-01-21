@@ -151,7 +151,7 @@ const ModernDashboard = () => {
     fetchDashboardData();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('ModernDashboard', 'dashboard', fetchDashboardData, 30000);
+    autoRefreshService.subscribe('ModernDashboard', 'dashboard', fetchDashboardData, 300000);
     
     // Clean up subscription on component unmount
     return () => {

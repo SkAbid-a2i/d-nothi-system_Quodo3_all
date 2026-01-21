@@ -142,7 +142,7 @@ const ModernLeaveManagement = () => {
     fetchLeaves();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('ModernLeaveManagement', 'leaves', fetchLeaves, 30000);
+    autoRefreshService.subscribe('ModernLeaveManagement', 'leaves', fetchLeaves, 300000);
     
     // Clean up subscription on component unmount
     return () => {

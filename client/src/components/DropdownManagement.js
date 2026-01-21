@@ -105,7 +105,7 @@ const DropdownManagement = () => {
     fetchDropdowns();
     
     // Subscribe to auto-refresh service
-    autoRefreshService.subscribe('DropdownManagement', 'dropdowns', fetchDropdowns, 30000);
+    autoRefreshService.subscribe('DropdownManagement', 'dropdowns', fetchDropdowns, 300000);
     
     // Clean up subscription on component unmount
     return () => {
