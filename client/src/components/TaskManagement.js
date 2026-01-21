@@ -389,13 +389,15 @@ const TaskManagement = () => {
         office: user.office
       });
       
-      // The backend already filters tasks based on user role:
-      // - Agents: only their own tasks (filtered by userId)
-      // - Supervisors: tasks from their office (filtered by office)
-      // - Admin and SystemAdmin: all tasks (no filter)
+      // On the Task Logger page, ALL ROLES should only see their own tasks
+      // This is different from other pages where Admin/Supervisor may see all tasks
+      tasksData = tasksData.filter(task => {
+        // Match either by userId or userName to be comprehensive
+        return task.userId === user.id || task.userName === user.username;
+      });
       
+      console.log('Filtered tasks for current user:', tasksData);
       console.log('Task filtering debug - user role:', user.role);
-      // So we don't need additional frontend filtering here
       
       // Log the tasks for debugging
       console.log('Received tasks:', tasksData.map(t => ({
@@ -510,8 +512,18 @@ const TaskManagement = () => {
       // Apply status filter
       const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
       
-      // Apply user filter - always true for tasks page since we don't include user filter
-      const matchesUser = true;
+      // Apply user filter - on Task Logger page, everyone only sees their own tasks
+      const matchesUser = task.userId === user?.id || task.userName === user?.username;
+      
+      // Debug logging for user matching
+      console.log('User filter check:', {
+        taskId: task.id,
+        taskUserId: task.userId,
+        taskUserName: task.userName,
+        currentUserId: user?.id,
+        currentUserName: user?.username,
+        matchesUser
+      });
       
       // Apply source filter
       const matchesSource = !appliedFilters.sourceFilter || task.source === appliedFilters.sourceFilter;
