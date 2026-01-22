@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -152,15 +152,24 @@ const AdminConsole = () => {
   const fetchDropdowns = async () => {
     try {
       const response = await dropdownAPI.getAllDropdowns();
-      setDropdowns(response.data);
+      
+      // Sort dropdowns by type and value for better performance
+      const sortedDropdowns = (response.data || []).sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type.localeCompare(b.type);
+        }
+        return a.value.localeCompare(b.value);
+      });
+      
+      setDropdowns(sortedDropdowns);
       
       // Get unique categories
-      const uniqueCategories = [...new Set(response.data
+      const uniqueCategories = [...new Set(sortedDropdowns
         .filter(d => d.type === 'Category')
         .map(d => d.value))];
       
       // Get unique sub-categories for Incident dropdown parent selection
-      const uniqueSubCategories = [...new Set(response.data
+      const uniqueSubCategories = [...new Set(sortedDropdowns
         .filter(d => d.type === 'Sub-Category')
         .map(d => d.value))];
       
@@ -170,6 +179,14 @@ const AdminConsole = () => {
       console.error('Error fetching dropdowns:', error);
     }
   };
+
+  // Memoize filtered dropdowns for better performance
+  const filteredDropdowns = useMemo(() => {
+    return dropdowns.filter(dropdown => {
+      const matchesType = selectedDropdownType === 'All' || dropdown.type === selectedDropdownType;
+      return matchesType;
+    }).slice(0, 1000); // Limit to 1000 items for performance
+  }, [dropdowns, selectedDropdownType]);
 
   const handleToggleStatus = async (userId) => {
     try {
@@ -430,7 +447,7 @@ const AdminConsole = () => {
     try {
       const dropdownData = {
         type: selectedDropdownType,
-        value: dropdownValue
+        value: dropdownValue.trim()
       };
 
       if (selectedDropdownType === 'Incident') {
@@ -442,6 +459,9 @@ const AdminConsole = () => {
         dropdownData.parentType = 'Category';
         dropdownData.parentValue = parentCategory;
       }
+
+      // Log the data being sent for debugging
+      console.log('Sending dropdown data:', dropdownData);
 
       if (editingDropdown) {
         await dropdownAPI.updateDropdownValue(editingDropdown.id, dropdownData);
@@ -462,11 +482,23 @@ const AdminConsole = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error saving dropdown value:', error);
+      console.error('Error response:', error.response);
+      console.error('Error request:', error.request);
+      
       // Handle specific error cases
-      if (error.response?.status === 400 && error.response?.data?.message?.includes('already exists')) {
-        setError(`Dropdown value "${dropdownValue}" already exists for type "${selectedDropdownType}"`);
+      if (error.response?.status === 400) {
+        const errorMessage = error.response?.data?.message || error.message;
+        if (errorMessage?.includes('already exists')) {
+          setError(`Dropdown value "${dropdownValue}" already exists for type "${selectedDropdownType}"`);
+        } else if (errorMessage?.includes('Invalid dropdown type')) {
+          setError(`Invalid dropdown type: ${selectedDropdownType}. Valid types are: Source, Category, Sub-Category, Incident, Office, Obligation`);
+        } else {
+          setError(`Bad request: ${errorMessage}`);
+        }
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
       } else {
-        setError('Failed to save dropdown value: ' + (error.response?.data?.message || error.message));
+        setError('Failed to save dropdown value: ' + (error.response?.data?.message || error.message || 'Unknown error'));
       }
       setTimeout(() => setError(''), 5000);
     }
