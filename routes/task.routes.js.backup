@@ -43,46 +43,19 @@ router.get('/', cors(corsOptions), authenticate, async (req, res) => {
       where.userId = req.user.id;
     }
     
-    // Extract pagination parameters
-    const { page, limit } = req.query;
-    
-    let options = { 
+    const tasks = await Task.findAll({ 
       where, 
       order: [['createdAt', 'DESC']],
+      // Add error handling for database issues
       logging: false // Reduce noise in logs
-    };
+    });
     
-    // Apply pagination if requested
-    if (page && limit) {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
-      
-      // Only apply offset and limit if limit is not -1 (meaning 'All')
-      if (limitNum !== -1) {
-        options.offset = (pageNum - 1) * limitNum;
-        options.limit = limitNum;
-      }
-    }
-    
-    const tasks = await Task.findAll(options);
-    
-    // If pagination was requested, also get the total count
-    if (page && limit) {
-      const totalCount = await Task.count({ where });
-      
-      res.json({
-        tasks,
-        totalPages: limit !== '-1' ? Math.ceil(totalCount / parseInt(limit)) : 1,
-        currentPage: parseInt(page),
-        totalTasks: totalCount
-      });
-    } else {
-      // Ensure we return an array
-      const taskArray = Array.isArray(tasks) ? tasks : tasks ? [tasks] : [];
-      res.json(taskArray);
-    }
+    // Ensure we return an array
+    const taskArray = Array.isArray(tasks) ? tasks : tasks ? [tasks] : [];
+    res.json(taskArray);
   } catch (err) {
     console.error('Error fetching tasks:', err);
+    // More detailed error response
     res.status(500).json({ 
       message: 'Server error while fetching tasks', 
       error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'

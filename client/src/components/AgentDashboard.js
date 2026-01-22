@@ -169,15 +169,22 @@ const AgentDashboard = () => {
       
       // Fetch all data in parallel
       const [tasksResponse, leavesResponse, meetingsResponse, collaborationsResponse] = await Promise.all([
-        taskAPI.getAllTasks(),
+        taskAPI.getAllTasks({ page: 1, limit: -1 }), // Fetch all tasks with pagination parameters to get unlimited data
         leaveAPI.getAllLeaves(),
         meetingAPI.getAllMeetings(),
         collaborationAPI.getAllCollaborations()
       ]);
       
-      // Filter tasks based on user role
-      let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
-                       tasksResponse.data?.data || tasksResponse.data || [];
+      // Handle both paginated and non-paginated response formats for tasks
+      let tasksData;
+      if (tasksResponse.data && tasksResponse.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = tasksResponse.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                         tasksResponse.data?.data || tasksResponse.data || [];
+      }
       
       // If user is admin, supervisor, or SystemAdmin, show all tasks initially, but apply user filter if set
       if (isAdmin) {

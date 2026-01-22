@@ -585,9 +585,18 @@ const UserManagement = () => {
       setLoading(true);
       
       // First, fetch the user's tasks before deletion
-      const tasksResponse = await taskAPI.getAllTasks();
-      const allTasks = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
-                       tasksResponse.data?.data || tasksResponse.data || [];
+      const tasksResponse = await taskAPI.getAllTasks({ page: 1, limit: -1 }); // Fetch all tasks with pagination parameters to get unlimited data
+      
+      // Handle both paginated and non-paginated response formats
+      let allTasks;
+      if (tasksResponse.data && tasksResponse.data.tasks !== undefined) {
+        // Paginated response format
+        allTasks = tasksResponse.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        allTasks = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                         tasksResponse.data?.data || tasksResponse.data || [];
+      }
       
       // Filter tasks belonging to the user being deleted
       const userTasks = allTasks.filter(task => task.userId === dialogs.userDelete.user.id);

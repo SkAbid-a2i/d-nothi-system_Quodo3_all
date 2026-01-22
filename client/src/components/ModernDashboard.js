@@ -57,9 +57,18 @@ const ModernDashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch tasks
-      const tasksResponse = await taskAPI.getAllTasks();
-      let tasksData = tasksResponse.data || [];
+      // Fetch tasks with pagination parameters to get unlimited data
+      const tasksResponse = await taskAPI.getAllTasks({ page: 1, limit: -1 });
+      
+      // Handle both paginated and non-paginated response formats
+      let tasksData;
+      if (tasksResponse.data && tasksResponse.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = tasksResponse.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = tasksResponse.data || [];
+      }
       
       // Filter tasks based on user role
       if (user && user.role === 'Agent') {

@@ -106,7 +106,7 @@ const ModernTaskLogger = () => {
         dropdownAPI.getDropdownValues('Source'),
         dropdownAPI.getDropdownValues('Category'),
         dropdownAPI.getDropdownValues('Service'),
-        taskAPI.getAllTasks()
+        taskAPI.getAllTasks({ page: 1, limit: -1 }) // Fetch all tasks with pagination parameters to get unlimited data
       ]);
       
       // Process responses
@@ -123,8 +123,17 @@ const ModernTaskLogger = () => {
                             categoriesRes.data?.data || categoriesRes.data || [];
       const servicesData = Array.isArray(servicesRes.data) ? servicesRes.data : 
                           servicesRes.data?.data || servicesRes.data || [];
-      const tasksData = Array.isArray(tasksRes.data) ? tasksRes.data : 
-                       tasksRes.data?.data || tasksRes.data || [];
+      
+      // Handle both paginated and non-paginated response formats for tasks
+      let tasksData;
+      if (tasksRes.data && tasksRes.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = tasksRes.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(tasksRes.data) ? tasksRes.data : 
+                         tasksRes.data?.data || tasksRes.data || [];
+      }
       
       console.log('Processed dropdown data:', { sourcesData, categoriesData, servicesData });
       console.log('User role:', user?.role);
@@ -133,13 +142,17 @@ const ModernTaskLogger = () => {
       setCategories(categoriesData);
       setServices(servicesData);
       
-      // Filter tasks - ALL users only see their own tasks, regardless of role
+      // Filter tasks - Admin and SystemAdmin roles see all tasks, other roles only see their own
       let filteredTasksData = tasksData;
       if (user) {
-        // ALL users (including admin roles) only see their own tasks
-        filteredTasksData = tasksData.filter(task => 
-          task.userId === user.id || task.userName === user.username
-        );
+        const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user.role);
+        if (!isAdminOrSystemAdmin) {
+          // For non-Admin/SystemAdmin users, only show their own tasks
+          filteredTasksData = tasksData.filter(task => 
+            task.userId === user.id || task.userName === user.username
+          );
+        }
+        // For Admin/SystemAdmin users, keep all tasks (no filtering needed)
       }
       
       setTasks(filteredTasksData);
@@ -217,18 +230,32 @@ const ModernTaskLogger = () => {
     
     setLoading(true);
     try {
-      const response = await taskAPI.getAllTasks();
+      // Fetch all tasks with pagination parameters to get unlimited data
+      const response = await taskAPI.getAllTasks({ page: 1, limit: -1 });
       console.log('Tasks response:', response);
-      const tasksData = Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || [];
       
-      // Filter tasks - ALL users only see their own tasks, regardless of role
+      // Handle both paginated and non-paginated response formats
+      let tasksData;
+      if (response.data && response.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = response.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(response.data) ? response.data : 
+                         response.data?.data || response.data || [];
+      }
+      
+      // Filter tasks - Admin and SystemAdmin roles see all tasks, other roles only see their own
       let filteredTasksData = tasksData;
       if (user) {
-        // ALL users (including admin roles) only see their own tasks
-        filteredTasksData = tasksData.filter(task => 
-          task.userId === user.id || task.userName === user.username
-        );
+        const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user.role);
+        if (!isAdminOrSystemAdmin) {
+          // For non-Admin/SystemAdmin users, only show their own tasks
+          filteredTasksData = tasksData.filter(task => 
+            task.userId === user.id || task.userName === user.username
+          );
+        }
+        // For Admin/SystemAdmin users, keep all tasks (no filtering needed)
       }
       
       setTasks(filteredTasksData);

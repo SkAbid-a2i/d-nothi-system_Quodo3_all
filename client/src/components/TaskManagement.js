@@ -380,12 +380,20 @@ const TaskManagement = () => {
     setDataLoading(true);
     try {
       console.log('Fetching tasks for user:', user);
-      const response = await taskAPI.getAllTasks();
+      // Fetch all tasks with pagination parameters to get unlimited data
+      const response = await taskAPI.getAllTasks({ page: 1, limit: -1 });
       console.log('Tasks response:', response);
       
-      // Filter tasks based on user role
-      let tasksData = Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || [];
+      // Handle both paginated and non-paginated response formats
+      let tasksData;
+      if (response.data && response.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = response.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(response.data) ? response.data : 
+                         response.data?.data || response.data || [];
+      }
       
       console.log('Raw tasks data:', tasksData);
       console.log('User info for filtering:', {
@@ -395,12 +403,18 @@ const TaskManagement = () => {
         office: user.office
       });
       
-      // On the Task Logger page, ALL ROLES should only see their own tasks
-      // This is different from other pages where Admin/Supervisor may see all tasks
-      tasksData = tasksData.filter(task => {
-        // Match either by userId or userName to be comprehensive
-        return task.userId === user.id || task.userName === user.username;
-      });
+      // On the Task Logger page, SystemAdmin and Admin roles should see all tasks
+      // Other roles (Supervisor, Agent) should only see their own tasks
+      const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user.role);
+      
+      if (!isAdminOrSystemAdmin) {
+        // For non-Admin/SystemAdmin users, only show their own tasks
+        tasksData = tasksData.filter(task => {
+          // Match either by userId or userName to be comprehensive
+          return task.userId === user.id || task.userName === user.username;
+        });
+      }
+      // For Admin/SystemAdmin users, keep all tasks (no filtering needed)
       
       console.log('Filtered tasks for current user:', tasksData);
       console.log('Task filtering debug - user role:', user.role);
@@ -518,8 +532,9 @@ const TaskManagement = () => {
       // Apply status filter
       const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
       
-      // Apply user filter - on Task Logger page, everyone only sees their own tasks
-      const matchesUser = task.userId === user?.id || task.userName === user?.username;
+      // Apply user filter - on Task Logger page, non-Admin/SystemAdmin users only see their own tasks
+      const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user?.role);
+      const matchesUser = isAdminOrSystemAdmin || task.userId === user?.id || task.userName === user?.username;
       
       // Debug logging for user matching
       console.log('User filter check:', {

@@ -779,8 +779,8 @@ Obligation,Legal,`;
       ? dropdowns 
       : dropdowns.filter(dropdown => dropdown.type === selectedDropdownType);
     
-    // Limit to 1000 items for performance with large datasets
-    return result.slice(0, 1000);
+    // No limit - show all items
+    return result;
   }, [dropdowns, selectedDropdownType]);
   
   // Calculate paginated dropdowns

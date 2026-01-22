@@ -100,7 +100,7 @@ export const userAPI = {
 
 // Task endpoints
 export const taskAPI = {
-  getAllTasks: () => api.get('/tasks'),
+  getAllTasks: (params) => api.get('/tasks', { params }),
   createTask: (taskData) => api.post('/tasks', taskData),
   updateTask: (id, taskData) => api.put(`/tasks/${id}`, taskData),
   deleteTask: (id) => api.delete(`/tasks/${id}`),

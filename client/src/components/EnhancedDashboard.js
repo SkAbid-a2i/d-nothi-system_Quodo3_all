@@ -118,14 +118,21 @@ const EnhancedDashboard = () => {
     try {
       // Fetch all data
       const [tasksResponse, leavesResponse, usersResponse] = await Promise.all([
-        taskAPI.getAllTasks(),
+        taskAPI.getAllTasks({ page: 1, limit: -1 }), // Fetch all tasks with pagination parameters to get unlimited data
         leaveAPI.getAllLeaves(),
         userAPI.getAllUsers()
       ]);
       
-      // Process tasks data
-      let tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
-                      tasksResponse.data?.data || tasksResponse.data || [];
+      // Handle both paginated and non-paginated response formats for tasks
+      let tasksData;
+      if (tasksResponse.data && tasksResponse.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = tasksResponse.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                        tasksResponse.data?.data || tasksResponse.data || [];
+      }
       
       // Process leaves data
       let leavesData = Array.isArray(leavesResponse.data) ? leavesResponse.data : 

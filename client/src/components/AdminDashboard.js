@@ -148,13 +148,22 @@ const AdminDashboard = () => {
     try {
       // Fetch tasks
       console.log('Fetching tasks...');
-      const tasksResponse = await taskAPI.getAllTasks();
+      // Fetch all tasks with pagination parameters to get unlimited data
+      const tasksResponse = await taskAPI.getAllTasks({ page: 1, limit: -1 });
       console.log('Tasks API response:', tasksResponse);
       console.log('Tasks response data structure:', typeof tasksResponse.data, Array.isArray(tasksResponse.data));
       console.log('Tasks response data keys:', Object.keys(tasksResponse.data || {}));
-      // Ensure we're setting an array - API might return an object with data property
-      const tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
-                       tasksResponse.data?.data || tasksResponse.data || [];
+      
+      // Handle both paginated and non-paginated response formats
+      let tasksData;
+      if (tasksResponse.data && tasksResponse.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = tasksResponse.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(tasksResponse.data) ? tasksResponse.data : 
+                         tasksResponse.data?.data || tasksResponse.data || [];
+      }
       console.log('Fetched tasks data:', tasksData);
       console.log('Number of tasks:', tasksData.length);
       console.log('Sample tasks:', tasksData.slice(0, 3));

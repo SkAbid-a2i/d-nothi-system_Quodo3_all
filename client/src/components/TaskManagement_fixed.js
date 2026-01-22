@@ -311,12 +311,20 @@ const TaskManagement = () => {
     setDataLoading(true);
     try {
       console.log('Fetching tasks for user:', user);
-      const response = await taskAPI.getAllTasks();
+      // Fetch all tasks with pagination parameters to get unlimited data
+      const response = await taskAPI.getAllTasks({ page: 1, limit: -1 });
       console.log('Tasks response:', response);
       
-      // Filter tasks based on user role
-      let tasksData = Array.isArray(response.data) ? response.data : 
-                       response.data?.data || response.data || [];
+      // Handle both paginated and non-paginated response formats
+      let tasksData;
+      if (response.data && response.data.tasks !== undefined) {
+        // Paginated response format
+        tasksData = response.data.tasks || [];
+      } else {
+        // Non-paginated response format
+        tasksData = Array.isArray(response.data) ? response.data : 
+                         response.data?.data || response.data || [];
+      }
       
       console.log('Raw tasks data:', tasksData);
       console.log('User info for filtering:', {
@@ -325,12 +333,16 @@ const TaskManagement = () => {
         fullName: user.fullName
       });
       
-      // ALL users should only see their own tasks
-      // Use both username and fullName for matching to ensure compatibility
-      const currentUserIdentifier = user.fullName || user.username;
-      console.log('Filtering tasks for user:', currentUserIdentifier);
+      // Admin and SystemAdmin roles should see all tasks
+      // Other roles (Supervisor, Agent) should only see their own tasks
+      const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user.role);
       
-      tasksData = tasksData.filter(task => {
+      if (!isAdminOrSystemAdmin) {
+        // Use both username and fullName for matching to ensure compatibility
+        const currentUserIdentifier = user.fullName || user.username;
+        console.log('Filtering tasks for user:', currentUserIdentifier);
+        
+        tasksData = tasksData.filter(task => {
         const taskUserIdentifier = task.userName;
         
         // More flexible matching to handle potential formatting differences
@@ -367,6 +379,8 @@ const TaskManagement = () => {
         });
         return isMatch;
       });
+      }
+      // For Admin/SystemAdmin users, keep all tasks (no filtering needed)
       
       console.log(`${user.role}: filtered to user tasks`, tasksData.length);
       // Log the filtered tasks for debugging
