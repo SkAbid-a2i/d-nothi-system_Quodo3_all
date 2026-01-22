@@ -77,7 +77,10 @@ const AdminConsole = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [importFile, setImportFile] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  
+      
+  // Dropdown search state
+  const [dropdownSearchTerm, setDropdownSearchTerm] = useState('');
+    
   // Pagination state for dropdowns
   const [currentPage, setCurrentPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(100);
@@ -851,15 +854,25 @@ Obligation,Legal,`;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Filter dropdowns based on type - add 'All' option with performance optimization
+  // Filter dropdowns based on type and search term - add 'All' option with performance optimization
   const allFilteredDropdowns = useMemo(() => {
-    const result = selectedDropdownType === 'All' 
+    let result = selectedDropdownType === 'All' 
       ? dropdowns 
       : dropdowns.filter(dropdown => dropdown.type === selectedDropdownType);
     
+    // Apply search filter if search term exists
+    if (dropdownSearchTerm) {
+      const searchTermLower = dropdownSearchTerm.toLowerCase();
+      result = result.filter(dropdown => 
+        dropdown.type.toLowerCase().includes(searchTermLower) ||
+        dropdown.value.toLowerCase().includes(searchTermLower) ||
+        (dropdown.parentValue && dropdown.parentValue.toLowerCase().includes(searchTermLower))
+      );
+    }
+    
     // No limit - show all items
     return result;
-  }, [dropdowns, selectedDropdownType]);
+  }, [dropdowns, selectedDropdownType, dropdownSearchTerm]);
   
   // Calculate paginated dropdowns
   const paginatedDropdowns = useMemo(() => {
@@ -870,15 +883,7 @@ Obligation,Legal,`;
   // Calculate total pages
   const totalPages = Math.ceil(allFilteredDropdowns.length / rowsPerPage);
   
-  // Add debugging to help identify issues
-  console.log('Dropdowns data:', dropdowns);
-  console.log('Selected dropdown type:', selectedDropdownType);
-  console.log('All filtered dropdowns:', allFilteredDropdowns);
-  
-  // Add debugging to help identify issues
-  console.log('Dropdowns data:', dropdowns);
-  console.log('Selected dropdown type:', selectedDropdownType);
-  console.log('All filtered dropdowns:', allFilteredDropdowns);
+
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -1570,24 +1575,37 @@ Obligation,Legal,`;
                 
                 <Grid item xs={12}>
                   <Paper sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         Dropdown Values
                       </Typography>
                       
-                      <FormControl size="small" sx={{ minWidth: 120 }}>
-                        <InputLabel>Type</InputLabel>
-                        <Select
-                          value={selectedDropdownType}
-                          onChange={handleDropdownTypeChange}
-                          label="Type"
-                        >
-                          <MenuItem value="All">All</MenuItem>
-                          {dropdownTypes.map(type => (
-                            <MenuItem key={type} value={type}>{type}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <TextField
+                          size="small"
+                          placeholder="Search dropdowns..."
+                          value={dropdownSearchTerm}
+                          onChange={(e) => setDropdownSearchTerm(e.target.value)}
+                          InputProps={{
+                            startAdornment: <SearchIcon sx={{ mr: 1, fontSize: 20 }} />
+                          }}
+                          sx={{ minWidth: 200 }}
+                        />
+                        
+                        <FormControl size="small" sx={{ minWidth: 120 }}>
+                          <InputLabel>Type</InputLabel>
+                          <Select
+                            value={selectedDropdownType}
+                            onChange={handleDropdownTypeChange}
+                            label="Type"
+                          >
+                            <MenuItem value="All">All</MenuItem>
+                            {dropdownTypes.map(type => (
+                              <MenuItem key={type} value={type}>{type}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Box>
                     </Box>
                     
                     {loading ? (
