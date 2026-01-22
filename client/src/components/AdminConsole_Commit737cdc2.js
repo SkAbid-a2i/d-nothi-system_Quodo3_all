@@ -180,13 +180,7 @@ const AdminConsole = () => {
     }
   };
 
-  // Memoize filtered dropdowns for better performance
-  const filteredDropdowns = useMemo(() => {
-    return dropdowns.filter(dropdown => {
-      const matchesType = selectedDropdownType === 'All' || dropdown.type === selectedDropdownType;
-      return matchesType;
-    }).slice(0, 1000); // Limit to 1000 items for performance
-  }, [dropdowns, selectedDropdownType]);
+
 
   const handleToggleStatus = async (userId) => {
     try {
@@ -568,47 +562,87 @@ const AdminConsole = () => {
         throw new Error('Invalid CSV format. Required columns: Type, Value');
       }
       
-      // Process and import each row
-      for (const row of importedData) {
-        const { Type, Value, Parent } = row;
+      // Process and import rows with better error handling
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+      
+      // Batch processing for better performance
+      const batchSize = 10;
+      for (let i = 0; i < importedData.length; i += batchSize) {
+        const batch = importedData.slice(i, i + batchSize);
+        const batchPromises = [];
         
-        if (!Type || !Value) {
-          console.warn('Skipping row with missing Type or Value:', row);
-          continue;
+        for (const row of batch) {
+          const { Type, Value, Parent } = row;
+          
+          if (!Type || !Value) {
+            console.warn('Skipping row with missing Type or Value:', row);
+            errorCount++;
+            errors.push(`Row ${i + 1}: Missing Type or Value`);
+            continue;
+          }
+          
+          // Validate type
+          const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'];
+          if (!validTypes.includes(Type)) {
+            console.warn('Skipping row with invalid type:', Type);
+            errorCount++;
+            errors.push(`Row ${i + 1}: Invalid type '${Type}'`);
+            continue;
+          }
+          
+          const dropdownData = {
+            type: Type,
+            value: Value.trim()
+          };
+          
+          // Handle parent relationships
+          if (Type === 'Incident' && Parent) {
+            dropdownData.parentType = 'Sub-Category';
+            dropdownData.parentValue = Parent;
+          }
+          
+          if (Type === 'Sub-Category' && Parent) {
+            dropdownData.parentType = 'Category';
+            dropdownData.parentValue = Parent;
+          }
+          
+          // Create promise for this dropdown
+          const promise = dropdownAPI.createDropdownValue(dropdownData)
+            .then(() => {
+              successCount++;
+              return null;
+            })
+            .catch((err) => {
+              errorCount++;
+              const errorMsg = err.response?.data?.message || err.message;
+              errors.push(`Row ${i + 1} (${Type}: ${Value}): ${errorMsg}`);
+              console.error('Error importing dropdown value:', err);
+              return err;
+            });
+          
+          batchPromises.push(promise);
         }
         
-        // Validate type
-        const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'];
-        if (!validTypes.includes(Type)) {
-          console.warn('Skipping row with invalid type:', Type);
-          continue;
-        }
+        // Wait for batch to complete
+        await Promise.all(batchPromises);
         
-        const dropdownData = {
-          type: Type,
-          value: Value
-        };
-        
-        // Handle parent relationships
-        if (Type === 'Incident' && Parent) {
-          dropdownData.parentType = 'Sub-Category';
-          dropdownData.parentValue = Parent;
-        }
-        
-        if (Type === 'Sub-Category' && Parent) {
-          dropdownData.parentType = 'Category';
-          dropdownData.parentValue = Parent;
-        }
-        
-        try {
-          await dropdownAPI.createDropdownValue(dropdownData);
-        } catch (err) {
-          // Skip duplicates or handle errors
-          console.warn('Error importing dropdown value:', err.message);
-        }
+        // Update progress
+        console.log(`Processed ${Math.min(i + batchSize, importedData.length)} of ${importedData.length} rows`);
       }
       
-      setSuccess(`${importFile.name} imported successfully! ${importedData.length} records processed.`);
+      // Show results
+      if (successCount > 0 && errorCount === 0) {
+        setSuccess(`${importFile.name} imported successfully! ${successCount} records added.`);
+      } else if (successCount > 0 && errorCount > 0) {
+        setSuccess(`${importFile.name}: ${successCount} records added, ${errorCount} failed. Check console for details.`);
+        console.error('Import errors:', errors);
+      } else {
+        setError(`${importFile.name}: All ${errorCount} records failed to import. Check console for details.`);
+        console.error('Import errors:', errors);
+      }
+      
       setImportDialogOpen(false);
       setImportFile(null);
       
@@ -745,10 +779,15 @@ Obligation,Legal,`;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Filter dropdowns based on type - add 'All' option
-  const filteredDropdowns = selectedDropdownType === 'All' 
-    ? dropdowns 
-    : dropdowns.filter(dropdown => dropdown.type === selectedDropdownType);
+  // Filter dropdowns based on type - add 'All' option with performance optimization
+  const filteredDropdowns = useMemo(() => {
+    const result = selectedDropdownType === 'All' 
+      ? dropdowns 
+      : dropdowns.filter(dropdown => dropdown.type === selectedDropdownType);
+    
+    // Limit to 1000 items for performance with large datasets
+    return result.slice(0, 1000);
+  }, [dropdowns, selectedDropdownType]);
   
   // Add debugging to help identify issues
   console.log('Dropdowns data:', dropdowns);
