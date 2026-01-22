@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
+import {
   Box, 
   Typography, 
   Grid, 
@@ -16,6 +16,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableFooter,
+  TablePagination,
   Chip,
   IconButton,
   Switch,
@@ -54,6 +56,7 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
+import usePagination from '../hooks/usePagination';
 
 const UserManagement = () => {
   const { user: currentUser } = useAuth();
@@ -120,6 +123,12 @@ const UserManagement = () => {
   // Permission templates state
   const [permissionTemplates, setPermissionTemplates] = useState([]);
   const [templateName, setTemplateName] = useState('');
+  
+  // Pagination hooks
+  const { paginatedData: paginatedUsers, currentPage: userCurrentPage, totalPages: userTotalPages, rowsPerPage: userRowsPerPage, handleChangePage: handleUserPageChange, handleChangeRowsPerPage: handleUserRowsPerPageChange } = usePagination(filteredUsers, 100);
+  
+  const { paginatedData: paginatedTemplates, currentPage: templateCurrentPage, totalPages: templateTotalPages, rowsPerPage: templateRowsPerPage, handleChangePage: handleTemplatePageChange, handleChangeRowsPerPage: handleTemplateRowsPerPageChange } = usePagination(permissionTemplates, 100);
+  
   const [templatePermissions, setTemplatePermissions] = useState({
     canCreateTasks: false,
     canAssignTasks: false,
@@ -822,6 +831,9 @@ const UserManagement = () => {
 
   // Filter dropdowns based on selected type
   const filteredDropdowns = dropdowns.filter(d => d.type === selectedDropdownType);
+  
+  // Pagination hooks for dropdowns
+  const { paginatedData: paginatedDropdowns, currentPage: dropdownCurrentPage, totalPages: dropdownTotalPages, rowsPerPage: dropdownRowsPerPage, handleChangePage: handleDropdownPageChange, handleChangeRowsPerPage: handleDropdownRowsPerPageChange } = usePagination(filteredDropdowns, 100);
 
   return (
     <Fade in={true} timeout={600}>
@@ -967,7 +979,7 @@ const UserManagement = () => {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {filteredUsers.map((u) => (
+                              {paginatedUsers.map((u) => (
                                 <TableRow 
                                   key={u.id} 
                                   sx={{ 
@@ -1169,7 +1181,7 @@ const UserManagement = () => {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {permissionTemplates.map((template) => (
+                              {paginatedTemplates.map((template) => (
                                 <TableRow 
                                   key={template.id} 
                                   sx={{ 
@@ -1225,6 +1237,33 @@ const UserManagement = () => {
                                 </TableRow>
                               ))}
                             </TableBody>
+                            <TableFooter>
+                              <TableRow>
+                                <TablePagination
+                                  rowsPerPageOptions={[
+                                    { label: '5', value: 5 },
+                                    { label: '10', value: 10 },
+                                    { label: '25', value: 25 },
+                                    { label: '50', value: 50 },
+                                    { label: '100', value: 100 },
+                                    { label: 'All', value: -1 }
+                                  ]}
+                                  colSpan={3}
+                                  count={permissionTemplates.length}
+                                  rowsPerPage={templateRowsPerPage === -1 ? permissionTemplates.length : templateRowsPerPage}
+                                  page={templateCurrentPage}
+                                  onPageChange={handleTemplatePageChange}
+                                  onRowsPerPageChange={handleTemplateRowsPerPageChange}
+                                  labelRowsPerPage="Rows per page:"
+                                  labelDisplayedRows={({ from, to, count }) => {
+                                    if (templateRowsPerPage === -1) {
+                                      return `${count} of ${count} entries (All)`;
+                                    }
+                                    return `${from}-${to} of ${count} entries`;
+                                  }}
+                                />
+                              </TableRow>
+                            </TableFooter>
                           </Table>
                         </TableContainer>
                       )}
@@ -1376,7 +1415,7 @@ const UserManagement = () => {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {filteredDropdowns.map((dropdown) => (
+                              {paginatedDropdowns.map((dropdown) => (
                                 <TableRow 
                                   key={dropdown.id} 
                                   sx={{ 
@@ -1454,6 +1493,33 @@ const UserManagement = () => {
                                 </TableRow>
                               ))}
                             </TableBody>
+                            <TableFooter>
+                              <TableRow>
+                                <TablePagination
+                                  rowsPerPageOptions={[
+                                    { label: '5', value: 5 },
+                                    { label: '10', value: 10 },
+                                    { label: '25', value: 25 },
+                                    { label: '50', value: 50 },
+                                    { label: '100', value: 100 },
+                                    { label: 'All', value: -1 }
+                                  ]}
+                                  colSpan={5}
+                                  count={filteredDropdowns.length}
+                                  rowsPerPage={dropdownRowsPerPage === -1 ? filteredDropdowns.length : dropdownRowsPerPage}
+                                  page={dropdownCurrentPage}
+                                  onPageChange={handleDropdownPageChange}
+                                  onRowsPerPageChange={handleDropdownRowsPerPageChange}
+                                  labelRowsPerPage="Rows per page:"
+                                  labelDisplayedRows={({ from, to, count }) => {
+                                    if (dropdownRowsPerPage === -1) {
+                                      return `${count} of ${count} entries (All)`;
+                                    }
+                                    return `${from}-${to} of ${count} entries`;
+                                  }}
+                                />
+                              </TableRow>
+                            </TableFooter>
                           </Table>
                         </TableContainer>
                       )}

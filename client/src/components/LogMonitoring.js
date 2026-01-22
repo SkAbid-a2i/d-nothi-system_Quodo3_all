@@ -9,6 +9,8 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
+  TableFooter,
+  TablePagination,
   Tabs, 
   Tab, 
   Select, 
@@ -23,6 +25,7 @@ import {
 import { logAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import frontendLogger from '../services/frontendLogger';
+import usePagination from '../hooks/usePagination';
 
 const LogMonitoring = () => {
   const { user } = useAuth();
@@ -33,7 +36,10 @@ const LogMonitoring = () => {
   const [logLevel, setLogLevel] = useState('all');
   const [timeRange, setTimeRange] = useState('24h');
   const [analysis, setAnalysis] = useState(null);
-
+  
+  // Pagination hooks
+  const { paginatedData: paginatedLogs, currentPage: logsCurrentPage, totalPages: logsTotalPages, rowsPerPage: logsRowsPerPage, handleChangePage: handleLogsPageChange, handleChangeRowsPerPage: handleLogsRowsPerPageChange } = usePagination(logs, 100);
+  
   const fetchLogs = useCallback(async () => {
     if (user?.role !== 'SystemAdmin') {
       setError('Access denied. Only SystemAdmin users can view logs.');
@@ -148,7 +154,7 @@ const LogMonitoring = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {logs.map((log, index) => (
+                  {paginatedLogs.map((log, index) => (
                     <TableRow key={index}>
                       <TableCell>
                         {new Date(log.timestamp).toLocaleString()}
@@ -173,6 +179,33 @@ const LogMonitoring = () => {
                     </TableRow>
                   ))}
                 </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TablePagination
+                      rowsPerPageOptions={[
+                        { label: '5', value: 5 },
+                        { label: '10', value: 10 },
+                        { label: '25', value: 25 },
+                        { label: '50', value: 50 },
+                        { label: '100', value: 100 },
+                        { label: 'All', value: -1 }
+                      ]}
+                      colSpan={4}
+                      count={logs.length}
+                      rowsPerPage={logsRowsPerPage === -1 ? logs.length : logsRowsPerPage}
+                      page={logsCurrentPage}
+                      onPageChange={handleLogsPageChange}
+                      onRowsPerPageChange={handleLogsRowsPerPageChange}
+                      labelRowsPerPage="Rows per page:"
+                      labelDisplayedRows={({ from, to, count }) => {
+                        if (logsRowsPerPage === -1) {
+                          return `${count} of ${count} entries (All)`;
+                        }
+                        return `${from}-${to} of ${count} entries`;
+                      }}
+                    />
+                  </TableRow>
+                </TableFooter>
               </Table>
             </TableContainer>
           )}
@@ -214,7 +247,7 @@ const LogMonitoring = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {logs.map((log, index) => (
+                  {paginatedLogs.map((log, index) => (
                     <TableRow key={index}>
                       <TableCell>
                         {new Date(log.timestamp).toLocaleString()}
@@ -239,6 +272,33 @@ const LogMonitoring = () => {
                     </TableRow>
                   ))}
                 </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TablePagination
+                      rowsPerPageOptions={[
+                        { label: '5', value: 5 },
+                        { label: '10', value: 10 },
+                        { label: '25', value: 25 },
+                        { label: '50', value: 50 },
+                        { label: '100', value: 100 },
+                        { label: 'All', value: -1 }
+                      ]}
+                      colSpan={4}
+                      count={logs.length}
+                      rowsPerPage={logsRowsPerPage === -1 ? logs.length : logsRowsPerPage}
+                      page={logsCurrentPage}
+                      onPageChange={handleLogsPageChange}
+                      onRowsPerPageChange={handleLogsRowsPerPageChange}
+                      labelRowsPerPage="Rows per page:"
+                      labelDisplayedRows={({ from, to, count }) => {
+                        if (logsRowsPerPage === -1) {
+                          return `${count} of ${count} entries (All)`;
+                        }
+                        return `${from}-${to} of ${count} entries`;
+                      }}
+                    />
+                  </TableRow>
+                </TableFooter>
               </Table>
             </TableContainer>
           )}

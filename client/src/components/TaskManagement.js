@@ -16,6 +16,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableFooter,
+  TablePagination,
   Chip,
   IconButton,
   Autocomplete,
@@ -56,6 +58,7 @@ import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
 import useUserFilter from '../hooks/useUserFilter';
+import usePagination from '../hooks/usePagination';
 import UserFilterDropdown from './UserFilterDropdown';
 import FilterSection from './FilterSection';
 
@@ -126,6 +129,9 @@ const TaskManagement = () => {
   
   // Add state for filtered tasks
   const [filteredTasks, setFilteredTasks] = useState([]);
+  
+  // Pagination hooks
+  const { paginatedData: paginatedTasks, currentPage: tasksCurrentPage, totalPages: tasksTotalPages, rowsPerPage: tasksRowsPerPage, handleChangePage: handleTasksPageChange, handleChangeRowsPerPage: handleTasksRowsPerPageChange } = usePagination(filteredTasks, 100);
 
   const showSnackbar = useCallback((message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -1539,7 +1545,7 @@ const TaskManagement = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {filteredTasks.length === 0 ? (
+                        {paginatedTasks.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={12} align="center">
                               <Typography variant="body1" color="textSecondary">
@@ -1548,7 +1554,7 @@ const TaskManagement = () => {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          filteredTasks.map((task) => (
+                          paginatedTasks.map((task) => (
                             <TableRow 
                               key={task.id}
                               sx={{
@@ -1636,6 +1642,33 @@ const TaskManagement = () => {
                           ))
                         )}
                       </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TablePagination
+                            rowsPerPageOptions={[
+                              { label: '5', value: 5 },
+                              { label: '10', value: 10 },
+                              { label: '25', value: 25 },
+                              { label: '50', value: 50 },
+                              { label: '100', value: 100 },
+                              { label: 'All', value: -1 }
+                            ]}
+                            colSpan={12}
+                            count={filteredTasks.length}
+                            rowsPerPage={tasksRowsPerPage === -1 ? filteredTasks.length : tasksRowsPerPage}
+                            page={tasksCurrentPage}
+                            onPageChange={handleTasksPageChange}
+                            onRowsPerPageChange={handleTasksRowsPerPageChange}
+                            labelRowsPerPage="Rows per page:"
+                            labelDisplayedRows={({ from, to, count }) => {
+                              if (tasksRowsPerPage === -1) {
+                                return `${count} of ${count} entries (All)`;
+                              }
+                              return `${from}-${to} of ${count} entries`;
+                            }}
+                          />
+                        </TableRow>
+                      </TableFooter>
                     </Table>
                   </TableContainer>
                 </Box>

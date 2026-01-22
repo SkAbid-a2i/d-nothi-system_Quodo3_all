@@ -16,6 +16,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableFooter,
+  TablePagination,
   Chip,
   IconButton,
   Switch,
@@ -46,6 +48,7 @@ import { userAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { auditLog } from '../services/auditLogger';
 import notificationService from '../services/notificationService';
+import usePagination from '../hooks/usePagination';
 
 const RealUserManagement = () => {
   const { user: currentUser } = useAuth();
@@ -323,6 +326,9 @@ const RealUserManagement = () => {
     
     return matchesSearch && matchesRole && matchesStatus;
   });
+  
+  // Pagination hooks
+  const { paginatedData: paginatedUsers, currentPage: userCurrentPage, totalPages: userTotalPages, rowsPerPage: userRowsPerPage, handleChangePage: handleUserPageChange, handleChangeRowsPerPage: handleUserRowsPerPageChange } = usePagination(filteredUsers, 100);
 
   return (
     <Fade in={true} timeout={600}>
@@ -436,7 +442,7 @@ const RealUserManagement = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {filteredUsers.map((u) => (
+                      {paginatedUsers.map((u) => (
                         <TableRow 
                           key={u.id} 
                           sx={{ 
@@ -535,6 +541,33 @@ const RealUserManagement = () => {
                         </TableRow>
                       ))}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TablePagination
+                          rowsPerPageOptions={[
+                            { label: '5', value: 5 },
+                            { label: '10', value: 10 },
+                            { label: '25', value: 25 },
+                            { label: '50', value: 50 },
+                            { label: '100', value: 100 },
+                            { label: 'All', value: -1 }
+                          ]}
+                          colSpan={5}
+                          count={filteredUsers.length}
+                          rowsPerPage={userRowsPerPage === -1 ? filteredUsers.length : userRowsPerPage}
+                          page={userCurrentPage}
+                          onPageChange={handleUserPageChange}
+                          onRowsPerPageChange={handleUserRowsPerPageChange}
+                          labelRowsPerPage="Rows per page:"
+                          labelDisplayedRows={({ from, to, count }) => {
+                            if (userRowsPerPage === -1) {
+                              return `${count} of ${count} entries (All)`;
+                            }
+                            return `${from}-${to} of ${count} entries`;
+                          }}
+                        />
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </TableContainer>
               )}

@@ -16,6 +16,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableFooter,
+  TablePagination,
   Chip,
   IconButton,
   Switch,
@@ -47,6 +49,7 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { userAPI } from '../services/api';
 import notificationService from '../services/notificationService';
 import autoRefreshService from '../services/autoRefreshService';
+import usePagination from '../hooks/usePagination';
 
 const ModernUserManagement = () => {
   const { user } = useAuth();
@@ -263,6 +266,9 @@ const ModernUserManagement = () => {
     
     return matchesSearch && matchesRole && matchesStatus;
   });
+  
+  // Pagination hooks
+  const { paginatedData: paginatedUsers, currentPage: userCurrentPage, totalPages: userTotalPages, rowsPerPage: userRowsPerPage, handleChangePage: handleUserPageChange, handleChangeRowsPerPage: handleUserRowsPerPageChange } = usePagination(filteredUsers, 100);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -543,7 +549,7 @@ const ModernUserManagement = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {filteredUsers.map((user) => (
+                        {paginatedUsers.map((user) => (
                           <TableRow 
                             key={user.id} 
                             sx={{ 
@@ -618,6 +624,33 @@ const ModernUserManagement = () => {
                           </TableRow>
                         ))}
                       </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TablePagination
+                            rowsPerPageOptions={[
+                              { label: '5', value: 5 },
+                              { label: '10', value: 10 },
+                              { label: '25', value: 25 },
+                              { label: '50', value: 50 },
+                              { label: '100', value: 100 },
+                              { label: 'All', value: -1 }
+                            ]}
+                            colSpan={9}
+                            count={filteredUsers.length}
+                            rowsPerPage={userRowsPerPage === -1 ? filteredUsers.length : userRowsPerPage}
+                            page={userCurrentPage}
+                            onPageChange={handleUserPageChange}
+                            onRowsPerPageChange={handleUserRowsPerPageChange}
+                            labelRowsPerPage="Rows per page:"
+                            labelDisplayedRows={({ from, to, count }) => {
+                              if (userRowsPerPage === -1) {
+                                return `${count} of ${count} entries (All)`;
+                              }
+                              return `${from}-${to} of ${count} entries`;
+                            }}
+                          />
+                        </TableRow>
+                      </TableFooter>
                     </Table>
                   </TableContainer>
                 )}
