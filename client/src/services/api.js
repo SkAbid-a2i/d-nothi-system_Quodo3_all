@@ -56,25 +56,18 @@ api.interceptors.response.use(
     );
     
     if (error.response?.status === 401) {
-      // Token expired or invalid, but let's be more careful
-      frontendLogger.warn('Authentication token expired or invalid, checking if we should redirect');
+      // Token expired or invalid, remove from localStorage
+      frontendLogger.warn('Authentication token expired or invalid, removing from storage');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Dispatch a custom event to notify AuthContext
+      window.dispatchEvent(new CustomEvent('authError401', { detail: { status: 401 } }));
       
       // Only redirect if we're not already on login page
       if (window.location.pathname !== '/login') {
-        // Check if this is a fresh page load vs ongoing session
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-          // Give AuthContext a chance to handle revalidation
-          frontendLogger.info('Token present, letting AuthContext handle revalidation');
-          // Don't redirect immediately, let AuthContext handle it
-          // The AuthContext will remove the token if truly invalid
-        } else {
-          // No token stored, safe to redirect
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          frontendLogger.info('No token found, redirecting to login');
-          window.location.replace('/login');
-        }
+        frontendLogger.info('Redirecting to login due to 401 error');
+        window.location.replace('/login');
       }
     }
     
@@ -123,6 +116,7 @@ export const dropdownAPI = {
   updateDropdownValue: (id, dropdownData) => api.put(`/dropdowns/${id}`, dropdownData),
   deleteDropdownValue: (id) => api.delete(`/dropdowns/${id}`),
   getAllDropdowns: () => api.get('/dropdowns'),
+  bulkCreateDropdowns: (dropdownsData) => api.post('/dropdowns/bulk', dropdownsData),
 };
 
 // Report endpoints

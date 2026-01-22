@@ -553,9 +553,7 @@ const AdminConsole = () => {
       setLoading(true);
       
       // Parse the CSV file with proper UTF-8 encoding
-      const buffer = await importFile.arrayBuffer();
-      const decoder = new TextDecoder('utf-8');
-      const fileText = decoder.decode(buffer);
+      const fileText = await importFile.text();
       const result = parse(fileText, {
         header: true,
         skipEmptyLines: true,
@@ -568,12 +566,12 @@ const AdminConsole = () => {
         throw new Error('Invalid CSV format. Required columns: Type, Value');
       }
       
-      // Process and import rows with better error handling
-      let successCount = 0;
+      // Prepare dropdown data for bulk import
+      const dropdownsToImport = [];
       let errorCount = 0;
       const errors = [];
       
-      // Process sequentially to avoid closure issues
+      // Process all rows to prepare data
       for (let i = 0; i < importedData.length; i++) {
         const row = importedData[i];
         const { Type, Value, Parent } = row;
@@ -610,31 +608,50 @@ const AdminConsole = () => {
           dropdownData.parentValue = Parent;
         }
         
-        try {
-          await dropdownAPI.createDropdownValue(dropdownData);
-          successCount++;
-        } catch (err) {
-          errorCount++;
-          const errorMsg = err.response?.data?.message || err.message;
-          errors.push(`Row ${i + 1} (${Type}: ${Value}): ${errorMsg}`);
-          console.error('Error importing dropdown value:', err);
-        }
-        
-        // Update progress periodically
-        if ((i + 1) % 100 === 0) {  // Log every 100 records
-          console.log(`Processed ${i + 1} of ${importedData.length} rows`);
-        }
+        dropdownsToImport.push(dropdownData);
       }
       
-      // Show results
-      if (successCount > 0 && errorCount === 0) {
-        setSuccess(`${importFile.name} imported successfully! ${successCount} records added.`);
-      } else if (successCount > 0 && errorCount > 0) {
-        setSuccess(`${importFile.name}: ${successCount} records added, ${errorCount} failed. Check console for details.`);
-        console.error('Import errors:', errors);
-      } else {
-        setError(`${importFile.name}: All ${errorCount} records failed to import. Check console for details.`);
-        console.error('Import errors:', errors);
+      if (dropdownsToImport.length === 0) {
+        throw new Error('No valid dropdowns to import after validation');
+      }
+      
+      try {
+        // Perform bulk import
+        const response = await dropdownAPI.bulkCreateDropdowns({ dropdowns: dropdownsToImport });
+        
+        const successCount = response.data.success;
+        const responseErrors = response.data.errors;
+        
+        if (response.status === 201 || response.status === 207) {
+          // Some or all succeeded
+          if (responseErrors > 0) {
+            // Some failed
+            setSuccess(`${importFile.name}: ${successCount} records added, ${responseErrors} failed. Check console for details.`);
+            console.error('Import errors:', response.data.errors);
+          } else {
+            // All succeeded
+            setSuccess(`${importFile.name} imported successfully! ${successCount} records added.`);
+          }
+        } else {
+          // Unexpected status
+          throw new Error(`Unexpected response status: ${response.status}`);
+        }
+      } catch (err) {
+        console.error('Bulk import error:', err);
+        const errorMsg = err.response?.data?.message || err.message;
+        
+        if (err.response?.status === 400 && err.response?.data?.errors) {
+          // Format detailed error messages from bulk response
+          const detailedErrors = err.response.data.errors.map((error) => 
+            `Row ${error.index + 1} (${error.data.type}: ${error.data.value}): ${error.error}`
+          );
+          setError(`${importFile.name}: ${detailedErrors.join('; ')}`);
+          console.error('Detailed import errors:', detailedErrors);
+        } else {
+          setError(`${importFile.name}: Import failed - ${errorMsg}`);
+        }
+        
+        return; // Exit early to prevent further processing
       }
       
       setImportDialogOpen(false);

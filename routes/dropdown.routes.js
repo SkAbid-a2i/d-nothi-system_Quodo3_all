@@ -226,4 +226,103 @@ router.delete('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Super
   }
 });
 
+// @route   POST /api/dropdowns/bulk
+// @desc    Bulk create dropdown values
+// @access  Private (Admin, Supervisor, SystemAdmin)
+router.post('/bulk', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+  try {
+    const { dropdowns } = req.body;
+    
+    if (!Array.isArray(dropdowns)) {
+      return res.status(400).json({ message: 'Dropdowns must be an array' });
+    }
+    
+    if (dropdowns.length === 0) {
+      return res.status(400).json({ message: 'Dropdowns array cannot be empty' });
+    }
+    
+    // Validate each dropdown item
+    for (const dropdown of dropdowns) {
+      if (!dropdown.type || !dropdown.value) {
+        return res.status(400).json({ message: `Missing required fields for dropdown: ${JSON.stringify(dropdown)}` });
+      }
+      
+      // Validate type
+      if (!['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'].includes(dropdown.type)) {
+        return res.status(400).json({ message: `Invalid dropdown type: ${dropdown.type}` });
+      }
+    }
+    
+    // Check for duplicates within the batch
+    const seen = new Set();
+    for (const dropdown of dropdowns) {
+      const key = `${dropdown.type}-${dropdown.value}`;
+      if (seen.has(key)) {
+        return res.status(400).json({ message: `Duplicate dropdown value found in batch: ${dropdown.type} - ${dropdown.value}` });
+      }
+      seen.add(key);
+    }
+    
+    // Check for duplicates against existing database entries
+    const results = [];
+    const errors = [];
+    
+    for (const dropdown of dropdowns) {
+      try {
+        // Check if value already exists
+        const existing = await Dropdown.findOne({ 
+          where: { type: dropdown.type, value: dropdown.value } 
+        });
+        
+        if (existing) {
+          errors.push({
+            index: dropdowns.indexOf(dropdown),
+            data: dropdown,
+            error: 'This value already exists'
+          });
+          continue;
+        }
+        
+        // Create new dropdown value
+        const newDropdown = await Dropdown.create({
+          type: dropdown.type,
+          value: dropdown.value,
+          parentType: (dropdown.type === 'Sub-Category' || dropdown.type === 'Incident') ? dropdown.parentType : undefined,
+          parentValue: (dropdown.type === 'Sub-Category' || dropdown.type === 'Incident') ? dropdown.parentValue : undefined,
+          createdBy: req.user.id,
+        });
+        
+        results.push(newDropdown);
+      } catch (err) {
+        errors.push({
+          index: dropdowns.indexOf(dropdown),
+          data: dropdown,
+          error: err.message
+        });
+      }
+    }
+    
+    const response = {
+      success: results.length,
+      errors: errors.length,
+      results,
+      errors: errors
+    };
+    
+    if (errors.length > 0 && results.length === 0) {
+      // All failed
+      return res.status(400).json(response);
+    } else if (errors.length > 0) {
+      // Some succeeded, some failed
+      return res.status(207).json(response); // 207 Multi-Status
+    } else {
+      // All succeeded
+      res.status(201).json(response);
+    }
+  } catch (err) {
+    console.error('Error in bulk dropdown creation:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

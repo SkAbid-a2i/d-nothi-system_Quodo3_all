@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Handle storage events for cross-tab synchronization
+  // Handle storage events for cross-tab synchronization and auth errors
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'token') {
@@ -76,16 +76,23 @@ export const AuthProvider = ({ children }) => {
       }
     };
     
+    const handleAuthError401 = (e) => {
+      frontendLogger.warn('Received authError401 event, logging out user');
+      handleLogout();
+    };
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('tokenChanged', handleTokenChange);
     window.addEventListener('userChanged', handleUserChange);
+    window.addEventListener('authError401', handleAuthError401);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('tokenChanged', handleTokenChange);
       window.removeEventListener('userChanged', handleUserChange);
+      window.removeEventListener('authError401', handleAuthError401);
     };
-  }, []);
+  }, [handleLogout]);
 
   // Check if user is logged in on initial load
   useEffect(() => {
@@ -96,10 +103,16 @@ export const AuthProvider = ({ children }) => {
       getCurrentUser();
     } else {
       frontendLogger.info('No token found, setting unauthenticated state');
+      setIsAuthenticated(false);
+      setUser(null);
       setLoading(false);
     }
     
     // Set up periodic token validation
+    if (tokenValidationRef.current) {
+      clearInterval(tokenValidationRef.current);
+    }
+    
     tokenValidationRef.current = setInterval(() => {
       if (isAuthenticated && user) {
         // Validate token periodically
@@ -112,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         clearInterval(tokenValidationRef.current);
       }
     };
-  }, []);
+  }, [isAuthenticated, user]);
 
   const validateToken = async () => {
     try {
@@ -121,13 +134,26 @@ export const AuthProvider = ({ children }) => {
       
       if (userData) {
         setUser(userData);
+        setIsAuthenticated(true);
         frontendLogger.info('Token validated successfully', { userId: userData.id });
       }
     } catch (error) {
-      frontendLogger.warn('Token validation failed', { error: error.message });
+      frontendLogger.warn('Token validation failed', { 
+        error: error.message,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
       if (error.response?.status === 401) {
         // Token is invalid, logout
+        frontendLogger.warn('Token validation 401 error, logging out user');
         handleLogout();
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        // Network error - token might still be valid, don't logout
+        frontendLogger.warn('Network error during token validation, keeping user authenticated');
+      } else {
+        // Other error - token might still be valid, don't logout
+        frontendLogger.warn('Non-401 error during token validation, keeping user authenticated');
       }
     }
   };
@@ -212,7 +238,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
       
-      // Set loading state
+      // Always set loading to false after error handling to prevent hanging loading state
       if (shouldSetLoadingFalse) {
         setLoading(false);
       }
