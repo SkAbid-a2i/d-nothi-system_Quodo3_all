@@ -16,6 +16,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableFooter,
+  TablePagination,
   Chip,
   IconButton,
   Switch,
@@ -75,6 +77,10 @@ const AdminConsole = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [importFile, setImportFile] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  
+  // Pagination state for dropdowns
+  const [currentPage, setCurrentPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   
   // Permission templates state
   const [permissionTemplates, setPermissionTemplates] = useState([]);
@@ -768,7 +774,7 @@ Obligation,Legal,`;
   });
 
   // Filter dropdowns based on type - add 'All' option with performance optimization
-  const filteredDropdowns = useMemo(() => {
+  const allFilteredDropdowns = useMemo(() => {
     const result = selectedDropdownType === 'All' 
       ? dropdowns 
       : dropdowns.filter(dropdown => dropdown.type === selectedDropdownType);
@@ -776,6 +782,15 @@ Obligation,Legal,`;
     // Limit to 1000 items for performance with large datasets
     return result.slice(0, 1000);
   }, [dropdowns, selectedDropdownType]);
+  
+  // Calculate paginated dropdowns
+  const paginatedDropdowns = useMemo(() => {
+    const startIndex = currentPage * rowsPerPage;
+    return allFilteredDropdowns.slice(startIndex, startIndex + rowsPerPage);
+  }, [allFilteredDropdowns, currentPage, rowsPerPage]);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(allFilteredDropdowns.length / rowsPerPage);
   
   // Add debugging to help identify issues
   console.log('Dropdowns data:', dropdowns);
@@ -1513,7 +1528,7 @@ Obligation,Legal,`;
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {filteredDropdowns.map((dropdown) => (
+                            {paginatedDropdowns.map((dropdown) => (
                               <TableRow 
                                 key={dropdown.id} 
                                 sx={{ 
@@ -1564,6 +1579,26 @@ Obligation,Legal,`;
                               </TableRow>
                             ))}
                           </TableBody>
+                          <TableFooter>
+                            <TableRow>
+                              <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50, { label: 'All', value: -1 }]}
+                                colSpan={4}
+                                count={allFilteredDropdowns.length}
+                                rowsPerPage={rowsPerPage}
+                                page={currentPage}
+                                onPageChange={(event, newPage) => setCurrentPage(newPage)}
+                                onRowsPerPageChange={(event) => {
+                                  setRowsPerPage(parseInt(event.target.value, 10));
+                                  setCurrentPage(0);
+                                }}
+                                labelRowsPerPage="Rows per page:"
+                                labelDisplayedRows={({ from, to, count }) => 
+                                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`} entries`
+                                }
+                              />
+                            </TableRow>
+                          </TableFooter>
                         </Table>
                       </TableContainer>
                     )}
