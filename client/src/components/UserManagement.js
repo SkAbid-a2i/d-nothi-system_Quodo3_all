@@ -124,6 +124,21 @@ const UserManagement = () => {
   const [permissionTemplates, setPermissionTemplates] = useState([]);
   const [templateName, setTemplateName] = useState('');
   
+  // Filter users based on search and filters
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = !searchTerm || 
+      u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesRole = !roleFilter || u.role === roleFilter;
+    const matchesStatus = statusFilter === '' || 
+      (statusFilter === 'active' && u.isActive) || 
+      (statusFilter === 'inactive' && !u.isActive);
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+  
   // Pagination hooks
   const { paginatedData: paginatedUsers, currentPage: userCurrentPage, totalPages: userTotalPages, rowsPerPage: userRowsPerPage, handleChangePage: handleUserPageChange, handleChangeRowsPerPage: handleUserRowsPerPageChange } = usePagination(filteredUsers, 100);
   
@@ -813,21 +828,6 @@ const UserManagement = () => {
       setLoading(false);
     }
   };
-
-  // Filter users based on search and filters
-  const filteredUsers = users.filter(u => {
-    const matchesSearch = !searchTerm || 
-      u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = !roleFilter || u.role === roleFilter;
-    const matchesStatus = statusFilter === '' || 
-      (statusFilter === 'active' && u.isActive) || 
-      (statusFilter === 'inactive' && !u.isActive);
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
 
   // Filter dropdowns based on selected type
   const filteredDropdowns = dropdowns.filter(d => d.type === selectedDropdownType);
