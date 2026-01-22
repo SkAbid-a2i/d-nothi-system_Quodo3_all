@@ -23,6 +23,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const tokenValidationRef = useRef(null);
+  const userRef = useRef(user); // Ref to track user without triggering re-renders
+  
+  // Update ref when user changes
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
   
   // Handle token storage with tab synchronization
   const setStoredToken = (token) => {
@@ -94,7 +100,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // Check if user is logged in on initial load
+  // Initialize auth state on component mount
   useEffect(() => {
     frontendLogger.info('Auth provider initialized');
     const token = localStorage.getItem('token');
@@ -107,25 +113,32 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setLoading(false);
     }
-    
-    // Set up periodic token validation
+  }, []); // Empty dependency array to run only once
+  
+  // Set up periodic token validation
+  useEffect(() => {
+    // Clear any existing interval
     if (tokenValidationRef.current) {
       clearInterval(tokenValidationRef.current);
+      tokenValidationRef.current = null;
     }
     
-    tokenValidationRef.current = setInterval(() => {
-      if (isAuthenticated && user) {
+    // Only set up interval if user is authenticated
+    if (isAuthenticated && userRef.current) {
+      tokenValidationRef.current = setInterval(() => {
         // Validate token periodically
         validateToken();
-      }
-    }, 300000); // Every 300 seconds
+      }, 300000); // Every 300 seconds
+    }
     
+    // Cleanup function
     return () => {
       if (tokenValidationRef.current) {
         clearInterval(tokenValidationRef.current);
+        tokenValidationRef.current = null;
       }
     };
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]); // Only depend on isAuthenticated, not user, to avoid constant recreation
 
   const handleLogout = () => {
     // Disconnect notification service
@@ -152,8 +165,11 @@ export const AuthProvider = ({ children }) => {
       const userData = response.data?.data || response.data;
       
       if (userData) {
-        setUser(userData);
-        setIsAuthenticated(true);
+        // Only update state if user data has changed
+        if (!user || user.id !== userData.id || user.username !== userData.username || user.role !== userData.role) {
+          setUser(userData);
+          setIsAuthenticated(true);
+        }
         frontendLogger.info('Token validated successfully', { userId: userData.id });
       }
     } catch (error) {
