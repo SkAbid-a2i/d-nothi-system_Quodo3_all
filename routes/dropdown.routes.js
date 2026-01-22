@@ -81,7 +81,7 @@ router.get('/:type', authenticate, async (req, res) => {
 // @route   POST /api/dropdowns
 // @desc    Create new dropdown value
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.post('/', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { type, value, parentType, parentValue } = req.body;
 
@@ -127,7 +127,7 @@ router.post('/', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), 
 // @route   PUT /api/dropdowns/:id
 // @desc    Update dropdown value
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.put('/:id', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.put('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { type, value, parentType, parentValue, isActive } = req.body;
@@ -229,7 +229,7 @@ router.delete('/:id', cors(corsOptions), authenticate, authorize('Admin', 'Super
 // @route   POST /api/dropdowns/bulk
 // @desc    Bulk create dropdown values
 // @access  Private (Admin, Supervisor, SystemAdmin)
-router.post('/bulk', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
+router.post('/bulk', cors(corsOptions), authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin'), async (req, res) => {
   try {
     const { dropdowns } = req.body;
     
