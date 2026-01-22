@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener('userChanged', handleUserChange);
       window.removeEventListener('authError401', handleAuthError401);
     };
-  }, [handleLogout]);
+  }, []);
 
   // Check if user is logged in on initial load
   useEffect(() => {
@@ -126,6 +126,25 @@ export const AuthProvider = ({ children }) => {
       }
     };
   }, [isAuthenticated, user]);
+
+  const handleLogout = () => {
+    // Disconnect notification service
+    notificationService.disconnect();
+    
+    // Remove token and user data
+    setStoredToken(null);
+    setStoredUser(null);
+    
+    setUser(null);
+    setIsAuthenticated(false);
+    
+    // Log audit entry
+    if (user) {
+      auditLog.userLogout(user.id, user.username);
+    }
+    
+    frontendLogger.info('User logged out');
+  };
 
   const validateToken = async () => {
     try {
@@ -281,25 +300,6 @@ export const AuthProvider = ({ children }) => {
         message: error.response?.data?.message || 'Login failed' 
       };
     }
-  };
-
-  const handleLogout = () => {
-    // Disconnect notification service
-    notificationService.disconnect();
-    
-    // Remove token and user data
-    setStoredToken(null);
-    setStoredUser(null);
-    
-    setUser(null);
-    setIsAuthenticated(false);
-    
-    // Log audit entry
-    if (user) {
-      auditLog.userLogout(user.id, user.username);
-    }
-    
-    frontendLogger.info('User logged out');
   };
 
   const logout = () => {
