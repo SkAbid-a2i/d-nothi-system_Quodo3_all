@@ -592,20 +592,29 @@ const AdminConsole = () => {
           continue;
         }
         
+        // Trim and validate the value before adding
+        const trimmedValue = Value.trim();
+        if (!trimmedValue) {
+          console.warn('Skipping row with empty value after trim:', row);
+          errorCount++;
+          errors.push(`Row ${i + 1}: Value is empty after trimming`);
+          continue;
+        }
+        
         const dropdownData = {
           type: Type,
-          value: Value.trim()
+          value: trimmedValue
         };
         
         // Handle parent relationships
         if (Type === 'Incident' && Parent) {
           dropdownData.parentType = 'Sub-Category';
-          dropdownData.parentValue = Parent;
+          dropdownData.parentValue = Parent.trim();
         }
         
         if (Type === 'Sub-Category' && Parent) {
           dropdownData.parentType = 'Category';
-          dropdownData.parentValue = Parent;
+          dropdownData.parentValue = Parent.trim();
         }
         
         dropdownsToImport.push(dropdownData);
@@ -655,16 +664,26 @@ const AdminConsole = () => {
               await dropdownAPI.createDropdownValue(dropdownData);
               successCount++;
             } catch (individualErr) {
-              errorCount++;
               const errorMsg = individualErr.response?.data?.message || individualErr.message;
+              
+              // Check if this is a duplicate entry error
+              if (errorMsg && (errorMsg.includes('already exists') || individualErr.response?.status === 400)) {
+                console.warn(`Duplicate or invalid entry skipped: Row ${i + 1} (${dropdownData.type}: ${dropdownData.value})`);
+              } else {
+                console.error('Error importing dropdown value:', individualErr);
+              }
+              
+              errorCount++;
               errors.push(`Row ${i + 1} (${dropdownData.type}: ${dropdownData.value}): ${errorMsg}`);
-              console.error('Error importing dropdown value:', individualErr);
             }
             
             // Update progress periodically
             if ((i + 1) % 100 === 0) {  // Log every 100 records
               console.log(`Processed ${i + 1} of ${dropdownsToImport.length} rows`);
             }
+            
+            // Small delay to prevent overwhelming the server
+            await new Promise(resolve => setTimeout(resolve, 10)); // 10ms delay between requests
           }
           
           // Show results
