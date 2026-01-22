@@ -403,18 +403,12 @@ const TaskManagement = () => {
         office: user.office
       });
       
-      // On the Task Logger page, SystemAdmin and Admin roles should see all tasks
-      // Other roles (Supervisor, Agent) should only see their own tasks
-      const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user.role);
-      
-      if (!isAdminOrSystemAdmin) {
-        // For non-Admin/SystemAdmin users, only show their own tasks
-        tasksData = tasksData.filter(task => {
-          // Match either by userId or userName to be comprehensive
-          return task.userId === user.id || task.userName === user.username;
-        });
-      }
-      // For Admin/SystemAdmin users, keep all tasks (no filtering needed)
+      // On the Task Logger page, ALL roles should only see their own task data
+      // This applies to SystemAdmin, Admin, Supervisor, and Agent roles
+      tasksData = tasksData.filter(task => {
+        // Match either by userId or userName to be comprehensive
+        return task.userId === user.id || task.userName === user.username;
+      });
       
       console.log('Filtered tasks for current user:', tasksData);
       console.log('Task filtering debug - user role:', user.role);
@@ -532,9 +526,9 @@ const TaskManagement = () => {
       // Apply status filter
       const matchesStatus = !appliedFilters.statusFilter || task.status === appliedFilters.statusFilter;
       
-      // Apply user filter - on Task Logger page, non-Admin/SystemAdmin users only see their own tasks
-      const isAdminOrSystemAdmin = ['SystemAdmin', 'Admin'].includes(user?.role);
-      const matchesUser = isAdminOrSystemAdmin || task.userId === user?.id || task.userName === user?.username;
+      // Apply user filter - on Task Logger page, ALL users only see their own tasks
+      // This applies to SystemAdmin, Admin, Supervisor, and Agent roles
+      const matchesUser = task.userId === user?.id || task.userName === user?.username;
       
       // Debug logging for user matching
       console.log('User filter check:', {
