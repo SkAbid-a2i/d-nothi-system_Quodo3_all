@@ -795,12 +795,12 @@ Obligation,Legal,`;
   // Add debugging to help identify issues
   console.log('Dropdowns data:', dropdowns);
   console.log('Selected dropdown type:', selectedDropdownType);
-  console.log('Filtered dropdowns:', filteredDropdowns);
+  console.log('All filtered dropdowns:', allFilteredDropdowns);
   
   // Add debugging to help identify issues
   console.log('Dropdowns data:', dropdowns);
   console.log('Selected dropdown type:', selectedDropdownType);
-  console.log('Filtered dropdowns:', filteredDropdowns);
+  console.log('All filtered dropdowns:', allFilteredDropdowns);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
