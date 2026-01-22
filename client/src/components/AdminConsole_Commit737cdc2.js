@@ -638,20 +638,62 @@ const AdminConsole = () => {
         }
       } catch (err) {
         console.error('Bulk import error:', err);
-        const errorMsg = err.response?.data?.message || err.message;
         
-        if (err.response?.status === 400 && err.response?.data?.errors) {
-          // Format detailed error messages from bulk response
-          const detailedErrors = err.response.data.errors.map((error) => 
-            `Row ${error.index + 1} (${error.data.type}: ${error.data.value}): ${error.error}`
-          );
-          setError(`${importFile.name}: ${detailedErrors.join('; ')}`);
-          console.error('Detailed import errors:', detailedErrors);
+        // Check if the error is a 404 (endpoint not found) or other network error
+        if (err.response?.status === 404 || err.response?.status === 405) {
+          // Bulk endpoint not available, fall back to individual imports
+          console.warn('Bulk endpoint not available, falling back to individual imports');
+          
+          // Process sequentially to avoid closure issues
+          let successCount = 0;
+          let errorCount = 0;
+          const errors = [];
+          
+          for (let i = 0; i < dropdownsToImport.length; i++) {
+            const dropdownData = dropdownsToImport[i];
+            try {
+              await dropdownAPI.createDropdownValue(dropdownData);
+              successCount++;
+            } catch (individualErr) {
+              errorCount++;
+              const errorMsg = individualErr.response?.data?.message || individualErr.message;
+              errors.push(`Row ${i + 1} (${dropdownData.type}: ${dropdownData.value}): ${errorMsg}`);
+              console.error('Error importing dropdown value:', individualErr);
+            }
+            
+            // Update progress periodically
+            if ((i + 1) % 100 === 0) {  // Log every 100 records
+              console.log(`Processed ${i + 1} of ${dropdownsToImport.length} rows`);
+            }
+          }
+          
+          // Show results
+          if (successCount > 0 && errorCount === 0) {
+            setSuccess(`${importFile.name} imported successfully! ${successCount} records added.`);
+          } else if (successCount > 0 && errorCount > 0) {
+            setSuccess(`${importFile.name}: ${successCount} records added, ${errorCount} failed. Check console for details.`);
+            console.error('Import errors:', errors);
+          } else {
+            setError(`${importFile.name}: All ${errorCount} records failed to import. Check console for details.`);
+            console.error('Import errors:', errors);
+          }
         } else {
-          setError(`${importFile.name}: Import failed - ${errorMsg}`);
+          // Other error (not 404), handle as before
+          const errorMsg = err.response?.data?.message || err.message;
+          
+          if (err.response?.status === 400 && err.response?.data?.errors) {
+            // Format detailed error messages from bulk response
+            const detailedErrors = err.response.data.errors.map((error) => 
+              `Row ${error.index + 1} (${error.data.type}: ${error.data.value}): ${error.error}`
+            );
+            setError(`${importFile.name}: ${detailedErrors.join('; ')}`);
+            console.error('Detailed import errors:', detailedErrors);
+          } else {
+            setError(`${importFile.name}: Import failed - ${errorMsg}`);
+          }
+          
+          return; // Exit early to prevent further processing
         }
-        
-        return; // Exit early to prevent further processing
       }
       
       setImportDialogOpen(false);

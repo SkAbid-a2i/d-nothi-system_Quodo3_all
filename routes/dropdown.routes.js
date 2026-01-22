@@ -267,7 +267,8 @@ router.post('/bulk', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin
     const results = [];
     const errors = [];
     
-    for (const dropdown of dropdowns) {
+    for (let i = 0; i < dropdowns.length; i++) {
+      const dropdown = dropdowns[i];
       try {
         // Check if value already exists
         const existing = await Dropdown.findOne({ 
@@ -276,7 +277,7 @@ router.post('/bulk', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin
         
         if (existing) {
           errors.push({
-            index: dropdowns.indexOf(dropdown),
+            index: i, // Use loop index instead of indexOf for better performance
             data: dropdown,
             error: 'This value already exists'
           });
@@ -295,7 +296,7 @@ router.post('/bulk', authenticate, authorize('Admin', 'Supervisor', 'SystemAdmin
         results.push(newDropdown);
       } catch (err) {
         errors.push({
-          index: dropdowns.indexOf(dropdown),
+          index: i, // Use loop index instead of indexOf for better performance
           data: dropdown,
           error: err.message
         });
