@@ -80,7 +80,7 @@ const AdminConsole = () => {
   
   // Pagination state for dropdowns
   const [currentPage, setCurrentPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
   
   // Permission templates state
   const [permissionTemplates, setPermissionTemplates] = useState([]);
@@ -1582,20 +1582,32 @@ Obligation,Legal,`;
                           <TableFooter>
                             <TableRow>
                               <TablePagination
-                                rowsPerPageOptions={[5, 10, 25, 50, { label: 'All', value: -1 }]}
+                                rowsPerPageOptions={[
+                                  { label: '5', value: 5 },
+                                  { label: '10', value: 10 },
+                                  { label: '25', value: 25 },
+                                  { label: '50', value: 50 },
+                                  { label: '100', value: 100 },
+                                  { label: 'All', value: -1 }
+                                ]}
                                 colSpan={4}
                                 count={allFilteredDropdowns.length}
-                                rowsPerPage={rowsPerPage}
+                                rowsPerPage={rowsPerPage === -1 ? allFilteredDropdowns.length : rowsPerPage}
                                 page={currentPage}
                                 onPageChange={(event, newPage) => setCurrentPage(newPage)}
                                 onRowsPerPageChange={(event) => {
-                                  setRowsPerPage(parseInt(event.target.value, 10));
+                                  const value = event.target.value;
+                                  const newRowsPerPage = value === -1 ? -1 : parseInt(value, 10);
+                                  setRowsPerPage(newRowsPerPage);
                                   setCurrentPage(0);
                                 }}
                                 labelRowsPerPage="Rows per page:"
-                                labelDisplayedRows={({ from, to, count }) => 
-                                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`} entries`
-                                }
+                                labelDisplayedRows={({ from, to, count }) => {
+                                  if (rowsPerPage === -1) {
+                                    return `${count} of ${count} entries (All)`;
+                                  }
+                                  return `${from}-${to} of ${count} entries`;
+                                }}
                               />
                             </TableRow>
                           </TableFooter>
