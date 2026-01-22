@@ -567,69 +567,57 @@ const AdminConsole = () => {
       let errorCount = 0;
       const errors = [];
       
-      // Batch processing for better performance
-      const batchSize = 10;
-      for (let i = 0; i < importedData.length; i += batchSize) {
-        const batch = importedData.slice(i, i + batchSize);
-        const batchPromises = [];
+      // Process sequentially to avoid closure issues
+      for (let i = 0; i < importedData.length; i++) {
+        const row = importedData[i];
+        const { Type, Value, Parent } = row;
         
-        for (const row of batch) {
-          const { Type, Value, Parent } = row;
-          
-          if (!Type || !Value) {
-            console.warn('Skipping row with missing Type or Value:', row);
-            errorCount++;
-            errors.push(`Row ${i + 1}: Missing Type or Value`);
-            continue;
-          }
-          
-          // Validate type
-          const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'];
-          if (!validTypes.includes(Type)) {
-            console.warn('Skipping row with invalid type:', Type);
-            errorCount++;
-            errors.push(`Row ${i + 1}: Invalid type '${Type}'`);
-            continue;
-          }
-          
-          const dropdownData = {
-            type: Type,
-            value: Value.trim()
-          };
-          
-          // Handle parent relationships
-          if (Type === 'Incident' && Parent) {
-            dropdownData.parentType = 'Sub-Category';
-            dropdownData.parentValue = Parent;
-          }
-          
-          if (Type === 'Sub-Category' && Parent) {
-            dropdownData.parentType = 'Category';
-            dropdownData.parentValue = Parent;
-          }
-          
-          // Create promise for this dropdown
-          const promise = dropdownAPI.createDropdownValue(dropdownData)
-            .then(() => {
-              successCount++;
-              return null;
-            })
-            .catch((err) => {
-              errorCount++;
-              const errorMsg = err.response?.data?.message || err.message;
-              errors.push(`Row ${i + 1} (${Type}: ${Value}): ${errorMsg}`);
-              console.error('Error importing dropdown value:', err);
-              return err;
-            });
-          
-          batchPromises.push(promise);
+        if (!Type || !Value) {
+          console.warn('Skipping row with missing Type or Value:', row);
+          errorCount++;
+          errors.push(`Row ${i + 1}: Missing Type or Value`);
+          continue;
         }
         
-        // Wait for batch to complete
-        await Promise.all(batchPromises);
+        // Validate type
+        const validTypes = ['Source', 'Category', 'Sub-Category', 'Incident', 'Office', 'Obligation'];
+        if (!validTypes.includes(Type)) {
+          console.warn('Skipping row with invalid type:', Type);
+          errorCount++;
+          errors.push(`Row ${i + 1}: Invalid type '${Type}'`);
+          continue;
+        }
         
-        // Update progress
-        console.log(`Processed ${Math.min(i + batchSize, importedData.length)} of ${importedData.length} rows`);
+        const dropdownData = {
+          type: Type,
+          value: Value.trim()
+        };
+        
+        // Handle parent relationships
+        if (Type === 'Incident' && Parent) {
+          dropdownData.parentType = 'Sub-Category';
+          dropdownData.parentValue = Parent;
+        }
+        
+        if (Type === 'Sub-Category' && Parent) {
+          dropdownData.parentType = 'Category';
+          dropdownData.parentValue = Parent;
+        }
+        
+        try {
+          await dropdownAPI.createDropdownValue(dropdownData);
+          successCount++;
+        } catch (err) {
+          errorCount++;
+          const errorMsg = err.response?.data?.message || err.message;
+          errors.push(`Row ${i + 1} (${Type}: ${Value}): ${errorMsg}`);
+          console.error('Error importing dropdown value:', err);
+        }
+        
+        // Update progress periodically
+        if ((i + 1) % 100 === 0) {  // Log every 100 records
+          console.log(`Processed ${i + 1} of ${importedData.length} rows`);
+        }
       }
       
       // Show results
