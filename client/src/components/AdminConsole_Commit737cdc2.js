@@ -663,17 +663,38 @@ const AdminConsole = () => {
           
           for (let i = 0; i < dropdownsToImport.length; i++) {
             const dropdownData = dropdownsToImport[i];
+            
+            // Log the data being sent for debugging
+            console.log(`Processing row ${i + 1}:`, dropdownData);
+            
+            // Validate data before sending
+            if (!dropdownData.type || !dropdownData.value) {
+              console.error(`Invalid data for row ${i + 1}:`, dropdownData);
+              errorCount++;
+              errors.push(`Row ${i + 1}: Invalid data - missing type or value`);
+              continue;
+            }
+            
             try {
               await dropdownAPI.createDropdownValue(dropdownData);
               successCount++;
+              console.log(`Successfully imported: ${dropdownData.type} - ${dropdownData.value}`);
             } catch (individualErr) {
               const errorMsg = individualErr.response?.data?.message || individualErr.message;
+              const statusCode = individualErr.response?.status;
+              
+              console.error(`Error importing row ${i + 1}:`, {
+                data: dropdownData,
+                error: errorMsg,
+                status: statusCode,
+                fullError: individualErr
+              });
               
               // Check if this is a duplicate entry error
-              if (errorMsg && (errorMsg.includes('already exists') || individualErr.response?.status === 400)) {
-                console.warn(`Duplicate or invalid entry skipped: Row ${i + 1} (${dropdownData.type}: ${dropdownData.value})`);
+              if (errorMsg && (errorMsg.includes('already exists') || statusCode === 400)) {
+                console.warn(`Duplicate or invalid entry skipped: Row ${i + 1} (${dropdownData.type}: ${dropdownData.value}) - ${errorMsg}`);
               } else {
-                console.error('Error importing dropdown value:', individualErr);
+                console.error(`Critical error importing dropdown value:`, individualErr);
               }
               
               errorCount++;
